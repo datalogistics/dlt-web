@@ -1,0 +1,33 @@
+{
+  "name": "peri-js",
+  "version": "0.0.1",
+  "description": "front end application for periscope",
+  "author": "Mark Keele <mkeele@indiana.edu>",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "nodemon server.js",
+    "prod": "forever start server.js",
+    "test": "karma start test/karma.conf.js"
+  },
+  "engines": {
+    "node": "0.10.28",
+    "npm": "1.4.6"
+  },
+  "dependencies": {
+    "bower": "1.3.3",
+    "express": "3.5.1",
+    "forever": "^0.11.1",
+    "karma": "0.12.16",
+    "mongoose": "3.8.x",
+    "node-freegeoip": "0.0.1",
+    "nodemon": "1.1.1",
+    "socket.io": "^1.0.6",
+    "socket.io-client": "^1.1.0",
+    "ws": "^0.4.32"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:periscope-ps/periscope.git"
+  }
+}

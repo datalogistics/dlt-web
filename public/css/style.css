@@ -1,0 +1,213 @@
+body {
+  padding-top: 70px;
+}
+
+.navbar {
+  font-size: 14px;
+  background: #990000;
+}
+
+a.navbar-brand {
+  color: #f5f4ec;
+}
+
+a.navbar-brand:hover {
+  color: white;
+}
+
+a.header {
+  color: #f5f4ec;
+}
+
+a.header:hover {
+  color: #990000;
+  background: #f5f4ec;
+}
+
+.footer {
+  font-size: 10px;
+  padding: 0px;
+}
+a.footer {
+  color: #990000;
+}
+a.footer:hover {
+  color: black;
+}
+li.left {
+  float: left;
+  text-align: left;
+}
+li.right {
+  float: right;
+  text-align: right;
+}
+
+.jumbotron {
+  word-wrap: break-word;
+}
+
+li {
+  list-style-type: none;
+}
+
+/* graph styles */
+svg {
+  background-color: #FFF;
+  cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+svg:not(.active):not(.ctrl) {
+  cursor: crosshair;
+}
+
+path.link {
+  fill: none;
+  stroke: #000;
+  stroke-width: 8px;
+  cursor: default;
+  pointer-events: bounding-box;
+}
+
+svg:not(.active):not(.ctrl) path.link {
+  cursor: pointer;
+}
+
+path.link.selected {
+  stroke-dasharray: 10,2;
+}
+
+path.link.dragline {
+  pointer-events: none;
+}
+
+path.link.hidden {
+  stroke-width: 0;
+}
+
+circle.node {
+  stroke-width: 5px;
+  cursor: pointer;
+}
+
+text {
+  font: 12px sans-serif;
+  pointer-events: none;
+}
+
+text.id {
+  text-anchor: middle;
+  font-weight: bold;
+}
+
+#graphSelect{
+  /*outline:black dotted thick;*/
+  height: 400px;
+  width: 600px;
+  /*margin: 50px;*/
+}
+
+/*
+ The animate class is apart of the element and the ng-enter class
+ is attached to the element once the enter animation event is triggered
+*/
+.mainview-animation.ng-enter {
+  -webkit-transition: .3s linear all;
+  -moz-transition: .3s linear all;
+  -o-transition: .3s linear all;
+  transition: .3s linear all;
+}
+
+/**
+ * Pre animation -> enter
+ */
+.mainview-animation.ng-enter {
+  opacity: 0;
+}
+
+/**
+ * Post animation -> enter
+ */
+.mainview-animation.ng-enter.ng-enter-active {
+  opacity: 1;
+}
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Northward tooltips */
+.d3-tip.n:after {
+  content: "\25BC";
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+  text-align: center;
+}
+
+/* Eastward tooltips */
+.d3-tip.e:after {
+  content: "\25C0";
+  margin: -4px 0 0 0;
+  top: 50%;
+  left: -8px;
+}
+
+/* Southward tooltips */
+.d3-tip.s:after {
+  content: "\25B2";
+  margin: 0 0 1px 0;
+  top: -8px;
+  left: 0;
+  text-align: center;
+}
+
+/* Westward tooltips */
+.d3-tip.w:after {
+  content: "\25B6";
+  margin: -4px 0 0 -1px;
+  top: 50%;
+  left: 100%;
+}
+
+/*** Map Stuff **/
+.background {
+  fill: none;
+  pointer-events: all;
+}
+
+#states {
+  fill: #aaa;
+}
+
+#state-borders {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
