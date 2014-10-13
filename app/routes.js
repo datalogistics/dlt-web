@@ -16,8 +16,8 @@ var fs = require('fs')
 var production = true;
 var unis_host = 'dlt.incntre.iu.edu';
 var unis_port = '9000';
-var unis_cert = '/home/kissel/ssl/dlt-client.pem';
-var unis_key = '/home/kissel/ssl/dlt-client.pem';
+var unis_cert = './dlt-client.pem';
+var unis_key = './dlt-client.pem';
 
 // var production = false;
 // var unis_host = 'monitor.incntre.iu.edu';
