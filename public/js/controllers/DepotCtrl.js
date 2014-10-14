@@ -45,20 +45,20 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
   });
 
   if (metadata_id) {
-    Depot.getMetadataData(function(metadataData) {
-      $scope.metadataData = $scope.metadataData || [];
+    Depot.getData(metadata_id, function(data) {
+      $scope.data = $scope.data || [];
 
-      if (typeof metadataData =='string')
-        metadataData = JSON.parse(metadataData);
+      if (typeof data =='string')
+        data = JSON.parse(data);
 
-      $scope.metadataData = $scope.metadataData.concat(metadataData);
+      $scope.data = $scope.data.concat(data);
 
-      Depot.getMetadata(function(metadata) {
+      Depot.getMetadata(metadata_id, function(metadata) {
         $scope.eventType = metadata.eventType;
       });
 
       var arrayData = [];
-      angular.forEach($scope.metadataData, function(key, value) {
+      angular.forEach($scope.data, function(key, value) {
         arrayData.push([key.ts, key.value]);
       });
 
@@ -70,12 +70,22 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
     });
   }
 
+  $scope.serviceFilter = function(service) {
+    if(service.name == 'blipp') {
+      return false;
+    } else {
+      return true;
+    }
+  };
+
   $scope.getServiceNode = function(accessPoint) {
     var ip = accessPoint.split(':')[1].replace('//', '');
 
     for(var i = 0; i < $scope.nodes.length; i++) {
       if ($scope.nodes[i].properties.geni.logins[0].hostname == ip) {
-          return $scope.nodes[i].id;
+        return $scope.nodes[i].id;
+      } else {
+        return 'Node Unknown';
       }
     }
   };
