@@ -94,10 +94,11 @@ var DownloadMap = (function(){
 					});
 					
 				}, 
-				initNodes : function(arr){					
-					for(var i=0 ; i < arr.length ; i++ ){
-						if(arr[i])
-							d._addLocation(''+arr[i].ip, arr[i].loc);
+				initNodes : function(map){					
+					for(var i in map ){
+						var arr = map[i];
+						if(arr)
+							d._addLocation(''+i, arr);
 					}
 				},
 				initProgessBox : function(){
@@ -181,13 +182,25 @@ var DownloadMap = (function(){
 	};
 	return d;
 })();
-angular.module('EodnCtrl', []).controller('EodnController', function($scope, $http, Service, Slice,Socket) {		
+angular.module('EodnCtrl', []).controller('EodnController', function($scope,$routeParams, $http, Service, Slice,Socket) {
+	var id = $routeParams.id ;
 	DownloadMap.init();
-	Socket.emit("eodnDownload_request",{});
+	Socket.emit("eodnDownload_request",{ id : id});
+	console.log("fine till here " ,id);
 	Socket.on("eodnDownload_Nodes",function(data){
 		console.log("Socket data ",data.data);
 		// Use this data to create nodes 
 		DownloadMap.initNodes(data.data);		
+	});
+	Socket.on("eodnDownload_Info", function(data){
+		// Set this data in scope to display file info
+		if(data.isError){
+			$scope.error = true;
+		} else {
+			$scope.name = data.name ,
+			$scope.size = data.size , 
+			$scope.connections = data.connections;			
+		}
 	});
 	Socket.on("eodnDownload_Progress",function(data){
 		var ip = data.data.ip;
