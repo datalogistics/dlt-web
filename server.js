@@ -7,25 +7,11 @@
 var express = require('express')
   , http = require('http')
   , socketio = require('socket.io');
-  // , mongoose = require('mongoose')
-  // , database = require('./app/config/db');
 
 // create app, server, sockets
 var app = module.exports = express();
 var server = http.createServer(app);
 var io = socketio.listen(server);
-
-// database connection
-// var db = mongoose.connection;
-
-// check db connection
-// db.on('error', console.error);
-// db.once('open', function() {
-  // console.log('Connected to ' + database.url)
-// });
-
-// connect to db
-// mongoose.connect(database.url);
 
 // app configuration
 app.configure(function() {
@@ -49,7 +35,7 @@ app.configure('production', function(){
 // restful api routes
 require('./app/routes')(app);
 
-// create http server and listen on a port */
+// create http server and listen on a port
 server.listen(app.get('port'), function(){
   console.log('HTTP server on port ' + app.get('port') + ' - running as ' + app.settings.env);
 });
