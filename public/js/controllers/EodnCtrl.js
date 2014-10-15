@@ -204,9 +204,11 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 	k = $scope ;
 	Socket.on("eodnDownload_Info", function(data){
 		// Set this data in scope to display file info
+		console.log('file data ' , data);
 		if(data.isError){
 			$scope.error = true;
 		} else {
+			$scope.error = false;
 			$scope.name = data.name ,
 			$scope.size = data.size , 
 			$scope.totalSize = data.totalSize ;
@@ -214,6 +216,7 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 		}
 	});
 	Socket.on("eodnDownload_Progress",function(data){
+		console.log('progress data', data);
 		var s = $scope.totalSize || 1 ;
 		var d = data.data ;
 		var ip = d.ip;		

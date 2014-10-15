@@ -285,7 +285,6 @@ module.exports = function (client_socket) {
       console.log('UNIS: Event socket closed');
     });
   });*/
-  
   client_socket.on('eodnDownload_request', function(data) {
 	  // The id according to which multiple downloads happen
 	  var id = data.id ;
@@ -293,16 +292,8 @@ module.exports = function (client_socket) {
 		  var nodeLocations = map;
 		  console.log('all fine till here ');
 		  client_socket.emit('eodnDownload_Nodes', {data : nodeLocations});
-		  var downloadAgent = registeredClientMap[id];
-		  if(downloadAgent){
-			  var q = downloadAgent;
-			  // Push the current socket so that it can get the emitted download info 
-			  q.registeredRequestClientArr.push(client_socket);
-			  // Send the file info 
-			  client_socket.emit('eodnDownload_Info', {name : q.filename , size : q.totalSize , connections : q.connections});
-		  } else {
-			  client_socket.emit('eodnDownload_Info', {isError : true });
-		  };
+		  // AddNewConnection
+		  addNewConn(client_socket , id);
 	  });
   });
   
@@ -318,13 +309,24 @@ module.exports = function (client_socket) {
   
   // The latest download hashmap 
   client_socket.on('eodnDownload_register', function(data) {
-	  console.log("registered new node");
 	  var id = data.hashId , 
 	  	name = data.filename ,
-	  	totalSize = data.totalSize;
-	  data.registeredRequestClientArr = [];
-	  registeredClientMap[id] = data ;
+	  	totalSize = data.totalSize, conn = data.connections;	   
+	  console.log("registered new node ",data);
+	  console.log(registeredClientMap);
+	  var old = registeredClientMap[id] || {};
+	  if(old) {
+		  console.log("yess there were some attempts before ",old);
+	  }
+	  data.registeredRequestClientArr = old.registeredRequestClientArr || [];
+	  //client_socket.emit('eodnDownload_Info', {name : q.filename , size : q.totalSize , connections : q.connections});
+	  data.exists = true ;
+	  registeredClientMap[id] = data ;	  
+	  var arr = data.registeredRequestClientArr || [] ;
+	  console.log("already regdd cleintssssssssssssss ",arr.length);
+	  emitDataToAllConnected(registeredClientMap[id], 'eodnDownload_Info',{id : id , name : name , size : totalSize , connections : conn});
   });
+  
   client_socket.on('eodnDownload_pushData', function(data) {
 	  var id =  data.hashId ;
 	  var serve = registeredClientMap[id];
@@ -339,10 +341,38 @@ module.exports = function (client_socket) {
   });
 };
 
+function addNewConn(client_socket , id){
+	  var downloadAgent = registeredClientMap[id];		  
+	  if(downloadAgent && downloadAgent.exists){
+		  var q = downloadAgent;
+		  // Push the current socket so that it can get the emitted download info 
+		  q.registeredRequestClientArr.push(client_socket);
+		  // Go bonkers and emit all old messages 
+		  var arr = q._emitPipe || [];
+		  console.log('pushing all known messages' , arr);
+		  for ( var i = 0 ; i < arr.length ; i++){
+			  client_socket.emit(arr[i].name , arr[i].data);
+		  }
+	  } else {
+		  // Send an error for now , then store it for later use anyway 		  
+		  client_socket.emit('eodnDownload_Info', {isError : true });
+		  registeredClientMap[id] = registeredClientMap[id] || {} ;
+		  var arr = registeredClientMap[id].registeredRequestClientArr || [];
+		  arr.push(client_socket);
+		  registeredClientMap[id].exists = false ;
+		  registeredClientMap[id].registeredRequestClientArr = arr ;
+		  console.log("added ......................... " ,registeredClientMap );
+	  };
+}
+
 function emitDataToAllConnected(serve , messageName , dataToBeSent) {
 	  if(serve){
+		  // Store all the emitted data to use for future connections
+		  serve._emitPipe = serve._emitPipe || [] ;
+		  serve._emitPipe.push({name : messageName , data : dataToBeSent});
 		  var arr = serve.registeredRequestClientArr || [] ;
 		  var time = (new Date()).getTime();
+		  var id = serve.hashId || serve.id;
 		  rClientsLastProgressMap[id] = time ;
 		  // Publish to all sockets in the array
 		  var nArr = [] , flag = false;
@@ -351,7 +381,7 @@ function emitDataToAllConnected(serve , messageName , dataToBeSent) {
 			  var sock = arr[i];
 			  if(arr[i].connected){		
 				  flag = true ;
-				  arr[i].emit('eodnDownload_Progress', data);
+				  arr[i].emit(messageName, dataToBeSent);
 				  //{data : { ip : "24.1.111.131" , progress : 5}});			  
 			  }		  
 			  if(arr[i].connected || arr[i].connecting){
