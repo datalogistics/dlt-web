@@ -285,16 +285,7 @@ module.exports = function (client_socket) {
       console.log('UNIS: Event socket closed');
     });
   });*/
-
-
-  //Can later create this array with
-  var nodeIpArray = ["24.1.111.131" , // bloomington
-                     "173.194.123.46", // google
-                     "128.83.40.146" , // UT austin
-                     "128.2.42.52" , // CMU
-                     "130.207.244.165" // GA Tech
-                     ];
-
+  
   client_socket.on('eodnDownload_request', function(data) {
 	  // The id according to which multiple downloads happen
 	  var id = data.id ;
@@ -315,20 +306,42 @@ module.exports = function (client_socket) {
 	  });
   });
   
+  client_socket.on("eodnDownload_clear",function(data){
+	var id = data.hashId ;
+	var serve = registeredClientMap[id];
+	var messageName = 'eodnDownload_clear' ,
+  	  dataToBeSent = data;
+	emitDataToAllConnected(serve , messageName , dataToBeSent);
+	// Kill it - will be auto gc'd 
+	registeredClientMap[id] = undefined ;
+  });
+  
   // The latest download hashmap 
   client_socket.on('eodnDownload_register', function(data) {
+	  console.log("registered new node");
 	  var id = data.hashId , 
 	  	name = data.filename ,
 	  	totalSize = data.totalSize;
 	  data.registeredRequestClientArr = [];
 	  registeredClientMap[id] = data ;
   });
-  
   client_socket.on('eodnDownload_pushData', function(data) {
 	  var id =  data.hashId ;
-	  var client = registeredClientMap[id];
-	  if(client){
-		  var arr = client.registeredRequestClientArr || [] ;
+	  var serve = registeredClientMap[id];
+	  var messageName = 'eodnDownload_Progress' ,
+	  	  dataToBeSent = data;
+	  if(serve){
+		  emitDataToAllConnected(serve , messageName , dataToBeSent);	  
+	  } else {
+		  // Do some error stuff or fallbaCK
+		  client_socket.emit('eodnDownload_fail');
+	  }
+  });
+};
+
+function emitDataToAllConnected(serve , messageName , dataToBeSent) {
+	  if(serve){
+		  var arr = serve.registeredRequestClientArr || [] ;
 		  var time = (new Date()).getTime();
 		  rClientsLastProgressMap[id] = time ;
 		  // Publish to all sockets in the array
@@ -350,15 +363,9 @@ module.exports = function (client_socket) {
 	  		rClientsLastUsedMap[id] = time ;
 	  	  }
 		  // Killed disconnected nodes
-		  client.registeredRequestClientArr = nArr ;
-	  } else {
-		  // Do some error stuff or fallbaCK
-		  client_socket.emit('eodnDownload_fail');
+	  	  serve.registeredRequestClientArr = nArr ;
 	  }
-  });
 };
-
-
 var _nodeLocationMap = {};
 function getAllIpLocationMap(array , cb){
 	array = array || [];

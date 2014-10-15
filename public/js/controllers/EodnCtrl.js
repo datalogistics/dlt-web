@@ -118,6 +118,10 @@ var DownloadMap = (function(){
 					var loc =  nodeLocationMap[ip];
 					d._moveLineToProgress(loc.attr('location').split(","),loc.attr('color') , progress);
 				},
+				doProgressWithOffset : function(ip , progressWith , offset){
+					var loc =  nodeLocationMap[ip];
+					d._moveLineToProgressWithOffset(loc.attr('location').split(","),loc.attr('color') , progress);
+				},
 				addKnownLocation : function(name){
 					var loc = knownLocations[name];
 					if(loc)
@@ -140,18 +144,23 @@ var DownloadMap = (function(){
 				},				
 				removeLocation : function(name){
 					svg.select('circle'+'#'+name).remove();
-				},
-				_moveLineToProgress : function(loc,color , progress){
-					// The progress in percentage 			
+				},			
+				_moveLineToProgress : function(loc,color , progress , offsetPercent){
 					progressStart = progressStart || 0 ; 
 					if (progressStart >= 100)
 						return;
 					if(progressStart + progress >= 100){
 						progress = 100 - progressStart ;
 					}
-					var ratio = 300 / 100 ;									
+					d._moveLineToProgressWithOffset(loc,color,progress,progressStart)
+				},
+				_moveLineToProgressWithOffset : function(loc,color , progress , offsetPercent){
+					if (progressStart >= 100)
+						return;
+					var ratio = 300 / 100 ;
+					var progOffset = 200 + (offsetPercent || 0) * ratio ;
 					// draw bar 
-					var prog = [width - 50 , 200 + (progressStart*ratio)];
+					var prog = [width - 50 , progOffset];
 					var h = ratio * progress , w = 30 ; 				
 					d._move(projection(loc), prog , color)
 					.each("end", function(){						
@@ -160,7 +169,7 @@ var DownloadMap = (function(){
 						.attr("width", w)
 				    	.attr("height", h)
 				    	.attr('x', width - 50)
-				    	.attr('y', 200 + (progressStart*ratio));
+				    	.attr('y', progOffset);
 						progressStart += progress ;
 					}).transition().duration(500).remove();
 				},
@@ -192,6 +201,7 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 		// Use this data to create nodes 
 		DownloadMap.initNodes(data.data);		
 	});
+	k = $scope ;
 	Socket.on("eodnDownload_Info", function(data){
 		// Set this data in scope to display file info
 		if(data.isError){
@@ -199,13 +209,17 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 		} else {
 			$scope.name = data.name ,
 			$scope.size = data.size , 
+			$scope.totalSize = data.totalSize ;
 			$scope.connections = data.connections;			
 		}
 	});
 	Socket.on("eodnDownload_Progress",function(data){
-		var ip = data.data.ip;
-		var pr = data.data.progress;
-		DownloadMap.doProgress(ip,pr);
+		var s = $scope.totalSize || 1 ;
+		var d = data.data ;
+		var ip = d.ip;		
+		var pr = d.progress;
+		var offset = (d.offset/ s )  * 100;
+		DownloadMap.doProgressWithOffset(ip,pr, offset);
 	});
 }); // end controller
 
