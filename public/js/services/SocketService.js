@@ -4,9 +4,9 @@
  * SocketService.js
  */
 
-angular.module('SocketService', []).service('Socket', function($rootScope) {
+angular.module('SocketService', []).service('Socket', function($rootScope, $location) {
 
-  var socket = io.connect('http://localhost:42424');
+  var socket = io.connect($location.absUrl());
 
   this.on = function (eventName, callback) {
     socket.on(eventName, function () {
@@ -16,6 +16,7 @@ angular.module('SocketService', []).service('Socket', function($rootScope) {
       });
     });
   };
+
   this.emit = function (eventName, data, callback) {
     socket.emit(eventName, data, function () {
       var args = arguments;
