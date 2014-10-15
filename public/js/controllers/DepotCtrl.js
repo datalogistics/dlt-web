@@ -4,45 +4,50 @@
  * DepotCtrl.js
  */
 
-angular.module('DepotCtrl', []).controller('DepotController', function($scope, $routeParams, $location, Depot) {
+angular.module('DepotCtrl', []).controller('DepotController', function($scope, $routeParams, $location, $rootScope, Depot) {
 
   var metadata_id = $routeParams.id;
 
-  Depot.getNodes(function(nodes) {
+  $scope.services = $rootScope.services;
+  $scope.nodes = $rootScope.nodes;
+  $scope.measurements = $rootScope.measurements;
+  $scope.metadata = $rootScope.metadata;
+
+  /*Depot.getNodes(function(nodes) {
     $scope.nodes = $scope.nodes || [];
 
     if (typeof nodes =='string')
       nodes = JSON.parse(nodes);
 
     $scope.nodes = $scope.nodes.concat(nodes);
-  });
+  });*/
 
-  Depot.getServices(function(services) {
+  /*Depot.getServices(function(services) {
     $scope.services = $scope.services || [];
 
     if (typeof services =='string')
       services = JSON.parse(services);
 
     $scope.services = $scope.services.concat(services);
-  });
+  });*/
 
-  Depot.getMeasurements(function(measurements) {
+  /*Depot.getMeasurements(function(measurements) {
     $scope.measurements = $scope.measurements || [];
 
     if (typeof measurements =='string')
       measurements = JSON.parse(measurements);
 
     $scope.measurements = $scope.measurements.concat(measurements);
-  });
+  });*/
 
-  Depot.getMetadatas(function(metadata) {
+  /*Depot.getMetadatas(function(metadata) {
     $scope.metadata = $scope.metadata || [];
 
     if (typeof metadata =='string')
       metadata = JSON.parse(metadata);
 
     $scope.metadata = $scope.metadata.concat(metadata);
-  });
+  });*/
 
   if (metadata_id) {
     Depot.getData(metadata_id, function(data) {

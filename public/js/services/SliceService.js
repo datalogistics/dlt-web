@@ -6,7 +6,7 @@
 
 angular.module('SliceService', []).service('Slice', function($http) {
 
-  this.getSlice = function(sliceInfo) {
+  /*this.getSlice = function(sliceInfo) {
     $http.get('/api/slice')
       .success(function(data) {
         console.log('Slice Request: ' , data);
@@ -15,6 +15,6 @@ angular.module('SliceService', []).service('Slice', function($http) {
       .error(function(data) {
         console.log('Slice Error: ' , data);
       });
-  };
+  };*/
 
 });
