@@ -9,9 +9,9 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
   'appRoutes', 'SliceCtrl', 'SliceService', 'NodeCtrl', 'NodeService', 'ServiceCtrl',
   'ServiceService', 'MeasurementCtrl', 'MeasurementService', 'MetadataCtrl', 'MetadataService',
   'PortService', 'SocketService', 'EodnCtrl', 'DepotCtrl', 'DepotService']
-  ).run(function($rootScope, $http, $timeout) {
+  ).run(function($rootScope, $http, $q, $timeout) {
     $http.get('/api/services').success(function(data) {
-      Socket.emit("service_request",{});
+      // Socket.emit("service_request",{});
 
       console.log('HTTP Service Request: ' , data);
       console.log(data.length);
@@ -28,35 +28,41 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
       console.log(unqiueServices.length);
       console.log(unqiueServices);
 
-      for(var i = 0; i < unqiueServices.length; i++) {
-        console.log(unqiueServices[i]);
+      getServices = function() {
+        var promises = [];
 
-        $http.get('/api/services/' + unqiueServices[i]).success(function(data) {
-          console.log('HTTP Service Request: ' , data);
-          services.push(data);
-          console.log(services.length);
-          console.log(services);
+        for(var i = 0; i < unqiueServices.length; i++) {
+          promises.push($http.get('/api/services/' + unqiueServices[i]).success(function(data) {
+            console.log('HTTP Service Request: ' , data);
+            services.push(data);
+          }));
+        }
+        return $q.all(promises);
+      };
 
-          // set timer value
-          /*onTimeout = function() {
-            for(var i = 0; i < services.length; i++) {
-              if(services[i].ttl <= 0) {
-                services[i].status = 'Unknown';
-              } else {
-                services[i].ttl--;
-              }
+      getServices().then(function(data) {
+        console.log(data.length);
+        console.log(data);
+
+        // set timer value
+        onTimeout = function() {
+          for(var i = 0; i < services.length; i++) {
+            if(services[i].ttl <= 0) {
+              services[i].status = 'Unknown';
+            } else {
+              services[i].ttl--;
             }
-            //continue timer
-            timeout = $timeout(onTimeout,1000);
           }
+          //continue timer
+          timeout = $timeout(onTimeout,1000);
+        }
 
-          // start timer
-          var timeout = $timeout(onTimeout,1000);*/
+        // start timer
+        var timeout = $timeout(onTimeout,1000);
 
-          // apply data to scope
-          $rootScope.services = services;
-        });
-      }
+        // apply data to scope
+        $rootScope.services = services;
+      });
     });
 
     $http.get('/api/nodes').success(function(data) {
