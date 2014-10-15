@@ -101,7 +101,7 @@ module.exports = function (client_socket) {
   });
 
   client_socket.on('data_request', function(data) {
-    console.log(data.id);
+    console.log('UNIS: Data ID requested: ' + data.id);
 
     if (data.id) {
       // Create socket to listen for updates on data
