@@ -6,12 +6,19 @@
 
 // modules
 var WebSocket = require('ws')  , freegeoip = require('node-freegeoip');
+var fs = require('fs')
+, path = require('path')
+, http = require('http')
+, https = require('https')
+, url = require('url');
 
 // export function for listening to the socket
 module.exports = function (client_socket) {
-
   var unis_sub = 'wss://dlt.incntre.iu.edu:9000/subscribe/'
   var ms_sub = 'wss://dlt.incntre.iu.edu:9001/subscribe/'
+  var ssl_opts = {'cert': fs.readFileSync('./dlt-client.pem'),
+		  'key': fs.readFileSync('./dlt-client.pem'),
+		  rejectUnauthorized: false}
 
   // establish client socket
   console.log('Client connected');
@@ -22,7 +29,7 @@ module.exports = function (client_socket) {
 
   client_socket.on('node_request', function(data) {
     // Create socket to listen for updates on nodes
-    var nodeSocket = new WebSocket(unis_sub + 'node');
+      var nodeSocket = new WebSocket(unis_sub + 'node', ssl_opts);
 
     nodeSocket.on('open', function(event) {
       console.log('UNIS: Node socket opened');
@@ -40,7 +47,7 @@ module.exports = function (client_socket) {
 
   client_socket.on('service_request', function(data) {
     // Create socket to listen for updates on services
-    var serviceSocket = new WebSocket(unis_sub + 'service');
+      var serviceSocket = new WebSocket(unis_sub + 'service', ssl_opts);
 
     serviceSocket.on('open', function(event) {
       console.log('UNIS: Service socket opened');
@@ -58,7 +65,7 @@ module.exports = function (client_socket) {
 
   client_socket.on('measurement_request', function(data) {
     // Create socket to listen for updates on measurements
-    var measurementSocket = new WebSocket(unis_sub + 'measurement');
+      var measurementSocket = new WebSocket(unis_sub + 'measurement', ssl_opts);
 
     measurementSocket.on('open', function(event) {
       console.log('UNIS: Measurement socket opened');
@@ -76,7 +83,7 @@ module.exports = function (client_socket) {
 
   client_socket.on('metadata_request', function(data) {
     // Create socket to listen for updates on metadata
-    var metadataSocket = new WebSocket(unis_sub + 'metadata');
+      var metadataSocket = new WebSocket(unis_sub + 'metadata', ssl_opts);
 
     metadataSocket.on('open', function(event) {
       console.log('UNIS: Metadata socket opened');
@@ -97,7 +104,7 @@ module.exports = function (client_socket) {
 
     if (data.id) {
       // Create socket to listen for updates on data
-      var dataSocket = new WebSocket(ms_sub + 'data/' + data.id);
+	var dataSocket = new WebSocket(ms_sub + 'data/' + data.id, ssl_opts);
 
       dataSocket.on('open', function(event) {
         console.log('UNIS: Data ID socket opened');
@@ -113,7 +120,7 @@ module.exports = function (client_socket) {
       });
     } else {
       // Create socket to listen for updates on data
-      var dataSocket = new WebSocket(ms_sub + 'data');
+	var dataSocket = new WebSocket(ms_sub + 'data', ssl_opts);
 
       dataSocket.on('open', function(event) {
         console.log('UNIS: Data socket opened');
@@ -132,7 +139,7 @@ module.exports = function (client_socket) {
 
   client_socket.on('port_request', function(data) {
     // Create socket to listen for updates on port
-    var portSocket = new WebSocket(unis_sub + 'port');
+      var portSocket = new WebSocket(unis_sub + 'port', ssl_opts);
 
     portSocket.on('open', function(event) {
       console.log('UNIS: Port socket opened');
@@ -150,7 +157,7 @@ module.exports = function (client_socket) {
 
   client_socket.on('link_request', function(data) {
     // Create socket to listen for updates on link
-    var linkSocket = new WebSocket(unis_sub + 'link');
+      var linkSocket = new WebSocket(unis_sub + 'link', ssl_opts);
 
     linkSocket.on('open', function(event) {
       console.log('UNIS: Link socket opened');
@@ -168,7 +175,7 @@ module.exports = function (client_socket) {
 
   client_socket.on('path_request', function(data) {
     // Create socket to listen for updates on path
-    var pathSocket = new WebSocket(unis_sub + 'path');
+      var pathSocket = new WebSocket(unis_sub + 'path', ssl_opts);
 
     pathSocket.on('open', function(event) {
       console.log('UNIS: Path socket opened');
@@ -186,7 +193,7 @@ module.exports = function (client_socket) {
 
   client_socket.on('network_request', function(data) {
     // Create socket to listen for updates on network
-    var networkSocket = new WebSocket(unis_sub + 'network');
+      var networkSocket = new WebSocket(unis_sub + 'network', ssl_opts);
 
     networkSocket.on('open', function(event) {
       console.log('UNIS: Network socket opened');
@@ -204,7 +211,7 @@ module.exports = function (client_socket) {
 
   client_socket.on('domain_request', function(data) {
     // Create socket to listen for updates on domain
-    var domainSocket = new WebSocket(unis_sub + 'domain');
+      var domainSocket = new WebSocket(unis_sub + 'domain', ssl_opts);
 
     domainSocket.on('open', function(event) {
       console.log('UNIS: Domain socket opened');
@@ -222,7 +229,7 @@ module.exports = function (client_socket) {
 
   client_socket.on('topology_request', function(data) {
     // Create socket to listen for updates on topology
-    var topologySocket = new WebSocket(unis_sub + 'topology');
+      var topologySocket = new WebSocket(unis_sub + 'topology', ssl_opts);
 
     topologySocket.on('open', function(event) {
       console.log('UNIS: Topology socket opened');
@@ -240,7 +247,7 @@ module.exports = function (client_socket) {
 
   client_socket.on('event_request', function(data) {
     // Create socket to listen for updates on event
-    var eventSocket = new WebSocket(unis_sub + 'event');
+      var eventSocket = new WebSocket(unis_sub + 'event', ssl_opts);
 
     eventSocket.on('open', function(event) {
       console.log('UNIS: Event socket opened');
