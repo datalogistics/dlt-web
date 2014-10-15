@@ -10,8 +10,8 @@ var WebSocket = require('ws')  , freegeoip = require('node-freegeoip');
 // export function for listening to the socket
 module.exports = function (client_socket) {
 
-  var unis_sub = 'ws://dlt.incntre.iu.edu:9000/subscribe/'
-  var ms_sub = 'ws://dlt.incntre.iu.edu:9001/subscribe/'
+  var unis_sub = 'wss://dlt.incntre.iu.edu:9000/subscribe/'
+  var ms_sub = 'wss://dlt.incntre.iu.edu:9001/subscribe/'
 
   // establish client socket
   console.log('Client connected');
