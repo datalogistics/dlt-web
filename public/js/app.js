@@ -9,9 +9,11 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
   'appRoutes', 'SliceCtrl', 'SliceService', 'NodeCtrl', 'NodeService', 'ServiceCtrl',
   'ServiceService', 'MeasurementCtrl', 'MeasurementService', 'MetadataCtrl', 'MetadataService',
   'PortService', 'SocketService', 'EodnCtrl', 'DepotCtrl', 'DepotService']
-  ).run(function($rootScope, $http, $q, $timeout) {
+  ).run(function($rootScope, $http, $q, $timeout, Socket) {
     $http.get('/api/services').success(function(data) {
-      // Socket.emit("service_request",{});
+      Socket.emit('service_request', {});
+      Socket.emit('measurement_request', {});
+      Socket.emit('metadata_request', {});
 
       console.log('HTTP Service Request: ' , data);
       console.log(data.length);
@@ -65,13 +67,6 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
       });
     });
 
-    $http.get('/api/nodes').success(function(data) {
-      console.log('HTTP Node Request: ' , data);
-      $rootScope.nodes = data;
-    }).error(function(data) {
-      console.log('HTTP Node Error: ' , data);
-    });
-
     $http.get('/api/measurements').success(function(data) {
       console.log('Measurement Request: ' + data);
       $rootScope.measurements = data;
@@ -86,5 +81,3 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
       console.log('Metadata Error: ' + data);
     });
   });
-
-// angular.module('measurementApp', ['ngRoute', 'ngAnimate', 'ui.utils' ,'ui.bootstrap', 'nvd3ChartDirectives', 'directedGraphModule', 'appRoutes', 'SliceCtrl', 'SliceService', 'NodeCtrl', 'NodeService', 'ServiceCtrl', 'ServiceService', 'BlippCtrl', 'BlippService', 'MeasurementCtrl', 'MeasurementService', 'HelmCtrl', 'HelmService', 'HelpCtrl', 'HelpService', 'MetadataCtrl', 'MetadataService', 'PortService', 'SocketService', 'schemaForm','EodnCtrl']);
