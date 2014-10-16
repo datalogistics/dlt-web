@@ -20,7 +20,7 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
       data = JSON.parse(data);
     }
 
-    data.status = 'New';
+    // data.status = 'New';
     console.log('Socket Service Request: ', data);
 
     function searchServices(addService) {
@@ -30,7 +30,9 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
       for(var i = 0; $scope.services.length; i++) {
 
         if($scope.services[i].id == data.id) {
-          $scope.services[i].ttl = -1;
+          // $scope.services[i].ttl = -1;
+          console.log("removing: " + $scope.services[i].accessPoint);
+          $scope.services.splice(i, 1);
           break;
         }
       }

@@ -18,7 +18,7 @@
       <th>Institution</th>
       <th>Location</th>
     </tr>
-    <tbody ng-repeat="service in services | orderBy:'-ts'">
+    <tbody ng-repeat="service in services | unique:'accessPoint' | orderBy:'-ts'">
       <td>
         <button ng-show="service.status === 'ON'" class="btn btn-success disabled">ON</button>
         <button ng-show="service.status === 'Unknown'" class="btn btn-warning disabled">Unknown</button>
