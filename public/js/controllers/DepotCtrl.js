@@ -4,50 +4,50 @@
  * DepotCtrl.js
  */
 
-angular.module('DepotCtrl', []).controller('DepotController', function($scope, $routeParams, $location, $rootScope, Depot) {
+angular.module('DepotCtrl', []).controller('DepotController', function($scope, $routeParams, $location, $rootScope, Depot, Socket) {
 
   var metadata_id = $routeParams.id;
 
+  // place inital app data into scope for view
   $scope.services = $rootScope.services;
-  $scope.nodes = $rootScope.nodes;
   $scope.measurements = $rootScope.measurements;
   $scope.metadata = $rootScope.metadata;
 
-  /*Depot.getNodes(function(nodes) {
-    $scope.nodes = $scope.nodes || [];
+  // continue to listen for new data
+  Socket.on('service_data', function(data) {
 
-    if (typeof nodes =='string')
-      nodes = JSON.parse(nodes);
+    if (typeof data =='string') {
+      data = JSON.parse(data);
+    }
 
-    $scope.nodes = $scope.nodes.concat(nodes);
-  });*/
+    data.status = 'New';
+    console.log('Socket Service Request: ', data);
 
-  /*Depot.getServices(function(services) {
-    $scope.services = $scope.services || [];
+    function searchServices(addService) {
+      console.log("searchServices function");
 
-    if (typeof services =='string')
-      services = JSON.parse(services);
+      // search for duplicate id's
+      for(var i = 0; $scope.services.length; i++) {
 
-    $scope.services = $scope.services.concat(services);
-  });*/
+        if($scope.services[i].id == data.id) {
+          $scope.services[i].ttl = -1;
+          break;
+        }
+      }
 
-  /*Depot.getMeasurements(function(measurements) {
-    $scope.measurements = $scope.measurements || [];
+      // Call the callback
+      addService();
+    }
 
-    if (typeof measurements =='string')
-      measurements = JSON.parse(measurements);
+    function addService() {
+      console.log("addService callback");
 
-    $scope.measurements = $scope.measurements.concat(measurements);
-  });*/
+      // add new data to scope for view
+      $scope.services.push(data);
+    }
 
-  /*Depot.getMetadatas(function(metadata) {
-    $scope.metadata = $scope.metadata || [];
-
-    if (typeof metadata =='string')
-      metadata = JSON.parse(metadata);
-
-    $scope.metadata = $scope.metadata.concat(metadata);
-  });*/
+    searchServices(addService);
+  });
 
   if (metadata_id) {
     Depot.getData(metadata_id, function(data) {
@@ -75,25 +75,6 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
     });
   }
 
-  $scope.serviceFilter = function(service) {
-    if(service.name == 'blipp') {
-      return false;
-    } else {
-      return true;
-    }
-  };
-
-  $scope.getServiceNode = function(accessPoint) {
-    var ip = accessPoint.split(':')[1].replace('//', '');
-
-    for(var i = 0; i < $scope.nodes.length; i++) {
-      if ($scope.nodes[i].properties.geni.logins[0].hostname == ip) {
-        return $scope.nodes[i].id;
-      } else {
-        return 'Node Unknown';
-      }
-    }
-  };
   $scope.getServiceMeasurement = function(accessPoint) {
     var ip = accessPoint.split(':')[1].replace('//', '');
 
@@ -105,6 +86,7 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
       }
     }
   };
+
   $scope.getServiceMetadata = function(accessPoint) {
     var ip = accessPoint.split(':')[1].replace('//', '');
     var metadatas = [];
@@ -125,6 +107,10 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
 
   $scope.showData = function(metadata_id) {
     $location.path('/depots/' + metadata_id);
+  };
+
+  $scope.showData = function(service_id) {
+    $location.path('/eodn/' + service_id);
   };
 
 });
