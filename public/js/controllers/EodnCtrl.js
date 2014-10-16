@@ -92,14 +92,31 @@ var DownloadMap = (function(){
 						  d._doProgress(loc,15);						  
 					  },5000);
 					});
-					
 				}, 
+				initTip : function(){
+					// Add tooltips 
+					tip = d3.tip().attr('class', 'd3-tip').html(function() {
+						var x = d3.select(this);
+						return x.attr('name');						
+					});
+					svg.call(tip);
+					var timer ;
+					svg.selectAll('circle.eodnNode')					  					
+					  .on('mouseover', function(){
+						  clearTimeout(timer);
+						  tip.show.apply(this,arguments);
+					  })
+					  .on('mouseout', function(){
+						 timer = setTimeout(tip.hide,2000);
+					  });
+				},
 				initNodes : function(map){					
 					for(var i in map ){
 						var arr = map[i];
 						if(arr)
 							d._addLocation(''+i, arr);
 					}
+					d.initTip();
 				},
 				initProgessBox : function(){
 					svg.append("rect")
@@ -135,7 +152,7 @@ var DownloadMap = (function(){
 						.attr("r",5)
 						.attr('fill',color)
 						.attr('color',color)
-						.attr('class',name)
+						.attr('class',name + " eodnNode")
 						.attr('name',name)
 						.attr('location',latLongPair)
 						.attr("transform", function() {return "translate(" + projection(latLongPair) + ")";});
