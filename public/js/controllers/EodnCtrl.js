@@ -208,11 +208,36 @@ var DownloadMap = (function(){
 	};
 	return d;
 })();
-angular.module('EodnCtrl', []).controller('EodnController', function($scope,$routeParams, $http, Service, Slice,Socket) {
+angular.module('EodnCtrl', []).controller('EodnController', function($scope,$routeParams,$rootScope, $http,Socket , Depot) {
 	var id = $routeParams.id ;
 	DownloadMap.init();
 	Socket.emit("eodnDownload_request",{ id : id});
 	console.log("fine till here " ,id);
+	 var getAccessIp = function(x){
+		  return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
+	    };
+	function addLocationsFromDepot(s){
+		// Create a map 
+		var map = {};
+		for (var i = 0 ; i < s.length ; i++){
+			var d = s[i];
+			if(d && d.location) {
+				map[getAccessIp(d)] = [d.location.longitude,d.location.latitude];
+			}
+		}
+		DownloadMap.initNodes(map);		
+	}
+	if($rootScope.services){
+		addLocationsFromDepot($rootScope.services);
+	} else {
+		Depot.getServices(function(services) {
+			$rootScope.services = $scope.services = $scope.services || $rootScope.services || [];
+			if (typeof services =='string')
+				services = JSON.parse(services);
+			$rootScope.services = $scope.services = $scope.services.concat(services);
+			addLocationsFromDepot($rootScope.services);
+		});
+	}
 	Socket.on("eodnDownload_Nodes",function(data){
 		console.log("Socket data ",data.data);
 		// Use this data to create nodes 

@@ -4,7 +4,7 @@
  * DepotCtrl.js
  */
 
-angular.module('DepotCtrl', []).controller('DepotController', function($scope, $routeParams, $location, Depot) {
+angular.module('DepotCtrl', []).controller('DepotController', function($scope, $routeParams, $location, Depot , $rootScope) {
 
   var metadata_id = $routeParams.id;
 
@@ -16,19 +16,19 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
 
     $scope.nodes = $scope.nodes.concat(nodes);
   });
-
+  
+  if(!$rootScope.services)
   Depot.getServices(function(services) {
-    $scope.services = $scope.services || [];
+    $rootScope.services = $scope.services = $scope.services || $rootScope.services || [];
 
     if (typeof services =='string')
       services = JSON.parse(services);
 
-    $scope.services = $scope.services.concat(services);
+    $rootScope.services = $scope.services = $scope.services.concat(services);
   });
 
   Depot.getMeasurements(function(measurements) {
     $scope.measurements = $scope.measurements || [];
-
     if (typeof measurements =='string')
       measurements = JSON.parse(measurements);
 

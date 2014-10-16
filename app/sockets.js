@@ -18,8 +18,10 @@ var nodeIpArray = ["24.1.111.131" , // bloomington
 setInterval(function(){
 	  var time = (new Date()).getTime();
 	  for(var i in registeredClientMap){
-		var c = registeredClientMap[i];
-		var id = c.id , 
+		var c = registeredClientMap[i] ;
+		if(!c || !c.hashId)
+			continue ;
+		var id = c.hashId, 
 			lastProgressTime = rClientsLastProgressMap[id]
 			lastUsedTime = rClientsLastUsedMap[id];
 		// If it has been used in last 5 minutes then keep it or else remove it
