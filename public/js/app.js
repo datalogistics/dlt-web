@@ -6,15 +6,10 @@
 
 angular.module('measurementApp', ['ngRoute', 'ngAnimate',
   'ui.utils' ,'ui.bootstrap', 'nvd3ChartDirectives', 'directedGraphModule',
-  'appRoutes', 'SliceCtrl', 'SliceService', 'NodeCtrl', 'NodeService', 'ServiceCtrl',
-  'ServiceService', 'MeasurementCtrl', 'MeasurementService', 'MetadataCtrl', 'MetadataService',
-  'PortService', 'SocketService', 'EodnCtrl', 'DepotCtrl', 'DepotService']
+  'appRoutes', 'SliceCtrl', 'SliceService','SocketService', 'EodnCtrl',
+  'DepotCtrl', 'DepotService']
   ).run(function($rootScope, $http, $q, $timeout, Socket) {
     $http.get('/api/services').success(function(data) {
-      Socket.emit('service_request', {});
-      Socket.emit('measurement_request', {});
-      Socket.emit('metadata_request', {});
-
       console.log('HTTP Service Request: ' , data);
       console.log(data.length);
 
@@ -49,26 +44,45 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
         // set timer value
         onTimeout = function() {
           for(var i = 0; i < services.length; i++) {
-            if(services[i].ttl <= 0) {
+
+            if(services[i].ttl == 0) {
               services[i].status = 'Unknown';
+            } else if(services[i].ttl < 0) {
+              services[i].status = 'OFF';
             } else {
               services[i].ttl--;
             }
           }
           //continue timer
-          timeout = $timeout(onTimeout,1000);
+          timeout = $timeout(onTimeout, 1000);
         }
 
+        // set ttl value
+        /*for(var i = 0; i < services.length; i++) {
+          var time = new Date();
+          var now = (time.getUTCSeconds());
+
+          console.log("Current time UTC" + now);
+
+          services[i].ttl = ((services[i].ttl + (services[i].ts * 0.000001)) - now);
+        }*/
+
         // start timer
-        var timeout = $timeout(onTimeout,1000);
+        var timeout = $timeout(onTimeout, 1000);
 
         // apply data to scope
         $rootScope.services = services;
+
+        // open sockets
+        Socket.emit('service_request', {});
       });
     });
 
     $http.get('/api/measurements').success(function(data) {
       console.log('Measurement Request: ' + data);
+
+      Socket.emit('measurement_request', {});
+
       $rootScope.measurements = data;
     }).error(function(data) {
       console.log('Measurement Error: ' + data);
@@ -76,6 +90,9 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
 
     $http.get('/api/metadata').success(function(data) {
       console.log('Metadata Request: ' + data);
+
+      Socket.emit('metadata_request', {});
+
       $rootScope.metadata = data;
     }).error(function(data) {
       console.log('Metadata Error: ' + data);
