@@ -6,7 +6,7 @@
 
 angular.module('SliceCtrl', []).controller('SliceController', function($scope, Slice) {
 
-  Slice.getSlice(function(sliceInfo) {
+  /*Slice.getSlice(function(sliceInfo) {
     $scope.geniSlice = sliceInfo[0];
-  });
+  });*/
 });
