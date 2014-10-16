@@ -109,7 +109,7 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
     $location.path('/depots/' + metadata_id);
   };
 
-  $scope.showData = function(service_id) {
+  $scope.showMap = function(service_id) {
     $location.path('/eodn/' + service_id);
   };
 
