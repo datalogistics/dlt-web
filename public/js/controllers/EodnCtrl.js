@@ -118,7 +118,7 @@ var DownloadMap = (function(){
 					var loc =  nodeLocationMap[ip];
 					d._moveLineToProgress(loc.attr('location').split(","),loc.attr('color') , progress);
 				},
-				doProgressWithOffset : function(ip , progressWith , offset){
+				doProgressWithOffset : function(ip , progress , offset){
 					var loc =  nodeLocationMap[ip];
 					d._moveLineToProgressWithOffset(loc.attr('location').split(","),loc.attr('color') , progress);
 				},
@@ -211,18 +211,19 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 			$scope.error = false;
 			$scope.name = data.name ,
 			$scope.size = data.size , 
-			$scope.totalSize = data.totalSize ;
 			$scope.connections = data.connections;			
 		}
 	});
 	Socket.on("eodnDownload_Progress",function(data){
 		console.log('progress data', data);
-		var s = $scope.totalSize || 1 ;
-		var d = data.data ;
+		var s = $scope.size || 1 ;
+		console.log("totalSize" , s);
+		var d = data ;
 		var ip = d.ip;		
 		var pr = d.progress;
+		var progress = (pr / s ) * 100 ;
 		var offset = (d.offset/ s )  * 100;
-		DownloadMap.doProgressWithOffset(ip,pr, offset);
+		DownloadMap.doProgressWithOffset(ip,progress, offset);
 	});
 }); // end controller
 

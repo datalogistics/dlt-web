@@ -13,9 +13,10 @@ sock.on('connect' , function(){
 		connections : 10 
 	});
 	
-	setTimeout(function(){
+	setInterval(function(){
 		// Send progress after every 5 seconds 
 		sock.emit(msg.p , { 
+			hashId : 1244 ,
 			ip : '173.194.123.46',
 			offset : 100 ,
 			progress : 100
