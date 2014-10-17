@@ -17,14 +17,21 @@ angular.module('DepotService', []).service('Depot', function($http, Socket) {
       });
   };
 
-  this.getData = function(id, data) {
-    Socket.emit('data_request', {id: id});
+  this.getData = function(data) {
+    Socket.on('data_data',function(data_request) {
+      console.log('Incoming Service Depot Data: ' , data_request);
+      data(data_request);
+    });
+  };
+
+  this.getDataId = function(id, data) {
+    Socket.emit('data_id_request', {id: id});
 
     $http.get('/api/data/' + id).success(function(data_request) {
       console.log('Data Request: ' + data_request);
       data(data_request);
 
-      Socket.on('data_data',function(data_request) {
+      Socket.on('data_id_data',function(data_request) {
         console.log('Incoming Service Depot Data: ' , data_request);
         data(data_request);
       });

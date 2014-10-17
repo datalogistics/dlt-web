@@ -100,42 +100,44 @@ module.exports = function (client_socket) {
     });
   });
 
-  client_socket.on('data_request', function(data) {
+  client_socket.on('data_id_request', function(data) {
     console.log('UNIS: Data ID requested: ' + data.id);
 
-    if (data.id) {
-      // Create socket to listen for updates on data
-	    var dataSocket = new WebSocket(ms_sub + 'data/' + data.id, ssl_opts);
+    // Create socket to listen for updates on data
+    var dataSocket = new WebSocket(ms_sub + 'data/' + data.id, ssl_opts);
 
-      dataSocket.on('open', function(event) {
-        console.log('UNIS: Data ID socket opened');
-      });
+    dataSocket.on('open', function(event) {
+      console.log('UNIS: Data ID socket opened');
+    });
 
-      dataSocket.on('message', function(data) {
-        console.log('UNIS: data_data: ' + data);
-        client_socket.emit('data_data', data);
-      });
+    dataSocket.on('message', function(data) {
+      console.log('UNIS: data_data: ' + data);
+      client_socket.emit('data_id_data', data);
+    });
 
-      dataSocket.on('close', function(event) {
-        console.log('UNIS: Data ID socket closed');
-      });
-    } else {
-      // Create socket to listen for updates on data
-	    var dataSocket = new WebSocket(ms_sub + 'data', ssl_opts);
+    dataSocket.on('close', function(event) {
+      console.log('UNIS: Data ID socket closed');
+    });
+  });
 
-      dataSocket.on('open', function(event) {
-        console.log('UNIS: Data socket opened');
-      });
+  client_socket.on('data_request', function(data) {
+    console.log('UNIS: Data requested: ' + data);
 
-      dataSocket.on('message', function(data) {
-        console.log('UNIS: data_data: ' + data);
-        client_socket.emit('data_data', data);
-      });
+    // Create socket to listen for updates on data
+    var dataSocket = new WebSocket(ms_sub + 'data', ssl_opts);
 
-      dataSocket.on('close', function(event) {
-        console.log('UNIS: Data socket closed');
-      });
-    }
+    dataSocket.on('open', function(event) {
+      console.log('UNIS: Data socket opened');
+    });
+
+    dataSocket.on('message', function(data) {
+      console.log('UNIS: data_data: ' + data);
+      client_socket.emit('data_data', data);
+    });
+
+    dataSocket.on('close', function(event) {
+      console.log('UNIS: Data socket closed');
+    });
   });
 
   client_socket.on('port_request', function(data) {
