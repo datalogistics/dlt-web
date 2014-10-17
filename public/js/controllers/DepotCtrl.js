@@ -55,7 +55,7 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
   });
 
   if (metadata_id) {
-    Depot.getData(metadata_id, function(data) {
+    Depot.getDataId(metadata_id, function(data) {
       $scope.data = $scope.data || [];
 
       if (typeof data =='string')
