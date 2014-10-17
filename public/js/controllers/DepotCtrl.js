@@ -23,15 +23,18 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
     // data.status = 'New';
     console.log('Socket Service Request: ', data);
 
+    var now = Math.round(new Date().getTime() / 1000.0) //seconds
+    data.ttl = ((data.ttl + (data.ts / 1000000)) - now);
+
     function searchServices(addService) {
       console.log("searchServices function");
 
       // search for duplicate id's
       for(var i = 0; $scope.services.length; i++) {
 
-        if($scope.services[i].id == data.id) {
+        if($scope.services[i].accessPoint == data.accessPoint) {
           // $scope.services[i].ttl = -1;
-          console.log("removing: " + $scope.services[i].accessPoint);
+          console.log("removing: " + $scope.services[i].accessPoint + " ts: " + $scope.services[i].ts);
           $scope.services.splice(i, 1);
           break;
         }

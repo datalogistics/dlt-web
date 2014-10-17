@@ -58,14 +58,13 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
         }
 
         // set ttl value
-        /*for(var i = 0; i < services.length; i++) {
-          var time = new Date();
-          var now = (time.getUTCSeconds());
+        for(var i = 0; i < services.length; i++) {
+          var now = Math.round(new Date().getTime() / 1000.0) //seconds
 
-          console.log("Current time UTC" + now);
+          console.log("Current time " + now);
 
-          services[i].ttl = ((services[i].ttl + (services[i].ts * 0.000001)) - now);
-        }*/
+          services[i].ttl = ((services[i].ttl + (services[i].ts / 1000000)) - now);
+        }
 
         // start timer
         var timeout = $timeout(onTimeout, 1000);
