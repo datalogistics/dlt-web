@@ -23,8 +23,8 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
     // data.status = 'New';
     console.log('Socket Service Request: ', data);
 
-    var now = Math.round(new Date().getTime() / 1000.0) //seconds
-    data.ttl = ((data.ttl + (data.ts / 1000000)) - now);
+    var now = Math.round(new Date().getTime() / 1e3) //seconds
+    data.ttl = Math.round(((data.ttl + (data.ts / 1e6)) - now));
 
     function searchServices(addService) {
       console.log("searchServices function");
