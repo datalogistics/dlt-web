@@ -24,8 +24,8 @@ angular.module('DepotService', []).service('Depot', function($http, Socket) {
       console.log('Data Request: ' + data_request);
       data(data_request);
 
-      Socket.on('data_data',function(data) {
-        console.log('Depot Data Request: ' , data);
+      Socket.on('data_data',function(data_request) {
+        console.log('Incoming Service Depot Data: ' , data_request);
         data(data_request);
       });
     }).error(function(data_request) {
