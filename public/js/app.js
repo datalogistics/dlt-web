@@ -60,7 +60,7 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
         // set ttl value
         for(var i = 0; i < services.length; i++) {
           var now = Math.round(new Date().getTime() / 1e3) //seconds
-          console.log("Current time " + now);
+            //console.log("Current time " + now);
           services[i].ttl = Math.round(((services[i].ttl + (services[i].ts / 1e6)) - now));
         }
 

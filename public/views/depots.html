@@ -17,6 +17,7 @@
       <th>Last Seen</th>
       <th>Institution</th>
       <th>Location</th>
+      <th>Charts</th>
     </tr>
     <tbody ng-repeat="service in services | orderBy:'-ts' | unique:'accessPoint'">
       <td>
@@ -30,12 +31,8 @@
       <td>{{ service.ts / 1000 | date:'yyyy-MM-dd HH:mm:ss' }}</td>
       <td>{{ service.location.institution }} {{ service.location.state }}</td>
       <td><button ng-click="showMap(service.id)" class="btn btn-info">Show on Map</button></td>
-      <tr>
-        <td colspan="2" ng-repeat="eventType in getServiceMeasurement(service.accessPoint)">{{eventType}}</td>
-      </tr>
-      <tr>
-        <td colspan="2" ng-repeat="metadata in getServiceMetadata(service.accessPoint)"><button ng-click="showData(metadata)" class="btn btn-info">Show Graph</button></td>
-      </tr>
+      <td ng-repeat="metadata in getServiceMetadata(service.accessPoint)">
+	<button ng-click="showData(metadata)" class="btn btn-info">{{getMetadataShortET(metadata)}}</button></td>
     </tbody>
   </table>
 </div>
