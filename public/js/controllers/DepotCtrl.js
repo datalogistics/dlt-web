@@ -66,8 +66,21 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
 
       var arrayData = [];
       angular.forEach($scope.data, function(key, value) {
-        arrayData.push([key.ts, key.value]);
+          arrayData.push([key.ts, key.value]);
       });
+	
+      $scope.xAxisTickFormat_Date_Format = function(){
+	  return function(d){
+	      var ts = d/1e3;
+	      return d3.time.format('%X')(new Date(ts));
+	  }
+      }
+
+      $scope.yAxisFormatFunction = function(){
+	  return function(d){
+	      return (d/1e9).toFixed(2); // GB
+	  }
+      }
 
       $scope.graphData = [
       {
