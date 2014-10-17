@@ -93,6 +93,16 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
     });
   }
 
+  $scope.getMetadataShortET = function(mid) {
+      for (var i = 0; i<$scope.metadata.length; i++) {
+	  if ($scope.metadata[i].id == mid) {
+	      var arr = $scope.metadata[i].eventType.split(':');
+	      return arr.pop();
+	  }
+      }
+      return "N/A";
+  };
+
   $scope.getServiceMeasurement = function(accessPoint) {
     var ip = accessPoint.split(':')[1].replace('//', '');
 
