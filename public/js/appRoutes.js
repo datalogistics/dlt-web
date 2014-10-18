@@ -35,6 +35,10 @@ angular.module('appRoutes', []).config(['$routeProvider', '$locationProvider', f
       templateUrl: 'views/depot_data.html',
       controller: 'DepotController'
     }).
+    when('/eodn/', {
+        templateUrl: 'views/eodn.html',
+        controller: 'EodnController'
+    }).
     when('/eodn/:id', {
         templateUrl: 'views/eodn.html',
         controller: 'EodnController'

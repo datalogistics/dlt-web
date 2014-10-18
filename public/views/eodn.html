@@ -1,10 +1,12 @@
 <h2 class="lead text-center">Depot Download Location</h2>
-<div  ng-if='error'>
-Invalid Download Id 
-</div>
-<div>
-	<div>Name : {{ name }}</div>
-	<div>Size : {{ size }}</div>
-	<div>Connections : {{ connections }}</div>
+<div ng-if='!hideFileInfo'>
+	<div  ng-if='error'>
+	Invalid Download Id 
+	</div>
+	<div>
+		<div>Name : {{ name }}</div>
+		<div>Size : {{ size }}</div>
+		<div>Connections : {{ connections }}</div>
+	</div>
 </div>
 <div id='downloadMap'></div>

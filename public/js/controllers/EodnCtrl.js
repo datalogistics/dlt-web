@@ -44,7 +44,7 @@ var DownloadMap = (function(){
 	}	
 	// The main obj
 	var d = {
-				init : function(){
+				init : function(hideInfo){
 					progressStart = 0;
 					projection = d3.geo.albersUsa()
 					    .scale(1070)
@@ -85,12 +85,10 @@ var DownloadMap = (function(){
 					      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
 					      .attr("id", "state-borders")
 					      .attr("d", path);
-					  var loc = d.addKnownLocation('bloomington');					  					  
-					  d.initProgessBox();
-					  d._doProgress(loc,5);
-					  setTimeout(function(){
-						  d._doProgress(loc,15);						  
-					  },5000);
+					  var loc = d.addKnownLocation('bloomington');
+					  if(!hideInfo){
+						  d.initProgessBox();
+					  }
 					});
 				}, 
 				initTip : function(){
@@ -210,7 +208,11 @@ var DownloadMap = (function(){
 })();
 angular.module('EodnCtrl', []).controller('EodnController', function($scope,$routeParams,$rootScope, $http,Socket , Depot) {
 	var id = $routeParams.id ;
-	DownloadMap.init();
+	if(!id) {
+		// If no id given then remove the progress bar and just show the map
+		$scope.hideFileInfo = true ;
+	}
+	DownloadMap.init($scope.hideFileInfo);
 	Socket.emit("eodnDownload_request",{ id : id});
 	console.log("fine till here " ,id);
 	 var getAccessIp = function(x){
