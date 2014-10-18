@@ -13,23 +13,23 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
       console.log('HTTP Service Request: ' , data);
       console.log(data.length);
 
-      var unqiueServices = [];
+      var uniqueServices = [];
       var services = [];
 
       for(var i = 0; i < data.length; i++) {
-        if(unqiueServices.indexOf(data[i].id) == -1) {
-          unqiueServices.push(data[i].id);
+        if(uniqueServices.indexOf(data[i].id) == -1) {
+          uniqueServices.push(data[i].id);
         }
       }
 
-      console.log(unqiueServices.length);
-      console.log(unqiueServices);
+      console.log(uniqueServices.length);
+      console.log(uniqueServices);
 
       getServices = function() {
         var promises = [];
 
-        for(var i = 0; i < unqiueServices.length; i++) {
-          promises.push($http.get('/api/services/' + unqiueServices[i]).success(function(data) {
+        for(var i = 0; i < uniqueServices.length; i++) {
+          promises.push($http.get('/api/services/' + uniqueServices[i]).success(function(data) {
             console.log('HTTP Service Request: ' , data);
             services.push(data);
           }));
