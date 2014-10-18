@@ -19,19 +19,20 @@
       <th>Location</th>
       <th>Charts</th>
     </tr>
-    <tbody ng-repeat="service in services | orderBy:'-ts' | unique:'accessPoint'">
+    <input ng-model="q.accessPoint" placeholder="filter services..." />
+    <tbody ng-repeat="service in services | filter:q:strict | orderBy:'-ts' | unique:'accessPoint'">
       <td>
         <button ng-show="service.status === 'ON'" class="btn btn-success disabled">ON</button>
         <button ng-show="service.status === 'Unknown'" class="btn btn-warning disabled">Unknown</button>
         <button ng-show="service.status === 'New'" class="btn btn-info disabled">New</button>
         <button ng-show="service.status === undefined || service.status === 'OFF'" class="btn btn-danger disabled">OFF</button>
       </td>
-      <td>{{ service.accessPoint }}</td>
+      <td>{{ service.accessPoint || service.serviceType }}</td>
       <td>{{ service.ttl }}</td>
       <td>{{ service.ts / 1000 | date:'yyyy-MM-dd HH:mm:ss' }}</td>
       <td>{{ service.location.institution }} {{ service.location.state }}</td>
       <td><button ng-click="showMap(service.id)" class="btn btn-info">Show on Map</button></td>
-      <td ng-repeat="metadata in getServiceMetadata(service.accessPoint)">
+      <td ng-repeat="metadata in getServiceMetadata(service)">
 	<button ng-click="showData(metadata)" class="btn btn-info">{{getMetadataShortET(metadata)}}</button></td>
     </tbody>
   </table>

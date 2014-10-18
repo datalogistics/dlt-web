@@ -38,8 +38,8 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
       };
 
       getServices().then(function(data) {
-        console.log(data.length);
-        console.log(data);
+        //console.log(data.length);
+        //console.log(data);
 
         // set timer value
         onTimeout = function() {
@@ -73,6 +73,26 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
         // open sockets
         Socket.emit('service_request', {});
       });
+    });
+
+    $http.get('/api/ports').success(function(data) {
+      console.log('Port Request: ' + data);
+
+      Socket.emit('port_request', {});
+
+      $rootScope.ports = data;
+    }).error(function(data) {
+      console.log('Port Error: ' + data);
+    });
+
+    $http.get('/api/nodes').success(function(data) {
+      console.log('Node Request: ' + data);
+
+      Socket.emit('node_request', {});
+
+      $rootScope.nodes = data;
+    }).error(function(data) {
+      console.log('Node Error: ' + data);
     });
 
     $http.get('/api/measurements').success(function(data) {

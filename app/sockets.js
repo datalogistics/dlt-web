@@ -20,6 +20,7 @@ module.exports = function (client_socket) {
   var ssl_opts = {'cert': fs.readFileSync('./dlt-client.pem'),
 		  'key': fs.readFileSync('./dlt-client.pem'),
 		  rejectUnauthorized: false}
+  //var ssl_opts = {};
 
   // establish client socket
   console.log('Client connected');

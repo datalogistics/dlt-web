@@ -283,7 +283,7 @@ module.exports = function(app) {
         cert: fs.readFileSync(unis_cert),
         requestCert: true,
         rejectUnauthorized: false,
-        path: '/services?serviceType=ibp_server&fields=id',
+        path: '/services?fields=id',
         method: 'GET',
         headers: {
             'Content-type': 'application/perfsonar+json',
@@ -312,7 +312,7 @@ module.exports = function(app) {
       var http_get_options = {
         hostname: unis_host,
         port: unis_port,
-        path: '/services?serviceType=ibp_server&fields=id',
+        path: '/services?fields=id',
         method: 'GET',
         headers: {
             'Content-type': 'application/perfsonar+json',

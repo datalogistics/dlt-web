@@ -6,12 +6,19 @@
 
 angular.module('DepotCtrl', []).controller('DepotController', function($scope, $routeParams, $location, $rootScope, Depot, Socket) {
 
+  var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
+		  'ps:tools:blipp:ibp_server:resource:usage:free',
+		  'ps:tools:blipp:linux:cpu:utilization:user',
+                  'ps:tools:blipp:linux:cpu:utilization:system']
+ 
   var metadata_id = $routeParams.id;
 
   // place inital app data into scope for view
   $scope.services = $rootScope.services;
   $scope.measurements = $rootScope.measurements;
   $scope.metadata = $rootScope.metadata;
+  $scope.nodes = $rootScope.nodes;
+  $scope.ports = $rootScope.ports;
 
   // continue to listen for new data
   Socket.on('service_data', function(data) {
@@ -93,48 +100,61 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
     });
   }
 
-  $scope.getMetadataShortET = function(mid) {
-      for (var i = 0; i<$scope.metadata.length; i++) {
-	  if ($scope.metadata[i].id == mid) {
-	      var arr = $scope.metadata[i].eventType.split(':');
-	      return arr.pop();
-	  }
-      }
-      return "N/A";
+  $scope.getMetadataShortET = function(md) {
+      var arr = md.eventType.split(':');
+      return arr.pop();
   };
 
-  $scope.getServiceMeasurement = function(accessPoint) {
-    var ip = accessPoint.split(':')[1].replace('//', '');
-
+  $scope.getServiceMeasurement = function(sref) {
     for(var i = 0; i < $scope.measurements.length; i++) {
-      if($scope.measurements[i].configuration.command) {
-        if($scope.measurements[i].configuration.command.split(" ")[1] == ip) {
-          return $scope.measurements[i].eventTypes;
+	if($scope.measurements[i].service == sref) {
+            return $scope.measurements[i].eventTypes;
         }
-      }
     }
   };
-
-  $scope.getServiceMetadata = function(accessPoint) {
-    var ip = accessPoint.split(':')[1].replace('//', '');
+					   
+  $scope.getServiceMetadata = function(service) {
     var metadatas = [];
+    var seen_ets = [];
 
-    for(var i = 0; i < $scope.measurements.length; i++) {
-      if($scope.measurements[i].configuration.command) {
-        if($scope.measurements[i].configuration.command.split(" ")[1] == ip) {
-          for(var j = 0; j < $scope.metadata.length; j++) {
-            if($scope.metadata[j].parameters.measurement.href.split('/')[4] == $scope.measurements[i].id) {
-              metadatas.push($scope.metadata[j].id);
+    // this case is brutal because our metadata is missing subject hrefs
+    // perhaps can fix in blipp for IDMS
+    if (service.serviceType == 'ibp_server') {
+	var ip = service.accessPoint.split(':')[1].replace('//', '');
+	for(var i = 0; i < $scope.measurements.length; i++) {
+	    if($scope.measurements[i].configuration.command) {
+		if($scope.measurements[i].configuration.command.split(" ")[1] == ip) {
+		    for(var j = 0; j < $scope.metadata.length; j++) {
+			if ((seen_ets.indexOf($scope.metadata[j].eventType) == -1) &&
+			    ($scope.metadata[j].parameters.measurement.href.split('/')[4] == $scope.measurements[i].id)) {
+			    metadatas.push($scope.metadata[j]);
+			    seen_ets.push($scope.metadata[j].eventType);
+			}
+		    }
+		}
+	    }
+	}
+    }
+    else {
+	for(var i = 0; i < $scope.measurements.length; i++) {
+            if($scope.measurements[i].service == service.selfRef) {
+		for(var j = 0; j < $scope.metadata.length; j++) {
+		    if($scope.metadata[j].parameters.measurement.href == $scope.measurements[i].selfRef) {
+			if ((seen_ets.indexOf($scope.metadata[j].eventType) == -1) &&
+			    (SHOW_ETS.indexOf($scope.metadata[j].eventType) >= 0)) {
+			    metadatas.push($scope.metadata[j]);
+			    seen_ets.push($scope.metadata[j].eventType);
+			}
+		    }
+		}
             }
-          }
-        }
-      }
+	}
     }
     return metadatas;
   };
 
-  $scope.showData = function(metadata_id) {
-    $location.path('/depots/' + metadata_id);
+  $scope.showData = function(metadata) {
+    $location.path('/depots/' + metadata.id);
   };
 
   $scope.showMap = function(service_id) {

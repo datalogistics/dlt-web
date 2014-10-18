@@ -18,6 +18,7 @@ angular.module('DepotService', []).service('Depot', function($http, Socket) {
   };
 
   this.getData = function(data) {
+      console.log("GETTING DATA: " + data);
     Socket.on('data_data',function(data_request) {
       console.log('Incoming Service Depot Data: ' , data_request);
       data(data_request);
