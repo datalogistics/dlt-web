@@ -44,7 +44,7 @@ var DownloadMap = (function(){
 	}	
 	// The main obj
 	var d = {
-				init : function(){
+				init : function(hideInfo){
 					progressStart = 0;
 					projection = d3.geo.albersUsa()
 					    .scale(1070)
@@ -85,20 +85,36 @@ var DownloadMap = (function(){
 					      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
 					      .attr("id", "state-borders")
 					      .attr("d", path);
-					  var loc = d.addKnownLocation('bloomington');					  					  
-					  d.initProgessBox();
-					  d._doProgress(loc,5);
-					  setTimeout(function(){
-						  d._doProgress(loc,15);						  
-					  },5000);
+					  var loc = d.addKnownLocation('bloomington');
+					  if(!hideInfo){
+						  d.initProgessBox();
+					  }
 					});
-					
 				}, 
-				initNodes : function(arr){					
-					for(var i=0 ; i < arr.length ; i++ ){
-						if(arr[i])
-							d._addLocation(''+arr[i].ip, arr[i].loc);
+				initTip : function(){
+					// Add tooltips 
+					tip = d3.tip().attr('class', 'd3-tip').html(function() {
+						var x = d3.select(this);
+						return x.attr('name');						
+					});
+					svg.call(tip);
+					var timer ;
+					svg.selectAll('circle.eodnNode')					  					
+					  .on('mouseover', function(){
+						  clearTimeout(timer);
+						  tip.show.apply(this,arguments);
+					  })
+					  .on('mouseout', function(){
+						 timer = setTimeout(tip.hide,2000);
+					  });
+				},
+				initNodes : function(map){					
+					for(var i in map ){
+						var arr = map[i];
+						if(arr)
+							d._addLocation(''+i, arr);
 					}
+					d.initTip();
 				},
 				initProgessBox : function(){
 					svg.append("rect")
@@ -117,6 +133,10 @@ var DownloadMap = (function(){
 					var loc =  nodeLocationMap[ip];
 					d._moveLineToProgress(loc.attr('location').split(","),loc.attr('color') , progress);
 				},
+				doProgressWithOffset : function(ip , progress , offset){
+					var loc =  nodeLocationMap[ip];
+					d._moveLineToProgressWithOffset(loc.attr('location').split(","),loc.attr('color') , progress);
+				},
 				addKnownLocation : function(name){
 					var loc = knownLocations[name];
 					if(loc)
@@ -130,7 +150,7 @@ var DownloadMap = (function(){
 						.attr("r",5)
 						.attr('fill',color)
 						.attr('color',color)
-						.attr('class',name)
+						.attr('class',name + " eodnNode")
 						.attr('name',name)
 						.attr('location',latLongPair)
 						.attr("transform", function() {return "translate(" + projection(latLongPair) + ")";});
@@ -139,18 +159,23 @@ var DownloadMap = (function(){
 				},				
 				removeLocation : function(name){
 					svg.select('circle'+'#'+name).remove();
-				},
-				_moveLineToProgress : function(loc,color , progress){
-					// The progress in percentage 			
+				},			
+				_moveLineToProgress : function(loc,color , progress , offsetPercent){
 					progressStart = progressStart || 0 ; 
 					if (progressStart >= 100)
 						return;
 					if(progressStart + progress >= 100){
 						progress = 100 - progressStart ;
 					}
-					var ratio = 300 / 100 ;									
+					d._moveLineToProgressWithOffset(loc,color,progress,progressStart)
+				},
+				_moveLineToProgressWithOffset : function(loc,color , progress , offsetPercent){
+					if (progressStart >= 100)
+						return;
+					var ratio = 300 / 100 ;
+					var progOffset = 200 + (offsetPercent || 0) * ratio ;
 					// draw bar 
-					var prog = [width - 50 , 200 + (progressStart*ratio)];
+					var prog = [width - 50 , progOffset];
 					var h = ratio * progress , w = 30 ; 				
 					d._move(projection(loc), prog , color)
 					.each("end", function(){						
@@ -159,7 +184,7 @@ var DownloadMap = (function(){
 						.attr("width", w)
 				    	.attr("height", h)
 				    	.attr('x', width - 50)
-				    	.attr('y', 200 + (progressStart*ratio));
+				    	.attr('y', progOffset);
 						progressStart += progress ;
 					}).transition().duration(500).remove();
 				},
@@ -181,18 +206,68 @@ var DownloadMap = (function(){
 	};
 	return d;
 })();
-angular.module('EodnCtrl', []).controller('EodnController', function($scope, $http, Service, Slice,Socket) {		
-	DownloadMap.init();
-	Socket.emit("eodnDownload_request",{});
+angular.module('EodnCtrl', []).controller('EodnController', function($scope,$routeParams,$rootScope, $http,Socket , Depot) {
+	var id = $routeParams.id ;
+	if(!id) {
+		// If no id given then remove the progress bar and just show the map
+		$scope.hideFileInfo = true ;
+	}
+	DownloadMap.init($scope.hideFileInfo);
+	Socket.emit("eodnDownload_request",{ id : id});
+	console.log("fine till here " ,id);
+	 var getAccessIp = function(x){
+		  return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
+	    };
+	function addLocationsFromDepot(s){
+		// Create a map 
+		var map = {};
+		for (var i = 0 ; i < s.length ; i++){
+			var d = s[i];
+			if(d && d.location) {
+				map[getAccessIp(d)] = [d.location.longitude,d.location.latitude];
+			}
+		}
+		DownloadMap.initNodes(map);		
+	}
+	if($rootScope.services){
+		addLocationsFromDepot($rootScope.services);
+	} else {
+		Depot.getServices(function(services) {
+			$rootScope.services = $scope.services = $scope.services || $rootScope.services || [];
+			if (typeof services =='string')
+				services = JSON.parse(services);
+			$rootScope.services = $scope.services = $scope.services.concat(services);
+			addLocationsFromDepot($rootScope.services);
+		});
+	}
 	Socket.on("eodnDownload_Nodes",function(data){
 		console.log("Socket data ",data.data);
 		// Use this data to create nodes 
 		DownloadMap.initNodes(data.data);		
 	});
+	k = $scope ;
+	Socket.on("eodnDownload_Info", function(data){
+		// Set this data in scope to display file info
+		console.log('file data ' , data);
+		if(data.isError){
+			$scope.error = true;
+		} else {
+			$scope.error = false;
+			$scope.name = data.name ,
+			$scope.size = data.size , 
+			$scope.connections = data.connections;			
+		}
+	});
 	Socket.on("eodnDownload_Progress",function(data){
-		var ip = data.data.ip;
-		var pr = data.data.progress;
-		DownloadMap.doProgress(ip,pr);
+		console.log('progress data', data);
+		var s = $scope.size || 1 ;
+		console.log("totalSize" , s);
+		var d = data ;
+		var ip = d.ip;		
+		var pr = d.progress;
+		var progress = (pr / s ) * 100 ;
+		var offset = (d.offset/ s )  * 100;
+		DownloadMap.doProgressWithOffset(ip,progress, offset);
 	});
 }); // end controller
 

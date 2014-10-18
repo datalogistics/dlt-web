@@ -5,12 +5,10 @@
  */
 
 angular.module('DepotCtrl', []).controller('DepotController', function($scope, $routeParams, $location, $rootScope, Depot, Socket) {
-
-  var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
-		  'ps:tools:blipp:ibp_server:resource:usage:free',
-		  'ps:tools:blipp:linux:cpu:utilization:user',
-                  'ps:tools:blipp:linux:cpu:utilization:system']
- 
+	var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
+	                'ps:tools:blipp:ibp_server:resource:usage:free',
+	                'ps:tools:blipp:linux:cpu:utilization:user',
+	                'ps:tools:blipp:linux:cpu:utilization:system'];
   var metadata_id = $routeParams.id;
 
   // place inital app data into scope for view
