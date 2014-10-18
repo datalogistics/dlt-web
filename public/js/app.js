@@ -4,11 +4,11 @@
  * app.js
  */
 
-angular.module('measurementApp', ['ngRoute', 'ngAnimate',
+angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
   'ui.utils' ,'ui.bootstrap', 'nvd3ChartDirectives', 'directedGraphModule',
   'appRoutes', 'SliceCtrl', 'SliceService','SocketService', 'EodnCtrl',
   'DepotCtrl', 'DepotService']
-  ).run(function($rootScope, $http, $q, $timeout, Socket) {
+  ).run(function($rootScope, $http, $q, $timeout, $location, Socket) {
     $http.get('/api/services').success(function(data) {
       console.log('HTTP Service Request: ' , data);
       console.log(data.length);
@@ -34,12 +34,13 @@ angular.module('measurementApp', ['ngRoute', 'ngAnimate',
             services.push(data);
           }));
         }
+
         return $q.all(promises);
       };
 
       getServices().then(function(data) {
-        //console.log(data.length);
-        //console.log(data);
+        console.log('Loading complete, redirecting');
+        $location.path('/status');
 
         // set timer value
         onTimeout = function() {
