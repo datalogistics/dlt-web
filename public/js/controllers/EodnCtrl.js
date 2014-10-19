@@ -263,11 +263,12 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 		var s = $scope.size || 1 ;
 		console.log("totalSize" , s);
 		var d = data ;
-		var ip = d.ip;		
+		var ip = d.ip;
 		var pr = d.progress;
+		var sizeOfChunk = d.amountRead || pr;
 		var progress = (pr / s ) * 100 ;
 		var offset = (d.offset/ s )  * 100;
-		DownloadMap.doProgressWithOffset(ip,progress, offset);
+		DownloadMap.doProgressWithOffset(ip,sizeOfChunk, offset);
 	});
 }); // end controller
 
