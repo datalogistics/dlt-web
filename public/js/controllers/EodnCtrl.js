@@ -135,7 +135,7 @@ var DownloadMap = (function(){
 				},
 				doProgressWithOffset : function(ip , progress , offset){
 					var loc =  nodeLocationMap[ip];
-					d._moveLineToProgressWithOffset(loc.attr('location').split(","),loc.attr('color') , progress);
+					d._moveLineToProgressWithOffset(loc.attr('location').split(","),loc.attr('color') , progress,offset);
 				},
 				addKnownLocation : function(name){
 					var loc = knownLocations[name];
@@ -167,7 +167,7 @@ var DownloadMap = (function(){
 					if(progressStart + progress >= 100){
 						progress = 100 - progressStart ;
 					}
-					d._moveLineToProgressWithOffset(loc,color,progress,progressStart)
+					d._moveLineToProgressWithOffset(loc,color,progress,progressStart,offset);
 				},
 				_moveLineToProgressWithOffset : function(loc,color , progress , offsetPercent){
 					if (progressStart >= 100)
