@@ -240,11 +240,7 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 		addLocationsFromDepot($rootScope.services);
 	} else {
 		$rootScope.getServices(function(services) {
-			$rootScope.services = $scope.services = $scope.services || $rootScope.services || [];
-			if (typeof services =='string')
-				services = JSON.parse(services);
-			$rootScope.services = $scope.services = $scope.services.concat(services);
-			addLocationsFromDepot($rootScope.services);
+			addLocationsFromDepot(services);
 		});
 	}
 	Socket.on("eodnDownload_Nodes",function(data){

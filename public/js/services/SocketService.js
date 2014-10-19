@@ -6,7 +6,9 @@
 
 angular.module('SocketService', []).service('Socket', function($rootScope, $location) {
 
-  var socket = io.connect($location.absUrl());
+  var socket = io.connect(window.location.origin);
+  // This was killing the sockets as it was giving full url -- just need localhost:4242
+		  //$location.absUrl());  
 
   this.on = function (eventName, callback) {
     socket.on(eventName, function () {

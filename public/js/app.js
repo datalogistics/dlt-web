@@ -35,7 +35,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 
         for(var i = 0; i < uniqueServices.length; i++) {
           promises.push($http.get('/api/services/' + uniqueServices[i]).success(function(data) {
-            console.log('HTTP Service Request: ' , data);
+//            console.log('HTTP Service Request: ' , data);
             services.push(data);
           }));
         }
