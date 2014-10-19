@@ -8,7 +8,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
   'ui.utils' ,'ui.bootstrap', 'nvd3ChartDirectives', 'directedGraphModule',
   'appRoutes', 'SliceCtrl', 'SliceService','SocketService', 'EodnCtrl',
   'DepotCtrl', 'DepotService']
-  ).run(function($rootScope, $http, $q, $timeout, $location, Socket) {
+  ).run(function($rootScope, $http, $q, $timeout, $location, Socket,$route) {
 	  var smPromises = [] ;
 	  $rootScope.getServices = function(cb){
 		  smPromises.push(cb);		  
@@ -49,9 +49,12 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
         	try{
         		smPromises[i](services);
         	}catch(e){}
-        };
+        	
+        };        
         if(!$rootScope.gotoSomeotherPage) {
         	$location.path('/status');
+        	$rootScope.services = services;
+        	console.log('root scoping serviuce');        	
         	$rootScope.gotoSomeotherPage = false ;
         }
 
@@ -70,7 +73,8 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
           //continue timer
           timeout = $timeout(onTimeout, 1000);
         }
-
+        
+        $rootScope.services = services;
         // set ttl value
         for(var i = 0; i < services.length; i++) {
           var now = Math.round(new Date().getTime() / 1e3) //seconds
@@ -80,11 +84,10 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 
         // start timer
         var timeout = $timeout(onTimeout, 1000);
-
-        // apply data to scope
-        $rootScope.services = services;
-        $rootScope.getServices = function(cb){
-        	cb(services);
+        if(!$rootScope.gotoSomeotherPage) {
+        	// I dont why this is needed
+        	$route.reload();
+        	$location.path('/status');
         };
         // open sockets
         Socket.emit('service_request', {});
@@ -116,6 +119,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 
       Socket.emit('measurement_request', {});
 
+      
       $rootScope.measurements = data;
     }).error(function(data) {
       console.log('Measurement Error: ' + data);
