@@ -50,7 +50,6 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
         		smPromises[i](services);
         	}catch(e){}
         };
-        callback(services);
         if(!$rootScope.gotoSomeotherPage) {
         	$location.path('/status');
         	$rootScope.gotoSomeotherPage = false ;
