@@ -208,8 +208,15 @@ var DownloadMap = (function(){
 })();
 angular.module('EodnCtrl', []).controller('EodnController', function($scope,$routeParams,$rootScope, $http,Socket , Depot) {
 	var id = $routeParams.id ;
+	var depotId = $routeParams.depotId ;
+	$rootScope.gotoSomeotherPage = true ;
 	if(!id) {
 		// If no id given then remove the progress bar and just show the map
+		$scope.hideFileInfo = true ;
+	}
+	
+	if(depotId){
+		// Do something else
 		$scope.hideFileInfo = true ;
 	}
 	DownloadMap.init($scope.hideFileInfo);
@@ -232,7 +239,7 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 	if($rootScope.services){
 		addLocationsFromDepot($rootScope.services);
 	} else {
-		Depot.getServices(function(services) {
+		$rootScope.getServices(function(services) {
 			$rootScope.services = $scope.services = $scope.services || $rootScope.services || [];
 			if (typeof services =='string')
 				services = JSON.parse(services);

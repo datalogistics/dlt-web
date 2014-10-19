@@ -156,7 +156,7 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
   };
 
   $scope.showMap = function(service_id) {
-    $location.path('/eodn/' + service_id);
+    $location.path('/eodnMap/' + service_id);
   };
 
 });

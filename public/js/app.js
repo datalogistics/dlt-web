@@ -9,6 +9,11 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
   'appRoutes', 'SliceCtrl', 'SliceService','SocketService', 'EodnCtrl',
   'DepotCtrl', 'DepotService']
   ).run(function($rootScope, $http, $q, $timeout, $location, Socket) {
+	  var smPromises = [] ;
+	  $rootScope.getServices = function(cb){
+		  smPromises.push(cb);		  
+      };
+      
     $http.get('/api/services').success(function(data) {
       console.log('HTTP Service Request: ' , data);
       console.log(data.length);
@@ -40,7 +45,16 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 
       getServices().then(function(data) {
         console.log('Loading complete, redirecting');
-        $location.path('/status');
+        for(var i = 0 ; i < smPromises.length ; i++){
+        	try{
+        		smPromises[i](services);
+        	}catch(e){}
+        };
+        callback(services);
+        if(!$rootScope.gotoSomeotherPage) {
+        	$location.path('/status');
+        	$rootScope.gotoSomeotherPage = false ;
+        }
 
         // set timer value
         onTimeout = function() {
@@ -70,7 +84,9 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 
         // apply data to scope
         $rootScope.services = services;
-
+        $rootScope.getServices = function(cb){
+        	cb(services);
+        };
         // open sockets
         Socket.emit('service_request', {});
       });
