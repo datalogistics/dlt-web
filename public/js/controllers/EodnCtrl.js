@@ -16,7 +16,7 @@ function movingLineFromPointToPoint(st , end) {
 var DownloadMap = (function(){
 	// All config 
 	var width = 960,height = 500 , selector = '#downloadMap';
-	var progressStart = 0 , nodeLocationMap = {};
+	progressStart = 0 , nodeLocationMap = {};
 	var knownLocations = {
 			'bloomington' : [-86.526386,39.165325] 
 	}
@@ -126,15 +126,21 @@ var DownloadMap = (function(){
 				    .attr('y', '200')
 				    ;
 				},	
-				_doProgress : function(loc,progress){					
-					d._moveLineToProgress(loc.attr('location').split(","),loc.attr('color') , progress);					
+				_doProgress : function(loc,progress){
+					if(loc)
+						d._moveLineToProgress(loc.attr('location').split(","),loc.attr('color') , progress);					
 				},
 				doProgress : function(ip , progress){
+					if(!ip)
+						return;
 					var loc =  nodeLocationMap[ip];
 					d._moveLineToProgress(loc.attr('location').split(","),loc.attr('color') , progress);
 				},
 				doProgressWithOffset : function(ip , progress , offset){
+					console.log('*** ' , ip , '  ', progress , '  ' , offset);
 					var loc =  nodeLocationMap[ip];
+					if(!ip || !loc)
+						return ;
 					d._moveLineToProgressWithOffset(loc.attr('location').split(","),loc.attr('color') , progress,offset);
 				},
 				addKnownLocation : function(name){
@@ -220,8 +226,6 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 		$scope.hideFileInfo = true ;
 	}
 	DownloadMap.init($scope.hideFileInfo);
-	Socket.emit("eodnDownload_request",{ id : id});
-	console.log("fine till here " ,id);
 	 var getAccessIp = function(x){
 		  return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
 	    };
@@ -234,7 +238,41 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 				map[getAccessIp(d)] = [d.location.longitude,d.location.latitude];
 			}
 		}
-		DownloadMap.initNodes(map);		
+		DownloadMap.initNodes(map);	
+		Socket.emit("eodnDownload_request",{ id : id});
+		console.log("fine till here " ,id);
+		Socket.on("eodnDownload_Nodes",function(data){
+			console.log("Socket data ",data.data);
+			// Use this data to create nodes 
+			DownloadMap.initNodes(data.data);		
+		});
+		k = $scope ;
+		Socket.on("eodnDownload_Info", function(data){
+			// Set this data in scope to display file info
+			console.log('file data ' , data);
+			if(data.isError){
+				$scope.error = true;
+			} else {
+				$scope.error = false;
+				$scope.name = data.name ,
+				$scope.size = data.size , 
+				$scope.connections = data.connections;						
+			}
+		});
+		Socket.on("eodnDownload_Progress",function(data){
+			var s = data.totalSize ;
+			console.log("totalSize" , s);
+			var d = data ;
+			var ip = d.ip;
+			var pr = d.progress;
+			var sizeOfChunk = d.amountRead || pr;
+			var progress = (sizeOfChunk / s ) * 100 ;
+			var offset = (d.offset/ s )  * 100;
+			if(progress > 100 || offset > 100){
+				alert('wrong data ....');
+			}
+			DownloadMap.doProgressWithOffset(ip,progress, offset);
+		});
 	}
 	if($rootScope.services){
 		addLocationsFromDepot($rootScope.services);
@@ -243,35 +281,5 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 			addLocationsFromDepot(services);
 		});
 	}
-	Socket.on("eodnDownload_Nodes",function(data){
-		console.log("Socket data ",data.data);
-		// Use this data to create nodes 
-		DownloadMap.initNodes(data.data);		
-	});
-	k = $scope ;
-	Socket.on("eodnDownload_Info", function(data){
-		// Set this data in scope to display file info
-		console.log('file data ' , data);
-		if(data.isError){
-			$scope.error = true;
-		} else {
-			$scope.error = false;
-			$scope.name = data.name ,
-			$scope.size = data.size , 
-			$scope.connections = data.connections;			
-		}
-	});
-	Socket.on("eodnDownload_Progress",function(data){
-		console.log('progress data', data);
-		var s = $scope.size || 1 ;
-		console.log("totalSize" , s);
-		var d = data ;
-		var ip = d.ip;
-		var pr = d.progress;
-		var sizeOfChunk = d.amountRead || pr;
-		var progress = (pr / s ) * 100 ;
-		var offset = (d.offset/ s )  * 100;
-		DownloadMap.doProgressWithOffset(ip,sizeOfChunk, offset);
-	});
 }); // end controller
 

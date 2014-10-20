@@ -327,9 +327,6 @@ module.exports = function (client_socket) {
 	  console.log("registered new node ",data);
 	  console.log(registeredClientMap);
 	  var old = registeredClientMap[id] || {};
-	  if(old) {
-		  console.log("yess there were some attempts before ",old);
-	  }
 	  data.registeredRequestClientArr = old.registeredRequestClientArr || [];
 	  //client_socket.emit('eodnDownload_Info', {name : q.filename , size : q.totalSize , connections : q.connections});
 	  data.exists = true ;
@@ -344,6 +341,7 @@ module.exports = function (client_socket) {
 	  var serve = registeredClientMap[id];
 	  var messageName = 'eodnDownload_Progress' ,
 	  	  dataToBeSent = data;
+	  dataToBeSent.totalSize = serve.totalSize;
 	  if(serve){
 		  emitDataToAllConnected(serve , messageName , dataToBeSent);	  
 	  } else {
