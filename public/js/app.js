@@ -8,7 +8,12 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
   'ui.utils' ,'ui.bootstrap', 'nvd3ChartDirectives', 'directedGraphModule',
   'appRoutes', 'SliceCtrl', 'SliceService','SocketService', 'EodnCtrl',
   'DepotCtrl', 'DepotService']
-  ).run(function($rootScope, $http, $q, $timeout, $location, Socket) {
+  ).run(function($rootScope, $http, $q, $timeout, $location, Socket,$route) {
+	  var smPromises = [] ;
+	  $rootScope.getServices = function(cb){
+		  smPromises.push(cb);		  
+      };
+      
     $http.get('/api/services').success(function(data) {
       console.log('HTTP Service Request: ' , data);
       console.log(data.length);
@@ -30,7 +35,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 
         for(var i = 0; i < uniqueServices.length; i++) {
           promises.push($http.get('/api/services/' + uniqueServices[i]).success(function(data) {
-            console.log('HTTP Service Request: ' , data);
+//            console.log('HTTP Service Request: ' , data);
             services.push(data);
           }));
         }
@@ -40,7 +45,18 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 
       getServices().then(function(data) {
         console.log('Loading complete, redirecting');
-        $location.path('/status');
+        for(var i = 0 ; i < smPromises.length ; i++){
+        	try{
+        		smPromises[i](services);
+        	}catch(e){}
+        	
+        };        
+        if(!$rootScope.gotoSomeotherPage) {
+        	$location.path('/status');
+        	$rootScope.services = services;
+        	console.log('root scoping serviuce');        	
+        	$rootScope.gotoSomeotherPage = false ;
+        }
 
         // set timer value
         onTimeout = function() {
@@ -57,7 +73,8 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
           //continue timer
           timeout = $timeout(onTimeout, 1000);
         }
-
+        
+        $rootScope.services = services;
         // set ttl value
         for(var i = 0; i < services.length; i++) {
           var now = Math.round(new Date().getTime() / 1e3) //seconds
@@ -67,10 +84,11 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 
         // start timer
         var timeout = $timeout(onTimeout, 1000);
-
-        // apply data to scope
-        $rootScope.services = services;
-
+        if(!$rootScope.gotoSomeotherPage) {
+        	// I dont why this is needed
+        	$route.reload();
+        	$location.path('/status');
+        };
         // open sockets
         Socket.emit('service_request', {});
       });
@@ -101,6 +119,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 
       Socket.emit('measurement_request', {});
 
+      
       $rootScope.measurements = data;
     }).error(function(data) {
       console.log('Measurement Error: ' + data);

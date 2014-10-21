@@ -5,14 +5,11 @@
  */
 
 angular.module('DepotCtrl', []).controller('DepotController', function($scope, $routeParams, $location, $rootScope, Depot, Socket) {
-
-  var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
-		  'ps:tools:blipp:ibp_server:resource:usage:free',
-		  'ps:tools:blipp:linux:cpu:utilization:user',
-                  'ps:tools:blipp:linux:cpu:utilization:system']
-
+	var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
+	                'ps:tools:blipp:ibp_server:resource:usage:free',
+	                'ps:tools:blipp:linux:cpu:utilization:user',
+	                'ps:tools:blipp:linux:cpu:utilization:system'];
   var metadata_id = $routeParams.id;
-  console.log('metadata_id: ' + metadata_id);
 
   // place inital app data into scope for view
   $scope.services = $rootScope.services;
@@ -62,22 +59,8 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
     searchServices(addService);
   });
 
-  if (metadata_id != null) {
-
-    console.log("DEBUGGIN1");
-
-    $scope.eventType = [];
-
-    Depot.getMetadata(metadata_id, function(metadata) {
-      $scope.eventType = metadata.eventType;
-    });
-
+  if (metadata_id) {
     Depot.getDataId(metadata_id, function(data) {
-
-      $scope.data = [];
-      var arrayData = [];
-      $scope.graphData = [];
-
       $scope.data = $scope.data || [];
 
       if (typeof data =='string')
@@ -85,10 +68,15 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
 
       $scope.data = $scope.data.concat(data);
 
+      Depot.getMetadata(metadata_id, function(metadata) {
+        $scope.eventType = metadata.eventType;
+      });
+
+      var arrayData = [];
       angular.forEach($scope.data, function(key, value) {
           arrayData.push([key.ts, key.value]);
       });
-
+	
       $scope.xAxisTickFormat_Date_Format = function(){
 	  return function(d){
 	      var ts = d/1e3;
@@ -122,7 +110,7 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
         }
     }
   };
-
+					   
   $scope.getServiceMetadata = function(service) {
     var metadatas = [];
     var seen_ets = [];
@@ -168,7 +156,7 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
   };
 
   $scope.showMap = function(service_id) {
-    $location.path('/eodn/' + service_id);
+    $location.path('/eodnMap/' + service_id);
   };
 
 });
