@@ -20,7 +20,7 @@ module.exports = function (client_socket) {
   var ssl_opts = {'cert': fs.readFileSync('./dlt-client.pem'),
 		  'key': fs.readFileSync('./dlt-client.pem'),
 		  rejectUnauthorized: false}
-  //var ssl_opts = {};
+  var socket_ids = [];
 
   // establish client socket
   console.log('Client connected');
@@ -104,15 +104,19 @@ module.exports = function (client_socket) {
   client_socket.on('data_id_request', function(data) {
     console.log('UNIS: Data ID requested: ' + data.id);
 
-    // Create socket to listen for updates on data
-    var dataSocket = new WebSocket(ms_sub + 'data/' + data.id, ssl_opts);
+    if(socket_ids.indexOf(data.id) == -1) {
+      // Create socket to listen for updates on data
+      var dataSocket = new WebSocket(ms_sub + 'data/' + data.id, ssl_opts);
+
+      socket_ids.push(data.id);
+    }
 
     dataSocket.on('open', function(event) {
-      console.log('UNIS: Data ID socket opened');
+      console.log('UNIS: Data ID socket opened for: ' + data.id);
     });
 
     dataSocket.on('message', function(data) {
-      console.log('UNIS: data_data: ' + data);
+      console.log('UNIS: data_id_data: ' + data);
       client_socket.emit('data_id_data', data);
     });
 

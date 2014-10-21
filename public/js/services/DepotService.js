@@ -18,7 +18,7 @@ angular.module('DepotService', []).service('Depot', function($http, Socket) {
   };
 
   this.getData = function(data) {
-      console.log("GETTING DATA: " + data);
+    console.log("GETTING DATA: " + data);
     Socket.on('data_data',function(data_request) {
       console.log('Incoming Service Depot Data: ' , data_request);
       data(data_request);
@@ -26,18 +26,18 @@ angular.module('DepotService', []).service('Depot', function($http, Socket) {
   };
 
   this.getDataId = function(id, data) {
-    Socket.emit('data_id_request', {id: id});
+    Socket.emit('data_id_request', {'id': id});
 
     $http.get('/api/data/' + id).success(function(data_request) {
-      console.log('Data Request: ' + data_request);
+      console.log('HTTP Data Request: ' + data_request);
       data(data_request);
-
-      Socket.on('data_id_data',function(data_request) {
-        console.log('Incoming Service Depot Data: ' , data_request);
-        data(data_request);
-      });
     }).error(function(data_request) {
-      console.log('Data Error: ' + data);
+      console.log('HTTP Data Error: ' + data);
+    });
+
+    Socket.on('data_id_data',function(data_request) {
+      console.log('Incoming Service Depot Data for ' + id + ' : ' , data_request);
+      data(data_request);
     });
   };
 

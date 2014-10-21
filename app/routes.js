@@ -626,7 +626,7 @@ module.exports = function(app) {
   });
 
   app.get('/api/metadata/:id', function(req, res) {
-    console.log("data id: " + req.params.id);
+    console.log("metadata id: " + req.params.id);
     // console.log('STATUS: ' + res.statusCode);
     // console.log('HEADERS: ' + JSON.stringify(res.headers));
     // console.log('BODY: ' + JSON.stringify(res.body));
