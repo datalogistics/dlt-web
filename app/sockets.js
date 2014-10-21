@@ -14,7 +14,7 @@ var WebSocket = require('ws')
 , url = require('url');
 
 //Can later create this array with
-// All registered depots  - Need a way to get all possible depots 
+// All registered depots  - Need a way to get all possible depots
 var nodeIpArray = ["24.1.111.131" , // bloomington
                    "173.194.123.46", // google
                    "128.83.40.146" , // UT austin
@@ -28,13 +28,13 @@ setInterval(function(){
 		var c = registeredClientMap[i] ;
 		if(!c || !c.hashId)
 			continue ;
-		var id = c.hashId, 
+		var id = c.hashId,
 			lastProgressTime = rClientsLastProgressMap[id]
 			lastUsedTime = rClientsLastUsedMap[id];
 		// If it has been used in last 5 minutes then keep it or else remove it
 		if(!(time - lastProgressTime > 300000 || time - lastUsedTime > 300000)){
 			registeredClientMap[id] = undefined ;
-		}		
+		}
 	  };
 },900000)
 
@@ -43,7 +43,7 @@ setInterval(function(){
 var registeredClientMap = {};
 var rClientsLastProgressMap = {} ,
 	rClientsLastUsedMap = {};
-  
+
 // export function for listening to the socket
 module.exports = function (client_socket) {
   var unis_sub = 'wss://dlt.incntre.iu.edu:9000/subscribe/'
@@ -52,6 +52,7 @@ module.exports = function (client_socket) {
 		  'key': fs.readFileSync('./dlt-client.pem'),
 		  rejectUnauthorized: false}
   var socket_ids = [];
+  var sockets = [];
 
   // establish client socket
   console.log('Client connected');
@@ -135,12 +136,15 @@ module.exports = function (client_socket) {
   client_socket.on('data_id_request', function(data) {
     console.log('UNIS: Data ID requested: ' + data.id);
 
-    if(socket_ids.indexOf(data.id) == -1) {
-      // Create socket to listen for updates on data
-      var dataSocket = new WebSocket(ms_sub + 'data/' + data.id, ssl_opts);
-
-      socket_ids.push(data.id);
+    for(var i = 0; i < sockets.length; i++) {
+      dataSocket = sockets[i];
+      dataSocket.close();
     }
+
+    // Create socket to listen for updates on data
+    var dataSocket = new WebSocket(ms_sub + 'data/' + data.id, ssl_opts);
+
+    sockets.push(dataSocket);
 
     dataSocket.on('open', function(event) {
       console.log('UNIS: Data ID socket opened for: ' + data.id);
@@ -152,7 +156,7 @@ module.exports = function (client_socket) {
     });
 
     dataSocket.on('close', function(event) {
-      console.log('UNIS: Data ID socket closed');
+      console.log('UNIS: Data ID socket closed for: ' + data.id);
     });
   });
 
@@ -304,7 +308,7 @@ module.exports = function (client_socket) {
   client_socket.on('eodnDownload_request', function(data) {
 	  // The id according to which multiple downloads happen
 	  var id = data.id ;
-	  getAllIpLocationMap(nodeIpArray,function(map){		  
+	  getAllIpLocationMap(nodeIpArray,function(map){
 		  var nodeLocations = map;
 		  console.log('all fine till here ');
 		  client_socket.emit('eodnDownload_Nodes', {data : nodeLocations});
@@ -312,34 +316,34 @@ module.exports = function (client_socket) {
 		  addNewConn(client_socket , id);
 	  });
   });
-  
+
   client_socket.on("eodnDownload_clear",function(data){
 	var id = data.hashId ;
 	var serve = registeredClientMap[id];
 	var messageName = 'eodnDownload_clear' ,
   	  dataToBeSent = data;
 	emitDataToAllConnected(serve , messageName , dataToBeSent);
-	// Kill it - will be auto gc'd 
+	// Kill it - will be auto gc'd
 	registeredClientMap[id] = undefined ;
   });
-  
-  // The latest download hashmap 
+
+  // The latest download hashmap
   client_socket.on('eodnDownload_register', function(data) {
-	  var id = data.hashId , 
+	  var id = data.hashId ,
 	  	name = data.filename ,
-	  	totalSize = data.totalSize, conn = data.connections;	   
+	  	totalSize = data.totalSize, conn = data.connections;
 	  console.log("registered new node ",data);
 	  console.log(registeredClientMap);
 	  var old = registeredClientMap[id] || {};
 	  data.registeredRequestClientArr = old.registeredRequestClientArr || [];
 	  //client_socket.emit('eodnDownload_Info', {name : q.filename , size : q.totalSize , connections : q.connections});
 	  data.exists = true ;
-	  registeredClientMap[id] = data ;	  
+	  registeredClientMap[id] = data ;
 	  var arr = data.registeredRequestClientArr || [] ;
 	  console.log("already regdd cleintssssssssssssss ",arr.length);
 	  emitDataToAllConnected(registeredClientMap[id], 'eodnDownload_Info',{id : id , name : name , size : totalSize , connections : conn});
   });
-  
+
   client_socket.on('eodnDownload_pushData', function(data) {
 	  var id =  data.hashId ;
 	  var serve = registeredClientMap[id];
@@ -347,7 +351,7 @@ module.exports = function (client_socket) {
 	  	  dataToBeSent = data;
 	  dataToBeSent.totalSize = serve.totalSize;
 	  if(serve){
-		  emitDataToAllConnected(serve , messageName , dataToBeSent);	  
+		  emitDataToAllConnected(serve , messageName , dataToBeSent);
 	  } else {
 		  // Do some error stuff or fallbaCK
 		  client_socket.emit('eodnDownload_fail');
@@ -356,19 +360,19 @@ module.exports = function (client_socket) {
 };
 
 function addNewConn(client_socket , id){
-	  var downloadAgent = registeredClientMap[id];		  
+	  var downloadAgent = registeredClientMap[id];
 	  if(downloadAgent && downloadAgent.exists){
 		  var q = downloadAgent;
-		  // Push the current socket so that it can get the emitted download info 
+		  // Push the current socket so that it can get the emitted download info
 		  q.registeredRequestClientArr.push(client_socket);
-		  // Go bonkers and emit all old messages 
+		  // Go bonkers and emit all old messages
 		  var arr = q._emitPipe || [];
 		  console.log('pushing all known messages' , arr);
 		  for ( var i = 0 ; i < arr.length ; i++){
 			  client_socket.emit(arr[i].name , arr[i].data);
 		  }
 	  } else {
-		  // Send an error for now , then store it for later use anyway 		  
+		  // Send an error for now , then store it for later use anyway
 		  client_socket.emit('eodnDownload_Info', {isError : true });
 		  registeredClientMap[id] = registeredClientMap[id] || {} ;
 		  var arr = registeredClientMap[id].registeredRequestClientArr || [];
@@ -391,15 +395,15 @@ function emitDataToAllConnected(serve , messageName , dataToBeSent) {
 		  // Publish to all sockets in the array
 		  var nArr = [] , flag = false;
 		  for(var i=0; i < arr.length ; i++) {
-			  // push to the sockets which are alive 
+			  // push to the sockets which are alive
 			  var sock = arr[i];
-			  if(arr[i].connected){		
+			  if(arr[i].connected){
 				  flag = true ;
 				  arr[i].emit(messageName, dataToBeSent);
-				  //{data : { ip : "24.1.111.131" , progress : 5}});			  
-			  }		  
+				  //{data : { ip : "24.1.111.131" , progress : 5}});
+			  }
 			  if(arr[i].connected || arr[i].connecting){
-				  // add to array 
+				  // add to array
 				  nArr.push(arr[i]);
 			  }
 		  }
@@ -427,13 +431,13 @@ function getAllIpLocationMap(array , cb){
 		if(_nodeLocationMap[val]){
 			locMap[val] = _nodeLocationMap[val];
 			done();
-		} else 
+		} else
 		freegeoip.getLocation(val, function(err, obj) {
 			if(err){
 				done();
 				return ;
 			}
-			locMap[val] = _nodeLocationMap[val] = [obj.longitude , obj.latitude];			
+			locMap[val] = _nodeLocationMap[val] = [obj.longitude , obj.latitude];
 			done();
 		});
 	});

@@ -59,7 +59,14 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
     searchServices(addService);
   });
 
-  if (metadata_id) {
+  if (metadata_id != null) {
+
+    $scope.eventType = [];
+
+    Depot.getMetadata(metadata_id, function(metadata) {
+      $scope.eventType = metadata.eventType;
+    });
+
     Depot.getDataId(metadata_id, function(data) {
       $scope.data = $scope.data || [];
 
@@ -68,15 +75,11 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
 
       $scope.data = $scope.data.concat(data);
 
-      Depot.getMetadata(metadata_id, function(metadata) {
-        $scope.eventType = metadata.eventType;
-      });
-
       var arrayData = [];
       angular.forEach($scope.data, function(key, value) {
           arrayData.push([key.ts, key.value]);
       });
-	
+
       $scope.xAxisTickFormat_Date_Format = function(){
 	  return function(d){
 	      var ts = d/1e3;
@@ -110,7 +113,7 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
         }
     }
   };
-					   
+
   $scope.getServiceMetadata = function(service) {
     var metadatas = [];
     var seen_ets = [];
