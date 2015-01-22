@@ -24,7 +24,8 @@
     "nodemon": "1.1.1",
     "socket.io": "^1.0.6",
     "socket.io-client": "^1.1.0",
-    "ws": "^0.4.32"
+    "ws": "^0.4.32",
+    "cors": "^2.5.3"
   },
   "repository": {
     "type": "git",

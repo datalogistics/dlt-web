@@ -6,7 +6,8 @@
 // include modules
 var express = require('express')
   , http = require('http')
-  , socketio = require('socket.io');
+  , socketio = require('socket.io')
+  , cors = require('cors');
 
 // create app, server, sockets
 var app = module.exports = express();
@@ -31,6 +32,9 @@ app.configure('development', function(){
 app.configure('production', function(){
   app.use(express.errorHandler());
 });
+
+//Enable CORS on all routes
+app.use(cors())
 
 // restful api routes
 require('./app/routes')(app);
