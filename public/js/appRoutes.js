@@ -37,6 +37,10 @@ angular.module('appRoutes', []).config(['$routeProvider', '$locationProvider', '
         templateUrl: 'views/eodn.html',
         controller: 'EodnController'
     }).
+    when('/files/',{    	
+    	templateUrl: 'views/files.html',
+    	controller: 'FilesController'
+    }).
     otherwise({redirectTo: '/'});
 
   $locationProvider.html5Mode(true);
