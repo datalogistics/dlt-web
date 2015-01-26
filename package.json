@@ -24,6 +24,7 @@
     "nodemon": "1.1.1",
     "socket.io": "^1.0.6",
     "socket.io-client": "^1.1.0",
+    "underscore": "^1.7.0",
     "ws": "^0.4.32"
   },
   "repository": {
