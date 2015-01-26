@@ -10,12 +10,13 @@ var fs = require('fs')
   , https = require('https')
   , url = require('url')
   , cfg = require('../properties')
-  ,_ = require('underscore');
+  ,_ = require('underscore')
+  ,q = require('q');
 
 var getHttpOptions = cfg.getHttpOptions;
 
 // production
-var production = true;
+var production = false;
 var unis_host = cfg.unis.default.url;
 var unis_port = cfg.unis.default.port;
 var unis_cert = './dlt-client.pem';
@@ -70,30 +71,63 @@ module.exports = function(app) {
     res.json(slice_info);
   });*/
   
-  function registerGenericHandler (httpOptions) {
+  function registerGenericHandler (options) {
       var method = http;
+      var res = options.res , req = options.req ;
+      options.req = options.res = undefined;
+
       if (production) {
           options = _.extend(options,prodOptions);
           method = https;
-      }
-
+      };
+      if (!_.isArray(options.hostname)) {
+          options.hostname = [options.hostname];
+          options.port = [options.port];
+      };
+      
+      // Loop over all options path 
       /* GET JSON and Render to our API */
-      method.get(options, function(http_res) {
-          var data = '';
-          
-          http_res.on('data', function (chunk) {
-              data += chunk;
-          });
-          http_res.on('end',function() {
-              var obj = JSON.parse(data);
-              // console.log( obj );
-              res.json( obj );
-          });
-          http_res.on('error',function() {
-              console.log('problem with request: ' + e.message);
-              res.send( 404 );
-          });
-      });      
+      var hostArr = options.hostname;
+      var portArr = options.port;
+      //console.log("Requesting from " ,hostArr);
+      var handlerArr = hostArr.map(function(x,index){
+          // Return handler function for each 
+          var opt = _.extend({},options);        
+          opt.hostName = x;
+          opt.port = portArr[index];
+          return function(){
+              var defer = q.defer();
+              method.get(opt, function(http_res) {
+                  var data = '';
+                  http_res.on('data', function (chunk) {
+                      data += chunk;
+                  });
+                  http_res.on('end',function() {
+                      var obj = JSON.parse(data);
+                      // console.log( obj );
+                      return defer.resolve(obj);
+                      //res.json( obj );
+                  });
+                  http_res.on('error',function(e) {
+                      return defer.reject(false);
+                      // res.send( 404 );
+                  });
+              });
+              return defer.promise;
+          };
+      });
+      q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
+          var isErr = true ;
+          var json = obj.reduce(function(x,y){
+              isErr = isErr && y.state =='rejected';
+              return x.concat(y.value || {});
+          },[]);
+          if (!isErr) {
+              res.json(json);          
+          } else {
+              res.send(404);
+          }
+      });
   };
 
     
@@ -109,6 +143,7 @@ module.exports = function(app) {
     // console.log('HEADERS: ' + JSON.stringify(res.headers));
     // console.log('BODY: ' + JSON.stringify(res.body));
     var options = _.extend({
+        req : req , res : res ,
         path : '/nodes',
         name : 'nodes'
     },getHttpOptions());      
@@ -123,6 +158,7 @@ module.exports = function(app) {
     var node_id = req.params.id;
     var method = http;
     var options = _.extend({
+        req : req , res : res ,
         name: "nodesId",
         path: '/nodes/' + node_id
     },getHttpOptions());  
@@ -130,15 +166,16 @@ module.exports = function(app) {
   });
 
   app.get('/api/services', function(req, res) {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
+    console.log('STATUS: ' + res.statusCode);
+    console.log('HEADERS: ' + JSON.stringify(res.headers));
+    console.log('BODY: ' + JSON.stringify(res.body));
     var node_id = req.params.id;
     var method = http;
     var options = _.extend({
+        req : req , res : res ,
         name: "services",
         path: '/services?fields=id'
-    },getHttpOptions());  
+    },getHttpOptions());
     registerGenericHandler(options);
   });
 
@@ -150,6 +187,7 @@ module.exports = function(app) {
     var service_id = req.params.id;
     var method = http;
     var options = _.extend({
+        req : req , res : res ,
         name: "servicesId",
         path: '/services/' + service_id
     },getHttpOptions());  
@@ -162,6 +200,7 @@ module.exports = function(app) {
     // console.log('BODY: ' + JSON.stringify(res.body));
     var method = http;
     var options = _.extend({
+        req : req , res : res ,
         name : "measurements",
         path: '/measurements'
     },getHttpOptions());  
@@ -177,6 +216,7 @@ module.exports = function(app) {
     var measurement_id = req.params.id;
     var method = http;
     var options = _.extend({
+        req : req , res : res ,
         name: "measurementsId",
         path: '/measurements'
     },getHttpOptions());  
@@ -189,6 +229,7 @@ module.exports = function(app) {
     // console.log('BODY: ' + JSON.stringify(res.body));
     var method = http;
     var options = _.extend({
+        req : req , res : res ,
         name: "metadata",
         path: '/metadata'
     },getHttpOptions());     
@@ -203,6 +244,7 @@ module.exports = function(app) {
     var metadata_id = req.params.id;
     var method = http;
     var options = _.extend({
+        req : req , res : res ,
         name: "metadataId",
         path: '/metadata/' + metadata_id
     },getHttpOptions());    
@@ -215,6 +257,7 @@ module.exports = function(app) {
     // console.log('BODY: ' + JSON.stringify(res.body));
     var method = http;
     var options = _.extend({
+        req : req , res : res ,
         name: "data",
         path: '/data'
     },getHttpOptions({
@@ -231,6 +274,7 @@ module.exports = function(app) {
     var data_id = req.params.id;
     var method = http;
     var options = _.extend({
+        req : req , res : res ,
         name: "dataId",
         path: '/data/' + data_id
     },getHttpOptions({
@@ -245,6 +289,7 @@ module.exports = function(app) {
     // console.log('BODY: ' + JSON.stringify(res.body));
     var method = http;
     var options = _.extend({
+        req : req , res : res ,
         name: "ports",
         path: '/ports'
     },getHttpOptions());  
@@ -260,6 +305,7 @@ module.exports = function(app) {
     var port_id = req.params.id;
     var method = http;
     var options = _.extend({
+        req : req , res : res ,
         path: '/ports/' + port_id,
         name: "portsId"
     },getHttpOptions());  

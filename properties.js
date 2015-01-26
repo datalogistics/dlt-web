@@ -35,9 +35,6 @@ var self = {
             ms = self.ms;
         // Default is Unis dev
         var host = unis.dev.url , port = unis.dev.port;
-        switch (cfg.name) {
-            
-        };
         var httpOptions = {
             hostname: host,
             port: port,    
