@@ -3,9 +3,7 @@
  * app/
  * routes.js
  */
-
-var fs = require('fs')
-  , path = require('path')
+var path = require('path')
   , http = require('http')
   , https = require('https')
   , url = require('url')
@@ -19,9 +17,7 @@ var getHttpOptions = cfg.getHttpOptions;
 var production = false;
 var unis_host = cfg.unis.default.url;
 var unis_port = cfg.unis.default.port;
-var unis_cert = './dlt-client.pem';
-var unis_key  = './dlt-client.pem';
-
+var prodOptions = cfg.prodOptions;
 // var slice_info = [];
 // var filePath = '/usr/local/etc/node.info';
 // var slice_uuid = '';
@@ -77,12 +73,15 @@ module.exports = function(app) {
       options.req = options.res = undefined;
 
       if (production) {
-          options = _.extend(options,prodOptions);
+          options = _.extend(options,prodOptions);          
           method = https;
       };
+      var keyArr = [] , certArr = [];
       if (!_.isArray(options.hostname)) {
           options.hostname = [options.hostname];
           options.port = [options.port];
+          keyArr = [options.key];
+          certArr = [options.cert];
       };
       
       // Loop over all options path 
@@ -94,7 +93,9 @@ module.exports = function(app) {
           // Return handler function for each 
           var opt = _.extend({},options);        
           opt.hostName = x;
-          opt.port = portArr[index];
+          opt.port = portArr[index];    
+          opt.key = keyArr[index] || keyArr[0];
+          opt.cert = certArr[index] || certArr[0];
           return function(){
               var defer = q.defer();
               method.get(opt, function(http_res) {
@@ -128,14 +129,6 @@ module.exports = function(app) {
               res.send(404);
           }
       });
-  };
-
-    
-  var prodOptions = {
-      key: fs.readFileSync(unis_key),
-      cert: fs.readFileSync(unis_cert),
-      requestCert: true,
-      rejectUnauthorized: false
   };
 
   app.get('/api/nodes', function(req, res) {
@@ -174,7 +167,7 @@ module.exports = function(app) {
     var options = _.extend({
         req : req , res : res ,
         name: "services",
-        path: '/services?fields=id'
+        path: '/services'
     },getHttpOptions());
     registerGenericHandler(options);
   });
