@@ -62,7 +62,7 @@ var self = {
             var url , port , key , cert;
             var isHttps = false;                
             if (!cfg.isMs){
-                switch (x) {
+                switch (x) { 
                 case 'dev' : 
                     url = unis.dev.url ; port = unis.dev.port;
                     key = keys['dev'].key;cert = keys['dev'].key;                    

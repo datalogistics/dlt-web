@@ -81,7 +81,7 @@ module.exports = function(app) {
       //console.log("Requesting from " ,hostArr);
       var handlerArr = hostArr.map(function(x,index){
           // Return handler function for each 
-          var method = http ;
+          var method = http ;  
           if (isHttpsArr[index]) {
               options = _.extend(options,prodOptions);          
               method = https;
