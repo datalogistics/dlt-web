@@ -52,27 +52,43 @@ var self = {
         var unis = self.unis,
             ms = self.ms,
             keys = self.keyCertMap;
+        cfg = cfg || {};
         // Default is Unis dev
         // Depending to no. of options se
         var hostList = ['dev'] ;
-        var hostArr = [] , portArr = [] , keyArr = [] , certArr = [];
+        var hostArr = [] , portArr = [] , keyArr = [] , certArr = [], isHttpsArr = [];
         // Create options according to hosts 
         hostList.map(function(x){
-            switch (x) {
+            var url , port , key , cert;
+            var isHttps = false;                
+            if (!cfg.isMs){
+                switch (x) {
                 case 'dev' : 
-                hostArr.push(unis.dev.url); portArr.push(unis.dev.port);
-                keyArr.push(keys['dev'].key);certArr.push(keys['dev'].key);
-                break;
-                // Add more 
-            };
-        });
-        
+                    url = unis.dev.url ; port = unis.dev.port;
+                    key = keys['dev'].key;cert = keys['dev'].key;                    
+                    break;
+                    // Add more 
+                };
+            } else {
+                switch (x) {
+                case 'dev' : 
+                    url = ms.dev.url ; port = ms.dev.port;
+                    key = keys['dev'].key;cert = keys['dev'].key;                                        
+                    break;
+                    // Add more 
+                };
+            }    
+            hostArr.push(unis.dev.url); portArr.push(unis.dev.port);
+            keyArr.push(keys['dev'].key);certArr.push(keys['dev'].key);
+            isHttpsArr.push(isHttps);
+        });    
         var httpOptions = {
             hostname: hostArr,
             port: portArr,
             method: 'GET',
             keyArr : keyArr ,
             certArr : certArr,
+            isHttpsArr : isHttpsArr,
             headers: {
                 'Content-type': 'application/perfsonar+json',
                 'connection': 'keep-alive'

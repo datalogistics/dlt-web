@@ -72,25 +72,20 @@ module.exports = function(app) {
       var res = options.res , req = options.req ;
       options.req = options.res = undefined;
 
-      if (production) {
-          options = _.extend(options,prodOptions);          
-          method = https;
-      };
-      var keyArr = [] , certArr = [];
-      if (!_.isArray(options.hostname)) {
-          options.hostname = [options.hostname];
-          options.port = [options.port];
-          keyArr = [options.key];
-          certArr = [options.cert];
-      };
-      
+      var keyArr = [].concat(options.key)
+      , certArr = [].concat(options.concat) 
+      , isHttpsArr = [].concat(options.isHttpsArr)
+      , hostArr = [].concat(options.hostname)
+      , portArr = [].concat(options.port);
       // Loop over all options path 
-      /* GET JSON and Render to our API */
-      var hostArr = options.hostname;
-      var portArr = options.port;
       //console.log("Requesting from " ,hostArr);
       var handlerArr = hostArr.map(function(x,index){
           // Return handler function for each 
+          var method = http ;
+          if (isHttpsArr[index]) {
+              options = _.extend(options,prodOptions);          
+              method = https;
+          }          
           var opt = _.extend({},options);        
           opt.hostName = x;
           opt.port = portArr[index];    
