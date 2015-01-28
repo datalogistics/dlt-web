@@ -20,7 +20,7 @@ var self = {
            url : "monitor.incntre.iu.edu",
            port : "9001"
         }
-    },
+    }, 
     unis : {   
         // Default is defined at bottom
         dev : {

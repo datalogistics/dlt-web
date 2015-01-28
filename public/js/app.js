@@ -12,7 +12,8 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 	  var smPromises = [] ;
 	  $rootScope.getServices = function(cb){
 		  smPromises.push(cb);		  
-          };     
+      };
+      
     $http.get('/api/services').success(function(data) {
       console.log('HTTP Service Request: ' , data);
       console.log(data.length);

@@ -22,8 +22,8 @@ var prodOptions = cfg.prodOptions;
 // var filePath = '/usr/local/etc/node.info';
 // var slice_uuid = '';
 // var os_name = '';
-// var distro = '';
-
+// var distro = ''; 
+ 
 var ms_host = 'dev.incntre.iu.edu' ; //'monitor.incntre.iu.edu';//'dlt.incntre.iu.edu';
 var ms_port = '8888'; //9001';
 
