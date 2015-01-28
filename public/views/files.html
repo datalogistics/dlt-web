@@ -1,16 +1,16 @@
 <h2 class="lead text-center">DLT</h2>
-
 <div class="table-responsive">
-dasd
-
-<div ng-controller="FilesController">
-<div class="row">
-    <div class="col-md-4 tree-browser">
-        <js-tree tree-events="select_node:nodeSelected" tree-data="json" tree-src="/views/filetree.json"></js-tree>
+    <div ng-controller="FilesController">
+        <div class="row">
+            <div class="col-md-4 tree-browser">
+                <!-- <js-tree tree-events="select_node:nodeSelected" tree-data="json" tree-src="/views/filetree.json"></js-tree> -->
+                <js-tree tree-data="scope" tree-model="treeModel" tree-events="open_node:openNodeCB"></js-tree>
+            </div>
+            <div class="col-md-8 file-viewer">
+                <pre>
+                  <code>{{fileViewer}}</code>
+                </pre>
+            </div>
+        </div>
     </div>
-    <div class="col-md-8 file-viewer"> <pre><code>{{fileViewer}}</pre>
-        </code>
-    </div>
-</div>
-</div>
 </div>
