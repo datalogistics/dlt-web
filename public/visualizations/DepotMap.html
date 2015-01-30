@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="../css/style.css">
+
+  <script src="./libs/d3.js"></script>
+  <script src="./libs/topojson.js"></script>
+  <script src="http://d3js.org/queue.v1.min.js"></script> <!-- https://github.com/mbostock/queue -->
+
+  <script src="depotmap.js"></script>
+</head>
+<body>
+  <div id="downloadMap"></div>
+
+  <script>
+    services_url = "http://localhost:42424/api/services"
+    d3.json(services_url, function(error, raw) {
+      var services = allServiceData(services_url, raw)
+      var map = baseMap("#downloadMap", 960, 500)
+
+    });
+
+  </script>
+</body>
+</html>
