@@ -42,7 +42,8 @@ var DownloadMap = (function(){
 	  projection.translate(d3.event.translate).scale(d3.event.scale);
 	  g.selectAll("path").attr("d", path);
 	}	
-	// The main obj
+
+  // The main obj
 	var d = {
 				init : function(hideInfo){
 					progressStart = 0;
@@ -275,6 +276,7 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 		});
 	}
 	if($rootScope.services){
+    debugger
 		addLocationsFromDepot($rootScope.services);
 	} else {
 		$rootScope.getServices(function(services) {
