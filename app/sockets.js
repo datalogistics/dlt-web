@@ -57,27 +57,42 @@ module.exports = function (client_socket) {
 		    rejectUnauthorized: false}
     var socket_ids = [];
     var sockets = [];
+    
     // Create all sockets required   
     // The generic api handler which just takes data form UNIS and returns it   
-    function getGenericHandler(unisUrl , emitName){         
+    function getGenericHandler(unisUrl,emitName){
+        // TODO move this to properties
+        var sArr = [{
+            name : 'unis',
+            url :  'wss://dlt.incntre.iu.edu:9000/subscribe/',
+            ssl_opts : {
+                'cert': fs.readFileSync('./dlt-client.pem'),
+		'key': fs.readFileSync('./dlt-client.pem'),
+		rejectUnauthorized: false
+            }}];
+                
         return function(data) {
-            // Create socket to listen for updates on nodes
-            var socket = new WebSocket(unis_sub + unisUrl, ssl_opts);
-
-            socket.on('open', function(event) {
-                console.log('UNIS: '+ unisUrl +' socket opened');
-            });
-
-            socket.on('message', function(data) {
-                console.log('UNIS:'+ unisUrl + ' '+  data);
-                client_socket.emit(emitName, data);
-            });
-
-            socket.on('close', function(event) {
-                console.log('UNIS:'+ unisUrl +' socket closed');
-            });
+            for (var i = 0 ; i < sArr.length ; i++) {
+                var k = sArr[i]; 
+                var name = k.name ;
+                var url = k.url + unisUrl ;
+                var ssl_opts = k.ssl_opts;
+                
+                var socket = new WebSocket(url, ssl_opts);            
+                socket.on('open', function(event) {
+                    console.log('UNIS: '+ url +' socket opened');
+                });
+                socket.on('message', function(data) {
+                    console.log('UNIS:'+ url + ' '+  data);               
+                    data.__source = name ;
+                    client_socket.emit(emitName, data);
+                });
+                socket.on('close', function(event) {
+                    console.log('UNIS:'+ url +' socket closed');
+                });
+            };
         };
-    }
+    };
     
     // establish client socket
     console.log('Client connected');
