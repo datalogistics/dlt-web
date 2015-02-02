@@ -54,7 +54,6 @@ module.exports = function(app) {
     routes.push('http://' + hostname + pathname + '/metadata');
     routes.push('http://' + hostname + pathname + '/data');
     routes.push('http://' + hostname + pathname + '/ports');
-
     res.json(routes);
   });
 
@@ -134,7 +133,9 @@ module.exports = function(app) {
         req : req , res : res ,
         path : '/nodes',
         name : 'nodes'
-    },getHttpOptions());      
+    },getHttpOptions({
+        name : 'nodes'
+    }));      
     registerGenericHandler(options);
   });
 
@@ -149,7 +150,9 @@ module.exports = function(app) {
         req : req , res : res ,
         name: "nodesId",
         path: '/nodes/' + node_id
-    },getHttpOptions());  
+    },getHttpOptions({
+        name : 'nodes_id'
+    }));  
     registerGenericHandler(options);    
   });
 
@@ -163,7 +166,9 @@ module.exports = function(app) {
         req : req , res : res ,
         name: "services",
         path: '/services'
-    },getHttpOptions());
+    },getHttpOptions({
+        name : 'services'
+    }));
     registerGenericHandler(options);
   });
 
@@ -178,7 +183,9 @@ module.exports = function(app) {
         req : req , res : res ,
         name: "servicesId",
         path: '/services/' + service_id
-    },getHttpOptions());  
+    },getHttpOptions({
+        name : 'services_id'
+    }));  
     registerGenericHandler(options);
   });
 
@@ -191,7 +198,9 @@ module.exports = function(app) {
         req : req , res : res ,
         name : "measurements",
         path: '/measurements'
-    },getHttpOptions());  
+    },getHttpOptions({
+        name : 'measurements'
+    }));  
     registerGenericHandler(options);
   });
 
@@ -207,7 +216,9 @@ module.exports = function(app) {
         req : req , res : res ,
         name: "measurementsId",
         path: '/measurements'
-    },getHttpOptions());  
+    },getHttpOptions({
+        name : 'measurements_id'
+    }));  
     registerGenericHandler(options);
   });
 
@@ -220,7 +231,9 @@ module.exports = function(app) {
         req : req , res : res ,
         name: "metadata",
         path: '/metadata'
-    },getHttpOptions());     
+    },getHttpOptions({
+        name : 'metadata'
+    }));     
     registerGenericHandler(options);
   });
 
@@ -235,7 +248,9 @@ module.exports = function(app) {
         req : req , res : res ,
         name: "metadataId",
         path: '/metadata/' + metadata_id
-    },getHttpOptions());    
+    },getHttpOptions({
+        name : 'metadata_id'
+    }));    
     registerGenericHandler(options);
   });
 
@@ -249,6 +264,7 @@ module.exports = function(app) {
         name: "data",
         path: '/data'
     },getHttpOptions({
+        name : 'data',
         isMs : true
     }));
     registerGenericHandler(options);
@@ -266,6 +282,7 @@ module.exports = function(app) {
         name: "dataId",
         path: '/data/' + data_id
     },getHttpOptions({
+        name : 'data_id',
         isMs : true 
     }));  
     registerGenericHandler(options);
@@ -280,7 +297,9 @@ module.exports = function(app) {
         req : req , res : res ,
         name: "ports",
         path: '/ports'
-    },getHttpOptions());  
+    },getHttpOptions({
+        name : 'ports'
+    }));  
     registerGenericHandler(options);
   });
 
@@ -296,7 +315,9 @@ module.exports = function(app) {
         req : req , res : res ,
         path: '/ports/' + port_id,
         name: "portsId"
-    },getHttpOptions());  
+    },getHttpOptions({
+        name : 'ports_id'
+    }));  
     registerGenericHandler(options);    
   });
 

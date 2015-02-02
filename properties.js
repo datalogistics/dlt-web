@@ -1,28 +1,35 @@
 /* Configuration file - Configure all source info here .. remove all URL related info from other files */
-var fs = require('fs');
+var fs = require('fs'),
+_ = require('underscore');
 var unis_cert = './dlt-client.pem';
 var unis_key  = './dlt-client.pem';
 var  key  = fs.readFileSync(unis_key),
      cert = fs.readFileSync(unis_cert);
 
-var self = {
-    ms : {
-        // Default is defined at bottom
-        dev : {
-            url : "dev.incntre.iu.edu" ,
-            port : "8888"
-        },
-        dlt : {
-           url : "dlt.incntre.iu.edu",
-           port : "9001"
-        },
-        monitor : {
-           url : "monitor.incntre.iu.edu",
-           port : "9001"
-        }
-    }, 
+var self = {    
+    // Just specify environment to use - it will automatically fill in url, port and authentication
+    // No way to add any other config - Eg. https for one dev and not on other - alternative is to create 2 envs for dev : with http and https
+    routeMap : { 
+        // Aggregate from the following by default 
+        'default'  : ['dev'],
+        // Empty array is ignored and goes to default , otherwise using this to aggregate        
+        'measurements' : ['dev'] ,
+        'nodes': [] ,        
+        'nodes_id' : [],
+        'services': [] ,
+        'services_id' : [],
+        'measurements': [],
+        'measurements_id' : [],
+        'metadata': [],
+        'metadata_id' : [],
+        'data': ['monitorMs'],
+        'data_id': ['monitorMs'],
+        'ports': [],
+        'ports_id' : []
+    },
     unis : {   
-        // Default is defined at bottom
+        // This better match a name
+        default : "dev",
         dev : {
             url : "dev.incntre.iu.edu" ,
             port : "8888"
@@ -34,6 +41,14 @@ var self = {
         monitor : {
            url : "monitor.incntre.iu.edu",
            port : "9000"
+        },
+        dltMs : {
+           url : "dlt.incntre.iu.edu",
+           port : "9001"
+        },
+        monitorMs : {
+           url : "monitor.incntre.iu.edu",
+           port : "9001"
         }
     },
     keyCertMap : {
@@ -47,41 +62,30 @@ var self = {
       cert: fs.readFileSync(unis_cert),
       requestCert: true,
       rejectUnauthorized: false
+    },    
+    getSocketOptions : function () {
+        
     },
     getHttpOptions : function (cfg) {
+        var keys = self.keyCertMap;
+        var rmap = self.routeMap;
         var unis = self.unis,
-            ms = self.ms,
-            keys = self.keyCertMap;
+        // Using the name - make it get the http options        
         cfg = cfg || {};
-        // Default is Unis dev
-        // Depending to no. of options se
-        var hostList = ['dev'] ;
+        var pr = rmap[cfg.name] ;        
+        var hostList = !_.isEmpty(pr) ? pr : rmap.default;
+        // The options array to be sent
         var hostArr = [] , portArr = [] , keyArr = [] , certArr = [], isHttpsArr = [];
         // Create options according to hosts 
+        console.log(hostList,rmap);
         hostList.map(function(x){
             var url , port , key , cert;
-            var isHttps = false;                
-            if (!cfg.isMs){
-                switch (x) { 
-                case 'dev' : 
-                    url = unis.dev.url ; port = unis.dev.port;
-                    key = keys['dev'].key;cert = keys['dev'].key;                    
-                    break;
-                    // Add more 
-                };
-            } else {
-                switch (x) {
-                case 'dev' : 
-                    url = ms.dev.url ; port = ms.dev.port;
-                    key = keys['dev'].key;cert = keys['dev'].key;                                        
-                    break;
-                    // Add more 
-                };
-            }    
-            hostArr.push(unis.dev.url); portArr.push(unis.dev.port);
-            keyArr.push(keys['dev'].key);certArr.push(keys['dev'].key);
+            var isHttps = false;                           
+            hostArr.push(unis[x].url); portArr.push(unis[x].port);
+            keyArr.push(keys[x].key);certArr.push(keys[x].key);
             isHttpsArr.push(isHttps);
         });    
+        console.log(hostArr);
         var httpOptions = {
             hostname: hostArr,
             port: portArr,
@@ -97,6 +101,5 @@ var self = {
         return httpOptions;
     }
 };
-self.unis.default = self.unis.dev;
-self.ms.default = self.ms.dev;
+self.unis.default = self.unis[self.unis.default];
 module.exports = self;
