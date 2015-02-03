@@ -55,11 +55,24 @@ module.exports = function (client_socket) {
     
     // Create all sockets required   
     // The generic api handler which just takes data form UNIS and returns it   
-    function getGenericHandler(path, emitName){
-	var opt = cfg.getHttpOptions(path);
+    function getGenericHandler(path, emitName, args){
+	var opt = cfg.getHttpOptions({'name': path});
+	var id_path = "";
+
+	if (args && args.id) {
+	    id_path = "/" + args.id;
+	}
+
+	if (args && args.flush) {
+	    console.log("Closing existing data sockets");
+	    for(var i = 0; i < sockets.length; i++) {
+		dataSocket = sockets[i];
+		dataSocket.close();
+	    }
+	}
+
 	return function(data) {
             for (var i = 0 ; i < opt.hostArr.length ; i++) {
-		console.log(opt.hostArr[i]);
                 var name = path;
 		var proto = "ws";
 		var ssl_opts = {};
@@ -73,16 +86,21 @@ module.exports = function (client_socket) {
 					 'slashes' : true,
 					 'hostname': opt.hostArr[i],
 					 'port'    : opt.portArr[i],
-					 'pathname': "/subscribe/" + path});
+					 'pathname': "/subscribe/" + path + id_path});
                 
 		console.log("Creating websocket for: " + urlstr);
 
-                var socket = new WebSocket(urlstr, ssl_opts);            
+                var socket = new WebSocket(urlstr, ssl_opts);
+
+		if (path == "data") {
+		    sockets.push(socket);
+		}
+
                 socket.on('open', function() {
                     //console.log('UNIS socket opened');
                 });
                 socket.on('message', function(data) {
-                    console.log('UNIS socket data: ' + data);               
+                    console.log('UNIS socket data: ' + data);        
                     data.__source = name ;
                     client_socket.emit(emitName, data);
                 });
@@ -113,36 +131,12 @@ module.exports = function (client_socket) {
     client_socket.on('domain_request', getGenericHandler('domain','domain_data'));
     client_socket.on('topology_request', getGenericHandler('topology','topology_data'));
     client_socket.on('event_request', getGenericHandler('event','event_data'));
-    client_socket.on('data_request', getGenericHandler('data','data_data'));
-
+    client_socket.on('data_request', function (data) { getGenericHandler('data', 'data_data',
+									 {'id': data.id,
+									  'flush': true
+									 })(data)});
+    
     // All the weird ones
-    client_socket.on('data_id_request', function(data) {
-        console.log('UNIS: Data ID requested: ' + data.id);
-
-        for(var i = 0; i < sockets.length; i++) {
-            dataSocket = sockets[i];
-            dataSocket.close();
-        }
-
-        // Create socket to listen for updates on data
-        var dataSocket = new WebSocket(ms_sub + 'data/' + data.id, ssl_opts);
-
-        sockets.push(dataSocket);
-
-        dataSocket.on('open', function(event) {
-            console.log('UNIS: Data ID socket opened for: ' + data.id);
-        });
-
-        dataSocket.on('message', function(data) {
-            console.log('UNIS: data_id_data: ' + data);
-            client_socket.emit('data_id_data', data);
-        });
-
-        dataSocket.on('close', function(event) {
-            console.log('UNIS: Data ID socket closed for: ' + data.id);
-        });
-    });
-
     client_socket.on('eodnDownload_request', function(data) {
 	// The id according to which multiple downloads happen
 	var id = data.id ;
