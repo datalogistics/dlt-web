@@ -46,49 +46,48 @@ setInterval(function(){
 var registeredClientMap = {};
 var rClientsLastProgressMap = {} ,
 	rClientsLastUsedMap = {};
-var rMap = cfg.routeMap ;
+var rMap = cfg.routeMap;
 
 // export function for listening to the socket
 module.exports = function (client_socket) {
-    var unis_sub = 'wss://dlt.incntre.iu.edu:9000/subscribe/'
-    var ms_sub = 'wss://dlt.incntre.iu.edu:9001/subscribe/'
-    var ssl_opts = {'cert': fs.readFileSync('./dlt-client.pem'),
-		    'key': fs.readFileSync('./dlt-client.pem'),
-		    rejectUnauthorized: false}
     var socket_ids = [];
     var sockets = [];
     
     // Create all sockets required   
     // The generic api handler which just takes data form UNIS and returns it   
-    function getGenericHandler(unisUrl,emitName){
-        // TODO move this to properties
-        var sArr = [{
-            name : 'unis',
-            url :  'wss://dlt.incntre.iu.edu:9000/subscribe/',
-            ssl_opts : {
-                'cert': fs.readFileSync('./dlt-client.pem'),
-		'key': fs.readFileSync('./dlt-client.pem'),
-		rejectUnauthorized: false
-            }}];
+    function getGenericHandler(path, emitName){
+	var opt = cfg.getHttpOptions(path);
+	return function(data) {
+            for (var i = 0 ; i < opt.hostArr.length ; i++) {
+		console.log(opt.hostArr[i]);
+                var name = path;
+		var proto = "ws";
+		var ssl_opts = {};
+		if (opt.doSSLArr[i]) {
+		    proto = "wss";
+		    ssl_opts = {'cert': fs.readFileSync(opt.certArr[i]),
+				'key': fs.readFileSync(opt.keyArr[i])};
+		    ssl_opts = _.extend(ssl_opts, cfg.sslOptions);
+		}
+                var urlstr = url.format({'protocol': proto,
+					 'slashes' : true,
+					 'hostname': opt.hostArr[i],
+					 'port'    : opt.portArr[i],
+					 'pathname': "/subscribe/" + path});
                 
-        return function(data) {
-            for (var i = 0 ; i < sArr.length ; i++) {
-                var k = sArr[i]; 
-                var name = k.name ;
-                var url = k.url + unisUrl ;
-                var ssl_opts = k.ssl_opts;
-                
-                var socket = new WebSocket(url, ssl_opts);            
-                socket.on('open', function(event) {
-                    console.log('UNIS: '+ url +' socket opened');
+		console.log("Creating websocket for: " + urlstr);
+
+                var socket = new WebSocket(urlstr, ssl_opts);            
+                socket.on('open', function() {
+                    //console.log('UNIS socket opened');
                 });
                 socket.on('message', function(data) {
-                    console.log('UNIS:'+ url + ' '+  data);               
+                    console.log('UNIS socket data: ' + data);               
                     data.__source = name ;
                     client_socket.emit(emitName, data);
                 });
-                socket.on('close', function(event) {
-                    console.log('UNIS:'+ url +' socket closed');
+                socket.on('close', function() {
+                    //console.log('UNIS: socket closed');
                 });
             };
         };
@@ -104,7 +103,7 @@ module.exports = function (client_socket) {
     // Uses the generic api handler which just takes data form UNIS and returns it   
     // Copy pasting here to make things modifiable without me writing code
     client_socket.on('node_request', getGenericHandler('node','node_data'));
-    client_socket.on('sevice_request', getGenericHandler('service','service_data'));
+    client_socket.on('service_request', getGenericHandler('service','service_data'));
     client_socket.on('measurement_request',  getGenericHandler('measurement','measurement_data'));
     client_socket.on('metadata_request',  getGenericHandler('metadata','metadata_data'));
     client_socket.on('port_request', getGenericHandler('port','port_data'));

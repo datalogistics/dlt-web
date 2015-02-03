@@ -82,7 +82,7 @@ module.exports = function(app) {
 	  if (keyArr[index]) {
               opt.key = fs.readFileSync(keyArr[index]);
 	  }
-          return function(){
+          return function() {
 	      //console.log(opt);
               var defer = q.defer();
               method.get(opt, function(http_res) {
@@ -158,7 +158,7 @@ module.exports = function(app) {
     var options = _.extend({
         req : req , res : res ,
         name: "services",
-        path: '/services?fields=id'
+        path: '/services'
     },getHttpOptions({
         name : 'services'
     }));
@@ -292,7 +292,7 @@ module.exports = function(app) {
         path: '/ports'
     },getHttpOptions({
         name : 'ports'
-    }));  
+    }));
     registerGenericHandler(options);
   });
 
@@ -311,11 +311,10 @@ module.exports = function(app) {
     },getHttpOptions({
         name : 'ports_id'
     }));  
-    registerGenericHandler(options);    
+    registerGenericHandler(options);
   });
 
   app.get('*', function(req, res) {
     res.sendfile('./public/index.html');
   });
-
 };
