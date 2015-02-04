@@ -4,39 +4,27 @@
  * routes.js
  */
 var path = require('path')
+  , fs = require('fs')
   , http = require('http')
   , https = require('https')
   , url = require('url')
   , cfg = require('../properties')
-  ,_ = require('underscore')
-  ,q = require('q');
+  , _ = require('underscore')
+  , q = require('q');
 
 var getHttpOptions = cfg.getHttpOptions;
+var sslOptions = cfg.sslOptions;
 
-// production
-var production = false;
-var unis_host = cfg.unis.default.url;
-var unis_port = cfg.unis.default.port;
-var prodOptions = cfg.prodOptions;
 // var slice_info = [];
 // var filePath = '/usr/local/etc/node.info';
 // var slice_uuid = '';
 // var os_name = '';
 // var distro = ''; 
  
-var ms_host = 'dev.incntre.iu.edu' ; //'monitor.incntre.iu.edu';//'dlt.incntre.iu.edu';
-var ms_port = '8888'; //9001';
-
 module.exports = function(app) {
-  console.log("UNIS Instance: " + unis_host + "@" + unis_port);
-  console.log("Measurement Store Host: " + ms_host);
-  console.log("Measurement Store Port: " + ms_port);
-
-  if(production) {
-    console.log('Running in Production');
-  } else {
-    console.log('Running in Development');
-  }
+  console.log("UNIS Default Instances: " + cfg.routeMap.default);
+  //console.log("Measurement Store Host: " + ms_host);
+  //console.log("Measurement Store Port: " + ms_port);
 
   app.get('/api', function(req, res) {
     // console.log('STATUS: ' + res.statusCode);
@@ -69,29 +57,34 @@ module.exports = function(app) {
   
   function registerGenericHandler (options) {
       var method = http;
-      var res = options.res , req = options.req ;
+      var res = options.res, req = options.req;
       options.req = options.res = undefined;
 
-      var keyArr = [].concat(options.key)
-      , certArr = [].concat(options.concat) 
-      , isHttpsArr = [].concat(options.isHttpsArr)
-      , hostArr = [].concat(options.hostname)
-      , portArr = [].concat(options.port);
+      var keyArr = [].concat(options.keyArr)
+      , certArr = [].concat(options.certArr)
+      , doSSLArr = [].concat(options.doSSLArr)
+      , hostArr = [].concat(options.hostArr)
+      , portArr = [].concat(options.portArr);
       // Loop over all options path 
-      //console.log("Requesting from " ,hostArr);
-      var handlerArr = hostArr.map(function(x,index){
+      //console.log("Requesting from ", hostArr, certArr);
+      var handlerArr = hostArr.map(function(x,index) {
           // Return handler function for each 
-          var method = http ;  
-          if (isHttpsArr[index]) {
-              options = _.extend(options,prodOptions);          
+          var method = http;
+          if (doSSLArr[index]) {
+              options = _.extend(options, sslOptions);
               method = https;
-          }          
-          var opt = _.extend({},options);        
-          opt.hostName = x;
-          opt.port = portArr[index];    
-          opt.key = keyArr[index] || keyArr[0];
-          opt.cert = certArr[index] || certArr[0];
-          return function(){
+          }
+          var opt = _.extend({}, options);
+          opt.hostname = hostArr[index];
+          opt.port = portArr[index];
+	  if (certArr[index]) {
+              opt.cert = fs.readFileSync(certArr[index]);
+	  }
+	  if (keyArr[index]) {
+              opt.key = fs.readFileSync(keyArr[index]);
+	  }
+          return function() {
+	      //console.log(opt);
               var defer = q.defer();
               method.get(opt, function(http_res) {
                   var data = '';
@@ -119,7 +112,7 @@ module.exports = function(app) {
               return x.concat(y.value || {});
           },[]);
           if (!isErr) {
-              res.json(json);          
+              res.json(json);
           } else {
               res.send(404);
           }
@@ -300,7 +293,7 @@ module.exports = function(app) {
         path: '/ports'
     },getHttpOptions({
         name : 'ports'
-    }));  
+    }));
     registerGenericHandler(options);
   });
 
@@ -319,7 +312,7 @@ module.exports = function(app) {
     },getHttpOptions({
         name : 'ports_id'
     }));  
-    registerGenericHandler(options);    
+    registerGenericHandler(options);
   });
 
   app.get('/api/fileTree', function(req, res) {
@@ -367,5 +360,4 @@ module.exports = function(app) {
   app.get('*', function(req, res) {
     res.sendfile('./public/index.html');
   });
-
 };

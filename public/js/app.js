@@ -8,15 +8,15 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
   'ui.utils' ,'ui.bootstrap', 'nvd3ChartDirectives', 'directedGraphModule',
   'appRoutes', 'SliceCtrl', 'SliceService','SocketService', 'EodnCtrl','jsTree.directive','FilesCtrl',
   'DepotCtrl', 'DepotService']
-  ).run(function($rootScope, $http, $q, $timeout, $location, Socket,$route) {
+  ).run(function($rootScope, $http, $q, $timeout, $location, Socket, $route) {
 	  var smPromises = [] ;
 	  $rootScope.getServices = function(cb){
 		  smPromises.push(cb);		  
-      };
+          };
       
     $http.get('/api/services').success(function(data) {
-      console.log('HTTP Service Request: ' , data);
-      console.log(data.length);
+      //console.log('HTTP Service Request: ' , data);
+      //console.log(data.length);
 
       var uniqueServices = [];
       var services = [];
@@ -24,19 +24,24 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
       for(var i = 0; i < data.length; i++) {
         if(uniqueServices.indexOf(data[i].id) == -1) {
           uniqueServices.push(data[i].id);
+	  services.push(data[i]);
         }
       }
 
-      console.log(uniqueServices.length);
-      console.log(uniqueServices);
+      //console.log(uniqueServices.length);
+      //console.log(uniqueServices);
 
       getServices = function() {
         var promises = [];
 
+	// let's not query each service
+	return $q.all(promises);
+
         for(var i = 0; i < uniqueServices.length; i++) {
-          promises.push($http.get('/api/services/' + uniqueServices[i]).success(function(data) {
-//            console.log('HTTP Service Request: ' , data);
-            services.push(data);
+	  console.log(uniqueServices[i]);
+          promises.push($http.get(uniqueServices[i]).success(function(data) {
+	  //console.log('HTTP Service Request: ', data);
+          services.push(data);
           }));
         }
 
@@ -54,7 +59,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
         if(!$rootScope.gotoSomeotherPage) {
         	$location.path('/status');
         	$rootScope.services = services;
-        	console.log('root scoping serviuce');        	
+        	console.log('root scoping serviuce');
         	$rootScope.gotoSomeotherPage = false ;
         }
 
@@ -95,7 +100,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
     });
 
     $http.get('/api/ports').success(function(data) {
-      console.log('Port Request: ' + data);
+      //console.log('Port Request: ' + data);
 
       Socket.emit('port_request', {});
 
@@ -105,7 +110,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
     });
 
     $http.get('/api/nodes').success(function(data) {
-      console.log('Node Request: ' + data);
+      //console.log('Node Request: ' + data);
 
       Socket.emit('node_request', {});
 
@@ -115,10 +120,9 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
     });
 
     $http.get('/api/measurements').success(function(data) {
-      console.log('Measurement Request: ' + data);
+      //console.log('Measurement Request: ' + data);
 
       Socket.emit('measurement_request', {});
-
       
       $rootScope.measurements = data;
     }).error(function(data) {
@@ -126,7 +130,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
     });
 
     $http.get('/api/metadata').success(function(data) {
-      console.log('Metadata Request: ' + data);
+      //console.log('Metadata Request: ' + data);
 
       Socket.emit('metadata_request', {});
 

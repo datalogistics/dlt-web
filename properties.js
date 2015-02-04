@@ -3,17 +3,17 @@ var fs = require('fs'),
 _ = require('underscore');
 var unis_cert = './dlt-client.pem';
 var unis_key  = './dlt-client.pem';
-var  key  = fs.readFileSync(unis_key),
-     cert = fs.readFileSync(unis_cert);
+//var key  = fs.readFileSync(unis_key);
+//var cert = fs.readFileSync(unis_cert);
 
 var self = {    
     // Just specify environment to use - it will automatically fill in url, port and authentication
     // No way to add any other config - Eg. https for one dev and not on other - alternative is to create 2 envs for dev : with http and https
     routeMap : { 
         // Aggregate from the following by default 
-        'default'  : ['dev'],
+        'default'  : ['dlt', 'monitor'],
         // Empty array is ignored and goes to default , otherwise using this to aggregate        
-        'measurements' : ['dev'] ,
+        'measurements' : [],
         'nodes': [] ,        
         'nodes_id' : [],
         'services': [] ,
@@ -22,77 +22,79 @@ var self = {
         'measurements_id' : [],
         'metadata': [],
         'metadata_id' : [],
-        'data': ['monitorMs'],
-        'data_id': ['monitorMs'],
+        'data': ['dlt_ms', 'monitor_ms'],
+        'data_id': ['dlt_ms', 'monitor_ms'],
         'ports': [],
         'ports_id' : []
     },
-    unis : {   
-        // This better match a name
-        default : "dev",
+    serviceMap : {   
         dev : {
             url : "dev.incntre.iu.edu" ,
-            port : "8888"
+            port : "8888",
+	    key: null,
+	    cert: null,
+	    use_ssl: false
         },
         dlt : {
-           url : "dlt.incntre.iu.edu",
-           port : "9000"
+            url : "dlt.incntre.iu.edu",
+            port : "9000",
+	    key: "./dlt-client.pem",
+	    cert: "./dlt-client.pem",
+	    use_ssl: true
         },
         monitor : {
-           url : "monitor.incntre.iu.edu",
-           port : "9000"
+            url : "monitor.incntre.iu.edu",
+            port : "9000",
+	    key: null,
+	    cert: null,
+	    use_ssl: false
         },
-        dltMs : {
-           url : "dlt.incntre.iu.edu",
-           port : "9001"
+        dlt_ms : {
+            url : "dlt.incntre.iu.edu",
+            port : "9001",
+	    key: "./dlt-client.pem",
+	    cert: "./dlt-client.pem",
+	    use_ssl: true
         },
-        monitorMs : {
-           url : "monitor.incntre.iu.edu",
-           port : "9001"
+        monitor_ms : {
+            url : "monitor.incntre.iu.edu",
+            port : "9001",
+	    key: null,
+	    cert: null,
+	    use_ssl: false
         }
     },
-    keyCertMap : {
-        "dev" : {
-            key : key ,
-            cert : cert
-        }
+    sslOptions : {
+	requestCert: true,
+	rejectUnauthorized: false
     },
-    prodOptions : {
-      key: fs.readFileSync(unis_key),
-      cert: fs.readFileSync(unis_cert),
-      requestCert: true,
-      rejectUnauthorized: false
-    },    
     getSocketOptions : function () {
         
     },
     getHttpOptions : function (cfg) {
-        var keys = self.keyCertMap;
         var rmap = self.routeMap;
-        var unis = self.unis,
+        var smap = self.serviceMap;
         // Using the name - make it get the http options        
         cfg = cfg || {};
-        var pr = rmap[cfg.name] ;        
+        var pr = rmap[cfg.name];
         var hostList = !_.isEmpty(pr) ? pr : rmap.default;
         // The options array to be sent
-        var hostArr = [] , portArr = [] , keyArr = [] , certArr = [], isHttpsArr = [];
+        var hostArr = [], portArr = [], keyArr = [], certArr = [], doSSLArr = [];
         // Create options according to hosts 
-        console.log(hostList,rmap);
         hostList.map(function(x){
-            var url , port , key , cert;
-            var isHttps = false;                           
-            hostArr.push(unis[x].url); portArr.push(unis[x].port);
-            keyArr.push(keys[x].key);certArr.push(keys[x].key);
-            isHttpsArr.push(isHttps);
+            hostArr.push(smap[x].url);
+	    portArr.push(smap[x].port);
+            keyArr.push(smap[x].key);
+	    certArr.push(smap[x].cert);
+            doSSLArr.push(smap[x].use_ssl);
         });    
-        console.log(hostArr);
         var httpOptions = {
-            hostname: hostArr,
-            port: portArr,
+            hostArr: hostArr,
+            portArr: portArr,
             method: 'GET',
             keyArr : keyArr ,
             certArr : certArr,
-            isHttpsArr : isHttpsArr,
+            doSSLArr : doSSLArr,
             headers: {
                 'Content-type': 'application/perfsonar+json',
                 'connection': 'keep-alive'
@@ -101,5 +103,5 @@ var self = {
         return httpOptions;
     }
 };
-self.unis.default = self.unis[self.unis.default];
+
 module.exports = self;
