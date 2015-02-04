@@ -54,6 +54,7 @@ module.exports = function(app) {
     routes.push('http://' + hostname + pathname + '/metadata');
     routes.push('http://' + hostname + pathname + '/data');
     routes.push('http://' + hostname + pathname + '/ports');
+    routes.push('http://' + hostname + pathname + '/fileTree');
     res.json(routes);
   });
 
@@ -124,7 +125,7 @@ module.exports = function(app) {
           }
       });
   };
-
+    
   app.get('/api/nodes', function(req, res) {
     // console.log('STATUS: ' + res.statusCode);
     // console.log('HEADERS: ' + JSON.stringify(res.headers));
@@ -320,6 +321,48 @@ module.exports = function(app) {
     }));  
     registerGenericHandler(options);    
   });
+
+  app.get('/api/fileTree', function(req, res) {
+      res.json([{
+          "id": "ajson1",
+          "parent": "#",
+          "text": "Simple root node" ,
+          "state" : {
+              "opened" : false ,
+              "disabled" : false,
+              "selected" : false 
+          }
+      }, {
+          "id": "ajson2",
+          "parent": "#",
+          "text": "Root node 2",
+
+          "state" : {
+              "opened" : false ,
+              "disabled" : false,
+              "selected" : false 
+          }
+      }, {
+          "id": "ajson3",
+          "parent": "ajson2",
+          "text": "Child 1",
+          "state" : {
+              "opened" : false ,
+              "disabled" : false,
+              "selected" : false 
+          }
+      }, {
+          "id": "ajson4",
+          "parent": "ajson2",
+          "text": "Child 2",
+          "state" : {
+              "opened" : false ,
+              "disabled" : false,
+              "selected" : false 
+          }
+      }]);
+  });
+
 
   app.get('*', function(req, res) {
     res.sendfile('./public/index.html');
