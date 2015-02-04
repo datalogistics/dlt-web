@@ -9,8 +9,10 @@ var path = require('path')
   , https = require('https')
   , url = require('url')
   , cfg = require('../properties')
+  , util = require('util')
   , _ = require('underscore')
-  , q = require('q');
+  , q = require('q')
+  , exjson = require('./exnode');
 
 var getHttpOptions = cfg.getHttpOptions;
 var sslOptions = cfg.sslOptions;
@@ -42,6 +44,7 @@ module.exports = function(app) {
     routes.push('http://' + hostname + pathname + '/metadata');
     routes.push('http://' + hostname + pathname + '/data');
     routes.push('http://' + hostname + pathname + '/ports');
+    routes.push('http://' + hostname + pathname + '/exnodes');
     routes.push('http://' + hostname + pathname + '/fileTree');
     res.json(routes);
   });
@@ -55,7 +58,7 @@ module.exports = function(app) {
     res.json(slice_info);
   });*/
   
-  function registerGenericHandler (options) {
+  function registerGenericHandler (options,cb) {
       var method = http;
       var res = options.res, req = options.req;
       options.req = options.res = undefined;
@@ -105,18 +108,25 @@ module.exports = function(app) {
               return defer.promise;
           };
       });
-      q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
-          var isErr = true ;
-          var json = obj.reduce(function(x,y){
-              isErr = isErr && y.state =='rejected';
-              return x.concat(y.value || {});
-          },[]);
-          if (!isErr) {
-              res.json(json);
-          } else {
-              res.send(404);
-          }
-      });
+      if (cb) {
+          q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
+              cb(obj);
+          });
+      } else {
+          q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
+              var isErr = true ;
+              var json = obj.reduce(function(x,y){
+                  isErr = isErr && y.state =='rejected';
+                  return x.concat(y.value || {});
+              },[]);
+              if (!isErr) {
+                  res.json(json);
+              } else {
+                  res.send(404);
+              }
+          });
+
+      }
   };
     
   app.get('/api/nodes', function(req, res) {
@@ -179,6 +189,21 @@ module.exports = function(app) {
         path: '/services/' + service_id
     },getHttpOptions({
         name : 'services_id'
+    }));  
+    registerGenericHandler(options);
+  });
+
+  app.get('/api/exnodes', function(req, res) {
+    // console.log('STATUS: ' + res.statusCode);
+    // console.log('HEADERS: ' + JSON.stringify(res.headers));
+    // console.log('BODY: ' + JSON.stringify(res.body));
+    var method = http;
+    var options = _.extend({
+        req : req , res : res ,
+        name : "exnodes",
+        path: '/exnodes'
+    },getHttpOptions({
+        name : 'exnodes'
     }));  
     registerGenericHandler(options);
   });
@@ -316,44 +341,70 @@ module.exports = function(app) {
   });
 
   app.get('/api/fileTree', function(req, res) {
-      res.json([{
-          "id": "ajson1",
-          "parent": "#",
-          "text": "Simple root node" ,
-          "state" : {
-              "opened" : false ,
-              "disabled" : false,
-              "selected" : false 
-          }
-      }, {
-          "id": "ajson2",
-          "parent": "#",
-          "text": "Root node 2",
+      var id = req.query.id || 1;
+      var arr = [];
+      // Need to handle null case at unis -- TODO delete
+      if (id == 1) {
+          var options = _.extend({
+              req : req , res : res ,
+              path : '/exnodes',
+              name : 'exnodes'
+          },getHttpOptions({
+              name : 'exnodes'
+          }));      
+          registerGenericHandler(options, function(obj){
+              var exjson =  obj[0].value;
+              // Return matching id children
+              exjson.map(function(x){            
+                  if(x.parent == null)
+                      arr.push({
+                          "id" : x.id ,
+                          "parent" : x.parent == null? "#" : x.parent,
+                          "children" : true,
+                          "state" : {
+                              "opened" : false ,
+                              "disabled" : false,
+                              "selected" : false 
+                          },
+                          "text" : x.name ,
+                          "size" : x.size , 
+                          "created" : x.created,
+                          "modified" : x.modified
+                      });
+              });
+              res.json(arr);
+          });     
+      } else {
+          var options = _.extend({
+              req : req , res : res ,
+              path : '/exnodes?parent='+id,
+              name : 'exnodes'
+          },getHttpOptions({
+              name : 'exnodes'
+          }));      
+          registerGenericHandler(options, function(obj){
+              var exjson =  obj[0].value;
+              // Return matching id children
+              exjson.map(function(x){            
+                  arr.push({
+                      "id" : x.id ,
+                      "parent" : x.parent == null? "#" : x.parent,
+                      "children" : true,
+                      "state" : {
+                          "opened" : false ,
+                          "disabled" : false,
+                          "selected" : false 
+                      },
+                      "text" : x.name ,
+                      "size" : x.size , 
+                      "created" : x.created,
+                      "modified" : x.modified
+                  });
+              });
+              res.json(arr);
+          });     
 
-          "state" : {
-              "opened" : false ,
-              "disabled" : false,
-              "selected" : false 
-          }
-      }, {
-          "id": "ajson3",
-          "parent": "ajson2",
-          "text": "Child 1",
-          "state" : {
-              "opened" : false ,
-              "disabled" : false,
-              "selected" : false 
-          }
-      }, {
-          "id": "ajson4",
-          "parent": "ajson2",
-          "text": "Child 2",
-          "state" : {
-              "opened" : false ,
-              "disabled" : false,
-              "selected" : false 
-          }
-      }]);
+      }
   });
 
 

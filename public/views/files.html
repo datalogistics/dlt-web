@@ -4,7 +4,8 @@
         <div class="row">
             <div class="col-md-4 tree-browser">
                 <!-- <js-tree tree-events="select_node:nodeSelected" tree-data="json" tree-src="/views/filetree.json"></js-tree> -->
-                <js-tree tree-data="scope" tree-model="treeModel" tree-events="open_node:openNodeCB"></js-tree>
+                <js-tree 
+                         tree-ajax="/api/fileTree" tree-plugins="checkbox"></js-tree>
             </div>
             <div class="col-md-8 file-viewer">
                 <pre>

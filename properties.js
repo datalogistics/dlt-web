@@ -14,6 +14,7 @@ var self = {
         'default'  : ['dlt', 'monitor'],
         // Empty array is ignored and goes to default , otherwise using this to aggregate        
         'measurements' : [],
+        'exnodes' : ['dev'],
         'nodes': [] ,        
         'nodes_id' : [],
         'services': [] ,
