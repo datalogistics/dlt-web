@@ -11,8 +11,7 @@ var path = require('path')
   , cfg = require('../properties')
   , util = require('util')
   , _ = require('underscore')
-  , q = require('q')
-  , exjson = require('./exnode');
+  , q = require('q');
 
 var getHttpOptions = cfg.getHttpOptions;
 var sslOptions = cfg.sslOptions;
