@@ -358,6 +358,7 @@ module.exports = function(app) {
                   if(x.parent == null)
                       arr.push({
                           "id" : x.id ,
+                          "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
                           "parent" : x.parent == null? "#" : x.parent,
                           "children" : true,
                           "state" : {
@@ -388,7 +389,8 @@ module.exports = function(app) {
                   arr.push({
                       "id" : x.id ,
                       "parent" : x.parent == null? "#" : x.parent,
-                      "children" : true,
+                      "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
+                      "children" :  x.mode != "file" ,
                       "state" : {
                           "opened" : false ,
                           "disabled" : false,
