@@ -14,7 +14,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 		  smPromises.push(cb);		  
           };
       
-    $http.get('/api/services').success(function(data) {
+    $http.get('/api/services', {cache: true}).success(function(data) {
       //console.log('HTTP Service Request: ' , data);
       //console.log(data.length);
 
@@ -99,7 +99,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
       });
     });
 
-    $http.get('/api/ports').success(function(data) {
+    $http.get('/api/ports', { cache: true}).success(function(data) {
       //console.log('Port Request: ' + data);
 
       Socket.emit('port_request', {});
@@ -109,7 +109,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
       console.log('Port Error: ' + data);
     });
 
-    $http.get('/api/nodes').success(function(data) {
+    $http.get('/api/nodes', { cache: true}).success(function(data) {
       //console.log('Node Request: ' + data);
 
       Socket.emit('node_request', {});
@@ -119,7 +119,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
       console.log('Node Error: ' + data);
     });
 
-    $http.get('/api/measurements').success(function(data) {
+    $http.get('/api/measurements' ,{ cache: true}).success(function(data) {
       //console.log('Measurement Request: ' + data);
 
       Socket.emit('measurement_request', {});
@@ -129,7 +129,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
       console.log('Measurement Error: ' + data);
     });
 
-    $http.get('/api/metadata').success(function(data) {
+    $http.get('/api/metadata', { cache: true}).success(function(data) {
       //console.log('Metadata Request: ' + data);
 
       Socket.emit('metadata_request', {});
