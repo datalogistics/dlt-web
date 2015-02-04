@@ -390,6 +390,7 @@ module.exports = function(app) {
                       "id" : x.id ,
                       "parent" : x.parent == null? "#" : x.parent,
                       "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
+                      "isFile" : x.mode == "file" ,
                       "children" :  x.mode != "file" ,
                       "state" : {
                           "opened" : false ,
