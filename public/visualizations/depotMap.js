@@ -1,9 +1,10 @@
 //Acquire all service information from the base url
 //Appends the items in serviceIds onto the baseUrl to acquire the details
-//Returns when all serviceId queries have returned (either with values or timeout)
+//After acquiring the information, builds a dictionary of {accesspoint: {lattitude: x, longitude: y}}
+//Finally executes the "then" on the resulting dictionary
+//
 //Returns at most one result for each UNIQUE serviceID
 //Drops serviceID results if incomplete
-//TODO: Do a better job of filling in defaults on incomplete results.
 function allServiceData(baseUrl, serviceIds, then) {
   var uniqueServices = [];
 
@@ -14,10 +15,10 @@ function allServiceData(baseUrl, serviceIds, then) {
   }
 
   var q = queue()
-    uniqueServices.forEach(function(service) {
-      var url = baseUrl + "/" + service
-      q.defer(d3.json, url)
-    })
+  uniqueServices.forEach(function(service) {
+    var url = baseUrl + "/" + service
+    q.defer(d3.json, url)
+  })
 	 
   q.awaitAll(function(error, result) {
     var services = []
@@ -37,10 +38,35 @@ function allServiceData(baseUrl, serviceIds, then) {
 
       services.push({name: id, location: place})
     })
-    console.log("loaded " + services.length + " service items")
+    console.log("loaded " + services.length + " service locations")
     then(services)
   })
 }
+
+//Acquire gelocations for the given IP addresses, if available
+//Converts to a dictionary of {ip: {lattitude: x, longitude: y}}
+function ipToLocation(ips, then) {
+  var q = queue()
+    ips.forEach(function(ip) {
+      var url = "http://freegeoip.net/json/" + ip
+      q.defer(d3.json, url)
+    })
+
+  q.awaitAll(function(error, result) {
+    var locations = []
+    result.forEach(function(raw) {
+      place = []
+      if (typeof raw.longitude != 'undefined'
+          && typeof raw.latitude != 'undefined') {
+          place = {latitude: raw.latitude, longitude: raw.longitude}
+      }
+      locations.push({name: raw.ip, location: place})
+    })
+  console.log("loaded " + result.length + " ip locations")
+    then(locations)
+  })
+}
+
 
 //Add a node with name at position latLon to svg using the projection
 function addMapLocation(name, lonLat, svg, projection) {		
@@ -48,7 +74,7 @@ function addMapLocation(name, lonLat, svg, projection) {
   var node = svg.append("g")
       .attr("transform", function() {return "translate(" + projection(lonLat) + ")";})
 
-      node.append("circle")
+      var circ = node.append("circle")
         .attr("r",5)
         .attr('fill',"#ee2222")
         .attr('color',"#ee2222")
@@ -61,34 +87,57 @@ function addMapLocation(name, lonLat, svg, projection) {
 }				
 
 
-OFF_MAP = [-72, 40]
-function addOffMapLocation(name, svg, projection) {
-    pair = OFF_MAP 
-    OFF_MAP = [OFF_MAP[0], OFF_MAP[1]+10]
+
+function tooltip(svg, text) {
+  tip = d3.tip().attr('class', 'd3-tip').html(function() {
+    var x = d3.select(this);
+    return x.attr('name');						
+  })
+
+  svg.call(tip);
+  var timer;
+  console.log("Selected: " + svg.selectAll("circle.eodnNode").length)
+  svg.selectAll("circle.eodnNode").on('mouseover', function(){
+        console.log("hello")
+      clearTimeout(timer);
+      tip.show.apply(this,arguments);
+  })
+  .on('mouseout', function(){
+    timer = setTimeout(tip.hide,2000);
+  });
+}
+
+//Add nodes to the side of the map, because their lat/lon is not known
+function addOffMapLocation(idx, baseLatLon, name, svg, projection) {
+    pair = [baseLatLon[0], baseLatLon[1]-idx]
     node = addMapLocation(name, pair, svg, projection)
     node.append("text")
        .attr("dx", function(d){return 10})
        .attr("dy", function(d){return 4})
-       .text(function(d) {return "t" + name})
+       .text(function(d) {return name})
     return node
 }
 
+var offmap =  0  //variable is global in case unkowns come from multiple sources
 function mapPoints(svg, projection, elementId) {
   return function(points) {
     var svg_points = svg.select("#overlay").append("g")
       .attr("id", elementId)
 
     points.forEach(function(item) {
-      if (item.location.length == 0) {
-        addOffMapLocation(item.name, svg_points, projection)
-      } else{
+      if (item.location.length == 0
+         || item.location.latitude == undefined
+         || item.location.longitude == undefined) {
+        addOffMapLocation(offmap, [-72, 40], item.name, svg_points, projection)
+        offmap = offmap+1
+      } else {
         pair = [item.location.longitude, item.location.latitude]
-        addMapLocation(item.name, pair, svg_points, projection)
+        node = addMapLocation(item.name, pair, svg_points, projection)
       }
     })
+    tooltip(svg)
   }
 }
-
 
 //Draws the US Map in.
 //selector -- used to grab an element of the page and append svg into into it
@@ -102,33 +151,39 @@ function baseMap(selector, width, height) {
 
 
   var svg = d3.select(selector).append("svg")
-        .attr("id", "map")
-        .attr("width", width)
-        .attr("height", height)
+               .attr("width", width)
+               .attr("height", height)
+  
+  var map = svg.append("g")
+               .attr("id", "map")
 
-  svg.append("g").attr("id", "states")
-  svg.append("g").attr("id", "overlay")
+  map.append("g").attr("id", "states")
 
   d3.json("../maps/us.json", function(error, us) {
 
     path = d3.geo.path().projection(projection);
 
-    svg.select("#states")
+    map.append("g")
+      .attr("id", "states")
       .selectAll("path")
         .data(topojson.feature(us, us.objects.states).features)
       .enter().append("path")
         .attr("d", path)
 
-    svg.append("path")
+    map.append("g").attr("id", "borders")
+      .append("path")
       .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
       .attr("id", "state-borders")
       .attr("d", path)
 
-    svg.append("rect")
+    map.append("rect")
           .attr("class", "background")
           .attr("width", width)
           .attr("height", height);
     console.log("Base map loaded.")
+  
+    svg.append("g").attr("id", "overlay")
+
   });
   return {svg: svg, projection: projection}
 }

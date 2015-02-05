@@ -4,7 +4,8 @@
 <head>
   <link rel="stylesheet" href="../css/style.css">
 
-  <script src="./libs/d3.js"></script>
+  <script src="../libs/d3/d3.js"></script>
+  <script src="../libs/d3-tip/index.js"></script>
   <script src="./libs/topojson.js"></script>
   <script src="http://d3js.org/queue.v1.min.js"></script> <!-- https://github.com/mbostock/queue -->
 
@@ -15,12 +16,21 @@
 
   <script>
     var knownLocations = [{name: 'bloomington', location: {longitude:-86.526386, latitude: 39.165325}}]
+    
+    var knownIPs = ["24.1.111.131" , // bloomington
+                   "173.194.123.46", // google
+                   "128.83.40.146" , // UT austin
+                   "128.2.42.52" , // CMU
+                   "130.207.244.165" // GA Tech
+                   ];
 
     services_url = "http://localhost:42424/api/services"
     d3.json(services_url, function(error, raw) {
       var map = baseMap("#downloadMap", 960, 500)
       allServiceData(services_url, raw, 
                      mapPoints(map.svg, map.projection, "depots"))
+      ipToLocation(knownIPs, 
+                     mapPoints(map.svg, map.projection, "ips")) 
       mapPoints(map.svg, map.projection, "known locations")(knownLocations)
     });
 
