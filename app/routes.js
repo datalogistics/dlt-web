@@ -47,26 +47,50 @@ module.exports = function(app) {
         routes.push('http://' + hostname + pathname + '/fileTree');
         res.json(routes);
     });
+   
+    function getHostOpt(name) {
+        if (!name)
+            return;
+        // returns the host name as per url or name
+        var prop = cfg.serviceMap;
+        var u = url.parse(name);
+        var ret ;        
+        for (var i in prop) {
+            var it = prop[i];          
+            var uH = u.host || u.href ;
+            var iA = (it.url || "").split(uH || "") ;            
+            if(((it.url + "").indexOf(uH + "")) != -1) {
+                ret = it;
+                var propUrl = url.parse(it.url || "");                
+                if (propUrl.host == it.host && it.protocol == propUrl.protocol) {
+                    return ret;
+                } // Else look for a better match
+            }                         
+        }
+        return ret;
+    };
 
-    /*app.get('/api/slice', function(req, res) {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    console.log(slice_info);
-    res.json(slice_info);
-    });*/
-    
     function registerGenericHandler (options,cb) {
         var method = http;
         var res = options.res, req = options.req;
         options.req = options.res = undefined;
-
         var keyArr = [].concat(options.keyArr)
         , certArr = [].concat(options.certArr)
         , doSSLArr = [].concat(options.doSSLArr)
         , hostArr = [].concat(options.hostArr)
-        , portArr = [].concat(options.portArr);
+        , portArr = [].concat(options.portArr);        
+        // Select host to be queried 
+        var host = req.query.hostname;
+        var opt = getHostOpt(host);
+        if (opt) {
+            // Copy options from array and make it the only opt
+            hostArr = [opt.url];
+            keyArr = [opt.key]
+            , certArr = [opt.cert]
+            , doSSLArr = [opt.use_ssl]
+            , portArr = [opt.port];        
+        }; 
+        //console.log("**" , hostArr , keyArr , certArr , doSSLArr , portArr );
         // Loop over all options path 
         //console.log("Requesting from ", hostArr, certArr);
         var handlerArr = hostArr.map(function(x,index) {
