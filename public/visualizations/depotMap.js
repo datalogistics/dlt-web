@@ -1,72 +1,48 @@
-//Acquire all service information from the base url
-//Appends the items in serviceIds onto the baseUrl to acquire the details
-//After acquiring the information, builds a dictionary of {accesspoint: {lattitude: x, longitude: y}}
-//Finally executes the "then" on the resulting dictionary
-//
-//Returns at most one result for each UNIQUE serviceID
-//Drops serviceID results if incomplete
-function allServiceData(baseUrl, serviceIds, then) {
-  var uniqueServices = [];
+function sanitizeId(id) {
+  return "S" + id.replace(/\.|#|\s|\\/gi, "X")
+}
 
-  for(var i = 0; i < serviceIds.length; i++) {
-    if(uniqueServices.indexOf(serviceIds[i].id) == -1) {
-      uniqueServices.push(serviceIds[i].id);
-    }
+//Add a highlight halo to a specified map item
+//The passed id is treated as an id, not a general selector,
+//so it goes through the same sanitization process as the ids add to nodes.
+//This makes it easy to ask that the node related to '124.1.2.3' be highlighted.
+//Derived from: http://bl.ocks.org/chiester/11267307
+//TODO: put a bound on the number of retries...
+function highlightMapLocation(svg, id) {
+  var sanitized = sanitizeId(id)
+  
+  var item= svg.select("#"+sanitized)
+  console.log(item)
+  if (item.empty()) {
+    console.log("Trying again")
+    setTimeout(function() {highlightMapLocation(svg,id)}, 1000)
+    return;
   }
+  
+  d3.select(item.node().parentNode).append("circle")
+      .attr("id", "highlight"+sanitized)
+      .attr("r", 0)
+      .attr("stroke", "#7A00A3")
+      .attr("fill", "none")
+      .each(pulse)
 
-  var q = queue()
-  uniqueServices.forEach(function(service) {
-    var url = baseUrl + "/" + service
-    q.defer(d3.json, url)
-  })
-	 
-  q.awaitAll(function(error, result) {
-    var services = []
-    result.forEach(function(raw) {
-      
-      id = "unknown"
-      if (typeof raw.accessPoint != 'undefined') {
-        id = ((raw.accessPoint || "").split("://")[1] || "").split(":")[0] || "" 
-      }
 
-      place = []
-      if (typeof raw.location != 'undefined'
-        && typeof raw.location.longitude != 'undefined'
-        && typeof raw.location.latitude != 'undefined') {
-        place = {longitude: raw.location.longitude, latitude: raw.location.latitude}
-      }
-
-      services.push({name: id, location: place})
-    })
-    console.log("loaded " + services.length + " service locations")
-    then(services)
-  })
+		function pulse() {
+			var circle = svg.select("#highlight"+sanitized);
+			(function repeat() {
+				circle = circle.transition()
+					.duration(2000)
+					.attr("stroke-width", 2)
+					.attr("r", 1)
+					.transition()
+					.duration(10)
+					.attr('stroke-width', 0)
+					.attr("r", 20)
+					.ease('sine')
+					.each("end", repeat);
+			})();
+		}
 }
-
-//Acquire gelocations for the given IP addresses, if available
-//Converts to a dictionary of {ip: {lattitude: x, longitude: y}}
-function ipToLocation(ips, then) {
-  var q = queue()
-    ips.forEach(function(ip) {
-      var url = "http://freegeoip.net/json/" + ip
-      q.defer(d3.json, url)
-    })
-
-  q.awaitAll(function(error, result) {
-    var locations = []
-    result.forEach(function(raw) {
-      place = []
-      if (typeof raw.longitude != 'undefined'
-          && typeof raw.latitude != 'undefined') {
-          place = {latitude: raw.latitude, longitude: raw.longitude}
-      }
-      locations.push({name: raw.ip, location: place})
-    })
-  console.log("loaded " + result.length + " ip locations")
-    then(locations)
-  })
-}
-
 
 //Add a node with name at position latLon to svg using the projection
 function addMapLocation(name, lonLat, svg, projection) {		
@@ -77,8 +53,9 @@ function addMapLocation(name, lonLat, svg, projection) {
       var circ = node.append("circle")
         .attr("r",5)
         .attr('fill',"#ee2222")
-        .attr('color',"#ee2222")
-        .attr('class',name + " eodnNode")
+        .attr('stroke',"#8F1414")
+        .attr('class', "eodnNode")
+        .attr('id', sanitizeId(name))
         .attr('name',name)
         .attr('location', lonLat)
 
@@ -87,7 +64,7 @@ function addMapLocation(name, lonLat, svg, projection) {
 }				
 
 
-
+//Add the tool tip functionality
 function tooltip(svg, text) {
   tip = d3.tip().attr('class', 'd3-tip').html(function() {
     var x = d3.select(this);
@@ -96,7 +73,6 @@ function tooltip(svg, text) {
 
   svg.call(tip);
   var timer;
-  console.log("Selected: " + svg.selectAll("circle.eodnNode").length)
   svg.selectAll("circle.eodnNode").on('mouseover', function(){
         console.log("hello")
       clearTimeout(timer);
@@ -108,6 +84,8 @@ function tooltip(svg, text) {
 }
 
 //Add nodes to the side of the map, because their lat/lon is not known
+//baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
+//TODO: Should projection be used...or not?
 function addOffMapLocation(idx, baseLatLon, name, svg, projection) {
     pair = [baseLatLon[0], baseLatLon[1]-idx]
     node = addMapLocation(name, pair, svg, projection)
@@ -118,6 +96,10 @@ function addOffMapLocation(idx, baseLatLon, name, svg, projection) {
     return node
 }
 
+
+//Map a collection of places.  The places should be a list of dictionaries {name, location}.
+//Location should be either {latitude, longitude} or []
+//If location is [], then the item is placed off map with a printed label
 var offmap =  0  //variable is global in case unkowns come from multiple sources
 function mapPoints(svg, projection, elementId) {
   return function(points) {
@@ -187,4 +169,74 @@ function baseMap(selector, width, height) {
   });
   return {svg: svg, projection: projection}
 }
+
+//Acquire all service information from the base url
+//Appends the items in serviceIds onto the baseUrl to acquire the details
+//After acquiring the information, builds a dictionary of {accesspoint: {lattitude: x, longitude: y}}
+//Finally executes the "then" on the resulting dictionary
+//
+//Returns at most one result for each UNIQUE serviceID
+//Drops serviceID results if incomplete
+function allServiceData(baseUrl, serviceIds, then) {
+  var uniqueServices = [];
+
+  for(var i = 0; i < serviceIds.length; i++) {
+    if(uniqueServices.indexOf(serviceIds[i].id) == -1) {
+      uniqueServices.push(serviceIds[i].id);
+    }
+  }
+
+  var q = queue()
+  uniqueServices.forEach(function(service) {
+    var url = baseUrl + "/" + service
+    q.defer(d3.json, url)
+  })
+	 
+  q.awaitAll(function(error, result) {
+    var services = []
+    result.forEach(function(raw) {
+      
+      id = "unknown"
+      if (typeof raw.accessPoint != 'undefined') {
+        id = ((raw.accessPoint || "").split("://")[1] || "").split(":")[0] || "" 
+      }
+
+      place = []
+      if (typeof raw.location != 'undefined'
+        && typeof raw.location.longitude != 'undefined'
+        && typeof raw.location.latitude != 'undefined') {
+        place = {longitude: raw.location.longitude, latitude: raw.location.latitude}
+      }
+
+      services.push({name: id, location: place})
+    })
+    console.log("loaded " + services.length + " service locations")
+    then(services)
+  })
+}
+
+//Acquire gelocations for the given IP addresses, if available
+//Converts to a dictionary of {ip: {lattitude: x, longitude: y}}
+function ipToLocation(ips, then) {
+  var q = queue()
+    ips.forEach(function(ip) {
+      var url = "http://freegeoip.net/json/" + ip
+      q.defer(d3.json, url)
+    })
+
+  q.awaitAll(function(error, result) {
+    var locations = []
+    result.forEach(function(raw) {
+      place = []
+      if (typeof raw.longitude != 'undefined'
+          && typeof raw.latitude != 'undefined') {
+          place = {latitude: raw.latitude, longitude: raw.longitude}
+      }
+      locations.push({name: raw.ip, location: place})
+    })
+  console.log("loaded " + result.length + " ip locations")
+    then(locations)
+  })
+}
+
 

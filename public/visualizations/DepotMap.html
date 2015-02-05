@@ -32,6 +32,9 @@
       ipToLocation(knownIPs, 
                      mapPoints(map.svg, map.projection, "ips")) 
       mapPoints(map.svg, map.projection, "known locations")(knownLocations)
+
+      highlightMapLocation(map.svg, "24.1.111.131")
+      highlightMapLocation(map.svg, "130.207.244.165")
     });
 
   </script>
