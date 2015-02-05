@@ -21,8 +21,9 @@ function highlightMapLocation(svg, id) {
   
   d3.select(item.node().parentNode).append("circle")
       .attr("id", "highlight"+sanitized)
-      .attr("r", 0)
-      .attr("stroke", "#7A00A3")
+      .attr("r", 20)
+      .attr('stroke-width', 0)
+      .attr("stroke", "#700039")
       .attr("fill", "none")
       .each(pulse)
 
@@ -52,8 +53,8 @@ function addMapLocation(name, lonLat, svg, projection) {
 
       var circ = node.append("circle")
         .attr("r",5)
-        .attr('fill',"#ee2222")
-        .attr('stroke',"#8F1414")
+        .attr('fill',"#CA7173")
+        .attr('stroke',"#860003")
         .attr('class', "eodnNode")
         .attr('id', sanitizeId(name))
         .attr('name',name)
