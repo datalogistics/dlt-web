@@ -190,7 +190,7 @@ module.exports = function(app) {
             var options = _.extend({
                 req : req , res : res ,
                 name: name+"Id",
-                path: path + node_id
+                path: path + '/' + node_id
             },getHttpOptions({
                 name : name + "_id"
             }));  
