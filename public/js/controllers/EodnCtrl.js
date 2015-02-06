@@ -276,7 +276,6 @@ angular.module('EodnCtrl', []).controller('EodnController', function($scope,$rou
 		});
 	}
 	if($rootScope.services){
-    debugger
 		addLocationsFromDepot($rootScope.services);
 	} else {
 		$rootScope.getServices(function(services) {

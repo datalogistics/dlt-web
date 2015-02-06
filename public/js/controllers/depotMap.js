@@ -1,52 +1,51 @@
-function sanitizeId(id) {
-  return "S" + id.replace(/\.|#|\s|\\/gi, "X")
-}
+// Add a highlight halo to a specified map item(s).
+// 
+// svg -- Root svg element to find things in
+// selector -- An svg selector for items.  
+// filter -- A predicate run on selected items
+function highlightMapLocations(svg, selector, filter) {
+  if (typeof filter == 'undefined') {filter = function(d,i) {return true;}}
+ 
+  var items = svg.selectAll(selector).filter(filter)
 
-//Add a highlight halo to a specified map item
-//The passed id is treated as an id, not a general selector,
-//so it goes through the same sanitization process as the ids add to nodes.
-//This makes it easy to ask that the node related to '124.1.2.3' be highlighted.
-//Derived from: http://bl.ocks.org/chiester/11267307
-//TODO: put a bound on the number of retries...
-function highlightMapLocation(svg, id) {
-  var sanitized = sanitizeId(id)
-  
-  var item= svg.select("#"+sanitized)
-  console.log(item)
-  if (item.empty()) {
+  if (items.empty()) {
     console.log("Trying again")
-    setTimeout(function() {highlightMapLocation(svg,id)}, 1000)
+    setTimeout(function() {highlightMapLocations(svg, selector, filter)}, 1000)
     return;
   }
-  
-  d3.select(item.node().parentNode).append("circle")
-      .attr("id", "highlight"+sanitized)
-      .attr("r", 20)
-      .attr('stroke-width', 0)
-      .attr("stroke", "#700039")
-      .attr("fill", "none")
-      .each(pulse)
 
+  items.each(
+      function(d, i) {
+        var id = "highlight" + this.id
+        d3.select(this.parentNode).append("circle")
+            .attr("id", id)
+            .attr("r", 20)
+            .attr('stroke-width', 0)
+            .attr("stroke", "#700039")
+            .attr("fill", "none")
+            .each(__pulse)
 
-		function pulse() {
-			var circle = svg.select("#highlight"+sanitized);
-			(function repeat() {
-				circle = circle.transition()
-					.duration(2000)
-					.attr("stroke-width", 2)
-					.attr("r", 1)
-					.transition()
-					.duration(10)
-					.attr('stroke-width', 0)
-					.attr("r", 20)
-					.ease('sine')
-					.each("end", repeat);
-			})();
-		}
+      function __pulse() {
+        var circle = svg.select("#" + id);
+        (function repeat() {
+          circle = circle.transition()
+            .duration(2000)
+            .attr("stroke-width", 2)
+            .attr("r", 1)
+            .transition()
+            .duration(10)
+            .attr('stroke-width', 0)
+            .attr("r", 20)
+            .ease('sine')
+            .each("end", repeat);
+        })();
+      }
+
+      });
 }
 
 //Add a node with name at position latLon to svg using the projection
-function addMapLocation(name, lonLat, svg, projection) {		
+function addMapLocation(projection, name, lonLat, svg) {		
   //var color = svg.getRandomColor();					
   var node = svg.append("g")
       .attr("transform", function() {return "translate(" + projection(lonLat) + ")";})
@@ -56,8 +55,7 @@ function addMapLocation(name, lonLat, svg, projection) {
         .attr('fill',"#CA7173")
         .attr('stroke',"#860003")
         .attr('class', "eodnNode")
-        .attr('id', sanitizeId(name))
-        .attr('name',name)
+        .attr('name', name)
         .attr('location', lonLat)
 
   //nodeLocationMap[name] = node ;
@@ -87,9 +85,9 @@ function tooltip(svg, text) {
 //Add nodes to the side of the map, because their lat/lon is not known
 //baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
 //TODO: Should projection be used...or not?
-function addOffMapLocation(idx, baseLatLon, name, svg, projection) {
+function addOffMapLocation(projection, idx, baseLatLon, name, svg) {
     pair = [baseLatLon[0], baseLatLon[1]-idx]
-    node = addMapLocation(name, pair, svg, projection)
+    node = addMapLocation(projection, name, pair, svg)
     node.append("text")
        .attr("dx", function(d){return 10})
        .attr("dy", function(d){return 4})
@@ -102,7 +100,7 @@ function addOffMapLocation(idx, baseLatLon, name, svg, projection) {
 //Location should be either {latitude, longitude} or []
 //If location is [], then the item is placed off map with a printed label
 var offmap =  0  //variable is global in case unkowns come from multiple sources
-function mapPoints(svg, projection, elementId) {
+function mapPoints(projection, svg, elementId) {
   return function(points) {
     var svg_points = svg.select("#overlay").append("g")
       .attr("id", elementId)
@@ -111,11 +109,11 @@ function mapPoints(svg, projection, elementId) {
       if (item.location.length == 0
          || item.location.latitude == undefined
          || item.location.longitude == undefined) {
-        addOffMapLocation(offmap, [-72, 40], item.name, svg_points, projection)
+        addOffMapLocation(projection, offmap, [-72, 40], item.name, svg_points)
         offmap = offmap+1
       } else {
         pair = [item.location.longitude, item.location.latitude]
-        node = addMapLocation(item.name, pair, svg_points, projection)
+        node = addMapLocation(projection, item.name, pair, svg_points)
       }
     })
     tooltip(svg)
