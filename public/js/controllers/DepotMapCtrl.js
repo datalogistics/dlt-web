@@ -18,7 +18,7 @@ angular.module('DepotMapCtrl', []).controller('DepotMapController', function($sc
     mapPoints(map.projection, map.svg, "known-locations")(knownLocations)
 
     if (typeof $routeParams.depotId != 'undefined') {
-      highlightMapLocations(map.svg, ".eodnNode", function(d) {return this.getAttribute("name") == "24.1.111.131"})
+      highlightMapLocations(map.svg, ".eodnNode", function(d) {return this.getAttribute("depot_id") == $routeParams.depotId})
       //highlightMapLocation(map.svg, "130.207.244.165")
     }
   });

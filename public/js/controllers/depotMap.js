@@ -45,18 +45,20 @@ function highlightMapLocations(svg, selector, filter) {
 }
 
 //Add a node with name at position latLon to svg using the projection
-function addMapLocation(projection, name, lonLat, svg) {		
+function addMapLocation(projection, name, lonLat, svg, depot_id) {		
   //var color = svg.getRandomColor();					
   var node = svg.append("g")
       .attr("transform", function() {return "translate(" + projection(lonLat) + ")";})
 
-      var circ = node.append("circle")
-        .attr("r",5)
-        .attr('fill',"#CA7173")
-        .attr('stroke',"#860003")
-        .attr('class', "eodnNode")
-        .attr('name', name)
-        .attr('location', lonLat)
+  var circ = node.append("circle")
+      .attr("r",5)
+      .attr('fill',"#CA7173")
+      .attr('stroke',"#860003")
+      .attr('class', "eodnNode")
+      .attr('name', name)
+      .attr('location', lonLat)
+
+  if (typeof depot_id != 'undefined') {circ.attr('depot_id', depot_id)}
 
   //nodeLocationMap[name] = node ;
   return node ;
@@ -85,9 +87,9 @@ function tooltip(svg, text) {
 //Add nodes to the side of the map, because their lat/lon is not known
 //baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
 //TODO: Should projection be used...or not?
-function addOffMapLocation(projection, idx, baseLatLon, name, svg) {
+function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id) {
     pair = [baseLatLon[0], baseLatLon[1]-idx]
-    node = addMapLocation(projection, name, pair, svg)
+    node = addMapLocation(projection, name, pair, svg, depot_id)
     node.append("text")
        .attr("dx", function(d){return 10})
        .attr("dy", function(d){return 4})
@@ -109,11 +111,11 @@ function mapPoints(projection, svg, elementId) {
       if (item.location.length == 0
          || item.location.latitude == undefined
          || item.location.longitude == undefined) {
-        addOffMapLocation(projection, offmap, [-72, 40], item.name, svg_points)
+        addOffMapLocation(projection, offmap, [-72, 40], item.name, svg_points, item.depot_id)
         offmap = offmap+1
       } else {
         pair = [item.location.longitude, item.location.latitude]
-        node = addMapLocation(projection, item.name, pair, svg_points)
+        node = addMapLocation(projection, item.name, pair, svg_points, item.depot_id)
       }
     })
     tooltip(svg)
@@ -195,9 +197,9 @@ function allServiceData(baseUrl, serviceIds, then) {
     var services = []
     result.forEach(function(raw) {
       
-      id = "unknown"
+      name = "unknown"
       if (typeof raw.accessPoint != 'undefined') {
-        id = ((raw.accessPoint || "").split("://")[1] || "").split(":")[0] || "" 
+       name = ((raw.accessPoint || "").split("://")[1] || "").split(":")[0] || "" 
       }
 
       place = []
@@ -207,7 +209,7 @@ function allServiceData(baseUrl, serviceIds, then) {
         place = {longitude: raw.location.longitude, latitude: raw.location.latitude}
       }
 
-      services.push({name: id, location: place})
+      services.push({name: name, location: place, depot_id: raw.id})
     })
     console.log("loaded " + services.length + " service locations")
     then(services)
