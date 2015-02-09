@@ -143,6 +143,8 @@ function baseMap(selector, width, height) {
                .attr("id", "map")
 
   map.append("g").attr("id", "states")
+  svg.append("g").attr("id", "overlay")
+
   svg.append("layout-data").attr("off-map-count", 0)
 
   d3.json("../maps/us.json", function(error, us) {
@@ -166,10 +168,9 @@ function baseMap(selector, width, height) {
           .attr("class", "background")
           .attr("width", width)
           .attr("height", height);
-    console.log("Base map loaded.")
   
-    svg.append("g").attr("id", "overlay")
-
+    
+    console.log("Base map loaded.")
   });
   return {svg: svg, projection: projection}
 }
@@ -194,10 +195,12 @@ function allServiceData(services, then) {
   var serviceDetails = []
   var uniqueIds = Object.keys(uniqueServices)
   for (var i =0; i < uniqueIds.length; i++) {
-    var item = uniqueServices[uniqueIds[i]]
-    var name = "unknown"
+    var name =  uniqueIds[i]
+    var item = uniqueServices[name]
     if (typeof item.accessPoint != 'undefined') {
      name = ((item.accessPoint || "").split("://")[1] || "").split(":")[0] || "" 
+    } else if (typeof item.name != 'undefined') {
+      name = item.name
     }
 
     var place = []
