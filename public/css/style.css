@@ -211,3 +211,21 @@ text.id {
   stroke-linecap: round;
   pointer-events: none;
 }
+
+
+/* File upload related */
+.tree-browser {
+    overflow: auto;
+}
+.file-viewer {
+    padding-left: 50px;
+    overflow: auto;
+}
+.jstree-custom-folder{
+    background-image: url('/images/folder.png') !important;
+    background-position: 0 !important;
+}
+.jstree-custom-file {
+    background-image: url('/images/file32px.png') !important;
+    background-position: 0 !important;
+}

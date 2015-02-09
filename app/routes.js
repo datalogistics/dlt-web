@@ -3,989 +3,279 @@
  * app/
  * routes.js
  */
+var path = require('path')
+, fs = require('fs')
+, http = require('http')
+, https = require('https')
+, url = require('url')
+, cfg = require('../properties')
+, util = require('util')
+, _ = require('underscore')
+, q = require('q');
 
-var fs = require('fs')
-  , path = require('path')
-  , http = require('http')
-  , https = require('https')
-  , url = require('url');
-
-// production
-var production = true;
-var unis_host = 'dlt.incntre.iu.edu';
-var unis_port = '9000';
-var unis_cert = './dlt-client.pem';
-var unis_key = './dlt-client.pem';
+var getHttpOptions = cfg.getHttpOptions;
+var sslOptions = cfg.sslOptions;
 
 // var slice_info = [];
 // var filePath = '/usr/local/etc/node.info';
 // var slice_uuid = '';
 // var os_name = '';
-// var distro = '';
-
-var ms_host = 'dlt.incntre.iu.edu';
-var ms_port = '9001';
+// var distro = ''; 
 
 module.exports = function(app) {
+    console.log("UNIS Default Instances: " + cfg.routeMap.default);
+    //console.log("Measurement Store Host: " + ms_host);
+    //console.log("Measurement Store Port: " + ms_port);
 
-  console.log("UNIS Instance: " + unis_host + "@" + unis_port);
-  console.log("Measurement Store Host: " + ms_host);
-  console.log("Measurement Store Port: " + ms_port);
+    app.get('/api', function(req, res) {
+        // console.log('STATUS: ' + res.statusCode);
+        // console.log('HEADERS: ' + JSON.stringify(res.headers));
+        // console.log('BODY: ' + JSON.stringify(res.body));
 
-  if(production) {
-    console.log('Running in Production');
-  } else {
-    console.log('Running in Development');
-  }
+        var routes = [];
+        var hostname = req.headers.host;
+        var pathname = url.parse(req.url).pathname;
 
-  /*var exec = require('child_process').exec;
-  var child1, child2;
-
-  child1 = exec('uname -s',
-    function (error, stdout, stderr) {
-      os_name = stdout;
-      if (error !== null) {
-        console.log('exec error: ' + error);
-      }
-  });
-
-  child2 = exec('head -1 /etc/issue',
-    function (error, stdout, stderr) {
-      distro = stdout;
-      if (error !== null) {
-        console.log('exec error: ' + error);
-      }
-  });
-
-  fs.readFile(filePath, {encoding: 'utf-8'}, function(err, data) {
-    if (err) {
-      console.log('file read error: ' + err);
-    } else {
-      var fileData = data.toString().split('\n');
-      var split, project, slice, gn, exAddy, ms_url, unis;
-
-      for(line in fileData) {
-        split = fileData[line].split('=');
-
-        if(split[0] === 'external_address')
-          exAddy = split[1];
-
-        if (split[0] === 'gn_address')
-          gn = split[1];
-
-        if(split[0] === 'unis_instance')
-          unis = split[1];
-
-        if(split[0] === 'ms_instance') {
-          ms_url = split[1];
-          // ms_port = ms_url.split(":")[2];
-          console.log("Measurement Store Port: " + ms_port);
-          // ms_host = ms_url.split("//")[1].split(":")[0];
-          console.log("Measurement Store Host: " + ms_host);
+        // routes.push('http://' + hostname + pathname + '/slice');
+        routes.push('http://' + hostname + pathname + '/nodes');
+        routes.push('http://' + hostname + pathname + '/services');
+        routes.push('http://' + hostname + pathname + '/measurements');
+        routes.push('http://' + hostname + pathname + '/metadata');
+        routes.push('http://' + hostname + pathname + '/data');
+        routes.push('http://' + hostname + pathname + '/ports');
+        routes.push('http://' + hostname + pathname + '/exnodes');
+        routes.push('http://' + hostname + pathname + '/fileTree');
+        res.json(routes);
+    });
+   
+    function getHostOpt(name) {
+        if (!name)
+            return;
+        // returns the host name as per url or name
+        var prop = cfg.serviceMap;
+        var u = url.parse(name);
+        var ret ;        
+        for (var i in prop) {
+            var it = prop[i];          
+            var uH = u.host || u.href ;
+            var iA = (it.url || "").split(uH || "") ;            
+            if(((it.url + "").indexOf(uH + "")) != -1) {
+                ret = it;
+                var propUrl = url.parse(it.url || "");                
+                if (propUrl.host == it.host && it.protocol == propUrl.protocol) {
+                    return ret;
+                } // Else look for a better match
+            }                         
         }
+        return ret;
+    };
 
-        if (split[0] === 'node_id') {
-          project = split[2].split('+');
-          slice = project[3].split(':');
+    function registerGenericHandler (options,cb) {
+        var method = http;
+        var res = options.res, req = options.req;
+        options.req = options.res = undefined;
+        var keyArr = [].concat(options.keyArr)
+        , certArr = [].concat(options.certArr)
+        , doSSLArr = [].concat(options.doSSLArr)
+        , hostArr = [].concat(options.hostArr)
+        , portArr = [].concat(options.portArr);        
+        // Select host to be queried 
+        var host = req.query.hostname;
+        var opt = getHostOpt(host);
+        if (opt) {
+            // Copy options from array and make it the only opt
+            hostArr = [opt.url];
+            keyArr = [opt.key]
+            , certArr = [opt.cert]
+            , doSSLArr = [opt.use_ssl]
+            , portArr = [opt.port];        
+        }; 
+        //console.log("**" , hostArr , keyArr , certArr , doSSLArr , portArr );
+        // Loop over all options path 
+        //console.log("Requesting from ", hostArr, certArr);
+        var handlerArr = hostArr.map(function(x,index) {
+            // Return handler function for each 
+            var method = http;
+            if (doSSLArr[index]) {
+                options = _.extend(options, sslOptions);
+                method = https;
+            }
+            var opt = _.extend({}, options);
+            opt.hostname = hostArr[index];
+            opt.port = portArr[index];
+	    if (certArr[index]) {
+                opt.cert = fs.readFileSync(certArr[index]);
+	    }
+	    if (keyArr[index]) {
+                opt.key = fs.readFileSync(keyArr[index]);
+	    }
+            return function() {
+	        //console.log(opt);
+                var defer = q.defer();
+                method.get(opt, function(http_res) {
+                    var data = '';
+                    http_res.on('data', function (chunk) {
+                        data += chunk;
+                    });
+                    http_res.on('end',function() {
+                        var obj = JSON.parse(data);
+                        // console.log( obj );
+                        return defer.resolve(obj);
+                        //res.json( obj );
+                    });
+                    http_res.on('error',function(e) {
+                        return defer.reject(false);
+                        // res.send( 404 );
+                    });
+                });
+                return defer.promise;
+            };
+        });
+        if (cb) {
+            q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
+                cb(obj);
+            });
+        } else {
+            q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
+                var isErr = true ;
+                var json = obj.reduce(function(x,y){
+                    isErr = isErr && y.state =='rejected';
+                    return x.concat(y.value || {});
+                },[]);
+                if (!isErr) {
+                    res.json(json);
+                } else {
+                    res.send(404);
+                }
+            });
+
         }
+    };
 
-        if(split[0] === 'auth_uuid')
-          slice_uuid = split[1];
-      }
-      slice_info.push({'external_address': exAddy, 'gn_address': gn, 'unis_instance': unis, 'ms_url': ms_url, 'project': project[1], 'slice': slice[0], 'slice_uuid': slice_uuid, 'os_name': os_name, 'distro': distro});
-      // console.log(slice_info);
+    function getGenericHandler(opt) {
+        var path = opt.path , name = opt.name ;
+        var handler = opt.handler;
+        return function(req, res) {
+            // console.log('STATUS: ' + res.statusCode);
+            // console.log('HEADERS: ' + JSON.stringify(res.headers));
+            // console.log('BODY: ' + JSON.stringify(res.body));
+            var options = _.extend({
+                req : req , res : res ,
+                path : path,
+                name : name
+            },getHttpOptions({
+                name : name
+            }));      
+            registerGenericHandler(options);
+        }
     }
-  });*/
+    app.get('/api/nodes', getGenericHandler({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
+    app.get('/api/services', getGenericHandler({path : '/services', name : 'services' , handler : registerGenericHandler}));
+    app.get('/api/exnodes', getGenericHandler({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));
+    app.get('/api/measurements', getGenericHandler({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));
+    app.get('/api/metadata', getGenericHandler({path : '/metadata', name : 'metadata' , handler : registerGenericHandler}));
+    app.get('/api/data', getGenericHandler({path : '/data', name : 'data' , handler : registerGenericHandler}));
+    app.get('/api/ports', getGenericHandler({path : '/ports', name : 'ports' , handl : registerGenericHandler}));
 
-  app.get('/api', function(req, res) {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
+    function getGenericHandlerWithId(opt) {
+        var path = opt.path , name = opt.name ;
+        var handler = opt.handler;
+        return function(req, res) {
+            console.log("node id: " + req.params.id);
+            // console.log('STATUS: ' + res.statusCode);
+            // console.log('HEADERS: ' + JSON.stringify(res.headers));
+            // console.log('BODY: ' + JSON.stringify(res.body));
+            var node_id = req.params.id;
+            var method = http;
+            var options = _.extend({
+                req : req , res : res ,
+                name: name+"Id",
+                path: path + '/' + node_id
+            },getHttpOptions({
+                name : name + "_id"
+            }));  
+            registerGenericHandler(options);    
+        };
+    };
+    app.get('/api/nodes/:id', getGenericHandlerWithId({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
+    app.get('/api/services/:id', getGenericHandlerWithId({path : '/services', name : 'services' , handler : registerGenericHandler}));
+    app.get('/api/exnodes/:id', getGenericHandlerWithId({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));
+    app.get('/api/measurements/:id', getGenericHandlerWithId({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));
+    app.get('/api/metadata/:id', getGenericHandlerWithId({path : '/metadata', name : 'metadata' , handler : registerGenericHandler}));
+    app.get('/api/data/:id', getGenericHandlerWithId({path : '/data', name : 'data' , handler : registerGenericHandler}));
+    app.get('/api/ports/:id', getGenericHandlerWithId({path : '/ports', name : 'ports' , handler : registerGenericHandler}));
 
-    var routes = [];
-    var hostname = req.headers.host;
-    var pathname = url.parse(req.url).pathname;
+    app.get('/api/fileTree',function(req, res) {
+        var id = req.query.id || 1;
+        var arr = [];
+        // Need to handle null case at unis -- TODO delete
+        if (id == 1) {
+            var options = _.extend({
+                req : req , res : res ,
+                path : '/exnodes',
+                name : 'exnodes'
+            },getHttpOptions({
+                name : 'exnodes'
+            }));      
+            registerGenericHandler(options, function(obj){
+                var exjson =  obj[0].value;
+                // Return matching id children
+                exjson.map(function(x){            
+                    if(x.parent == null)
+                        arr.push({
+                            "id" : x.id ,
+                            "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
+                            "parent" : x.parent == null? "#" : x.parent,
+                            "children" : true,
+                            "state" : {
+                                "opened" : false ,
+                                "disabled" : false,
+                                "selected" : false 
+                            },
+                            "text" : x.name ,
+                            "size" : x.size , 
+                            "created" : x.created,
+                            "modified" : x.modified
+                        });
+                });
+                res.json(arr);
+            });     
+        } else {
+            var options = _.extend({
+                req : req , res : res ,
+                path : '/exnodes?parent='+id,
+                name : 'exnodes'
+            },getHttpOptions({
+                name : 'exnodes'
+            }));      
+            registerGenericHandler(options, function(obj){
+                var exjson =  obj[0].value;
+                // Return matching id children
+                exjson.map(function(x){            
+                    arr.push({
+                        "id" : x.id ,
+                        "parent" : x.parent == null? "#" : x.parent,
+                        "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
+                        "isFile" : x.mode == "file" ,
+                        "children" :  x.mode != "file" ,
+                        "state" : {
+                            "opened" : false ,
+                            "disabled" : false,
+                            "selected" : false 
+                        },
+                        "text" : x.name ,
+                        "size" : x.size , 
+                        "created" : x.created,
+                        "modified" : x.modified
+                    });
+                });
+                res.json(arr);
+            });     
 
-    // routes.push('http://' + hostname + pathname + '/slice');
-    routes.push('http://' + hostname + pathname + '/nodes');
-    routes.push('http://' + hostname + pathname + '/services');
-    routes.push('http://' + hostname + pathname + '/measurements');
-    routes.push('http://' + hostname + pathname + '/metadata');
-    routes.push('http://' + hostname + pathname + '/data');
-    routes.push('http://' + hostname + pathname + '/ports');
-
-    res.json(routes);
-  });
-
-  /*app.get('/api/slice', function(req, res) {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    console.log(slice_info);
-    res.json(slice_info);
-  });*/
-
-  app.get('/api/nodes', function(req, res) {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    if (production) {
-      /* HTTPS Options */
-      var https_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/nodes',
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
         }
-      };
-      /* GET JSON and Render to our API */
-      https.get(https_get_options, function(http_res) {
-        var data = '';
+    });
 
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      /* HTTP Options */
-      var http_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        path: '/nodes',
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('/api/nodes/:id', function(req, res) {
-    console.log("node id: " + req.params.id);
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    var node_id = req.params.id;
-
-    if (production) {
-      /* HTTPS Options */
-      var https_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/nodes/' + node_id,
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      https.get(https_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      /* HTTP Options */
-      var http_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        path: '/nodes/' + node_id,
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('/api/services', function(req, res) {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    if (production) {
-      /* HTTPS Options */
-      var https_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/services?fields=id',
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      https.get(https_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      /* HTTP Options */
-      var http_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        path: '/services?fields=id',
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('/api/services/:id', function(req, res) {
-    console.log("service id: " + req.params.id);
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    var service_id = req.params.id;
-
-    if (production) {
-      /* HTTPS Options */
-      var https_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/services/' + service_id,
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      https.get(https_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      /* HTTP Options */
-      var http_get_options = {
-          hostname: unis_host,
-          port: unis_port,
-          path: '/services/' + service_id,
-          method: 'GET',
-          headers: {
-              'Content-type': 'application/perfsonar+json',
-              'connection': 'keep-alive'
-          }
-      };
-      /* GET JSON and Render to our API */
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('/api/measurements', function(req, res) {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    if (production) {
-      /* HTTPS Options */
-      var https_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/measurements',
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      https.get(https_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      /* HTTP Options */
-      var http_get_options = {
-          hostname: unis_host,
-          port: unis_port,
-          path: '/measurements',
-          method: 'GET',
-          headers: {
-              'Content-type': 'application/perfsonar+json',
-              'connection': 'keep-alive'
-          }
-      };
-      /* GET JSON and Render to our API */
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('/api/measurements/:id', function(req, res) {
-    console.log("measurement id: " + req.params.id);
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    var measurement_id = req.params.id;
-
-    if (production) {
-      /* HTTPS Options */
-      var https_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/measurements/' + measurement_id,
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      https.get(https_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      /* HTTP Options */
-      var http_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        path: '/measurements/' + measurement_id,
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('/api/metadata', function(req, res) {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    if (production) {
-      /* HTTPS Options */
-      var https_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/metadata',
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      https.get(https_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      /* HTTP Options */
-      var http_get_options = {
-          hostname: unis_host,
-          port: unis_port,
-          path: '/metadata',
-          method: 'GET',
-          headers: {
-              'Content-type': 'application/perfsonar+json',
-              'connection': 'keep-alive'
-          }
-      };
-      /* GET JSON and Render to our API */
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('/api/metadata/:id', function(req, res) {
-    console.log("metadata id: " + req.params.id);
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    var metadata_id = req.params.id;
-
-    if (production) {
-      /* HTTPS Options */
-      var https_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/metadata/' + metadata_id,
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      https.get(https_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      /* HTTP Options */
-      var http_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        path: '/metadata/' + metadata_id,
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('/api/data', function(req, res) {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    if (production) {
-      // HTTPS Options
-      var https_get_options = {
-        hostname: ms_host,
-        port: ms_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/data',
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      // GET JSON and Render to our API
-      https.get(https_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      // HTTP Options
-      var http_get_options = {
-          hostname: ms_host,
-          port: ms_port,
-          path: '/data',
-          method: 'GET',
-          headers: {
-              'Content-type': 'application/perfsonar+json',
-              'connection': 'keep-alive'
-          }
-      };
-      // GET JSON and Render to our API
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('/api/data/:id', function(req, res) {
-    console.log("data id: " + req.params.id);
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    var data_id = req.params.id;
-
-    if (production) {
-      // HTTPS Options
-      var https_get_options = {
-        hostname: ms_host,
-        port: ms_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/data/' + data_id,
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      // GET JSON and Render to our API
-      https.get(https_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      // HTTP Options
-      var http_get_options = {
-        hostname: ms_host,
-        port: ms_port,
-        path: '/data/' + data_id,
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      // GET JSON and Render to our API
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('/api/ports', function(req, res) {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    if (production) {
-      /* HTTPS Options */
-      var https_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/ports',
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      https.get(https_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      /* HTTP Options */
-      var http_get_options = {
-          hostname: unis_host,
-          port: unis_port,
-          path: '/ports',
-          method: 'GET',
-          headers: {
-              'Content-type': 'application/perfsonar+json',
-              'connection': 'keep-alive'
-          }
-      };
-      /* GET JSON and Render to our API */
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('/api/ports/:id', function(req, res) {
-    console.log("data id: " + req.params.id);
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    // console.log('BODY: ' + JSON.stringify(res.body));
-
-    var port_id = req.params.id;
-
-    if (production) {
-      /* HTTPS Options */
-      var https_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        key: fs.readFileSync(unis_key),
-        cert: fs.readFileSync(unis_cert),
-        requestCert: true,
-        rejectUnauthorized: false,
-        path: '/ports/' + port_id,
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      https.get(https_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    } else {
-      /* HTTP Options */
-      var http_get_options = {
-        hostname: unis_host,
-        port: unis_port,
-        path: '/ports/' + port_id,
-        method: 'GET',
-        headers: {
-            'Content-type': 'application/perfsonar+json',
-            'connection': 'keep-alive'
-        }
-      };
-      /* GET JSON and Render to our API */
-      http.get(http_get_options, function(http_res) {
-        var data = '';
-
-        http_res.on('data', function (chunk) {
-          data += chunk;
-        });
-        http_res.on('end',function() {
-          var obj = JSON.parse(data);
-          // console.log( obj );
-          res.json( obj );
-        });
-        http_res.on('error',function() {
-          console.log('problem with request: ' + e.message);
-          res.send( 404 );
-        });
-      });
-    }
-  });
-
-  app.get('*', function(req, res) {
-    res.sendfile('./public/index.html');
-  });
-
+    app.get('*', function(req, res) {
+        res.sendfile('./public/index.html');
+    });
 };

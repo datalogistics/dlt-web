@@ -22,10 +22,12 @@
     "mongoose": "3.8.x",
     "node-freegeoip": "0.0.1",
     "nodemon": "1.1.1",
+    "q": "^1.1.2",
     "socket.io": "^1.0.6",
     "socket.io-client": "^1.1.0",
-    "ws": "^0.4.32",
-    "cors": "^2.5.3"
+    "cors": "^2.5.3",
+    "underscore": "^1.7.0",
+    "ws": "^0.4.32"
   },
   "repository": {
     "type": "git",
