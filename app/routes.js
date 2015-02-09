@@ -11,6 +11,7 @@ var path = require('path')
 , cfg = require('../properties')
 , util = require('util')
 , _ = require('underscore')
+, querystring = require('querystring')
 , q = require('q');
 
 var getHttpOptions = cfg.getHttpOptions;
@@ -101,6 +102,7 @@ module.exports = function(app) {
                 method = https;
             }
             var opt = _.extend({}, options);
+            // Adding parameters got 
             opt.hostname = hostArr[index];
             opt.port = portArr[index];
 	    if (certArr[index]) {
@@ -155,13 +157,16 @@ module.exports = function(app) {
     function getGenericHandler(opt) {
         var path = opt.path , name = opt.name ;
         var handler = opt.handler;
+
         return function(req, res) {
+            // Get all parameters and just forward it to UNIS 
+            var paramString = querystring.stringify(req.query);
             // console.log('STATUS: ' + res.statusCode);
             // console.log('HEADERS: ' + JSON.stringify(res.headers));
             // console.log('BODY: ' + JSON.stringify(res.body));
             var options = _.extend({
                 req : req , res : res ,
-                path : path,
+                path : path + "?" + paramString,
                 name : name
             },getHttpOptions({
                 name : name
@@ -181,6 +186,8 @@ module.exports = function(app) {
         var path = opt.path , name = opt.name ;
         var handler = opt.handler;
         return function(req, res) {
+            // Get all parameters and just forward it to UNIS 
+            var paramString = querystring.stringify(req.query);
             console.log("node id: " + req.params.id);
             // console.log('STATUS: ' + res.statusCode);
             // console.log('HEADERS: ' + JSON.stringify(res.headers));
@@ -189,7 +196,7 @@ module.exports = function(app) {
             var method = http;
             var options = _.extend({
                 req : req , res : res ,
-                name: name+"Id",
+                name: name+"Id"+ "?" + paramString,
                 path: path + '/' + node_id
             },getHttpOptions({
                 name : name + "_id"
@@ -207,12 +214,13 @@ module.exports = function(app) {
 
     app.get('/api/fileTree',function(req, res) {
         var id = req.query.id || 1;
-        var arr = [];
-        // Need to handle null case at unis -- TODO delete
+        req.query.id = undefined ;
+        var paramString = querystring.stringify(req.query);
+        var arr = [];        
         if (id == 1) {
             var options = _.extend({
                 req : req , res : res ,
-                path : '/exnodes',
+                path : '/exnodes?parent=null='+"&"+paramString,
                 name : 'exnodes'
             },getHttpOptions({
                 name : 'exnodes'
@@ -221,29 +229,28 @@ module.exports = function(app) {
                 var exjson =  obj[0].value;
                 // Return matching id children
                 exjson.map(function(x){            
-                    if(x.parent == null)
-                        arr.push({
-                            "id" : x.id ,
-                            "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
-                            "parent" : x.parent == null? "#" : x.parent,
-                            "children" : true,
-                            "state" : {
-                                "opened" : false ,
-                                "disabled" : false,
-                                "selected" : false 
-                            },
-                            "text" : x.name ,
-                            "size" : x.size , 
-                            "created" : x.created,
-                            "modified" : x.modified
-                        });
+                    arr.push({
+                        "id" : x.id ,
+                        "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
+                        "parent" : x.parent == null? "#" : x.parent,
+                        "children" : true,
+                        "state" : {
+                            "opened" : false ,
+                            "disabled" : false,
+                            "selected" : false 
+                        },
+                        "text" : x.name ,
+                        "size" : x.size , 
+                        "created" : x.created,
+                        "modified" : x.modified
+                    });
                 });
                 res.json(arr);
             });     
         } else {
             var options = _.extend({
                 req : req , res : res ,
-                path : '/exnodes?parent='+id,
+                path : '/exnodes?parent='+id+"&"+paramString,
                 name : 'exnodes'
             },getHttpOptions({
                 name : 'exnodes'
