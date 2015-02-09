@@ -8,18 +8,18 @@ angular.module('DepotMapCtrl', []).controller('DepotMapController', function($sc
                   "130.207.244.165" // GA Tech
   ];
 
+  var map = baseMap("#downloadMap", 960, 500)
+  
   services_url = "http://localhost:42424/api/services"
-  d3.json(services_url, function(error, raw) {
-    var map = baseMap("#downloadMap", 960, 500)
+  d3.json(services_url, function(error, services) {
 
-    allServiceData(services_url, raw, mapPoints(map.projection, map.svg, "depots"))
+    allServiceData(services, mapPoints(map.projection, map.svg, "depots"))
     
     ipToLocation(knownIPs, mapPoints(map.projection, map.svg, "ips")) 
     mapPoints(map.projection, map.svg, "known-locations")(knownLocations)
 
     if (typeof $routeParams.depotId != 'undefined') {
       highlightMapLocations(map.svg, ".eodnNode", function(d) {return this.getAttribute("depot_id") == $routeParams.depotId})
-      //highlightMapLocation(map.svg, "130.207.244.165")
     }
   });
 }); // end controller

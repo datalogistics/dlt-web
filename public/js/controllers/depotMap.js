@@ -3,14 +3,17 @@
 // svg -- Root svg element to find things in
 // selector -- An svg selector for items.  
 // filter -- A predicate run on selected items
-function highlightMapLocations(svg, selector, filter) {
+function highlightMapLocations(svg, selector, filter, retries) {
   if (typeof filter == 'undefined') {filter = function(d,i) {return true;}}
  
   var items = svg.selectAll(selector).filter(filter)
 
   if (items.empty()) {
-    console.log("Trying again")
-    setTimeout(function() {highlightMapLocations(svg, selector, filter)}, 1000)
+    if (typeof retries == 'undefined') {retries = 20;}
+    if (retries > 0) {
+      console.log("Trying again")
+      setTimeout(function() {highlightMapLocations(svg, selector, filter, retries-1)}, 1000)
+    }
     return;
   }
 
@@ -44,27 +47,6 @@ function highlightMapLocations(svg, selector, filter) {
       });
 }
 
-//Add a node with name at position latLon to svg using the projection
-function addMapLocation(projection, name, lonLat, svg, depot_id) {		
-  //var color = svg.getRandomColor();					
-  var node = svg.append("g")
-      .attr("transform", function() {return "translate(" + projection(lonLat) + ")";})
-
-  var circ = node.append("circle")
-      .attr("r",5)
-      .attr('fill',"#CA7173")
-      .attr('stroke',"#860003")
-      .attr('class', "eodnNode")
-      .attr('name', name)
-      .attr('location', lonLat)
-
-  if (typeof depot_id != 'undefined') {circ.attr('depot_id', depot_id)}
-
-  //nodeLocationMap[name] = node ;
-  return node ;
-}				
-
-
 //Add the tool tip functionality
 function tooltip(svg, text) {
   tip = d3.tip().attr('class', 'd3-tip').html(function() {
@@ -82,6 +64,26 @@ function tooltip(svg, text) {
     timer = setTimeout(tip.hide,2000);
   });
 }
+
+//Add a node with name at position latLon to svg using the projection
+function addMapLocation(projection, name, lonLat, svg, depot_id) {		
+  var node = svg.append("g")
+      .attr("transform", function() {return "translate(" + projection(lonLat) + ")";})
+
+  var circ = node.append("circle")
+      .attr("r",5)
+      .attr('fill',"#CA7173")
+      .attr('stroke',"#860003")
+      .attr('class', "eodnNode")
+      .attr('name', name)
+      .attr('location', lonLat)
+
+  if (typeof depot_id != 'undefined') {circ.attr('depot_id', depot_id)}
+
+  //nodeLocationMap[name] = node ;
+  return node ;
+}				
+
 
 //Add nodes to the side of the map, because their lat/lon is not known
 //baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
@@ -107,7 +109,8 @@ function mapPoints(projection, svg, elementId) {
     points.forEach(function(item) {
       if (item.location.length == 0
          || item.location.latitude == undefined
-         || item.location.longitude == undefined) {
+         || item.location.longitude == undefined
+         || (item.location.latitude == 0 && item.location.longitude == 0)) {
         
         offmap = parseInt(svg.select("layout-data").attr("off-map-count"))
         svg.select("layout-data").attr("off-map-count", offmap+1)
@@ -178,42 +181,37 @@ function baseMap(selector, width, height) {
 //
 //Returns at most one result for each UNIQUE serviceID
 //Drops serviceID results if incomplete
-function allServiceData(baseUrl, serviceIds, then) {
-  var uniqueServices = [];
+function allServiceData(services, then) {
+  var uniqueServices = {};
 
-  for(var i = 0; i < serviceIds.length; i++) {
-    if(uniqueServices.indexOf(serviceIds[i].id) == -1) {
-      uniqueServices.push(serviceIds[i].id);
+  for(var i = 0; i < services.length; i++) {
+    if(uniqueServices[services[i].id] != 'undefined') {
+      uniqueServices[services[i].id] = services[i];
     }
   }
+	
 
-  var q = queue()
-  uniqueServices.forEach(function(service) {
-    var url = baseUrl + "/" + service
-    q.defer(d3.json, url)
-  })
-	 
-  q.awaitAll(function(error, result) {
-    var services = []
-    result.forEach(function(raw) {
-      
-      name = "unknown"
-      if (typeof raw.accessPoint != 'undefined') {
-       name = ((raw.accessPoint || "").split("://")[1] || "").split(":")[0] || "" 
-      }
+  var serviceDetails = []
+  var uniqueIds = Object.keys(uniqueServices)
+  for (var i =0; i < uniqueIds.length; i++) {
+    var item = uniqueServices[uniqueIds[i]]
+    var name = "unknown"
+    if (typeof item.accessPoint != 'undefined') {
+     name = ((item.accessPoint || "").split("://")[1] || "").split(":")[0] || "" 
+    }
 
-      place = []
-      if (typeof raw.location != 'undefined'
-        && typeof raw.location.longitude != 'undefined'
-        && typeof raw.location.latitude != 'undefined') {
-        place = {longitude: raw.location.longitude, latitude: raw.location.latitude}
-      }
+    var place = []
+    if (typeof item.location != 'undefined'
+      && typeof item.location.longitude != 'undefined'
+      && typeof item.location.latitude != 'undefined') {
+      place = {longitude: item.location.longitude, latitude: item.location.latitude}
+    }
 
-      services.push({name: name, location: place, depot_id: raw.id})
-    })
-    console.log("loaded " + services.length + " service locations")
-    then(services)
-  })
+    serviceDetails.push({name: name, location: place, depot_id: item.id})
+  }
+
+  console.log("loaded " + serviceDetails.length + " service locations")
+  then(serviceDetails)
 }
 
 //Acquire gelocations for the given IP addresses, if available
@@ -235,7 +233,7 @@ function ipToLocation(ips, then) {
       }
       locations.push({name: raw.ip, location: place})
     })
-  console.log("loaded " + result.length + " ip locations")
+    console.log("loaded " + result.length + " ip locations")
     then(locations)
   })
 }
