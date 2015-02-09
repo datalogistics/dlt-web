@@ -75,7 +75,6 @@ function tooltip(svg, text) {
   svg.call(tip);
   var timer;
   svg.selectAll("circle.eodnNode").on('mouseover', function(){
-        console.log("hello")
       clearTimeout(timer);
       tip.show.apply(this,arguments);
   })
@@ -86,9 +85,8 @@ function tooltip(svg, text) {
 
 //Add nodes to the side of the map, because their lat/lon is not known
 //baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
-//TODO: Should projection be used...or not?
 function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id) {
-    pair = [baseLatLon[0], baseLatLon[1]-idx]
+    pair = [baseLatLon[0]-idx*.3, baseLatLon[1]-idx]  //the idx*.3 straigthens out the line
     node = addMapLocation(projection, name, pair, svg, depot_id)
     node.append("text")
        .attr("dx", function(d){return 10})
@@ -101,7 +99,6 @@ function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id) {
 //Map a collection of places.  The places should be a list of dictionaries {name, location}.
 //Location should be either {latitude, longitude} or []
 //If location is [], then the item is placed off map with a printed label
-var offmap =  0  //variable is global in case unkowns come from multiple sources
 function mapPoints(projection, svg, elementId) {
   return function(points) {
     var svg_points = svg.select("#overlay").append("g")
@@ -111,8 +108,10 @@ function mapPoints(projection, svg, elementId) {
       if (item.location.length == 0
          || item.location.latitude == undefined
          || item.location.longitude == undefined) {
+        
+        offmap = parseInt(svg.select("layout-data").attr("off-map-count"))
+        svg.select("layout-data").attr("off-map-count", offmap+1)
         addOffMapLocation(projection, offmap, [-72, 40], item.name, svg_points, item.depot_id)
-        offmap = offmap+1
       } else {
         pair = [item.location.longitude, item.location.latitude]
         node = addMapLocation(projection, item.name, pair, svg_points, item.depot_id)
@@ -141,6 +140,7 @@ function baseMap(selector, width, height) {
                .attr("id", "map")
 
   map.append("g").attr("id", "states")
+  svg.append("layout-data").attr("off-map-count", 0)
 
   d3.json("../maps/us.json", function(error, us) {
 
