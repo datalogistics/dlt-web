@@ -214,7 +214,7 @@ module.exports = function(app) {
 
     app.get('/api/fileTree',function(req, res) {
         var id = req.query.id || 1;
-        req.query.id = undefined ;
+        delete req.query.id ;
         var paramString = querystring.stringify(req.query);
         var arr = [];        
         if (id == 1) {
