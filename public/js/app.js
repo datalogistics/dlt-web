@@ -7,7 +7,7 @@
 angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
   'ui.utils' ,'ui.bootstrap', 'nvd3ChartDirectives', 'directedGraphModule',
   'appRoutes', 'SliceCtrl', 'SliceService','SocketService', 'EodnCtrl','jsTree.directive','FilesCtrl',
-  'DepotCtrl', 'DepotService']
+  'DepotMapCtrl', 'DepotCtrl', 'DepotService']
   ).run(function($rootScope, $http, $q, $timeout, $location, Socket, $route) {
 
       getUniqueById = function(ary) {

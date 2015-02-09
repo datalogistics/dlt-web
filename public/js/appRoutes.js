@@ -22,20 +22,20 @@ angular.module('appRoutes', []).config(['$routeProvider', '$locationProvider', '
       controller: 'DepotController'
     }).
     when('/eodnMap/:depotId', {
-        templateUrl: 'views/eodn.html',
-        controller: 'EodnController'
+        templateUrl: 'views/depot_map.html',
+        controller: 'DepotMapController'
     }).
     when('/eodnMap/', {
-        templateUrl: 'views/eodn.html',
-        controller: 'EodnController'
+        templateUrl: 'views/depot_map.html',
+        controller: 'DepotMapController'
     }).
     when('/eodn/', {
-        templateUrl: 'views/eodn.html',
-        controller: 'EodnController'
+        templateUrl: 'views/depot_map.html',
+        controller: 'DepotMapController'
     }).
     when('/eodn/:id', {
-        templateUrl: 'views/eodn.html',
-        controller: 'EodnController'
+        templateUrl: 'views/depot_map.html',
+        controller: 'DepotMapController'
     }).
     when('/files/',{    	
     	templateUrl: 'views/files.html',
