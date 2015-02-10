@@ -183,14 +183,7 @@ function baseMap(selector, width, height) {
 //Returns at most one result for each UNIQUE serviceID
 //Drops serviceID results if incomplete
 function allServiceData(services, then) {
-  var uniqueServices = {};
-
-  for(var i = 0; i < services.length; i++) {
-    if(uniqueServices[services[i].id] != 'undefined') {
-	uniqueServices[services[i].id] = services[i];
-    }
-  }
-
+  var uniqueServices = getUniqueById(services);
   var unknownLoc     = {}	
   var serviceDetails = []
   var uniqueIds = Object.keys(uniqueServices)
@@ -202,20 +195,20 @@ function allServiceData(services, then) {
     } else if (typeof item.name != 'undefined') {
       name = item.name
     }
-
+    
     var place = []
     if (typeof item.location != 'undefined'
-      && typeof item.location.longitude != 'undefined'
-      && typeof item.location.latitude != 'undefined'
-      && item.location.longitude != 0
-      && item.location.latitude != 0) {
+	&& typeof item.location.longitude != 'undefined'
+	&& typeof item.location.latitude != 'undefined'
+	&& item.location.longitude != 0
+	&& item.location.latitude != 0) {
       place = {longitude: item.location.longitude, latitude: item.location.latitude}
       serviceDetails.push({name: name, location: place, depot_id: item.id})
     } else {
       unknownLoc[name] = {id: item.id};
     }
   }
-
+  
   console.log("loaded " + serviceDetails.length + " service locations")
   ipToLocation(unknownLoc, then);
   then(serviceDetails)
@@ -229,17 +222,16 @@ function ipToLocation(items, then) {
       var url = "http://freegeoip.net/json/" + name
       q.defer(d3.json, url)
     })
-
+  
   q.awaitAll(function(error, result) {
     var locations = []
-      console.log(result);
     result.forEach(function(raw) {
       place = []
       if (typeof raw.longitude != 'undefined'
           && typeof raw.latitude != 'undefined') {
-          place = {latitude: raw.latitude, longitude: raw.longitude}
+        place = {latitude: raw.latitude, longitude: raw.longitude}
       }
-	locations.push({name: raw.ip, location: place, depot_id: items[raw.ip].id})
+      locations.push({name: raw.ip, location: place, depot_id: items[raw.ip].id})
     })
     console.log("loaded " + result.length + " ip locations")
     then(locations)

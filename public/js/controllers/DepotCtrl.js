@@ -20,43 +20,28 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
 
   // continue to listen for new data
   Socket.on('service_data', function(data) {
-
     if (typeof data =='string') {
       data = JSON.parse(data);
     }
-
+    
     // data.status = 'New';
     console.log('Socket Service Request: ', data);
+    
+    setupServiceEntry(data);
 
-    var now = Math.round(new Date().getTime() / 1e3) //seconds
-    data.ttl = Math.round(((data.ttl + (data.ts / 1e6)) - now));
-
-    function searchServices(addService) {
-      console.log("searchServices function");
-
-      // search for duplicate id's
-      for(var i = 0; $scope.services.length; i++) {
-
-        if($scope.services[i].accessPoint == data.accessPoint) {
-          // $scope.services[i].ttl = -1;
-          console.log("removing: " + $scope.services[i].accessPoint + " ts: " + $scope.services[i].ts);
-          $scope.services.splice(i, 1);
-          break;
-        }
+    var found = false;
+    // search for duplicate id's
+    for(var i = 0; $scope.services.length; i++) {      
+      if($scope.services[i].accessPoint == data.accessPoint) {
+        $scope.services[i] = data;
+	found = true;
+	break;
       }
-
-      // Call the callback
-      addService();
     }
-
-    function addService() {
-      console.log("addService callback");
-
-      // add new data to scope for view
+    
+    if (!found) {
       $scope.services.push(data);
     }
-
-    searchServices(addService);
   });
 
   if (metadata_id != null) {
