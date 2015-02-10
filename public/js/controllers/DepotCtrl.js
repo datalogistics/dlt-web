@@ -9,6 +9,13 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
 	                'ps:tools:blipp:ibp_server:resource:usage:free',
 	                'ps:tools:blipp:linux:cpu:utilization:user',
 	                'ps:tools:blipp:linux:cpu:utilization:system'];
+
+  var ETS_TO_CHART_TYPE = {"ps:tools:blipp:ibp_server:resource:usage:used" : "#CHART-Time-GB",
+                           "ps:tools:blipp:ibp_server:resource:usage:free" : "#CHART-Time-GB",
+                           "ps:tools:blipp:linux:cpu:utilization:user": "#CHART-Time-Percent",
+                           "ps:tools:blipp:linux:cpu:utilization:system": "#CHART-Time-Percent"}
+
+
   var metadata_id = $routeParams.id;
 
   // place inital app data into scope for view
@@ -24,9 +31,6 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
     if (typeof data =='string') {
       data = JSON.parse(data);
     }
-
-    // data.status = 'New';
-    console.log('Socket Service Request: ', data);
 
     var now = Math.round(new Date().getTime() / 1e3) //seconds
     data.ttl = Math.round(((data.ttl + (data.ts / 1e6)) - now));
@@ -65,39 +69,47 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
 
     Depot.getMetadata(metadata_id, function(metadata) {
       $scope.eventType = metadata.eventType;
-    });
+      var eventType;
 
-    Depot.getDataId(metadata_id, function(data) {
-      $scope.data = $scope.data || [];
+      for (i=0; i< metadata.length; i++) {
+        if (eventType === undefined) {
+          eventType = metadata[i].eventType
+        }
+      }
+      d3.select(ETS_TO_CHART_TYPE[eventType]).attr("style", "")
 
-      if (typeof data =='string')
-        data = JSON.parse(data);
+      Depot.getDataId(metadata_id, function(data) {
+        $scope.data = $scope.data || [];
 
-      $scope.data = $scope.data.concat(data);
+        if (typeof data =='string') {data = JSON.parse(data);}
 
-      var arrayData = [];
-      angular.forEach($scope.data, function(key, value) {
+        $scope.data = $scope.data.concat(data);
+
+        var arrayData = [];
+        angular.forEach($scope.data, function(key, value) {
           arrayData.push([key.ts, key.value]);
+        });
+
+        $scope.xAxisTickFormat_Date_Format = function(){
+          return function(d){
+            var ts = d/1e3;
+            return d3.time.format('%X')(new Date(ts));
+          }
+        }
+
+        $scope.yAxisFormatFunction = function(){
+          return function(d){
+            return (d/1e9).toFixed(2); // GB
+          }
+        }
+
+        $scope.graphData = [
+        {
+          "key": "Data Point",
+            "values": arrayData
+        }];
+
       });
-
-      $scope.xAxisTickFormat_Date_Format = function(){
-	  return function(d){
-	      var ts = d/1e3;
-	      return d3.time.format('%X')(new Date(ts));
-	  }
-      }
-
-      $scope.yAxisFormatFunction = function(){
-	  return function(d){
-	      return (d/1e9).toFixed(2); // GB
-	  }
-      }
-
-      $scope.graphData = [
-      {
-        "key": "Data Point",
-        "values": arrayData
-      }];
     });
   }
 

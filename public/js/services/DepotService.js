@@ -27,7 +27,7 @@ angular.module('DepotService', []).service('Depot', function($http, Socket) {
 
   this.getDataId = function(id, data) {
     $http.get('/api/data/' + id).success(function(data_request) {
-      console.log('HTTP Data Request: ' + data_request);
+      console.log('HTTP Data Request: ' + data_request[0] + "...");
       data(data_request);
       Socket.emit('data_request', {'id': id});
     }).error(function(data_request) {
