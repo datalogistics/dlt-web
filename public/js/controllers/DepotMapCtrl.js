@@ -1,26 +1,14 @@
-angular.module('DepotMapCtrl', []).controller('DepotMapController', function($scope,$routeParams,$rootScope, $http,Socket , Depot) {
-  var knownLocations = [{name: 'bloomington', location: {longitude:-86.526386, latitude: 39.165325}}]
-
-  var knownIPs = ["24.1.111.131" , // bloomington
-                  "173.194.123.46", // google
-                  "128.83.40.146" , // UT austin
-                  "128.2.42.52" , // CMU
-                  "130.207.244.165" // GA Tech
-  ];
-
-  var map = baseMap("#downloadMap", 960, 500)
-  
-  d3.json('/api/services', function(error, services) {
-
-    allServiceData(services, mapPoints(map.projection, map.svg, "depots"))
+angular.module('DepotMapCtrl', []).controller('DepotMapController', function($scope,$routeParams,$rootScope,$http,Socket,Depot) {
+    var map = baseMap("#downloadMap", 960, 500);
     
-    ipToLocation(knownIPs, mapPoints(map.projection, map.svg, "ips")) 
-    mapPoints(map.projection, map.svg, "known-locations")(knownLocations)
+    $scope.services = $rootScope.services;
 
+    allServiceData($scope.services, mapPoints(map.projection, map.svg, "depots"));
+        
     if (typeof $routeParams.depotId != 'undefined') {
-      highlightMapLocations(map.svg, ".eodnNode", function(d) {return this.getAttribute("depot_id") == $routeParams.depotId})
+	console.log($routeParams.depotId);
+	highlightMapLocations(map.svg, ".eodnNode", function(d) {return this.getAttribute("depot_id") == $routeParams.depotId})
     }
-  });
 }); // end controller
 
 
