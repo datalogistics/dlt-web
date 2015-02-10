@@ -10,8 +10,7 @@ angular.module('DepotMapCtrl', []).controller('DepotMapController', function($sc
 
   var map = baseMap("#downloadMap", 960, 500)
   
-  services_url = "http://localhost:42424/api/services"
-  d3.json(services_url, function(error, services) {
+  d3.json('/api/services', function(error, services) {
 
     allServiceData(services, mapPoints(map.projection, map.svg, "depots"))
     
