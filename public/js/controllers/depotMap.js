@@ -183,62 +183,49 @@ function baseMap(selector, width, height) {
 //Returns at most one result for each UNIQUE serviceID
 //Drops serviceID results if incomplete
 function allServiceData(services, then) {
-  var uniqueServices = {};
-
-  for(var i = 0; i < services.length; i++) {
-    if(uniqueServices[services[i].id] != 'undefined') {
-      uniqueServices[services[i].id] = services[i];
-    }
-  }
-	
-
+  var uniqueServices = getUniqueById(services);
+  var unknownLoc     = {}	
   var serviceDetails = []
   var uniqueIds = Object.keys(uniqueServices)
   for (var i =0; i < uniqueIds.length; i++) {
     var name =  uniqueIds[i]
     var item = uniqueServices[name]
-    if (typeof item.accessPoint != 'undefined') {
-     name = ((item.accessPoint || "").split("://")[1] || "").split(":")[0] || "" 
-    } else if (typeof item.name != 'undefined') {
-      name = item.name
-    }
-
+    name = getServiceName(item);
+    
     var place = []
-    if (typeof item.location != 'undefined'
-      && typeof item.location.longitude != 'undefined'
-      && typeof item.location.latitude != 'undefined') {
+    if (hasLocationInfo(item)) {
       place = {longitude: item.location.longitude, latitude: item.location.latitude}
+      serviceDetails.push({name: name, location: place, depot_id: item.id})
+    } else {
+      unknownLoc[name] = {id: item.id};
     }
-
-    serviceDetails.push({name: name, location: place, depot_id: item.id})
   }
-
+  
   console.log("loaded " + serviceDetails.length + " service locations")
+  ipToLocation(unknownLoc, then);
   then(serviceDetails)
 }
 
-//Acquire gelocations for the given IP addresses, if available
+//Acquire gelocations for the item dictionary, if available
 //Converts to a dictionary of {ip: {lattitude: x, longitude: y}}
-function ipToLocation(ips, then) {
+function ipToLocation(items, then) {
   var q = queue()
-    ips.forEach(function(ip) {
-      var url = "http://freegeoip.net/json/" + ip
+    Object.keys(items).forEach(function(name) {
+      var url = "http://freegeoip.net/json/" + name
       q.defer(d3.json, url)
     })
-
+  
   q.awaitAll(function(error, result) {
     var locations = []
     result.forEach(function(raw) {
       place = []
       if (typeof raw.longitude != 'undefined'
           && typeof raw.latitude != 'undefined') {
-          place = {latitude: raw.latitude, longitude: raw.longitude}
+        place = {latitude: raw.latitude, longitude: raw.longitude}
       }
-      locations.push({name: raw.ip, location: place})
+      locations.push({name: raw.ip, location: place, depot_id: items[raw.ip].id})
     })
     console.log("loaded " + result.length + " ip locations")
     then(locations)
   })
 }
-
-
