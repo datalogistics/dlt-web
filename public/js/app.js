@@ -24,14 +24,14 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
       
       finish = function() {
 	  var services = $rootScope.services;
-
 	  console.log('Loading complete, redirecting');
-          if(!$rootScope.gotoSomeotherPage) {
-              $location.path('/status');
-              $rootScope.services = services;
-              console.log('root scoping service');
-              $rootScope.gotoSomeotherPage = false ;
-          }
+
+          var depotScope = $depotScope;
+          depotScope.services = $rootScope.services || [];
+          depotScope.measurements = $rootScope.measurements || [];
+          depotScope.metadata = $rootScope.metadata || [];
+          depotScope.nodes = $rootScope.nodes || [];
+          depotScope.ports = $rootScope.ports || [];
 	  
           // set timer value
           onTimeout = function() {

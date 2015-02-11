@@ -10,13 +10,13 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
 	                'ps:tools:blipp:linux:cpu:utilization:user',
 	                'ps:tools:blipp:linux:cpu:utilization:system'];
   var metadata_id = $routeParams.id;
-
+  window.$depotScope = $scope;
   // place inital app data into scope for view
-  $scope.services = $rootScope.services;
-  $scope.measurements = $rootScope.measurements;
-  $scope.metadata = $rootScope.metadata;
-  $scope.nodes = $rootScope.nodes;
-  $scope.ports = $rootScope.ports;
+  $scope.services = $rootScope.services || [];
+  $scope.measurements = $rootScope.measurements || [];
+  $scope.metadata = $rootScope.metadata || [];
+  $scope.nodes = $rootScope.nodes || [];
+  $scope.ports = $rootScope.ports || [];
 
   // continue to listen for new data
   Socket.on('service_data', function(data) {
