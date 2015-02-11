@@ -12,6 +12,8 @@ var path = require('path')
 , util = require('util')
 , _ = require('underscore')
 , querystring = require('querystring')
+, xmlparse = require('xml2js').parseString
+, request = require('request')
 , q = require('q');
 
 var getHttpOptions = cfg.getHttpOptions;
@@ -251,6 +253,19 @@ module.exports = function(app) {
             });
             res.json(arr);
         });     
+    });
+    app.get('/api/usgssearch',function(req, res) {
+        var params = req.query;
+        var paramString = querystring.stringify(req.query);
+        // Make a request to the USGS get_metadata url which returns the data in xml form
+        var url = cfg.usgs_searchurl + "?"+paramString;
+        console.log(url);
+        request(url,function(err,r,resp){
+            xmlparse(resp, function(err , result){
+                console.dir(result);                
+                res.json(result);
+            });
+        });        
     });
 
     app.get('*', function(req, res) {
