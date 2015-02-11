@@ -4,7 +4,7 @@
  * app.js
  */
 
-angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
+angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate','schemaForm',
 				  'ui.utils' ,'ui.bootstrap', 'nvd3ChartDirectives', 'directedGraphModule',
 				  'appRoutes', 'SliceCtrl', 'SliceService','SocketService', 'EodnCtrl','jsTree.directive','FilesCtrl',
 				  'DepotMapCtrl', 'DepotCtrl', 'DepotService']
@@ -98,6 +98,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
     
     // start timer
     var timeout = $timeout(onTimeout, 1000);   
+  var $depotScope = window.$depotScope || {};
   $depotScope.services = $rootScope.services || [];
   $depotScope.measurements = $rootScope.measurements || [];
   $depotScope.metadata = $rootScope.metadata || [];

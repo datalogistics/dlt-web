@@ -215,71 +215,42 @@ module.exports = function(app) {
     app.get('/api/fileTree',function(req, res) {
         var id = req.query.id || 1;
         delete req.query.id ;
-        var paramString = querystring.stringify(req.query);
-        var arr = [];        
-        if (id == 1) {
-            var options = _.extend({
-                req : req , res : res ,
-                path : '/exnodes?parent=null='+"&"+paramString,
-                name : 'exnodes'
-            },getHttpOptions({
-                name : 'exnodes'
-            }));      
-            registerGenericHandler(options, function(obj){
-                var exjson =  obj[0].value;
-                // Return matching id children
-                exjson.map(function(x){            
-                    arr.push({
-                        "id" : x.id ,
-                        "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
-                        "parent" : x.parent == null? "#" : x.parent,
-                        "children" : true,
-                        "state" : {
-                            "opened" : false ,
-                            "disabled" : false,
-                            "selected" : false 
-                        },
-                        "text" : x.name ,
-                        "size" : x.size , 
-                        "created" : x.created,
-                        "modified" : x.modified
-                    });
-                });
-                res.json(arr);
-            });     
+        if(id ==1) {
+            req.query.parent = "null=";
         } else {
-            var options = _.extend({
-                req : req , res : res ,
-                path : '/exnodes?parent='+id+"&"+paramString,
-                name : 'exnodes'
-            },getHttpOptions({
-                name : 'exnodes'
-            }));      
-            registerGenericHandler(options, function(obj){
-                var exjson =  obj[0].value;
-                // Return matching id children
-                exjson.map(function(x){            
-                    arr.push({
-                        "id" : x.id ,
-                        "parent" : x.parent == null? "#" : x.parent,
-                        "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
-                        "isFile" : x.mode == "file" ,
-                        "children" :  x.mode != "file" ,
-                        "state" : {
-                            "opened" : false ,
-                            "disabled" : false,
-                            "selected" : false 
-                        },
-                        "text" : x.name ,
-                        "size" : x.size , 
-                        "created" : x.created,
-                        "modified" : x.modified
-                    });
-                });
-                res.json(arr);
-            });     
-
+            req.query.parent = id;
         }
+        var paramString = querystring.stringify(req.query);
+        var arr = [];
+        var options = _.extend({
+            req : req , res : res ,
+            path : '/exnodes?'+paramString,
+            name : 'exnodes'
+        },getHttpOptions({
+            name : 'exnodes'
+        }));      
+        registerGenericHandler(options, function(obj){
+            var exjson =  obj[0].value;
+            // Return matching id children
+            arr = exjson.map(function(x){            
+                return {
+                    "id" : x.id ,
+                    "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
+                    "parent" : x.parent == null? "#" : x.parent,
+                    "children" : true,
+                    "state" : {
+                        "opened" : false ,
+                        "disabled" : false,
+                        "selected" : false 
+                    },
+                    "text" : x.name ,
+                    "size" : x.size , 
+                    "created" : x.created,
+                    "modified" : x.modified
+                };
+            });
+            res.json(arr);
+        });     
     });
 
     app.get('*', function(req, res) {
