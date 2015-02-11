@@ -69,6 +69,7 @@ var self = {
 	requestCert: true,
 	rejectUnauthorized: false
     },
+    usgs_searchurl : "    http://landsat.usgs.gov/includes/scripts/get_metadata.php",
     getSocketOptions : function () {
         
     },
