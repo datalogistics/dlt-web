@@ -26,20 +26,21 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
     
     // data.status = 'New';
     console.log('Socket Service Request: ', data);
-    
-    setupServiceEntry(data);
 
     var found = false;
-    // search for duplicate id's
+    // search for duplicate services
     for(var i = 0; $scope.services.length; i++) {      
       if($scope.services[i].accessPoint == data.accessPoint) {
-        $scope.services[i] = data;
+	// just update the ttl and ts with the new value, saving our stored info
+        $scope.services[i].ttl = data.ttl;
+	$scope.services[i].ts = data.ts;
 	found = true;
 	break;
       }
     }
-    
+
     if (!found) {
+      updateServiceEntry(data);
       $scope.services.push(data);
     }
   });

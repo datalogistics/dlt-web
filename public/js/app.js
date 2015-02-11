@@ -24,14 +24,61 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
     return ret;
   };
   
-  setupServiceEntry = function(service) {
+  getServiceName = function(service) {
+    var name;
+    if (typeof service.accessPoint != 'undefined') {
+      name = ((service.accessPoint || "").split("://")[1] || "").split(":")[0] || "" 
+    } else if (typeof service.name != 'undefined') {
+      name = service.name
+    }
+    return name;
+  }
+
+  hasLocationInfo = function(service) {
+    return (typeof service.location != 'undefined'
+            && typeof service.location.longitude != 'undefined'
+            && typeof service.location.latitude != 'undefined'
+            && service.location.longitude != 0
+            && service.location.latitude != 0)
+  };
+  
+  updateServiceEntry = function(service) {
     var now = Math.round(new Date().getTime() / 1e3) // seconds
     service.ttl = Math.round(((service.ttl + (service.ts / 1e6)) - now));
+
+    if (!hasLocationInfo(service)) {
+      var url = "http://freegeoip.net/json/" + getServiceName(service);
+      $http.get(url).
+	success(function(data, status, headers, config) {
+	  service.location = {
+	    'latitude': data.latitude,
+	    'longitude': data.longitude,
+	    'state': data.region_code,
+	    'country': data.country_code,
+	    'zipcode': data.zip_code,
+	    'city': data.city
+	  };
+
+	  $rootScope.ports.forEach(function(p) {
+	    if (typeof p.properties.ipv4 != 'undefined'
+	       && typeof service.listeners != 'undefined') {
+	      service.listeners.forEach(function(l) {
+		if (l.tcp.split("/")[0] == p.properties.ipv4.address)
+		  service.location.institution = p.nodeRef.replace(/(.*)(domain=)(.*):.*$/, "$3");
+	      })}
+	  });
+	}).
+	error(function(data, status, headers, config) {
+	  console.log("Error: ", status);
+	})
+    }
   };
 
   finish = function() {
     var services = $rootScope.services;
-    services.forEach(function(s) {setupServiceEntry(s)});
+    services.forEach(function(s) {
+      updateServiceEntry(s)
+    });
     
     // set timer value
     onTimeout = function() {
@@ -41,6 +88,7 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
 	} else if(services[i].ttl < ttl_wiggle) {
 	  services[i].status = 'OFF';
 	} else {
+	  services[i].status = 'ON';
 	  services[i].ttl--;
 	}
       }
@@ -55,9 +103,6 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
     if($location.path() != "/status") {
       $location.path('/status');
     };
-
-    // start listening for service updates
-    Socket.emit('service_request', {});
   };
   
   $q.all([
@@ -77,7 +122,8 @@ angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate',
     Socket.emit('port_request', {});
     Socket.emit('measurement_request', {});
     Socket.emit('metadata_request', {});
-    
+    Socket.emit('service_request', {});    
+
     finish();
   });
 });

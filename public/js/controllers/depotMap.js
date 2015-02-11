@@ -190,18 +190,10 @@ function allServiceData(services, then) {
   for (var i =0; i < uniqueIds.length; i++) {
     var name =  uniqueIds[i]
     var item = uniqueServices[name]
-    if (typeof item.accessPoint != 'undefined') {
-     name = ((item.accessPoint || "").split("://")[1] || "").split(":")[0] || "" 
-    } else if (typeof item.name != 'undefined') {
-      name = item.name
-    }
+    name = getServiceName(item);
     
     var place = []
-    if (typeof item.location != 'undefined'
-	&& typeof item.location.longitude != 'undefined'
-	&& typeof item.location.latitude != 'undefined'
-	&& item.location.longitude != 0
-	&& item.location.latitude != 0) {
+    if (hasLocationInfo(item)) {
       place = {longitude: item.location.longitude, latitude: item.location.latitude}
       serviceDetails.push({name: name, location: place, depot_id: item.id})
     } else {
@@ -237,5 +229,3 @@ function ipToLocation(items, then) {
     then(locations)
   })
 }
-
-
