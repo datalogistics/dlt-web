@@ -9,11 +9,28 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
 	                'ps:tools:blipp:ibp_server:resource:usage:free',
 	                'ps:tools:blipp:linux:cpu:utilization:user',
 	                'ps:tools:blipp:linux:cpu:utilization:system'];
+  var format_timestamp = function(){
+    return function(d){
+      var ts = d/1e3;
+      return d3.time.format('%X')(new Date(ts));
+    }
+  }
 
-  var ETS_TO_CHART_TYPE = {"ps:tools:blipp:ibp_server:resource:usage:used" : "#CHART-Time-GB",
-                           "ps:tools:blipp:ibp_server:resource:usage:free" : "#CHART-Time-GB",
-                           "ps:tools:blipp:linux:cpu:utilization:user": "#CHART-Time-Percent",
-                           "ps:tools:blipp:linux:cpu:utilization:system": "#CHART-Time-Percent"}
+  var format_GB = function(){
+    return function(d){
+      return (d/1e9).toFixed(2); // GB
+    }
+  }
+
+  var format_percent = function() {
+    return function(d) {return (d*100).toFixed(2)}
+  }
+
+  var ETS_CHART_CONFIG = 
+     {"ps:tools:blipp:ibp_server:resource:usage:used" : {selector: "#CHART-Time-GB", xformat: format_timestamp, yformat: format_GB},
+      "ps:tools:blipp:ibp_server:resource:usage:free" :{selector: "#CHART-Time-GB", xformat: format_timestamp, yformat: format_GB},
+      "ps:tools:blipp:linux:cpu:utilization:user": {selector: "#CHART-Time-Percent", xformat: format_timestamp, yformat: format_percent},
+      "ps:tools:blipp:linux:cpu:utilization:system":{selector: "#CHART-Time-Percent", xformat: format_timestamp, yformat: format_percent}}
 
 
   var metadata_id = $routeParams.id;
@@ -76,7 +93,9 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
           eventType = metadata[i].eventType
         }
       }
-      d3.select(ETS_TO_CHART_TYPE[eventType]).attr("style", "")
+
+      var chartconfig = ETS_CHART_CONFIG[eventType]
+      d3.select(chartconfig.selector).attr("style", "")
 
       Depot.getDataId(metadata_id, function(data) {
         $scope.data = $scope.data || [];
@@ -90,18 +109,8 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
           arrayData.push([key.ts, key.value]);
         });
 
-        $scope.xAxisTickFormat_Date_Format = function(){
-          return function(d){
-            var ts = d/1e3;
-            return d3.time.format('%X')(new Date(ts));
-          }
-        }
-
-        $scope.yAxisFormatFunction = function(){
-          return function(d){
-            return (d/1e9).toFixed(2); // GB
-          }
-        }
+        $scope.xAxisTickFormat_Date_Format = chartconfig.xformat;
+        $scope.yAxisFormatFunction = chartconfig.yformat;
 
         $scope.graphData = [
         {
