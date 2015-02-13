@@ -9,7 +9,7 @@ function highlightMapLocations(svg, selector, filter, retries) {
   var items = svg.selectAll(selector).filter(filter)
 
   if (items.empty()) {
-    if (typeof retries == 'undefined') {retries = 20;}
+    if (retries === undefined) {retries = 20;}
     if (retries > 0) {
       console.log("Trying again")
       setTimeout(function() {highlightMapLocations(svg, selector, filter, retries-1)}, 1000)
@@ -51,7 +51,7 @@ function highlightMapLocations(svg, selector, filter, retries) {
 function tooltip(svg, text) {
   tip = d3.tip().attr('class', 'd3-tip').html(function() {
     var x = d3.select(this);
-    return x.attr('name');						
+    return x.attr('name').replace(/\|/g, "</p>")
   })
 
   svg.call(tip);
@@ -66,23 +66,60 @@ function tooltip(svg, text) {
 }
 
 //Add a node with name at position latLon to svg using the projection
-function addMapLocation(projection, name, lonLat, svg, depot_id) {		
-  var node = svg.append("g")
-      .attr("transform", function() {return "translate(" + projection(lonLat) + ")";})
+function addMapLocation(projection, name, rawLonLat, svg, depot_id) {		
+  var lonLat = [rawLonLat[0].toFixed(2), rawLonLat[1].toFixed(2)] //Round lat/lon
 
-  var circ = node.append("circle")
-      .attr("r",5)
-      .attr('fill',"#CA7173")
-      .attr('stroke',"#860003")
-      .attr('class', "eodnNode")
-      .attr('name', name)
-      .attr('location', lonLat)
+  var translate = "translate(" + projection(lonLat) + ")"
+  var nodes = svg.selectAll(".eodnLocation").filter(function (d, i) { return d3.select(this).attr("transform") == translate })
 
-  if (typeof depot_id != 'undefined') {circ.attr('depot_id', depot_id)}
+  if (nodes.empty()) {
+    var node = svg.append("g")
+        .attr("transform", function() {return translate;})
+        .attr("class", "eodnLocation")
 
-  //nodeLocationMap[name] = node ;
-  return node ;
-}				
+    var circ = node.append("circle")
+        .attr("r",7)
+        .attr('fill',"#CA7173")
+        .attr('stroke',"#860003")
+        .attr('class', "eodnNode")
+        .attr('name', name)
+        .attr('location', lonLat)
+
+    if (typeof depot_id != 'undefined') {circ.attr('depot_id', depot_id)}
+
+    //nodeLocationMap[name] = node ;
+    return node
+  } else {
+    nodes.each(function(d,i) {
+      var group = d3.select(this)
+      var count = group.select(".count")
+      if (count.empty()) {
+        group.append("text")
+            .text(function (d) {return 2})
+            .attr("class", "count")
+            .attr("baseline-shift", "-5px")
+            .attr("text-anchor", "middle")
+      } else{
+        var val = parseInt(count.text())
+        val = val + 1;
+        count.text(function (d) {return val})
+      }
+
+      var super_circ = group.select(".eodnNode")
+      var existingName = super_circ.attr("name")
+      super_circ.attr("name", name + "|" + existingName)
+     
+      //Empty point to search for by name...
+      var circ = group.append("circle")
+         .attr("r", 1)
+         .attr("class", "eodnNode")
+         .attr("name", name)
+         .attr("style", "display:none")
+
+      if (typeof depot_id != 'undefined') {circ.attr('depot_id', depot_id)}
+    })
+  }
+}
 
 
 //Add nodes to the side of the map, because their lat/lon is not known
@@ -223,7 +260,8 @@ function ipToLocation(items, then) {
           && typeof raw.latitude != 'undefined') {
         place = {latitude: raw.latitude, longitude: raw.longitude}
       }
-      locations.push({name: raw.ip, location: place, depot_id: items[raw.ip].id})
+      var id = items[raw.ip] === undefined ? "unknown" : items[raw.ip].id
+      locations.push({name: raw.ip, location: place, depot_id: id})
     })
     console.log("loaded " + result.length + " ip locations")
     then(locations)
