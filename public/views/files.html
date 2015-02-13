@@ -1,14 +1,14 @@
-<h2 class="lead text-center">DLT</h2>
-<div class="table-responsive">
+<h2 class="lead text-center">EODN/IDMS Exnode Browser</h2>
+<div class="table-responsive" style="max-width: 1024px; margin-left: auto; margin-right: auto";>
   <div ng-controller="FilesController">
-    <div class="row">
+    <div class="row" ng-style="{'border':'solid 3px darkblue', 'border-radius': '15px'}">
       <div class="col-md-12">
        <form sf-schema="schema" sf-form="form" sf-model="model"></form>
       </div>
     </div>
-    <div class="row">
-      <div class="col-md-6 tree-browser">
-        <!-- <js-tree tree-events="select_node:nodeSelected" tree-data="json" tree-src="/views/filetree.json"  tree-plugins="checkbox"></js-tree> -->
+    <div ng-style="{'padding': '20px'}"/>
+    <div class="row" ng-style="{'border':'solid 3px darkblue', 'border-radius': '15px', 'padding': '10px'}">
+      <div class="col-md-6 tree-browser" ng-style="{'border-right': 'solid 3px black'}">
         <js-tree tree-events="select_node:nodeSelected"
                  tree-ajax="/api/fileTree"></js-tree>
       </div>
