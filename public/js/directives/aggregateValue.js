@@ -32,7 +32,7 @@ angular.module('aggregateValue', [])
       template: '<div class="col-xs-5" style="border: 2px solid lightblue; \
                  border-radius: 15px; padding: 10px; \
                  background-color: lightblue;"><p>{{type.text}}</p> \
-                 <div class="{{dclass}}"/>{{services[0].ttl}}</div>',
+                 <div class="{{dclass}}"/>{{type.datafn()}}</div>',
       link: function(scope, element, attrs) {
 	function updateValue() {
 	  scope.dclass = "loader";
