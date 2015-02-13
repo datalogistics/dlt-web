@@ -76,7 +76,7 @@ angular.module('FilesCtrl', []).controller('FilesController', function($scope, $
     $scope.showInfo= function(){
     };
     $scope.fileInfo = "Select a file";
-    $scope.fileViewer = 'Please select a file to view its contentsdddddd';
+  $scope.fileViewer = 'Please select a file to view its contents';
     $scope.showDownload = false;
     $scope.nodeSelected = function(a,b){
         var info = b.node.original;
