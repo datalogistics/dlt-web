@@ -229,3 +229,12 @@ text.id {
     background-image: url('/images/file32px.png') !important;
     background-position: 0 !important;
 }
+
+.searchfile{
+    background-image: url('/images/file.png'); 
+    background-position: center center; 
+    background-size: auto auto;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+}

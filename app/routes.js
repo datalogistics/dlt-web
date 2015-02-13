@@ -239,7 +239,7 @@ module.exports = function(app) {
                     "id" : x.id ,
                     "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
                     "parent" : x.parent == null? "#" : x.parent,
-                    "children" : true,
+                    "children" :  x.mode != "file",
                     "state" : {
                         "opened" : false ,
                         "disabled" : false,

@@ -5,7 +5,7 @@
  */
 
 angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate','schemaForm',
-				  'ui.utils' ,'ui.bootstrap', 'nvd3ChartDirectives', 'directedGraphModule',
+				  'ui.utils' ,'ui.bootstrap', 'nvd3ChartDirectives', 'directedGraphModule','ExnodeService',
 				  'appRoutes', 'SliceCtrl', 'SliceService','SocketService', 'EodnCtrl','jsTree.directive','FilesCtrl',
 				  'DepotMapCtrl', 'DepotCtrl', 'DepotService']
 ).run(function($rootScope, $http, $q, $timeout, $location, Socket, $route) {
