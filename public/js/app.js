@@ -6,10 +6,8 @@
 
 angular.module('measurementApp', ['ngRoute', 'angular-loading-bar', 'ngAnimate','schemaForm',
 				  'ui.utils' ,'ui.bootstrap', 'nvd3ChartDirectives', 'directedGraphModule','ExnodeService',
-				  'appRoutes', 'MainCtrl', 'MainService','SocketService', 'EodnCtrl','jsTree.directive',
-				  'FilesCtrl', 'DepotMapCtrl', 'DepotCtrl', 'DepotService'
-//,'aggregateValue'
-]
+				  'appRoutes', 'MainCtrl', 'MainService', 'SocketService', 'EodnCtrl','jsTree.directive',
+				  'FilesCtrl', 'DepotMapCtrl', 'DepotCtrl', 'DownloadCtrl', 'DepotService','aggregateValue']
 ).run(function($rootScope, $http, $q, $timeout, $location, Socket, $route) {
   
   var ttl_wiggle = -5;
