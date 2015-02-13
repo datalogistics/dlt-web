@@ -24,7 +24,7 @@ function highlightMapLocations(svg, selector, filter, retries) {
             .attr("id", id)
             .attr("r", 20)
             .attr('stroke-width', 0)
-            .attr("stroke", "#1A2F64")
+            .attr("stroke", "#76231F")
             .attr("fill", "none")
             .each(__pulse)
 
@@ -79,8 +79,9 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id) {
 
     var circ = node.append("circle")
         .attr("r",7)
-        .attr('fill',"#4B6094")
-        .attr('stroke',"#1A2F64")
+        .attr('fill',"#B4635F")
+        .attr('stroke',"#76231F")
+        .attr('stroke-width', '1.25')
         .attr('class', "eodnNode")
         .attr('name', name)
         .attr('location', lonLat)
@@ -99,7 +100,7 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id) {
             .attr("class", "count")
             .attr("baseline-shift", "-4.5px")
             .attr("text-anchor", "middle")
-            .attr("fill", "#A4B1D2")
+            .attr("fill", "#D99490")
       } else{
         var val = parseInt(count.text())
         val = val + 1;
