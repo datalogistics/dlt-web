@@ -1,8 +1,7 @@
-angular.module('aggregateValue', [])
-  .controller('avController', function($scope, $rootScope, $filter) {
-    $scope.services = $rootScope.services || [];
+angular.module('avDirective', [])
+  .controller('avController', function($scope, $rootScope, $filter, UnisService) {
     getDepotCount = function() {
-      return $filter('filter')($scope.services, { serviceType: 'ibp_server' }).length;
+      return $filter('filter')(UnisService.services, { serviceType: 'ibp_server' }).length;
     };
     getNetworkUsage = function() {
       return 0;
@@ -30,12 +29,19 @@ angular.module('aggregateValue', [])
 	type: '=type'
       },
       template: '<div class="col-xs-5" style="border: 2px solid lightblue; \
-                 border-radius: 15px; padding: 10px; \
+                 border-radius: 15px; padding: 10px; height: 300px; \
                  background-color: lightblue;"><p>{{type.text}}</p> \
-                 <div class="{{dclass}}"/>{{type.datafn()}}</div>',
+                 <div class="{{dclass}}">{{value}}</div>',
       link: function(scope, element, attrs) {
 	function updateValue() {
-	  scope.dclass = "loader";
+	  var val = scope.type.datafn();
+	  if (val) {
+	    scope.dclass = "avtext";
+	    scope.value  = val;
+	  }
+	  else  {
+	    scope.dclass = "loader";
+	  }
 	}
 	
 	timeoutId = $interval(function() {

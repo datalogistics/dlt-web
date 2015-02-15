@@ -1,14 +1,15 @@
 /*
- * Depot Page Controller
- * public/js/controllers/
- * DepotCtrl.js
+ * Depot Controller
+ * public/js/depot/
+ * DepotController.js
  */
 
-angular.module('DepotCtrl', []).controller('DepotController', function($scope, $routeParams, $location, $rootScope, Depot, Socket) {
-	var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
-	                'ps:tools:blipp:ibp_server:resource:usage:free',
-	                'ps:tools:blipp:linux:cpu:utilization:user',
-	                'ps:tools:blipp:linux:cpu:utilization:system'];
+function depotController($scope, $routeParams, $location, $rootScope, UnisService, DepotService) {
+  var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
+	          'ps:tools:blipp:ibp_server:resource:usage:free',
+	          'ps:tools:blipp:linux:cpu:utilization:user',
+	          'ps:tools:blipp:linux:cpu:utilization:system'];
+
   var format_timestamp = function(){
     return function(d){
       var ts = d/1e3;
@@ -32,48 +33,20 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
       "ps:tools:blipp:linux:cpu:utilization:user": {selector: "#CHART-Time-Percent", xformat: format_timestamp, yformat: format_percent},
       "ps:tools:blipp:linux:cpu:utilization:system":{selector: "#CHART-Time-Percent", xformat: format_timestamp, yformat: format_percent}}
 
-
   var metadata_id = $routeParams.id;
-  window.$depotScope = $scope;
-  // place inital app data into scope for view
-  $scope.services = $rootScope.services || [];
-  $scope.measurements = $rootScope.measurements || [];
-  $scope.metadata = $rootScope.metadata || [];
-  $scope.nodes = $rootScope.nodes || [];
-  $scope.ports = $rootScope.ports || [];
-
-  // continue to listen for new data
-  Socket.on('service_data', function(data) {
-    if (typeof data =='string') {
-      data = JSON.parse(data);
-    }
-    
-    // data.status = 'New';
-    console.log('Socket Service Request: ', data);
-
-    var found = false;
-    // search for duplicate services
-    for(var i = 0; $scope.services.length; i++) {      
-      if($scope.services[i].accessPoint == data.accessPoint) {
-        // just update the ttl and ts with the new value, saving our stored info
-        $scope.services[i].ttl = data.ttl;
-        $scope.services[i].ts = data.ts;
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
-      updateServiceEntry(data);
-      $scope.services.push(data);
-    }
-  });
+  
+  // place inital UnisService data into scope for view
+  $scope.services = UnisService.services || [];
+  $scope.measurements = UnisService.measurements || [];
+  $scope.metadata = UnisService.metadata || [];
+  $scope.nodes = UnisService.nodes || [];
+  $scope.ports = UnisService.ports || [];
 
   if (metadata_id != null) {
 
     $scope.eventType = [];
 
-    Depot.getMetadata(metadata_id, function(metadata) {
+    UnisService.getMetadataId(metadata_id, function(metadata) {
       $scope.eventType = metadata.eventType;
       var eventType;
 
@@ -86,7 +59,7 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
       var chartconfig = ETS_CHART_CONFIG[eventType]
       d3.select(chartconfig.selector).attr("style", "")
 
-      Depot.getDataId(metadata_id, function(data) {
+      UnisService.getDataId(metadata_id, function(data) {
         $scope.data = $scope.data || [];
 
         if (typeof data =='string') {data = JSON.parse(data);}
@@ -171,5 +144,4 @@ angular.module('DepotCtrl', []).controller('DepotController', function($scope, $
   $scope.showMap = function(service_id) {
     $location.path('/eodnMap/' + service_id);
   };
-
-});
+}

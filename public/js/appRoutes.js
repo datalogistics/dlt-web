@@ -1,10 +1,10 @@
 /*
  * Routes and Views to Render
  * public/js/
- * appRoutes.js
+ * routes.js
  */
 
-angular.module('appRoutes', []).config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
+angular.module('routes', []).config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
 function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
 
   cfpLoadingBarProvider.includeSpinner = false;
@@ -22,25 +22,17 @@ function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
       templateUrl: 'views/depot_data.html',
       controller: 'DepotController'
     }).
-    when('/eodnMap/:depotId', {
-      templateUrl: 'views/depot_map.html',
-      controller: 'DepotMapController'
-    }).
-    when('/eodnMap/', {
-      templateUrl: 'views/depot_map.html',
-      controller: 'DepotMapController'
-    }).
     when('/map/', {
       templateUrl: 'views/depot_map.html',
-      controller: 'DepotMapController'
+      controller: 'MapController'
     }).
-    when('/eodn/:id', {
+    when('/map/:id', {
       templateUrl: 'views/depot_map.html',
-      controller: 'DepotMapController'
+      controller: 'MapController'
     }).
-    when('/files/',{
-      templateUrl: 'views/files.html',
-      controller: 'FilesController'
+    when('/browser/',{
+      templateUrl: 'views/browser.html',
+      controller: 'ExnodeController'
     }).
     when('/downloads/',{
       templateUrl: 'views/downloads.html',

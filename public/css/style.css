@@ -231,7 +231,7 @@ text.id {
 }
 
 
-.searchfile{
+.searchfile {
     background-image: url('/images/file.png'); 
     background-position: center center; 
     background-size: auto auto;
@@ -240,17 +240,13 @@ text.id {
     line-height: 24px;
 }
 
-.layout {
-    display: table;
+.avtext {
+    font-family: sans-serif;
+    font-weight: bold;
+    font-size: 150px;
+    color: grey;
 }
 
-.layout .columns-container {
-    display: table-row;
-}
-
-.layout .columns-container .column {
-    display: table-cell;
-}
 .loader {
   font-size: 20px;
   margin: 5em auto;

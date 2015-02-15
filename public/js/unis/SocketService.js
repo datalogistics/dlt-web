@@ -1,14 +1,15 @@
 /*
  * Socket Service
- * public/js/services/
+ * public/js/unis/
  * SocketService.js
  */
 
-angular.module('SocketService', []).service('Socket', function($rootScope, $location) {
-
+function socketService($rootScope, $http) {
+  
+  var service = {};
   var socket = io.connect(window.location.origin);
 
-  this.on = function (eventName, callback) {
+  service.on = function (eventName, callback) {
     socket.on(eventName, function () {
       var args = arguments;
       $rootScope.$apply(function () {
@@ -17,7 +18,7 @@ angular.module('SocketService', []).service('Socket', function($rootScope, $loca
     });
   };
 
-  this.emit = function (eventName, data, callback) {
+  service.emit = function (eventName, data, callback) {
     socket.emit(eventName, data, function () {
       var args = arguments;
       $rootScope.$apply(function () {
@@ -28,4 +29,5 @@ angular.module('SocketService', []).service('Socket', function($rootScope, $loca
     });
   };
 
-});
+  return service;
+}
