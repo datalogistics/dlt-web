@@ -1,11 +1,23 @@
+function getSchemaProperties(obj) {
+    var n = obj.properties;
+    var arr = [];
+    for (i in n) {
+        i = i || "";
+        if (i.charAt(0) != "$") {
+            arr.push({
+                name : i,
+                desc : n[i].description
+            });
+        };
+    };
+    return arr;
+};
 /*
  * Exnode Browser Page Controller
  * public/js/exnode/
  * ExnodeController.js
  */
 function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeService,$log) {
-
-
   // The Exnode file browser 
   $scope.fieldArr = [];    
   $scope.addField = function(){

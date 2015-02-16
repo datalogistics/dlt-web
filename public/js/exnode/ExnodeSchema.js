@@ -137,3 +137,17 @@ window.exnodeForm = [
     type: "submit",
     title: "Search"
 }];
+
+window.dltSchema = {
+  // start_date : 'date' ,
+  // end_date:'date',
+  // // aoi_entry
+  // aoi_entry : "path_row",
+  // seasonal : [true , false],
+  // cloud_cover : 0 // 0 to 100 
+
+  // name : "dltForm" ,
+  
+};
+
+
