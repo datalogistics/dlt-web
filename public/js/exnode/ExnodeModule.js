@@ -9,4 +9,5 @@ angular.module('exnode', [])
     return new exnodeService($http);
   }])
   .controller('ExnodeController', exnodeController)
+  .controller('DltFormController', dltFormController)
   .controller('DownloadController', downloadController);

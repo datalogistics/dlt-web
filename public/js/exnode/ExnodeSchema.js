@@ -125,70 +125,15 @@ window.extentSchema = {
     }
 };
 
-window.exnodeForm = [{
-    type: "tabs",
-    tabs: [{
-        title: "Exnode Search",
-        items: [{
-            type: "section",
-            htmlClass: "col-md-4",
-            items: [{
-                    key: "description",
-                    htmlClass: "kkkkk"
-                },
-                "id"
-            ]
-        }, {
-            type: "section",
-            htmlClass: "col-md-4",
-            items: [{
-                    key: "description",
-                    htmlClass: "kkkkk"
-                },
-                "id"
-            ]
-        }, {
-            type: "section",
-            htmlClass: "col-md-4",
-            items: [{
-                    key: "description",
-                    htmlClass: "kkkkk"
-                },
-                "id"
-            ]
-        }]
-    }, {
-        title: "USGS Search",
-        items: [{
-            type: "section",
-            htmlClass: "col-md-4",
-            items: [{
-                    key: "description",
-                    htmlClass: "kkkkk"
-                },
-                "id"
-            ]
-        }, {
-            type: "section",
-            htmlClass: "col-md-4",
-            items: [{
-                    key: "description",
-                    htmlClass: "kkkkk"
-                },
-                "id"
-            ]
-        }, {
-            type: "section",
-            htmlClass: "col-md-4",
-            items: [{
-                    key: "description",
-                    htmlClass: "kkkkk"
-                },
-                "id"
-            ]
-        }]
+window.exnodeForm = [
+  {
+    type: "section",
+    htmlClass: "col-md-4",
+    items: [{
+      key: "description",
+      htmlClass: "kkkkk"
     }]
-}, {
+  },{
     type: "submit",
     title: "Search"
 }];

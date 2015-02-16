@@ -3,30 +3,10 @@
  * public/js/exnode/
  * ExnodeController.js
  */
+function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeService,$log) {
 
-function getSchemaProperties(obj) {
-    var n = obj.properties;
-    var arr = [];
-    for (i in n) {
-        i = i || "";
-        if (i.charAt(0) != "$") {
-            arr.push({
-                name : i,
-                desc : n[i].description
-            });
-        };
-    };
-    return arr;
-};
 
-function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeService) {
-  // Inlining the schema - Testing
-  $scope.exFields = getSchemaProperties(window.exnodeScheme);
-  $scope.selectedExnode = false;
-  $scope.setField = (function(x){
-    $scope.selectedExnode = x;        
-  });
-  
+  // The Exnode file browser 
   $scope.fieldArr = [];    
   $scope.addField = function(){
     var x = {
@@ -43,6 +23,7 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
       if (arr[i].id == ind)
         break;
     };
+
     // Delete        
     arr.splice(i,1);
     console.log("New Arr",arr , i , ind);

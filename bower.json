@@ -17,7 +17,8 @@
     "d3-tip": "~0.6.4",
     "angular-schema-form": "~0.7.3",
     "angular-loading-bar": "~0.6.0",
-    "jstree-directive": "~0.1.4"
+    "jstree-directive": "~0.1.4",
+    "angular-bootstrap-slider": "~0.1.1"
   },
   "resolutions": {
     "angular": "~1.2.6"
