@@ -47,9 +47,9 @@ function depotController($scope, $routeParams, $location, $rootScope, UnisServic
     $scope.eventType = [];
 
     UnisService.getMetadataId(metadata_id, function(metadata) {
-      $scope.eventType = metadata.eventType;
-      var eventType;
-
+      var eventType = metadata.eventType;
+      var arrayData = [];
+      
       for (i=0; i< metadata.length; i++) {
         if (eventType === undefined) {
           eventType = metadata[i].eventType
@@ -60,30 +60,35 @@ function depotController($scope, $routeParams, $location, $rootScope, UnisServic
       d3.select(chartconfig.selector).attr("style", "")
 
       UnisService.getDataId(metadata_id, function(data) {
-        $scope.data = $scope.data || [];
+        if (typeof data =='string') {
+	  data = JSON.parse(data);
+	}
+	
+	if (Object.prototype.toString.call(data) === '[object Array]') {
+          angular.forEach(data.reverse(), function(key, value) {
+            arrayData.push([key.ts, key.value]);
+          });
 
-        if (typeof data =='string') {data = JSON.parse(data);}
-
-        $scope.data = $scope.data.concat(data);
-
-        var arrayData = [];
-        angular.forEach($scope.data, function(key, value) {
-          arrayData.push([key.ts, key.value]);
-        });
-
-        $scope.xAxisTickFormat_Date_Format = chartconfig.xformat;
-        $scope.yAxisFormatFunction = chartconfig.yformat;
-
-        $scope.graphData = [
-        {
-          "key": "Data Point",
+          $scope.xAxisTickFormat_Date_Format = chartconfig.xformat;
+          $scope.yAxisFormatFunction = chartconfig.yformat;
+	  $scope.eventType = eventType;
+	}
+	else {
+	  angular.forEach(data[metadata_id], function(key, value) {
+            arrayData.push([key.ts, key.value]);
+          });
+	}
+        
+	// should not rely on the scope here or above
+	$scope.graphData = [
+          {
+            "key": "Data Point",
             "values": arrayData
-        }];
-
+          }];	 
       });
     });
   }
-
+  
   $scope.getMetadataShortET = function(md) {
       var arr = md.eventType.split(':');
       return arr.pop();
