@@ -5,9 +5,9 @@ function mapController($scope, $routeParams, $http, UnisService) {
   
   allServiceData($scope.services, mapPoints(map.projection, map.svg, "depots"));
   
-  if (typeof $routeParams.depotId != 'undefined') {
-    console.log($routeParams.depotId);
-    highlightMapLocations(map.svg, ".eodnNode", function(d) {return this.getAttribute("depot_id") == $routeParams.depotId})
+  if (typeof $routeParams.id != 'undefined') {
+    console.log($routeParams.id);
+    highlightMapLocations(map.svg, ".eodnNode", function(d) {return this.getAttribute("depot_id") == $routeParams.id})
   }
 } // end controller
 

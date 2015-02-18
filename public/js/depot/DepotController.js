@@ -142,6 +142,6 @@ function depotController($scope, $routeParams, $location, $rootScope, UnisServic
   };
 
   $scope.showMap = function(service_id) {
-    $location.path('/eodnMap/' + service_id);
+    $location.path('/map/' + service_id);
   };
 }
