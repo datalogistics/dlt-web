@@ -160,6 +160,44 @@ module.exports = function(client) {
   client.on('event_request', getGenericHandler('event','event_data'));
   client.on('data_request', getGenericHandler('data','data_data'));
  
+  client.on('usgs_lat_search',function(data){
+    var params = data;
+    var paramString = querystring.stringify(params);
+    // Make a request to the USGS get_metadata url which returns the data in xml form
+    var url = cfg.usgs_lat_searchurl + "?"+paramString;
+    console.log(url);
+    request(url,function(err,r,resp){
+      xmlparse(resp, function(err , result){
+        console.dir(result);      
+        var data = result || {};
+        data = data.searchResponse || [];      
+        var r = (data.metaData || []).map(function(x) {
+          for (var i in x) {
+            if(_.isArray(x[i]) && x[i].length == 1){
+              x[i] = x[i][0];
+            }
+          };
+          x.name = x.sceneID;
+          return x;
+        });
+        if (data.length == 0){
+          try{
+            r.error = result.html.body ;
+          } catch(e){
+            r.error ="No results found";
+          }
+        };
+        /*********** Emitting some data here **********/
+        client.emit('usgs_lat_res',r);
+
+        // // Use the data to query mongo where name maps to id
+        // // Super hacky and super slow -- temporary way
+        // r.map(function(x){
+        
+        // });        
+      });
+    });
+  });
   client.on('usgs_row_search', function(data){
     var params = data;
     var paramString = querystring.stringify(params);

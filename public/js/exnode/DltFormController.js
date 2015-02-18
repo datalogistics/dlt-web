@@ -17,23 +17,43 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
   function toMMFormat(date){
     return $filter('date')(date, "MM/dd/yyyy");
   };
+  $scope.isUsgsLoading = false;
   $scope.submitUsgsForm = function(){
     console.log(usf);    
-    SocketService.emit('usgs_row_search', {
-      'sensor_name':usf.sensorName,
-      'start_date': toMMFormat(usf.startDate),
-      'end_date': toMMFormat(usf.endDate),
-      'cloud_cover': usf.cloud ,
-      'seasonal': usf.isSeasonal,
-      'aoi_entry':'path_row',
-      'begin_path': usf.pathStart,
-      'end_path': usf.pathEnd,
-      'begin_row': usf.rowStart,
-      'end_row': usf.rowEnd,
-      'output_type':'unknown'
-    });
+    $scope.isUsgsLoading = true;
+    if (usf.searchModel == 'row'){
+      SocketService.emit('usgs_row_search', {
+        'sensor_name':usf.sensorName,
+        'start_date': toMMFormat(usf.startDate),
+        'end_date': toMMFormat(usf.endDate),
+        'cloud_cover': usf.cloud ,
+        'seasonal': usf.isSeasonal,
+        'aoi_entry':'path_row',
+        'begin_path': usf.pathStart,
+        'end_path': usf.pathEnd,
+        'begin_row': usf.rowStart,
+        'end_row': usf.rowEnd,
+        'output_type':'unknown'
+      });
+    } else {
+      SocketService.emit('usgs_lat_search', {
+        'sensor_name':usf.sensorName,
+        'start_date': toMMFormat(usf.startDate),
+        'end_date': toMMFormat(usf.endDate),
+        'cloud_cover': usf.cloud ,
+        'seasonal': usf.isSeasonal,
+        'north': usf.latStart,
+        'south': usf.latEnd,
+        'west': usf.latStart,
+        'east': usf.latEnd
+      });        
+    }
   };
+  SocketService.on('usgs_lat_res',function(data){
+      $scope.isUsgsLoading = false;
+  });
   SocketService.on('usgs_row_res',function(data){
+    $scope.isUsgsLoading = false;
     var r = {};
     (data || []).map(function(x) {
       x.name = x.sceneID;

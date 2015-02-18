@@ -169,10 +169,15 @@
                         <div class="col-md-4">
                             <input type="submit" class="btn btn-primary" value="Search"/>
                         </div>                    
+                    </div>                    
+                    <div class="row top10" ng-if="isUsgsLoading">
+                        <div class="col-xs-5" style=" padding: 10px; height: 300px;background-color: rgba(200,200,200,0.3);">
+                            <div class="loader"></div>
+                        </div>
                     </div>
-                    <div class="row">
+                    <div class="row top10" ng-if="usgsSearchRes && !isUsgsLoading ">
                         <div class="col-md-6 tree-browser">
-                            <div ng-if="usgsSearchRes">
+                            <div>
                                 <div class="row" ng-repeat="(name,rows) in usgsSearchRes">
                                     <a id="" ng-click="showInfo()" class="jstree-anchor">
                                         <i role="presentation" 
