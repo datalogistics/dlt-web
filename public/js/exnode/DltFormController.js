@@ -17,7 +17,6 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
   function toMMFormat(date){
     return $filter('date')(date, "MM/dd/yyyy");
   };
-
   $scope.submitUsgsForm = function(){
     console.log(usf);    
     SocketService.emit('usgs_row_search', {
@@ -35,23 +34,30 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     });
   };
   SocketService.on('usgs_row_res',function(data){
-    data = data.searchResponse || [];      
-    var r = (data.metaData || []).map(function(x) {
-      for (var i in x) {
-        if($.isArray(x[i]) && x[i].length == 1){
-          x[i] = x[i][0];
-        }
-      };
+    var r = {};
+    (data || []).map(function(x) {
       x.name = x.sceneID;
-      return x;
+      r[x.name] = x;
     });
     $scope.isUsgsSearched = true;
-    console.log("Search Results ",r);
+    console.log("Search Results ",r , data);
     if (!r) {
       usgsSearchRes = false ;
     };
+    for (var i in r){
+      SocketService.emit('exnode_request',{name : i});
+    };
     // Convert the data into e/api/usgssearch?xpected form 
     $scope.usgsSearchRes = r;      
+  });
+  
+  SocketService.on('exnode_data',function(data){    
+    if (data && data.length > 0){      
+      var k = $scope.usgsSearchRes[(data[0].name || "").split(".")[0]];
+      k.isPresentInExnode = true;
+      k._exData = data;
+      console.log("Exnode data ",arguments);
+    } 
   });
   /*
     $scope.submitUsgsForm = function(){

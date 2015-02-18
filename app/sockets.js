@@ -168,10 +168,61 @@ module.exports = function(client) {
     console.log(url);
     request(url,function(err,r,resp){
       xmlparse(resp, function(err , result){
-        console.dir(result);                
-        client.emit('usgs_row_res',result);        
+        console.dir(result);      
+        var data = result || {};
+        data = data.searchResponse || [];      
+        var r = (data.metaData || []).map(function(x) {
+          for (var i in x) {
+            if(_.isArray(x[i]) && x[i].length == 1){
+              x[i] = x[i][0];
+            }
+          };
+          x.name = x.sceneID;
+          return x;
+        });
+        if (data.length == 0){
+          try{
+            r.error = result.html.body ;
+          } catch(e){
+            r.error ="No results found";
+          }
+        };
+        /*********** Emitting some data here **********/
+        client.emit('usgs_row_res',r);
+
+        // // Use the data to query mongo where name maps to id
+        // // Super hacky and super slow -- temporary way
+        // r.map(function(x){
+          
+        // });        
       });
+      // Now use this response to 
     });        
+  });
+  client.on('exnode_request',function(data){
+    var name = data.name ;
+    http.get({
+      host : cfg.serviceMap.dev.url,
+      port : cfg.serviceMap.dev.port,
+      path : '/exnodes?name=reg='+name
+    }, function(http_res) {
+      var data = '';
+      http_res.on('data', function (chunk) {
+        data += chunk;
+      });
+      http_res.on('end',function() {
+        var obj = JSON.parse(data);
+        // console.log( obj );
+        client.emit('exnode_data',JSON.parse(data));
+        //return defer.resolve(obj);
+        //res.json( obj );
+      });
+      http_res.on('error',function(e) {
+        console.log("Error for Id ",id);
+        //return defer.reject(false);
+        // res.send( 404 );
+      });
+    });
   });
   // All the weird ones
   client.on('eodnDownload_request', function(data) {

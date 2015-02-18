@@ -173,11 +173,13 @@
                     <div class="row">
                         <div class="col-md-6 tree-browser">
                             <div ng-if="usgsSearchRes">
-                                <div class="row" ng-repeat="rows in usgsSearchRes">
+                                <div class="row" ng-repeat="(name,rows) in usgsSearchRes">
                                     <a id="" ng-click="showInfo()" class="jstree-anchor">
                                         <i role="presentation" 
                                            class="searchfile jstree-icon jstree-themeicon jstree-themeicon-custom"></i>
                                         {{rows.name}}</a>
+                                    <div ng-if="rows.isPresentInExnode">This Exists in exnode ...</div>
+                                    
                                 </div>
                             </div>
                             <div ng-if="!usgsSearchRes && isUsgsSearched">
