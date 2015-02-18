@@ -12,6 +12,9 @@ var WebSocket = require('ws')
 , http = require('http')
 , https = require('https')
 , url = require('url')
+, xmlparse = require('xml2js').parseString
+, request = require('request')
+, querystring = require('querystring')
 , cfg = require('../properties')
 ,_ = require('underscore');
 
@@ -156,7 +159,20 @@ module.exports = function(client) {
   client.on('topology_request', getGenericHandler('topology','topology_data'));
   client.on('event_request', getGenericHandler('event','event_data'));
   client.on('data_request', getGenericHandler('data','data_data'));
-  
+ 
+  client.on('usgs_row_search', function(data){
+    var params = data;
+    var paramString = querystring.stringify(params);
+    // Make a request to the USGS get_metadata url which returns the data in xml form
+    var url = cfg.usgs_row_searchurl + "?"+paramString;
+    console.log(url);
+    request(url,function(err,r,resp){
+      xmlparse(resp, function(err , result){
+        console.dir(result);                
+        client.emit('usgs_row_res',result);        
+      });
+    });        
+  });
   // All the weird ones
   client.on('eodnDownload_request', function(data) {
     // The id according to which multiple downloads happen
