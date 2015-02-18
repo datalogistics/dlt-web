@@ -262,17 +262,15 @@ module.exports = function(client) {
       });
     });
   });
-  // All the weird ones
+
+  // Download Viz requests
   client.on('eodnDownload_request', function(data) {
     // The id according to which multiple downloads happen
     var id = data.id ;
-    getAllIpLocationMap(nodeIpArray,function(map){
-      var nodeLocations = map;
-      console.log('all fine till here ');
-      client.emit('eodnDownload_Nodes', {data : nodeLocations});
-      // AddNewConnection
-      addNewConn(client, id);
-    });
+    console.log('all fine till here ');
+    client.emit('eodnDownload_Nodes', {data : {}});
+    // AddNewConnection
+    addNewConn(client, id);
   });
   
   client.on("eodnDownload_clear",function(data){

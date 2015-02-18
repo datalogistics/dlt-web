@@ -22,19 +22,19 @@ sock.on('connect' , function(){
 	});
 	sock.emit(msg.p, {
 	    hashId : 1244,
-	    ip : '152.54.15.19',
+	    ip : '152.54.14.13',
 	    offset : off + 65536,
 	    progress : 32768
 	});
 	sock.emit(msg.p, {
 	    hashId : 1244,
-	    ip : 'depot1.loc1.tacc.reddnet.org',
+	    ip : '152.54.14.15',
 	    offset : off + 98304,
 	    progress : 49152
 	});
 	sock.emit(msg.p, {
 	    hashId : 1244,
-	    ip : 'depot1.loc1.umich.reddnet.org',
+	    ip : '155.99.144.103',
 	    offset : off + 98304,
 	    progress : 262144
 	});

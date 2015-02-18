@@ -5,4 +5,5 @@
  */
 
 angular.module('map', [])
-  .controller('MapController', mapController);
+  .controller('MapController', mapController)
+  .controller("DownloadVizController", downloadVizController);

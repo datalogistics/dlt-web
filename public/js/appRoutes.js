@@ -38,6 +38,10 @@ function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
       templateUrl: 'views/downloads.html',
       controller: 'DownloadController'
     }).
+    when('/downloads/:id',{
+      templateUrl: 'views/download_map.html',
+      controller: 'DownloadVizController'
+    }).
     otherwise({redirectTo: '/'});
   
   $locationProvider.html5Mode(true);
