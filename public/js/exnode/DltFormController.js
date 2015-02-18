@@ -1,4 +1,7 @@
 function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeService,$log) {
+
+  $scope.searchModel = 'row';
+
   $scope.exFields = getSchemaProperties(window.exnodeScheme);
   // Date
   $scope.today = function() {

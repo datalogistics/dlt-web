@@ -1,6 +1,13 @@
  http://earthexplorer.usgs.gov/fgdc/4923/LC80120542013154LGN00/
 
 http://landsat.usgs.gov/consumer.php
+For latitude , longitude
+    http://earthexplorer.usgs.gov/EE/InventoryStream/latlong?
+    north=21.00000&south=1.00000&east=133.00000&west=3.00000
+    &sensor=LANDSAT_8
+    &start_date=1982-07-12&end_date=2015-02-08
+    
+For Row data
     http://landsat.usgs.gov/includes/scripts/get_metadata.php?
     sensor_name=LANDSAT_8
     
@@ -43,16 +50,7 @@ TODO :
 * Integrating the search api with the tree browser
 * Figure out and document what each part of query maps to
 * Is pagination possible ? or Do we need some kind of caching ??
-{ sensor_name  :
-{
-"LANDSAT_8": "Landsat 8 OLI/TIRS"
-"LANDSAT_ETM_SLC_OFF" : "Landsat 7 SLC-off (2003 -&gt;)"
-"LANDSAT_ETM": "Landsat 7 SLC-on (1999-2003)"
-"LANDSAT_TM": "Landsat 4-5 TM"
-"LANDSAT_MSS2": "Landsat 4-5 MSS"
-"LANDSAT_MSS1": "Landsat 1-3 MSS"
-"LANDSAT_COMBINED": "Landsat 4-8 Combined"
-}}
+
 
 Invalid value for
 sensor_name,
@@ -62,3 +60,6 @@ end_date, aoi_entry
 Slider 
 Longitude : -180 to 180 degrees
 Latitude  : -90 to 90 degrees
+
+
+https://gitlab.crest.iu.edu/damsl/bddlt/blob/unis-exnode/src/DLTWebStartClient/resources/webLauncher.jnlp

@@ -108,14 +108,66 @@
                         </p>
                     </div>                    
                 </div>
-                <div class="row">
+                <div class="row">                    
+                    <div class="col-md-4">
+                        <div class="btn-group">
+                            <label class="btn btn-primary" ng-model="searchModel" btn-radio="'row'">Row </label>
+                            <label class="btn btn-primary" ng-model="searchModel" btn-radio="'latlong'">Latitude/Longitude</label>
+                        </div>
+                    </div>       
                     <div class="col-md-4">
                         <div>Cloud cover</div>
                         <slider ng-model="sliders.sliderValue" min="testOptions.min" step="testOptions.step" max="testOptions.max" value="testOptions.value"></slider>
+                    </div>                                
+                </div>
+                <div ng-if="searchModel == 'latlong'" class="row top10">
+                    <div class="col-md-1">
+                        Latitude
                     </div>
+                    <div class="col-md-2 form-group">
+                        <input type="number" class="form-control">
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <input type="number" class="form-control">
+                    </div>
+                    <div class="col-md-2 form-group">                        
+                    </div>
+                    <div class="col-md-1">
+                        Longitude
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <input type="number" class="form-control">
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <input type="number" class="form-control">
+                    </div>
+                </div>
+                <div ng-if="searchModel == 'row'" class="row top10">
+                    <div class="col-md-1">
+                        WRS Path
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <input type="number" class="form-control">
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <input type="number" class="form-control">
+                    </div>
+                    <div class="col-md-2 form-group">                        
+                    </div>
+                    <div class="col-md-1">
+                        WRS Row
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <input type="number" class="form-control">
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <input type="number" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
                     <div class="col-md-4">
                         <input type="submit" class="btn btn-primary" value="Search"/>
-                    </div>
+                    </div>                    
                 </div>
             </tab>              
         </tabset>                    
