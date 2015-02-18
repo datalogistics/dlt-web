@@ -18,18 +18,14 @@ function exnodeService($http) {
     });
   };
     
-  service.searchUsgsRow = function (params,cb) {
+  service.searchUsgsRow = function (params) {
     var paramStr = $.param(params);
-    $http.get('/api/usgsrowsearch?'+paramStr).success(function(data){
-      cb(data);
-    });
+    return $http.get('/api/usgsrowsearch?'+paramStr);
   };
 
-  service.searchUsgsLat = function (params,cb) {
+  service.searchUsgsLat = function (params) {
     var paramStr = $.param(params);
-    $http.get('/api/usgslatsearch?'+paramStr).success(function(data){
-      cb(data);
-    });
+    return $http.get('/api/usgslatsearch?'+paramStr);
   };
   
   return service;

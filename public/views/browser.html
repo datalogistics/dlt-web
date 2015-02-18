@@ -81,7 +81,7 @@
                     <div class="row">
                         <div class="col-md-4">
                             <div> Sensor name </div>
-                            <select class="form-control searchField" ng-model="usgsform.searchField">
+                            <select class="form-control searchField" ng-model="usgsform.sensorName">
                                 <option ng-repeat="(key, value) in sensorNames" ng-value="key"
                                         value="{{key}}">
                                     {{value}}
@@ -111,15 +111,15 @@
                     </div>
                     <div class="row">                    
                         <div class="col-md-4">
-                            <div class="btn-group">
-                                <label class="btn btn-primary" ng-model="usgsform.searchModel" btn-radio="'row'">Row </label>
-                                <label class="btn btn-primary" ng-model="usgsform.searchModel" btn-radio="'latlong'">Latitude/Longitude</label>
-                            </div>
-                        </div>       
-                        <div class="col-md-4">
                             <div>Cloud cover</div>
                             <slider ng-model="usgsform.cloud" min="testOptions.min" step="testOptions.step" max="testOptions.max" value="testOptions.value"></slider>
                         </div>                                
+                        <div class="col-md-4">
+                            <div class="btn-group">
+                                <label class="btn btn-primary" ng-model="usgsform.searchModel" btn-radio="'row'">Row/Path </label>
+                                <label class="btn btn-primary" ng-model="usgsform.searchModel" btn-radio="'latlong'">Latitude/Longitude</label>
+                            </div>
+                        </div>
                     </div>
                     <div ng-if="usgsform.searchModel == 'latlong'" class="row top10">
                         <div class="col-md-1">
@@ -170,6 +170,27 @@
                             <input type="submit" class="btn btn-primary" value="Search"/>
                         </div>                    
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 tree-browser">
+                            <div ng-if="usgsSearchRes">
+                                <div class="row" ng-repeat="rows in usgsSearchRes">
+                                    <a id="" ng-click="showInfo()" class="jstree-anchor">
+                                        <i role="presentation" 
+                                           class="searchfile jstree-icon jstree-themeicon jstree-themeicon-custom"></i>
+                                        {{rows.name}}</a>
+                                </div>
+                            </div>
+                            <div ng-if="!usgsSearchRes && isUsgsSearched">
+                                No Results
+                            </div>
+                        </div>
+                        <div class="col-md-6 file-viewer">
+                            <pre>
+                                <code>{{fileInfo}}</code>
+                            </pre>
+                        </div>
+
+                    </div>  
                 </form>
             </tab>              
         </tabset>                    

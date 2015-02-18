@@ -1,20 +1,56 @@
-function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeService,$log) {
+function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter) {
   
   // The usgs Model form
   var usf = $scope.usgsform = {
     startDate : "",
     endDate : "",
-    searchField : "" ,
+    sensorName : "" ,
     searchModel : 'row',
     cloud : "" ,
+    isSeasonal : false,
     latStart : "" , latEnd : "" ,
     longStart : "" , longEnd: "",    
     rowStart : "" , rowEnd : "",
     pathStart : "", pathEnd : ""
   };
+
+  function toMMFormat(date){
+    return $filter('date')(date, "MM/dd/yyyy");
+  };
+
   $scope.submitUsgsForm = function(){
-    console.log(usf);
-    
+    console.log(usf);    
+    ExnodeService.searchUsgsRow({
+      'sensor_name':usf.sensorName,
+      'start_date': toMMFormat(usf.startDate),
+      'end_date': toMMFormat(usf.endDate),
+      'cloud_cover': usf.cloud ,
+      'seasonal': usf.isSeasonal,
+      'aoi_entry':'path_row',
+      'begin_path': usf.pathStart,
+      'end_path': usf.pathEnd,
+      'begin_row': usf.rowStart,
+      'end_row': usf.rowEnd,
+      'output_type':'unknown'
+    }).success(function(data){      
+      data = data.searchResponse || [];      
+      var r = (data.metaData || []).map(function(x) {
+        for (var i in x) {
+          if($.isArray(x[i]) && x[i].length == 1){
+            x[i] = x[i][0];
+          }
+        };
+        x.name = x.sceneID;
+        return x;
+      });
+      $scope.isUsgsSearched = true;
+      console.log("Search Results ",r);
+      if (!r) {
+        usgsSearchRes = false ;
+      };
+      // Convert the data into e/api/usgssearch?xpected form 
+      $scope.usgsSearchRes = r;      
+    });
       // /api/usgssearch?sensor_name=LANDSAT_8&start_date=07/21/1982&end_date=02/18/2015&cloud_cover=100&seasonal=false&aoi_entry=path_row&begin_path=12&end_path=12&begin_row=1&end_row=3&output_type=unknown
   };
 
