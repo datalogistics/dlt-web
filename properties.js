@@ -69,7 +69,8 @@ var self = {
     requestCert: true,
     rejectUnauthorized: false
   },
-  usgs_searchurl : "    http://landsat.usgs.gov/includes/scripts/get_metadata.php",
+  usgs_row_searchurl : "http://landsat.usgs.gov/includes/scripts/get_metadata.php",
+  usgs_lat_searchurl : "http://earthexplorer.usgs.gov/EE/InventoryStream/latlong",
   getSocketOptions : function () {
     
   },

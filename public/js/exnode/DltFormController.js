@@ -1,6 +1,22 @@
 function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeService,$log) {
-
-  $scope.searchModel = 'row';
+  
+  // The usgs Model form
+  var usf = $scope.usgsform = {
+    startDate : "",
+    endDate : "",
+    searchField : "" ,
+    searchModel : 'row',
+    cloud : "" ,
+    latStart : "" , latEnd : "" ,
+    longStart : "" , longEnd: "",    
+    rowStart : "" , rowEnd : "",
+    pathStart : "", pathEnd : ""
+  };
+  $scope.submitUsgsForm = function(){
+    console.log(usf);
+    
+      // /api/usgssearch?sensor_name=LANDSAT_8&start_date=07/21/1982&end_date=02/18/2015&cloud_cover=100&seasonal=false&aoi_entry=path_row&begin_path=12&end_path=12&begin_row=1&end_row=3&output_type=unknown
+  };
 
   $scope.exFields = getSchemaProperties(window.exnodeScheme);
   // Date

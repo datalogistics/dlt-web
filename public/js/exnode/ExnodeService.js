@@ -6,6 +6,7 @@
 
 function exnodeService($http) {
   var service = {}
+  
   service.search = function(params , cb){
     var q = "?mode=file&";
     for (var i in params) {
@@ -15,6 +16,21 @@ function exnodeService($http) {
     $http.get('/api/exnodes'+q).success(function(data) {
       cb(data);
     });
-  }
+  };
+    
+  service.searchUsgsRow = function (params,cb) {
+    var paramStr = $.param(params);
+    $http.get('/api/usgsrowsearch?'+paramStr).success(function(data){
+      cb(data);
+    });
+  };
+
+  service.searchUsgsLat = function (params,cb) {
+    var paramStr = $.param(params);
+    $http.get('/api/usgslatsearch?'+paramStr).success(function(data){
+      cb(data);
+    });
+  };
+  
   return service;
 }

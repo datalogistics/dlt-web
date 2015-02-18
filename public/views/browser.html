@@ -74,101 +74,103 @@
                         </pre>
                     </div>
 
-                </div>
+                </div>  
             </tab>     
             <tab heading="DLT Search"  ng-controller="DltFormController">
-                <div class="row top5">
-                    <div class="col-md-4">
-                        <div> Sensor name </div>
-                        <select class="form-control searchField" ng-model="selected">
-                            <option ng-repeat="(key, value) in sensorNames" ng-value="key"
-                                    value="{{key}}">
-                                {{value}}
-                            </option>                              
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <div>Start date </div>
-                        <p class="input-group">
-                            <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="stdt" is-open="opened" 
-                                   max-date="'2015-06-22'" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
-                            <span class="input-group-btn">
-                                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
-                            </span>
-                        </p>
-                    </div>
-                    <div class="col-md-4">
-                        <div> End date</div>
-                        <p class="input-group">
-                            <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="enddt" is-open="opened2" 
-                                   max-date="'2015-06-22'" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
-                            <span class="input-group-btn">
-                                <button type="button" class="btn btn-default" ng-click="open2($event)"><i class="glyphicon glyphicon-calendar"></i></button>
-                            </span>
-                        </p>
-                    </div>                    
-                </div>
-                <div class="row">                    
-                    <div class="col-md-4">
-                        <div class="btn-group">
-                            <label class="btn btn-primary" ng-model="searchModel" btn-radio="'row'">Row </label>
-                            <label class="btn btn-primary" ng-model="searchModel" btn-radio="'latlong'">Latitude/Longitude</label>
+                <form class="form-horizontal top5" ng-submit="submitUsgsForm()">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div> Sensor name </div>
+                            <select class="form-control searchField" ng-model="usgsform.searchField">
+                                <option ng-repeat="(key, value) in sensorNames" ng-value="key"
+                                        value="{{key}}">
+                                    {{value}}
+                                </option>                              
+                            </select>
                         </div>
-                    </div>       
-                    <div class="col-md-4">
-                        <div>Cloud cover</div>
-                        <slider ng-model="sliders.sliderValue" min="testOptions.min" step="testOptions.step" max="testOptions.max" value="testOptions.value"></slider>
-                    </div>                                
-                </div>
-                <div ng-if="searchModel == 'latlong'" class="row top10">
-                    <div class="col-md-1">
-                        Latitude
+                        <div class="col-md-4">
+                            <div>Start date </div>
+                            <p class="input-group">
+                                <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="usgsform.startDate" is-open="opened" 
+                                       max-date="'2015-06-22'" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <div> End date</div>
+                            <p class="input-group">
+                                <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="usgsform.endDate" is-open="opened2" 
+                                       max-date="'2015-06-22'" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default" ng-click="open2($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                                </span>
+                            </p>
+                        </div>                    
                     </div>
-                    <div class="col-md-2 form-group">
-                        <input type="number" class="form-control">
+                    <div class="row">                    
+                        <div class="col-md-4">
+                            <div class="btn-group">
+                                <label class="btn btn-primary" ng-model="usgsform.searchModel" btn-radio="'row'">Row </label>
+                                <label class="btn btn-primary" ng-model="usgsform.searchModel" btn-radio="'latlong'">Latitude/Longitude</label>
+                            </div>
+                        </div>       
+                        <div class="col-md-4">
+                            <div>Cloud cover</div>
+                            <slider ng-model="usgsform.cloud" min="testOptions.min" step="testOptions.step" max="testOptions.max" value="testOptions.value"></slider>
+                        </div>                                
                     </div>
-                    <div class="col-md-2 form-group">
-                        <input type="number" class="form-control">
+                    <div ng-if="usgsform.searchModel == 'latlong'" class="row top10">
+                        <div class="col-md-1">
+                            Latitude
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <input type="number" ng-model="usgsform.latStart" class="form-control">
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <input type="number" ng-model="usgsform.latEnd" class="form-control">
+                        </div>
+                        <div class="col-md-2 form-group">                        
+                        </div>
+                        <div class="col-md-1">
+                            Longitude
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <input type="number" ng-model="usgsform.longStart" class="form-control">
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <input type="number" ng-model="usgsform.longEnd" class="form-control">
+                        </div>
                     </div>
-                    <div class="col-md-2 form-group">                        
+                    <div ng-if="usgsform.searchModel == 'row'" class="row top10">
+                        <div class="col-md-1">
+                            WRS Path
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <input type="number" ng-model="usgsform.pathStart" class="form-control">
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <input type="number" ng-model="usgsform.pathEnd" class="form-control">
+                        </div>
+                        <div class="col-md-2 form-group">                        
+                        </div>
+                        <div class="col-md-1">
+                            WRS Row
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <input type="number" ng-model="usgsform.rowStart" class="form-control">
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <input type="number" ng-model="usgsform.rowEnd" class="form-control">
+                        </div>
                     </div>
-                    <div class="col-md-1">
-                        Longitude
+                    <div class="row">
+                        <div class="col-md-4">
+                            <input type="submit" class="btn btn-primary" value="Search"/>
+                        </div>                    
                     </div>
-                    <div class="col-md-2 form-group">
-                        <input type="number" class="form-control">
-                    </div>
-                    <div class="col-md-2 form-group">
-                        <input type="number" class="form-control">
-                    </div>
-                </div>
-                <div ng-if="searchModel == 'row'" class="row top10">
-                    <div class="col-md-1">
-                        WRS Path
-                    </div>
-                    <div class="col-md-2 form-group">
-                        <input type="number" class="form-control">
-                    </div>
-                    <div class="col-md-2 form-group">
-                        <input type="number" class="form-control">
-                    </div>
-                    <div class="col-md-2 form-group">                        
-                    </div>
-                    <div class="col-md-1">
-                        WRS Row
-                    </div>
-                    <div class="col-md-2 form-group">
-                        <input type="number" class="form-control">
-                    </div>
-                    <div class="col-md-2 form-group">
-                        <input type="number" class="form-control">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        <input type="submit" class="btn btn-primary" value="Search"/>
-                    </div>                    
-                </div>
+                </form>
             </tab>              
         </tabset>                    
     </div>

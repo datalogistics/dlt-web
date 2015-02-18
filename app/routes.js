@@ -255,11 +255,14 @@ module.exports = function(app) {
       res.json(arr);
     });     
   });
-  app.get('/api/usgssearch',function(req, res) {
+
+
+  // Will do some refractoring a little later
+  app.get('/api/usgsrowsearch',function(req, res) {
     var params = req.query;
     var paramString = querystring.stringify(req.query);
     // Make a request to the USGS get_metadata url which returns the data in xml form
-    var url = cfg.usgs_searchurl + "?"+paramString;
+    var url = cfg.usgs_row_searchurl + "?"+paramString;
     console.log(url);
     request(url,function(err,r,resp){
       xmlparse(resp, function(err , result){
@@ -268,6 +271,21 @@ module.exports = function(app) {
       });
     });        
   });
+
+  app.get('/api/usgslatsearch',function(req, res) {
+    var params = req.query;
+    var paramString = querystring.stringify(req.query);
+    // Make a request to the USGS get_metadata url which returns the data in xml form
+    var url = cfg.usgs_lat_searchurl + "?"+paramString;
+    console.log(url);
+    request(url,function(err,r,resp){
+      xmlparse(resp, function(err , result){
+        console.dir(result);                
+        res.json(result);
+      });
+    });        
+  });
+
   
   app.get('*', function(req, res) {
     res.sendfile('./public/index.html');
