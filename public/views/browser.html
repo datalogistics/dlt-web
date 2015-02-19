@@ -4,18 +4,41 @@
         <tabset>
             <tab heading="Exnode Browser" ng-controller="ExnodeController">
                 <div class="row top5">
-                    <div class="col-md-6 tree-browser">
+                    <div class="col-md-5 tree-browser">
                         <!-- <js-tree tree-events="select_node:nodeSelected" tree-data="json" tree-src="/views/filetree.json"  tree-plugins="checkbox"></js-tree> -->
-                        <js-tree tree-events="select_node:nodeSelected"
+                        <js-tree tree-events="check_node:nodeSelected;uncheck_node:nodeUnselected;uncheck_all:uncheckAll;check_all:checkAll"   
+                                 tree-checkbox="{ tie_selection : false}"
+                                 tree-plugins="checkbox"
                                  tree-ajax="/api/fileTree"></js-tree>
                     </div>
-                    <div class="col-md-6 file-viewer">
-                        <pre>
-                            <code>{{fileViewer}}</code>
-                        </pre>
-                        <span ng-if='showDownload'>
-                            <button ng-click="downloadFile()" class="btn btn-info">Download</button>
-                        </span>
+                    <div class="col-md-7 file-viewer">
+                        <div>
+                            <table class="table-striped table exnodeFileList">
+                                <thead>
+                                    <tr>
+                                        <th> Name </th>
+                                        <th> Id </th>
+                                        <th> Select </th>
+                                        <th> Download</th>                                        
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="(key,val) in selectedIds">
+                                        <td>{{val.name || val.text}}</td>
+                                        <td>{{val.id}}</td> 
+                                        <td><input type="checkbox" value="{{val.selfRef}}"/></td>
+                                        <td><button ng-click="downloadOne(val.selfRef)" class="btn btn-info">Download</button></td>
+                                    </tr>                                       
+                                </tbody>
+                            </table>                            
+                            <button ng-click="downloadAll()" class="btn btn-info">Download Selected</button>                            
+                        </div>
+                        <!-- <pre>
+                 <code>{{fileViewer}}</code>
+                 </pre> -->
+                        <!-- <span ng-if='showDownload'>
+                 <button ng-click="downloadFile()" class="btn btn-info">Download</button>
+                 </span> -->
                     </div>
                 </div>
             </tab>

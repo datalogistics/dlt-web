@@ -17,9 +17,14 @@ function getSchemaProperties(obj) {
  * public/js/exnode/
  * ExnodeController.js
  */
-function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeService,$log) {
+function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,SocketService) {
+  // Dangerous code
+  // SocketService.emit('exnode_getAllChildren', {id : null});
+  // SocketService.on('exnode_childFiles' , function(d){
+  //   console.log("***********************",d);
+  // });
   // The Exnode file browser 
-  $scope.fieldArr = [];    
+  $scope.fieldArr = [];      
   $scope.addField = function(){
     var x = {
       id : $scope.fieldArr.length,
@@ -40,6 +45,7 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     arr.splice(i,1);
     console.log("New Arr",arr , i , ind);
   };
+
   $scope.isSearched = false ;
   $scope.searchExnodes = function(){
     var sarr = [];
@@ -72,19 +78,43 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   $scope.fileInfo = "Select a file";
   $scope.fileViewer = 'Please select a file to view its contents';
   $scope.showDownload = false;
+
+  // Angular will use the selected Ids to display information 
+  $scope.selectedIds = {};
   $scope.nodeSelected = function(a,b){
     var info = b.node.original;
-    console.log(info);
-    $scope.fileViewer = "Id : " + info.id  + "\n" + 
-      "Created: " + info.created + "\n" +
-      "Modified: " + info.modified + "\n" +
-      (info.size ? "Size : " + info.created + "\n" : "") ;
+    $scope.selectedIds[info.id] = info;
+    // console.log(info);    
     $scope.showDownload = info.isFile;
     $scope.downloadId = info.id ;
+  };  
+  $scope.uncheckAll = function() {
+    $scope.selectedIds = {};
   };
-  $scope.downloadFile = function(){
-    //Download this file         
-    console.log("Downloading this file ",$scope.downloadId);
+  $scope.checkAll = function (a,b) {
+    console.log(arguments);
+  }
+  $scope.nodeUnselected = function(a,b){
+    var info = b.node.original;
+    delete $scope.selectedIds[info.id];
+  };
+
+  $scope.downloadOne = function(id){
+    console.log("Downloading this file ",id);
+    download([id]);
+  };
+  $scope.downloadAll = function(){
+    var arr = [];
+    $(".exnodeFileList input:checked").each(function(){
+      arr.push($(this).val());
+    });
+    download(arr);
+  };
+  
+  function download(arr) {
+    var csv = (arr || []).join(",");
+    var k = "<form action='/api/download' method='post'><input type='text' name='refList' value='"+csv+"'/><form>";
+    $(k).submit();
   };
 }
 

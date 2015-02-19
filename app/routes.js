@@ -242,11 +242,13 @@ module.exports = function(app) {
 	  "isFile": x.mode == "file" ? true: false,
           "parent" : x.parent == null? "#" : x.parent,
           "children" :  x.mode != "file",
+          "undetermined" : true,
           "state" : {
             "opened" : false ,
             "disabled" : false,
             "selected" : false 
           },
+          "selfRef" : x.selfRef,
           "text" : x.name ,
           "size" : x.size , 
           "created" : x.created,
@@ -288,12 +290,15 @@ module.exports = function(app) {
   });
 
   app.post('/api/download',function(req,res){
+    console.log(req.body);
+    var arr = req.body.refList.split(",");
     // Use req.params to create this -- Currently hard coding it 
     ejs.renderFile('./app/jnlpTemp.jnlp', {
       codebase : 'sadas' , jarname : 'jar..' ,      
-      args : ['url1','url2'],
+      args : arr,
       jnlpname: "dasdasda"}, function(err, html) {
-      res.set('Content-Type','jnlp');
+      res.set('Content-Type','data/jnlp');
+      res.set('Content-Disposition',"attachment; filename='ExnodeDownload'");
       res.end(html);
     });
   });

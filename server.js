@@ -25,6 +25,7 @@ app.configure(function() {
   app.use(express.methodOverride());
 });
 
+app.use(express.bodyParser());
 // configure enviroments
 app.configure('development', function(){
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
