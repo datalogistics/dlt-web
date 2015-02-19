@@ -14,6 +14,7 @@ var path = require('path')
 , querystring = require('querystring')
 , xmlparse = require('xml2js').parseString
 , request = require('request')
+, ejs = require('ejs')
 , q = require('q');
 
 var getHttpOptions = cfg.getHttpOptions;
@@ -283,10 +284,19 @@ module.exports = function(app) {
         console.dir(result);                
         res.json(result);
       });
-    });        
+    });
   });
 
-  
+  app.post('/api/download',function(req,res){
+    // Use req.params to create this -- Currently hard coding it 
+    ejs.renderFile('./app/jnlpTemp.jnlp', {
+      codebase : 'sadas' , jarname : 'jar..' ,      
+      args : ['url1','url2'],
+      jnlpname: "dasdasda"}, function(err, html) {
+      res.set('Content-Type','jnlp');
+      res.end(html);
+    });
+  });
   app.get('*', function(req, res) {
     res.sendfile('./public/index.html');
   });
