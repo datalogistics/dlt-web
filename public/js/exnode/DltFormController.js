@@ -50,15 +50,27 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     }
   };
   SocketService.on('usgs_lat_res',function(data){
-      $scope.isUsgsLoading = false;
+    $scope.isUsgsLoading = false;
+    console.log(data);
   });
   SocketService.on('usgs_row_res',function(data){
     $scope.isUsgsLoading = false;
     var r = {};
-    (data || []).map(function(x) {
+    var data = (data || []);
+    
+    var dataAsTreeArr = data.map(function(x,i) {
       x.name = x.sceneID;
-      r[x.name] = x;
+      x._treeIndex = i ;
+      r[x.name] = x;                 
+      return  $.extend(x, {
+        "id" : x.name ,
+        "text" : x.name,
+        "icon" :   "/images/file.png" ,
+        "parent" :  "#" ,
+        "children" : false
+      });   
     });
+    
     $scope.isUsgsSearched = true;
     console.log("Search Results ",r , data);
     if (!r) {
@@ -69,6 +81,8 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     };
     // Convert the data into e/api/usgssearch?xpected form 
     $scope.usgsSearchRes = r;      
+    $scope.usgsSearchResAsArr = dataAsTreeArr;
+    console.log(dataAsTreeArr);
   });
   
   SocketService.on('exnode_data',function(data){    
@@ -214,7 +228,10 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
   $scope.formaterFn = function(value) {
     return $scope.prefix + value + $scope.suffix;
   };
-
+  $scope.showImage = function(img,ev){
+    console.log("Show image ",img);
+    $(ev.target).ekkoLightbox();
+  };
   $scope.delegateEvent = null;
   $scope.slideDelegate = function ( value, event ) {
     if( angular.isObject(event) ) {

@@ -80,24 +80,37 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   $scope.showDownload = false;
 
   // Angular will use the selected Ids to display information 
-  $scope.selectedIds = {};
-  $scope.nodeSelected = function(a,b){
-    var info = b.node.original;
-    $scope.selectedIds[info.id] = info;
-    // console.log(info);    
-    $scope.showDownload = info.isFile;
-    $scope.downloadId = info.id ;
-  };  
+  // The generator func
+  function selectNodeGen(prefix) {
+    return function(a,b){
+      var info = b.node.original;
+      var selectedIds = $scope[prefix + 'selectedIds'] = $scope[prefix + 'selectedIds'] || {} ;
+      selectedIds[info.id] = info;
+      // console.log(info);    
+      $scope[prefix+'showDownload'] = info.isFile;
+      $scope[prefix+'downloadId'] = info.id ;     
+    };
+  };
+  k = $scope ;
+  function unselectNodeGen(prefix){
+    return function(a,b){
+      var info = b.node.original;
+      delete ($scope['selectedIds'+prefix] || {})[info.id];
+    };
+  };
+  
+  $scope.nodeSelected = selectNodeGen("");
+  $scope.nodeUnselected = unselectNodeGen("");
+
+  $scope.usgsNodeSelected = selectNodeGen("usgs");
+  $scope.usgsNodeUnselected = unselectNodeGen("usgs");
+
   $scope.uncheckAll = function() {
     $scope.selectedIds = {};
   };
   $scope.checkAll = function (a,b) {
     console.log(arguments);
   }
-  $scope.nodeUnselected = function(a,b){
-    var info = b.node.original;
-    delete $scope.selectedIds[info.id];
-  };
 
   $scope.downloadOne = function(id){
     console.log("Downloading this file ",id);

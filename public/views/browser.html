@@ -199,27 +199,41 @@
                         </div>
                     </div>
                     <div class="row top10" ng-if="usgsSearchRes && !isUsgsLoading ">
-                        <div class="col-md-6 tree-browser">
+                        <div class="col-md-5 tree-browser">
                             <div>
-                                <div class="row" ng-repeat="(name,rows) in usgsSearchRes">
-                                    <a id="" ng-click="showInfo()" class="jstree-anchor">
-                                        <i role="presentation" 
-                                           class="searchfile jstree-icon jstree-themeicon jstree-themeicon-custom"></i>
-                                        {{rows.name}}</a>
-                                    <div ng-if="rows.isPresentInExnode">This Exists in exnode ...</div>
-                                    
-                                </div>
+                                <js-tree tree-data="scope" 
+                                         tree-checkbox="{ tie_selection : false}"
+                                         tree-plugins="checkbox"
+                                         tree-events="check_node:usgsNodeSelected;uncheck_node:usgsNodeUnselected"
+                                         tree-model="usgsSearchResAsArr"></js-tree>
                             </div>
                             <div ng-if="!usgsSearchRes && isUsgsSearched">
                                 No Results
                             </div>
                         </div>
-                        <div class="col-md-6 file-viewer">
-                            <pre>
-                                <code>{{fileInfo}}</code>
-                            </pre>
+                        <div class="col-md-7 file-viewer">
+                            <div>
+                                <table class="table-striped table exnodeFileList">
+                                    <thead>
+                                        <tr>
+                                            <th> Name </th>
+                                            <th> Select </th>
+                                            <th> Download</th>                                        
+                                            <th> Image </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="(key,val) in usgsselectedIds">
+                                            <td>{{val.text}}</td>
+                                            <td><input type="checkbox" value=""/></td>
+                                            <td><button type="button" ng-click="downloadOne()" class="btn btn-info">Download</button></td>
+                                            <td><a href="{{val.browseURL}}" ng-click="showImage(val.browseURL,$event);$event.preventDefault();" class="btn btn-info">Show Image</a></td>
+                                        </tr>                                       
+                                    </tbody>
+                                </table>                            
+                                <button type="button" ng-click="downloadAll()" class="btn btn-info">Download Selected</button>                            
+                            </div>
                         </div>
-
                     </div>  
                 </form>
             </tab>              

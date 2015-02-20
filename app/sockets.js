@@ -263,7 +263,45 @@ module.exports = function(client) {
     });
   });
 
-  // Download Viz requests
+  // @SuperDangerous possibly
+  // function getAllChildExnodeFiles(id , emitId){    
+  //   if (id == null) {
+  //     id = 'null=';
+  //   }
+  //   http.get({
+  //     host : cfg.serviceMap.dev.url,
+  //     port : cfg.serviceMap.dev.port,
+  //     path : '/exnodes?parent='+ id
+  //   }, function(http_res) {
+  //     var data = '';
+  //     http_res.on('data', function (chunk) {
+  //       data += chunk;
+  //     });
+  //     http_res.on('end',function() {
+  //       var obj = JSON.parse(data);
+  //       // console.log( obj );
+  //       for (var i=0 ; i < obj.length ; i++) {
+  //         var it = obj[i];
+  //         if (it.mode == 'file') {
+  //           console.log("emitting " , it);
+  //           it.emitId = emitId;
+  //           client.emit('exnode_childFiles',it);
+  //         } else {
+  //           console.log("Proceeding with Id ",it.id);
+  //           getAllChildExnodeFiles(it.id , emitId);
+  //         }
+  //       };
+  //     });
+  //     http_res.on('error',function(e) {
+  //       console.log("Error for Id ",id);
+  //     });
+  //   });
+  // };
+
+  // client.on('exnode_getAllChildren', function(d){
+  //   getAllChildExnodeFiles(d.id , d.id);
+  // });
+
   client.on('eodnDownload_request', function(data) {
     // The id according to which multiple downloads happen
     var id = data.id ;
