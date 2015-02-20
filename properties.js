@@ -71,6 +71,9 @@ var self = {
   },
   usgs_row_searchurl : "http://landsat.usgs.gov/includes/scripts/get_metadata.php",
   usgs_lat_searchurl : "http://earthexplorer.usgs.gov/EE/InventoryStream/latlong",
+  jnlp_opt : {
+    codebase : "http://dlt.incntre.iu.edu/webstart"
+  },
   getSocketOptions : function () {
     
   },

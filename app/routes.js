@@ -293,14 +293,14 @@ module.exports = function(app) {
     console.log(req.body);
     var arr = req.body.refList.split(",");
     // Use req.params to create this -- Currently hard coding it 
-    ejs.renderFile('./app/jnlpTemp.jnlp', {
-      codebase : 'sadas' , jarname : 'jar..' ,      
-      args : arr,
-      jnlpname: "dasdasda"}, function(err, html) {
-      res.set('Content-Type','data/jnlp');
-      res.set('Content-Disposition',"attachment; filename='ExnodeDownload'");
-      res.end(html);
-    });
+    ejs.renderFile('./app/jnlpTemp.jnlp',
+                   _.extend(cfg.jnlp_opt,{
+                     args : arr}), 
+                   function(err, html) {
+                     res.set('Content-Type','data/jnlp');
+                     res.set('Content-Disposition',"attachment; filename='ExnodeDownload'");
+                     res.end(html);
+                   });
   });
   app.get('*', function(req, res) {
     res.sendfile('./public/index.html');
