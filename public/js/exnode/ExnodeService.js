@@ -13,7 +13,7 @@ function exnodeService($http) {
       var val = params[i];
       q += i + "=reg="+val+"&";
     };
-    $http.get('/api/exnodes'+q).success(function(data) {
+    $http.get('/api/fileTree'+q).success(function(data) {
       cb(data);
     });
   };

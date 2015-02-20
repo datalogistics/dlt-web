@@ -65,6 +65,11 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
       $scope.isSearched = true;
       console.log(res);
       $scope.searchRes = res;
+      $scope.exSearchResAsArr = res.map(function(x) {
+        x.parent = "#";
+        x.children = false;
+        return x ;
+      });
     });;
   };
   
@@ -95,12 +100,15 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   function unselectNodeGen(prefix){
     return function(a,b){
       var info = b.node.original;
-      delete ($scope['selectedIds'+prefix] || {})[info.id];
+      delete ($scope[prefix+'selectedIds'] || {})[info.id];
     };
   };
   
   $scope.nodeSelected = selectNodeGen("");
   $scope.nodeUnselected = unselectNodeGen("");
+
+  $scope.exsearchNodeSelected = selectNodeGen("exsearch");
+  $scope.exsearchNodeUnselected = unselectNodeGen("exsearch");
 
   $scope.usgsNodeSelected = selectNodeGen("usgs");
   $scope.usgsNodeUnselected = unselectNodeGen("usgs");
