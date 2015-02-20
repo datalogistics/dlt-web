@@ -114,19 +114,22 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
 
   $scope.downloadOne = function(id){
     console.log("Downloading this file ",id);
-    download([id]);
+    client_action([id], 'download');
   };
   $scope.downloadAll = function(){
     var arr = [];
     $(".exnodeFileList input:checked").each(function(){
       arr.push($(this).val());
     });
-    download(arr);
+    client_action(arr, 'download');
   };
   
-  function download(arr) {
+  function client_action(arr, app) {
     var csv = (arr || []).join(",");
-    var k = "<form action='/api/download' method='post'><input type='text' name='refList' value='"+csv+"'/><form>";
+    var k = "<form action='/api/download' method='post'>"
+    k += "<input type='text' name='refList' value='"+csv+"'/>"
+    k += "<input type='text' name='app' value='"+app+"'/>"
+    k += "</form>";
     $(k).submit();
   };
 }

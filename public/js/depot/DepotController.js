@@ -105,47 +105,49 @@ function depotController($scope, $routeParams, $location, $rootScope, UnisServic
   $scope.getServiceMetadata = function(service) {
     var metadatas = [];
     var seen_ets = [];
-
+    
     // this case is brutal because our metadata is missing subject hrefs
     // perhaps can fix in blipp for IDMS
     if (service.serviceType == 'ibp_server') {
-	var ip = service.accessPoint.split(':')[1].replace('//', '');
-	for(var i = 0; i < $scope.measurements.length; i++) {
-	    if($scope.measurements[i].configuration.command) {
-		if($scope.measurements[i].configuration.command.split(" ")[1] == ip) {
-		    for(var j = 0; j < $scope.metadata.length; j++) {
-			if ((seen_ets.indexOf($scope.metadata[j].eventType) == -1) &&
-			    ($scope.metadata[j].parameters.measurement.href.split('/')[4] == $scope.measurements[i].id)) {
-			    metadatas.push($scope.metadata[j]);
-			    seen_ets.push($scope.metadata[j].eventType);
-			}
-		    }
-		}
+      var ip = service.accessPoint.split(':')[1].replace('//', '');
+      for(var i = 0; i < $scope.measurements.length; i++) {
+	if($scope.measurements[i].configuration.command) {
+	  if($scope.measurements[i].configuration.command.split(" ")[1] == ip) {
+	    for(var j = 0; j < $scope.metadata.length; j++) {
+	      if ((seen_ets.indexOf($scope.metadata[j].eventType) == -1) &&
+		  ($scope.metadata[j].parameters.measurement.href.split('/')[4] == $scope.measurements[i].id)) {
+		metadatas.push($scope.metadata[j]);
+		seen_ets.push($scope.metadata[j].eventType);
+	      }
 	    }
+	  }
 	}
+      }
+      
+      
     }
     else {
-	for(var i = 0; i < $scope.measurements.length; i++) {
-            if($scope.measurements[i].service == service.selfRef) {
-		for(var j = 0; j < $scope.metadata.length; j++) {
-		    if($scope.metadata[j].parameters.measurement.href == $scope.measurements[i].selfRef) {
-			if ((seen_ets.indexOf($scope.metadata[j].eventType) == -1) &&
-			    (SHOW_ETS.indexOf($scope.metadata[j].eventType) >= 0)) {
-			    metadatas.push($scope.metadata[j]);
-			    seen_ets.push($scope.metadata[j].eventType);
-			}
-		    }
-		}
-            }
-	}
+      for(var i = 0; i < $scope.measurements.length; i++) {
+        if($scope.measurements[i].service == service.selfRef) {
+	  for(var j = 0; j < $scope.metadata.length; j++) {
+	    if($scope.metadata[j].parameters.measurement.href == $scope.measurements[i].selfRef) {
+	      if ((seen_ets.indexOf($scope.metadata[j].eventType) == -1) &&
+		  (SHOW_ETS.indexOf($scope.metadata[j].eventType) >= 0)) {
+		metadatas.push($scope.metadata[j]);
+		seen_ets.push($scope.metadata[j].eventType);
+	      }
+	    }
+	  }
+        }
+      }
     }
     return metadatas;
   };
-
+  
   $scope.showData = function(metadata) {
     $location.path('/depots/' + metadata.id);
   };
-
+  
   $scope.showMap = function(service_id) {
     $location.path('/map/' + service_id);
   };

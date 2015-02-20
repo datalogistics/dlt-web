@@ -288,20 +288,24 @@ module.exports = function(app) {
       });
     });
   });
-
-  app.post('/api/download',function(req,res){
+  
+  app.post('/api/download',function(req, res){
     console.log(req.body);
     var arr = req.body.refList.split(",");
+    var app = req.body.app;
     // Use req.params to create this -- Currently hard coding it 
-    ejs.renderFile('./app/jnlpTemp.jnlp', {
-      codebase : 'sadas' , jarname : 'jar..' ,      
-      args : arr,
-      jnlpname: "dasdasda"}, function(err, html) {
-      res.set('Content-Type','data/jnlp');
-      res.set('Content-Disposition',"attachment; filename='ExnodeDownload'");
-      res.end(html);
-    });
+    console.log(cfg.jnlpMap[app].template);
+    ejs.renderFile(cfg.jnlpMap[app].template, {
+      jarname: cfg.jnlpMap[app].jarfile,
+      codebase: cfg.jnlpMap[app].codebase,
+      args : arr}, function(err, html) {
+	console.log(err, html);
+	res.set('Content-Type','data/jnlp');
+	res.set('Content-Disposition',"attachment; filename='dlt-client.jnlp'");
+	res.end(html);
+      });
   });
+
   app.get('*', function(req, res) {
     res.sendfile('./public/index.html');
   });

@@ -7,8 +7,18 @@ var unis_key  = './dlt-client.pem';
 //var cert = fs.readFileSync(unis_cert);
 
 var self = {    
-  // Just specify environment to use - it will automatically fill in url, port and authentication
-  // No way to add any other config - Eg. https for one dev and not on other - alternative is to create 2 envs for dev : with http and https
+  jnlpMap : {
+    'download': {
+      'template': './misc/dlt-client.jnlp.tmpl',
+      'codebase': 'http://dlt.incntre.iu.edu/webstart',
+      'jarfile' : 'lib/dlt-client.jar'
+    },
+    'publish' : {
+      'template': './misc/dlt-publisher.jnlp.tmpl',
+      'codebase': 'http://dlt.incntre.iu.edu/webstart',
+      'jarfile' : 'lib/dlt-publisher.jar'
+    }
+  },
   routeMap : { 
     // Aggregate from the following by default 
     'default'  : ['dlt', 'monitor'],

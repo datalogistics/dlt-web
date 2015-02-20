@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jnlp spec="1.0+" codebase="<%=codebase%>">
+    <information>
+        <title>Download Client</title>
+        <vendor>DLT</vendor>
+	<homepage href="http://www.data-logistics.org"/>
+	<description>Data Logistics Toolkit - Download Client</description>
+	<icon kind="splash" href="http://dlt.incntre.iu.edu/webstart/html/DLTlogoRed.png"/>
+	<icon href="http://dlt.incntre.iu.edu/webstart/html/DLTlogo.png"/>
+        <offline-allowed/>
+    </information>
+    <resources>
+        <!-- Application Resources -->
+        <j2se version="1.6+" max-heap-size="1024m" href="http://java.sun.com/products/autodl/j2se"/>
+        <jar href="<%=jarname%>" main="true"/>
+	<jar href="lib/commons-cli-1.2.jar"/>
+    </resources>
+    <application-desc
+         name="Download Client"
+         main-class="edu.crest.dlt.downloadClient.DownloadClient">
+     </application-desc>
+     <%for (var i=0; i< args.length; i++) { %>
+     <argument><%=args[i]%></argument>
+     <% } %>     
+</jnlp>
