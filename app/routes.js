@@ -290,16 +290,13 @@ module.exports = function(app) {
   });
   
   app.post('/api/download',function(req, res){
-    console.log(req.body);
     var arr = req.body.refList.split(",");
     var app = req.body.app;
-    // Use req.params to create this -- Currently hard coding it 
-    console.log(cfg.jnlpMap[app].template);
-    ejs.renderFile(cfg.jnlpMap[app].template, {
-      jarname: cfg.jnlpMap[app].jarfile,
-      codebase: cfg.jnlpMap[app].codebase,
+    var jmap = cfg.jnlpMap[app];
+    ejs.renderFile(jmap.template, {
+      jarname: jmap.jarfile,
+      codebase: jmap.codebase,
       args : arr}, function(err, html) {
-	console.log(err, html);
 	res.set('Content-Type','data/jnlp');
 	res.set('Content-Disposition',"attachment; filename='dlt-client.jnlp'");
 	res.end(html);
