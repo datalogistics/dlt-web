@@ -288,20 +288,21 @@ module.exports = function(app) {
       });
     });
   });
-
-  app.post('/api/download',function(req,res){
-    console.log(req.body);
+  
+  app.post('/api/download',function(req, res){
     var arr = req.body.refList.split(",");
-    // Use req.params to create this -- Currently hard coding it 
-    ejs.renderFile('./app/jnlpTemp.jnlp',
-                   _.extend(cfg.jnlp_opt,{
-                     args : arr}), 
-                   function(err, html) {
-                     res.set('Content-Type','data/jnlp');
-                     res.set('Content-Disposition',"attachment; filename='ExnodeDownload'");
-                     res.end(html);
-                   });
+    var app = req.body.app;
+    var jmap = cfg.jnlpMap[app];
+    ejs.renderFile(jmap.template, _.extend(jmap,{
+      jarname: jmap.jarfile,
+      codebase: jmap.codebase,
+      args : arr}), function(err, html) {
+	res.set('Content-Type','data/jnlp');
+	res.set('Content-Disposition',"attachment; filename='dlt-client.jnlp'");
+	res.end(html);
+      });
   });
+
   app.get('*', function(req, res) {
     res.sendfile('./public/index.html');
   });

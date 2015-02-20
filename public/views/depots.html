@@ -2,14 +2,6 @@
 
 <div class="table-responsive">
   <table class="table table-hover table-condensed">
-    <colgroup>
-      <col span="1" style="width: 10%;">
-      <col span="1" style="width: 25%;">
-      <col span="1" style="width: 10%;">
-      <col span="1" style="width: 20%;">
-      <col span="1" style="width: 20%;">
-      <col span="1" style="width: 15%;">
-    </colgroup>
     <tr>
       <th>Status</th>
       <th>Access Point</th>
@@ -30,8 +22,8 @@
       <td>{{ service.accessPoint || service.serviceType }}</td>
       <td>{{ service.ttl }}</td>
       <td>{{ service.ts / 1000 | date:'yyyy-MM-dd HH:mm:ss' }}</td>
-      <td>[{{ service.location.institution }}] {{service.location.city}}, {{ service.location.state }}</td>
-      <td><button ng-click="showMap(service.id)" class="btn btn-info">Show on Map</button></td>
+      <td>{{service.location.institution}}</td>
+      <td><button ng-click="showMap(service.id)" class="btn btn-info">{{service.location.city}} {{ service.location.state }}</button></td>
       <td ng-repeat="metadata in getServiceMetadata(service)">
 	<button ng-click="showData(metadata)" class="btn btn-info">{{getMetadataShortET(metadata)}}</button></td>
     </tbody>
