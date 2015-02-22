@@ -5,7 +5,7 @@
  */
 
 function unisService($q, $http, $timeout, SocketService) {
-  
+  var ttl_wiggle = -5;  
   var service = {};
   
   service.nodes        = [];
@@ -77,31 +77,6 @@ function unisService($q, $http, $timeout, SocketService) {
     }
   };
 
-  // Update services on socket
-  SocketService.on('service_data', function(data) {
-    if (typeof data =='string') {
-      data = JSON.parse(data);
-    }
-    console.log('Socket Service Request: ', data);
-    var services = service.services;
-    var found = false;
-    // search for duplicate services
-    for(var i = 0; services.length; i++) {      
-      if(services[i].accessPoint == data.accessPoint) {
-        // just update the ttl and ts with the new value, saving our stored info
-        services[i].ttl = data.ttl;
-        services[i].ts = data.ts;
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
-      updateServiceEntry(data);
-      services.push(data);
-    }
-  });
-
   service.getMetadataId = function(id, cb) {
     $http.get('/api/metadata/' + id)
       .success(function(data) {
@@ -128,9 +103,6 @@ function unisService($q, $http, $timeout, SocketService) {
     });
   };
   
-
-  // We start here when the service is instantiated
-  var ttl_wiggle = -5;
   finish = function() {
     var services = service.services;
     services.forEach(function(s) {
@@ -156,18 +128,64 @@ function unisService($q, $http, $timeout, SocketService) {
     // start timer
     var timeout = $timeout(onTimeout, 1000);   
   };
+    
+  // socket handlers...
+  SocketService.on('service_data', function(data) {
+    if (typeof data =='string') {
+      data = JSON.parse(data);
+    }
+    console.log('Service data: ', data);
+    var services = service.services;
+    var found = false;
+    // search for duplicate services
+    for(var i = 0; i < services.length; i++) {      
+      if(services[i].accessPoint == data.accessPoint) {
+        // just update the ttl and ts with the new value, saving our stored info
+        services[i].ttl = data.ttl;
+        services[i].ts = data.ts;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      updateServiceEntry(data);
+      services.push(data);
+    }
+  });
+
+  SocketService.on('measurement_data', function(data) {
+    console.log('Measurement data: ', data);
+    service.measurement.push(data);
+  });
+
+  SocketService.on('metadata_data', function(data) {
+    console.log('Metadata data: ', data);
+    service.metadata.push(data);
+  });
+
+  SocketService.on('node_data', function(data) {
+    console.log('Node data: ', data);
+    service.node.push(data);
+  });
+
+  SocketService.on('port_data', function(data) {
+    console.log('Port data: ', data);
+    service.port.push(data);
+  });
   
-  $q.all([
+  // We start here when the service is instantiated
+  service.init = $q.all([
     $http.get('/api/nodes', { cache: true}),
     $http.get('/api/ports', { cache: true}),
     $http.get('/api/measurements', { cache: true}),
     $http.get('/api/metadata', { cache: true}),
     $http.get('/api/services', { cache: true})
   ]).then(function(res) {
-    service.nodes = res[0].data;
-    service.ports = res[1].data;
-    service.measurements = res[2].data;
-    service.metadata = res[3].data;
+    service.nodes = getUniqueById(res[0].data);
+    service.ports = getUniqueById(res[1].data);
+    service.measurements = getUniqueById(res[2].data);
+    service.metadata = getUniqueById(res[3].data);
     service.services = getUniqueById(res[4].data);
     
     SocketService.emit('node_request', {});
@@ -178,6 +196,6 @@ function unisService($q, $http, $timeout, SocketService) {
     
     finish();
   });
-  
+    
   return service;
 }
