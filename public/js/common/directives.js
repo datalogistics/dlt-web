@@ -18,7 +18,7 @@ angular.module('avDirective', [])
     getStorageFree = function() {
       var ret = 0;
       Object.keys(DepotService.depots).forEach(function(key) {
-	if (DepotService.depots[key][ETS.used]) {
+	if (DepotService.depots[key][ETS.free]) {
       	  ret += DepotService.depots[key][ETS.free]
 	}
       });
@@ -41,7 +41,7 @@ angular.module('avDirective', [])
 	type: '=type'
       },
       template: '<div class="col-xs-5" style="border: 2px solid lightblue; \
-                 border-radius: 15px; padding: 10px; height: 300px; \
+                 border-radius: 15px; padding: 5px; height: 250px; \
                  background-color: lightblue;"><p>{{type.text}}</p> \
                  <div class="{{dclass}}">{{value}}</div>',
       link: function(scope, element, attrs) {

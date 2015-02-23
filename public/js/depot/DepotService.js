@@ -15,7 +15,7 @@ var ETS = {
 
 var ETS_CHART_CONFIG = {}
 
-function depotService($http, UnisService) {
+function depotService($http, UnisService, CommChannel) {
   var service = {};
   
   var format_timestamp = function(){
@@ -136,6 +136,12 @@ function depotService($http, UnisService) {
 	createDepot(s);
       }
     });
+  });
+
+  CommChannel.onNewData('new_service', function(s) {
+    if (s.serviceType == "ibp_server") {
+      createDepot(data);
+    }
   });
   
   return service;

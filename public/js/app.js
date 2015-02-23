@@ -13,14 +13,16 @@ angular.module('periApp', ['ngRoute',
 			   'ui.bootstrap',
                            'ui.bootstrap-slider',
 			   'nvd3ChartDirectives',
+			   'pubsub',
 			   'main',
 			   'unis',
 			   'exnode',
 			   'depot',
 			   'map'])
-  .run(function($rootScope, UnisService, DepotService) {
+  .run(function($rootScope, UnisService, DepotService, CommChannel) {
     $rootScope.unis = UnisService;
     $rootScope.depot = DepotService;
+    $rootScope.comm = CommChannel;
   })
   .config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
   function($routeProvider, $locationProvider, cfpLoadingBarProvider) {

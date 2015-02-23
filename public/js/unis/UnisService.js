@@ -4,7 +4,7 @@
  * UnisService.js
  */
 
-function unisService($q, $http, $timeout, SocketService) {
+function unisService($q, $http, $timeout, SocketService, CommChannel) {
   var ttl_wiggle = -5;  
   var service = {};
   
@@ -21,6 +21,18 @@ function unisService($q, $http, $timeout, SocketService) {
     for(var i = 0; i < ary.length; i++) {
       if(curr.indexOf(ary[i].id) == -1) {
 	curr.push(ary[i].id);
+	ret.push(ary[i]);
+      }
+    }
+    return ret;
+  };
+
+  getUniqueByField = function(ary, f) {
+    var curr = [];
+    var ret = [];
+    for(var i = 0; i < ary.length; i++) {
+      if(curr.indexOf(ary[i][f]) == -1) {
+	curr.push(ary[i][f]);
 	ret.push(ary[i]);
       }
     }
@@ -97,7 +109,7 @@ function unisService($q, $http, $timeout, SocketService) {
     $http.get(qstr).success(function(data) {
       //console.log('HTTP Data Response: ' + data);
       cb(data);
-      SocketService.emit('data_request', {'id': id});
+      //SocketService.emit('data_request', {'id': id});
     }).error(function(data) {
       console.log('HTTP Data Error: ' + data);
     });
@@ -126,8 +138,8 @@ function unisService($q, $http, $timeout, SocketService) {
 	  services[i].status = 'OFF';
 	} else {
 	  services[i].status = 'ON';
-	  services[i].ttl--;
 	}
+	services[i].ttl--;
       }
       //continue timer
       timeout = $timeout(onTimeout, 1000);
@@ -159,12 +171,13 @@ function unisService($q, $http, $timeout, SocketService) {
     if (!found) {
       updateServiceEntry(data);
       services.push(data);
+      CommChannel.newData('new_service', data);
     }
   });
 
   SocketService.on('measurement_data', function(data) {
     console.log('Measurement data: ', data);
-    service.measurement.push(data);
+    service.measurements.push(data);
   });
 
   SocketService.on('metadata_data', function(data) {
@@ -174,12 +187,12 @@ function unisService($q, $http, $timeout, SocketService) {
 
   SocketService.on('node_data', function(data) {
     console.log('Node data: ', data);
-    service.node.push(data);
+    service.nodes.push(data);
   });
 
   SocketService.on('port_data', function(data) {
     console.log('Port data: ', data);
-    service.port.push(data);
+    service.ports.push(data);
   });
   
   // We start here when the service is instantiated
@@ -194,7 +207,7 @@ function unisService($q, $http, $timeout, SocketService) {
     service.ports = getUniqueById(res[1].data);
     service.measurements = getUniqueById(res[2].data);
     service.metadata = getUniqueById(res[3].data);
-    service.services = getUniqueById(res[4].data);
+    service.services = getUniqueByField(res[4].data, 'accessPoint');
     
     SocketService.emit('node_request', {});
     SocketService.emit('port_request', {});
