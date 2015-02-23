@@ -19,9 +19,11 @@
     "angular-loading-bar": "~0.6.0",
     "jstree-directive": "~0.1.4",
     "angular-bootstrap-slider": "~0.1.1",
-    "ekko-lightbox": "~3.2.2"
+    "ekko-lightbox": "~3.2.2",
+    "jstree": "~3.0.9"
   },
   "resolutions": {
-    "angular": "~1.2.6"
+    "angular": "~1.2.6",
+    "d3": "~3.3.13"
   }
 }
