@@ -63,6 +63,9 @@ function tooltip(svg, text) {
   .on('mouseout', function(){
     timer = setTimeout(tip.hide,2000);
   });
+
+  //tip2 = d3.select(svg[0].parentNode).append("div")
+  //    .attr("name", "tooltip")
 }
 
 //Add a node with name at position latLon to svg using the projection
@@ -248,24 +251,24 @@ function allServiceData(services, then) {
 //Acquire gelocations for the item dictionary, if available
 //Converts to a dictionary of {ip: {lattitude: x, longitude: y}}
 function ipToLocation(items, then) {
-  var q = queue()
-    Object.keys(items).forEach(function(name) {
-      var url = "http://freegeoip.net/json/" + name
-      q.defer(d3.json, url)
-    })
-  
-  q.awaitAll(function(error, result) {
-    var locations = []
-    result.forEach(function(raw) {
-      place = []
-      if (typeof raw.longitude != 'undefined'
-          && typeof raw.latitude != 'undefined') {
-        place = {latitude: raw.latitude, longitude: raw.longitude}
+  Object.keys(items).forEach(function(name) {
+    var url = "https://freegeoip.net/json/" + name
+    d3.json(url, function (error, raw) {
+      var locations = []
+      if (error) {
+        var id = items[name] === undefined ? "unknown" : items[name].id
+        locations.push({name: name, location: [], depot_id: id})
+        console.log("No location found for ", name, items[name])
+      } else {
+          var place = []
+          if (typeof raw.longitude != 'undefined'
+              && typeof raw.latitude != 'undefined') {
+            place = {latitude: raw.latitude, longitude: raw.longitude}
+          }
+          var id = items[raw.ip] === undefined ? "unknown" : items[raw.ip].id
+          locations.push({name: raw.ip, location: place, depot_id: id})
       }
-      var id = items[raw.ip] === undefined ? "unknown" : items[raw.ip].id
-      locations.push({name: raw.ip, location: place, depot_id: id})
+      then(locations)
     })
-    console.log("loaded " + result.length + " ip locations")
-    then(locations)
   })
 }
