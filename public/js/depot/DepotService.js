@@ -43,10 +43,10 @@ function depotService($http, UnisService, CommChannel) {
 				xformat: format_timestamp, yformat: format_percent};
   ETS_CHART_CONFIG[ETS.sys]  = {selector: "#CHART-Time-Percent",
 				xformat: format_timestamp, yformat: format_percent};
-  ETS_CHART_CONFIG[ETS.in]   = {selector: "#CHART-Time-Percent",
-				xformat: format_timestamp, yformat: format_percent};
-  ETS_CHART_CONFIG[ETS.out]  = {selector: "#CHART-Time-Percent",
-				xformat: format_timestamp, yformat: format_percent};
+  ETS_CHART_CONFIG[ETS.in]   = {selector: "#CHART-Time-GB",
+				xformat: format_timestamp, yformat: format_GB};
+  ETS_CHART_CONFIG[ETS.out]  = {selector: "#CHART-Time-GB",
+				xformat: format_timestamp, yformat: format_GB};
   
   // depots is a map of service IDs
   service.depots = {};
