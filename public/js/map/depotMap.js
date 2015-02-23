@@ -49,7 +49,8 @@ function highlightMapLocations(svg, selector, filter, retries) {
 
 //Add the tool tip functionality
 function tooltip(svg) {
-  d3.select("#map-tool-tip").remove()
+  d3.selectAll("#map-tool-tip").each(function() {this.remove()})
+
   tip = d3.tip()
             .attr('class', 'd3-tip')
             .attr('id', "map-tool-tip")
