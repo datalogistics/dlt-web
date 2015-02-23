@@ -48,11 +48,15 @@ function highlightMapLocations(svg, selector, filter, retries) {
 }
 
 //Add the tool tip functionality
-function tooltip(svg, text) {
-  tip = d3.tip().attr('class', 'd3-tip').html(function() {
-    var x = d3.select(this);
-    return x.attr('name').replace(/\|/g, "</p>")
-  })
+function tooltip(svg) {
+  d3.select("#map-tool-tip").remove()
+  tip = d3.tip()
+            .attr('class', 'd3-tip')
+            .attr('id', "map-tool-tip")
+            .html(function() {
+              var x = d3.select(this);
+              return x.attr('name').replace(/\|/g, "</p>")
+            })
 
   svg.call(tip);
   var timer;
@@ -63,9 +67,6 @@ function tooltip(svg, text) {
   .on('mouseout', function(){
     timer = setTimeout(tip.hide,2000);
   });
-
-  //tip2 = d3.select(svg[0].parentNode).append("div")
-  //    .attr("name", "tooltip")
 }
 
 //Add a node with name at position latLon to svg using the projection
@@ -161,8 +162,8 @@ function mapPoints(projection, svg, elementId) {
         pair = [item.location.longitude, item.location.latitude]
         node = addMapLocation(projection, item.name, pair, svg_points, item.depot_id)
       }
+      tooltip(svg)
     })
-    tooltip(svg)
   }
 }
 
