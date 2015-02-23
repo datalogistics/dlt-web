@@ -141,13 +141,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	  services[i].status = 'OFF';
 	} else {
 	  services[i].status = 'ON';
-	}
-	services[i].ttl--;
-	// remove service if it's been off for too long
-	if (services[i].ttl < -ttl_off_limit) {
-	  var sref = services[i];
-	  services.splice(i, 1);
-	  delete sref;
+	  services[i].ttl--;
 	}
       }
       //continue timer

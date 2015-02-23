@@ -125,6 +125,8 @@ function depotService($http, UnisService, CommChannel) {
       }
     });
     service.depots[s.id] = depot;
+    // save a reference to the depot object in the service entry
+    s.depot = depot;
   };
   
   // depot tracking service waits until UNIS has data
