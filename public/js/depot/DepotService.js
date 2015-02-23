@@ -140,7 +140,7 @@ function depotService($http, UnisService, CommChannel) {
 
   CommChannel.onNewData('new_service', function(s) {
     if (s.serviceType == "ibp_server") {
-      createDepot(data);
+      createDepot(s);
     }
   });
   
