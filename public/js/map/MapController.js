@@ -9,6 +9,12 @@ function mapController($scope, $routeParams, $http, UnisService) {
     console.log($routeParams.id);
     highlightMapLocations(map.svg, ".eodnNode", function(d) {return this.getAttribute("depot_id") == $routeParams.id})
   }
+
+
+  //Cleanup the tooltip object when you navigate away
+  $scope.$on("$destroy", function() {
+    d3.selectAll("#map-tool-tip").each(function() {this.remove()})
+  })
 } // end controller
 
 

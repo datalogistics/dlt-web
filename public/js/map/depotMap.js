@@ -49,17 +49,18 @@ function highlightMapLocations(svg, selector, filter, retries) {
 
 //Add the tool tip functionality
 function tooltip(svg) {
-  d3.selectAll("#map-tool-tip").each(function() {this.remove()})
+  if (d3.select("#map-tool-tip").empty()) {
+    tip = d3.tip()
+              .attr('class', 'd3-tip')
+              .attr('id', "map-tool-tip")
+              .html(function() {
+                var x = d3.select(this);
+                return x.attr('name').replace(/\|/g, "</p>")
+              })
 
-  tip = d3.tip()
-            .attr('class', 'd3-tip')
-            .attr('id', "map-tool-tip")
-            .html(function() {
-              var x = d3.select(this);
-              return x.attr('name').replace(/\|/g, "</p>")
-            })
+    svg.call(tip);
+  }
 
-  svg.call(tip);
   var timer;
   svg.selectAll("circle.eodnNode").on('mouseover', function(){
       clearTimeout(timer);
