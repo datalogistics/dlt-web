@@ -200,7 +200,7 @@ module.exports = function(app) {
       var options = _.extend({
         req : req , res : res ,
         name: name+"Id"+ "?" + paramString,
-        path: path + '/' + node_id
+        path: path + '/' + node_id + '?' + paramString
       },getHttpOptions({
         name : name + "_id"
       }));  

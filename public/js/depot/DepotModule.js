@@ -5,7 +5,7 @@
  */
 
 angular.module('depot', [])
-  .factory('DepotService', ['$http', function($http) {
-    return new depotService($http);
+  .factory('DepotService', ['$http', 'UnisService', function($http, UnisService) {
+    return new depotService($http, UnisService);
   }])
   .controller('DepotController', depotController);

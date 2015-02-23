@@ -10,31 +10,6 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	          'ps:tools:blipp:linux:cpu:utilization:user',
 	          'ps:tools:blipp:linux:cpu:utilization:system'];
 
-  var format_timestamp = function(){
-    return function(d){
-      var ts = d/1e3;
-      return d3.time.format('%X')(new Date(ts));
-    }
-  }
-
-  var format_GB = function(){
-    return function(d){
-      return (d/1e9).toFixed(2); // GB
-    }
-  }
-
-  var format_percent = function() {
-    return function(d) {return (d*100).toFixed(2)}
-  }
-
-  var ETS_CHART_CONFIG = 
-     {"ps:tools:blipp:ibp_server:resource:usage:used" : {selector: "#CHART-Time-GB", xformat: format_timestamp, yformat: format_GB},
-      "ps:tools:blipp:ibp_server:resource:usage:free" : {selector: "#CHART-Time-GB", xformat: format_timestamp, yformat: format_GB},
-      "ps:tools:blipp:linux:cpu:utilization:user": {selector: "#CHART-Time-Percent", xformat: format_timestamp, yformat: format_percent},
-      "ps:tools:blipp:linux:cpu:utilization:system": {selector: "#CHART-Time-Percent", xformat: format_timestamp, yformat: format_percent},
-      "ps:tools:blipp:linux:network:utilization:bytes:in": {selector: "#CHART-Time-Percent", xformat: format_timestamp, yformat: format_percent},
-      "ps:tools:blipp:linux:network:utilization:bytes:out": {selector: "#CHART-Time-Percent", xformat: format_timestamp, yformat: format_percent}}
-
   var metadata_id = $routeParams.id;
   
   // place inital UnisService data into scope for view
@@ -61,7 +36,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
       var chartconfig = ETS_CHART_CONFIG[eventType]
       d3.select(chartconfig.selector).attr("style", "")
 
-      UnisService.getDataId(metadata_id, function(data) {
+      UnisService.getDataId(metadata_id, null, function(data) {
         if (typeof data =='string') {
 	  data = JSON.parse(data);
 	}
@@ -96,76 +71,8 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
       return arr.pop();
   };
 
-  $scope.getServiceMeasurement = function(sref) {
-    for(var i = 0; i < $scope.measurements.length; i++) {
-	if($scope.measurements[i].service == sref) {
-            return $scope.measurements[i].eventTypes;
-        }
-    }
-  };
-
   $scope.getServiceMetadata = function(service) {
-    var metadatas = [];
-    var seen_ets = [];
-    
-    // this case is brutal because our metadata is missing subject hrefs
-    // perhaps can fix in blipp for IDMS
-    if (service.serviceType == 'ibp_server') {
-      var ip = service.accessPoint.split(':')[1].replace('//', '');
-      // this search matches on measurement commands
-      for(var i = 0; i < $scope.measurements.length; i++) {
-	if($scope.measurements[i].configuration.command) {
-	  if($scope.measurements[i].configuration.command.split(" ")[1] == ip) {
-	    for(var j = 0; j < $scope.metadata.length; j++) {
-	      if ((seen_ets.indexOf($scope.metadata[j].eventType) == -1) &&
-		  ($scope.metadata[j].parameters.measurement.href.split('/')[4] == $scope.measurements[i].id)) {
-		metadatas.push($scope.metadata[j]);
-		seen_ets.push($scope.metadata[j].eventType);
-	      }
-	    }
-	  }
-	}
-      }
-      // this search looks for matching ports, mapped to nodes->services->measurements
-      $scope.ports.forEach(function(p) {
-	if (p.properties.ipv4 && p.properties.ipv4.address == ip) {
-	  $scope.nodes.forEach(function(n) {
-	    if (n.ports) {
-	      n.ports.forEach(function(pref) {
-		if (pref.href == p.selfRef) {
-		  UnisService.services.forEach(function(s) {
-		    if (s.runningOn && s.runningOn.href == n.selfRef) {
-		      $scope.measurements.forEach(function(m) {
-			if (m.service == s.selfRef) {
-			  $scope.metadata.forEach(function(md) {
-			    if (md.parameters.measurement.href == m.selfRef &&
-				seen_ets.indexOf(md.eventType) == -1 &&
-				Object.keys(ETS_CHART_CONFIG).indexOf(md.eventType) >= 0) {
-			      metadatas.push(md);
-			      seen_ets.push(md.eventType);
-			    }})
-			}})
-		    }})
-		}})
-	    }})
-	}});
-    }
-    else {
-      for(var i = 0; i < $scope.measurements.length; i++) {
-        if($scope.measurements[i].service == service.selfRef) {
-	  for(var j = 0; j < $scope.metadata.length; j++) {
-	    if($scope.metadata[j].parameters.measurement.href == $scope.measurements[i].selfRef) {
-	      if ((seen_ets.indexOf($scope.metadata[j].eventType) == -1) &&
-		  (SHOW_ETS.indexOf($scope.metadata[j].eventType) >= 0)) {
-		metadatas.push($scope.metadata[j]);
-		seen_ets.push($scope.metadata[j].eventType);
-	      }
-	    }
-	  }
-        }
-      }
-    }
-    return metadatas;
+    return DepotService.depots[service.id].metadata;
   };
   
   $scope.showData = function(metadata) {

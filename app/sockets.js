@@ -52,7 +52,7 @@ module.exports = function(client) {
   function getGenericHandler(resource, emitName){
     var opt = cfg.getHttpOptions({'name': resource});
 
-    function createWebSocket(path, name) {
+    function createWebSocket(path, name, emit) {
       for (var i = 0; i < opt.hostArr.length; i++) {
 	var proto = "ws";
 	var ssl_opts = {};
@@ -75,10 +75,10 @@ module.exports = function(client) {
           //console.log('UNIS socket opened');
         });
         socket.on('message', function(data) {
-          console.log('UNIS socket ('+name+'): '+data);        
+          //console.log('UNIS socket ('+name+'): '+data);        
           data.__source = name;
 	  socketMap[path].clients.forEach(function(client) {
-            client.emit(emitName, data);
+            client.emit(emit, data);
 	  });
         });
         socket.on('close', function() {
@@ -96,12 +96,14 @@ module.exports = function(client) {
     
     return function(data) {
       var path = resource;
+      var emit = emitName;
       if (data && data.id) {
 	path = path + '/' + data.id;
+	emit = emit + '_' + data.id;
       }
       if (!socketMap[path]) {
 	socketMap[path] = {'clients': [client]};
-	createWebSocket(path, resource);
+	createWebSocket(path, resource, emit);
       }
       else {
 	socketMap[path].clients.push(client);

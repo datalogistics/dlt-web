@@ -88,8 +88,13 @@ function unisService($q, $http, $timeout, SocketService) {
       });
   };
   
-  service.getDataId = function(id, cb) {
-    $http.get('/api/data/' + id).success(function(data) {
+  service.getDataId = function(id, n, cb) {
+    var qstr = '/api/data/' + id;
+    if (!n) {
+      n = 300;
+    }
+    qstr += '?limit=' + n;
+    $http.get(qstr).success(function(data) {
       //console.log('HTTP Data Response: ' + data);
       cb(data);
       SocketService.emit('data_request', {'id': id});
@@ -97,8 +102,11 @@ function unisService($q, $http, $timeout, SocketService) {
       console.log('HTTP Data Error: ' + data);
     });
     
-    SocketService.on('data_data', function(data) {
-      console.log('Incoming data for ' + id + ' : ', data);
+    SocketService.on('data_data_' + id, function(data) {
+      if (typeof data =='string') {
+	data = JSON.parse(data);
+      }
+      //console.log('Incoming data for ' + id + ' : ', data);
       cb(data);
     });
   };

@@ -18,8 +18,9 @@ angular.module('periApp', ['ngRoute',
 			   'exnode',
 			   'depot',
 			   'map'])
-  .run(function($rootScope, UnisService) {
+  .run(function($rootScope, UnisService, DepotService) {
     $rootScope.unis = UnisService;
+    $rootScope.depot = DepotService;
   })
   .config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
   function($routeProvider, $locationProvider, cfpLoadingBarProvider) {

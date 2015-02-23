@@ -1,5 +1,5 @@
 angular.module('avDirective', [])
-  .controller('avController', function($scope, $rootScope, $filter, UnisService) {
+  .controller('avController', function($scope, $rootScope, $filter, UnisService, DepotService) {
     getDepotCount = function() {
       return $filter('filter')(UnisService.services, { serviceType: 'ibp_server' }).length;
     };
@@ -7,19 +7,31 @@ angular.module('avDirective', [])
       return 0;
     };
     getStorageUsed = function() {
-      return 0;
+      var ret = 0;
+      Object.keys(DepotService.depots).forEach(function(key) {
+	if (DepotService.depots[key][ETS.used]) {
+      	  ret += DepotService.depots[key][ETS.used]
+	}
+      });
+      return (ret/1e12).toFixed(2);
     };
     getStorageFree = function() {
-      return 0;
+      var ret = 0;
+      Object.keys(DepotService.depots).forEach(function(key) {
+	if (DepotService.depots[key][ETS.used]) {
+      	  ret += DepotService.depots[key][ETS.free]
+	}
+      });
+      return (ret/1e12).toFixed(2);
     };
 
     $scope.dcount = {'text': 'Depot Count',
-		     'datafn':  getDepotCount};
+		     'datafn': getDepotCount};
     $scope.dnet   = {'text': 'Network Usage',
 		     'datafn': getNetworkUsage};
-    $scope.dused  = {'text': 'Total Storage Used',
+    $scope.dused  = {'text': 'Total Storage Used (TB)',
 		     'datafn': getStorageUsed};
-    $scope.dfree  = {'text': 'Total Storage Free',
+    $scope.dfree  = {'text': 'Total Storage Free (TB)',
 		     'datafn': getStorageFree};
   })
   .directive('avElement', function($interval) {
@@ -35,7 +47,7 @@ angular.module('avDirective', [])
       link: function(scope, element, attrs) {
 	function updateValue() {
 	  var val = scope.type.datafn();
-	  if (val) {
+	  if (val > 0) {
 	    scope.dclass = "avtext";
 	    scope.value  = val;
 	  }
