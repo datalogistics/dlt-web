@@ -6,4 +6,4 @@
 
 angular.module('map', [])
   .controller('MapController', mapController)
-  .controller("DownloadVizController", downloadVizController);
+  .controller("DownloadMapController", downloadMapController);

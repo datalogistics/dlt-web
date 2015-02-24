@@ -4,7 +4,7 @@
 // selector -- An svg selector for items.  
 // filter -- A predicate run on selected items
 function highlightMapLocations(svg, selector, filter, retries) {
-  if (typeof filter == 'undefined') {filter = function(d,i) {return true;}}
+  if (filter === undefined) {filter = function(d,i) {return true;}}
  
   var items = svg.selectAll(selector).filter(filter)
 
@@ -72,7 +72,7 @@ function tooltip(svg) {
 }
 
 //Add a node with name at position latLon to svg using the projection
-function addMapLocation(projection, name, rawLonLat, svg, depot_id) {		
+function addMapLocation(projection, name, rawLonLat, svg, depot_id, depot_ip) {		
   var lonLat = [rawLonLat[0].toFixed(2), rawLonLat[1].toFixed(2)] //Round lat/lon
 
   var translate = "translate(" + projection(lonLat) + ")"
@@ -92,7 +92,8 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id) {
         .attr('name', name)
         .attr('location', lonLat)
 
-    if (typeof depot_id != 'undefined') {circ.attr('depot_id', depot_id)}
+    if (depot_id !== undefined) {circ.attr('depot_id', depot_id)}
+    if (depot_ip !== undefined) {circ.attr('depot_ip', depot_ip)}
 
     //nodeLocationMap[name] = node ;
     return node
@@ -123,8 +124,10 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id) {
          .attr("class", "eodnNode")
          .attr("name", name)
          .attr("style", "display:none")
+         .attr("depot-ip", name)
 
-      if (typeof depot_id != 'undefined') {circ.attr('depot_id', depot_id)}
+      if (depot_id !== undefined) {circ.attr('depot_id', depot_id)}
+      if (depot_ip !== undefined) {circ.attr('depot_ip', depot_ip)}
     })
   }
 }
@@ -132,9 +135,9 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id) {
 
 //Add nodes to the side of the map, because their lat/lon is not known
 //baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
-function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id) {
+function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id, depot_ip) {
     pair = [baseLatLon[0]-idx*.3, baseLatLon[1]-idx]  //the idx*.3 straigthens out the line
-    node = addMapLocation(projection, name, pair, svg, depot_id)
+    node = addMapLocation(projection, name, pair, svg, depot_id, depot_ip)
     node.append("text")
        .attr("dx", function(d){return 10})
        .attr("dy", function(d){return 4})
@@ -264,8 +267,8 @@ function ipToLocation(items, then) {
         console.log("No location found for ", name, items[name])
       } else {
           var place = []
-          if (typeof raw.longitude != 'undefined'
-              && typeof raw.latitude != 'undefined') {
+          if (raw.longitude !== undefined
+              && raw.latitude !== undefined) {
             place = {latitude: raw.latitude, longitude: raw.longitude}
           }
           var id = items[raw.ip] === undefined ? "unknown" : items[raw.ip].id
@@ -275,3 +278,63 @@ function ipToLocation(items, then) {
     })
   })
 }
+
+
+
+/// -------------------------------------------
+//   Download visualizatoin components
+function move(svg, st , end , color ) {
+  var y2 = end[1];
+  return svg.append('line')
+    .style({stroke: color , strokeWidth:2})
+    .attr('x1',st[0]).attr('y1',st[1])
+    .attr('x2',st[0]).attr('y2',st[1])
+    .transition().duration(500)
+    .attr('x2',end[0]).attr('y2',y2)
+    //.transition().duration(500).remove()
+    ;					
+}
+
+function moveLineToProgressWithOffset(svg, mapNode, progress, offsetPercent){
+  if (progress >= 100) {return;}
+
+  var ratio = 300 / 100 ;
+  var progOffset = 200 + (offsetPercent || 0) * ratio ;
+
+  // draw bar
+  var width = 960 ///TODO: lookup
+  var prog = [width - 50 , progOffset];
+  var h = ratio * progress , w = 30 ;
+
+  var loc = d3.transform(d3.select(mapNode.node().parentNode).attr("transform")).translate
+  var color = mapNode.attr("fill")
+  console.log(loc, color)
+  move(svg, loc, prog , color)
+    .each("end", function(){						
+      svg.append('rect')
+      .attr("fill", color)
+      .attr("width", w)
+      .attr("height", h)
+      .attr('x', width - 50)
+      .attr('y', progOffset);
+    //progressStart += progress;
+    }).transition().duration(500).remove();
+}
+
+function moveLineToProgress(svg, mapNode, progress , offsetPercent){
+  //progressStart = progressStart || 0 ; 
+  var progressStart = 0 //TODO: store somewhere...in map probably (like the offMapLocation counter)
+  if (progressStart >= 100) {return;}
+  if(progressStart + progress >= 100){
+    progress = 100 - progressStart ;
+  }
+  moveLineToProgressWithOffset(svg, mapNode, progress, progressStart, offset);
+}
+
+function doProgressWithOffset(svg, id, progress , offset){
+  var nodes = svg.selectAll(".eodnNode").filter(function(d) {return this.getAttribute("name") == id})
+  if (nodes.empty()) {return;}
+  var mapNode = d3.select(nodes[0][0]) //ensures we have exactly one item
+  moveLineToProgressWithOffset(svg, mapNode, progress, offset);
+}
+
