@@ -13,7 +13,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   var metadata_id = $routeParams.id;
   
   // place inital UnisService data into scope for view
-  $scope.services = $filter('filter')(UnisService.services, { serviceType: 'ibp_server' }) || [];
+  $scope.services = UnisService.services || [];
   $scope.measurements = UnisService.measurements || [];
   $scope.metadata = UnisService.metadata || [];
   $scope.nodes = UnisService.nodes || [];
@@ -75,7 +75,9 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   };
   
   $scope.getServiceMetadata = function(service) {
-    return DepotService.depots[service.id].metadata;
+    if (service.serviceType == "ibp_server") {
+      return DepotService.depots[service.id].metadata;
+    }
   };
   
   $scope.showData = function(metadata) {

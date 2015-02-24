@@ -135,13 +135,16 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     // set timer value
     onTimeout = function() {
       for(var i = services.length-1; i >= 0; i--) {
-	if(services[i].ttl == 0) {
+	if(services[i].ttl <= 0 && services[i].ttl >= -ttl_wiggle) {
 	  services[i].status = 'Unknown';
 	} else if(services[i].ttl < -ttl_wiggle) {
 	  services[i].status = 'OFF';
 	} else {
 	  services[i].status = 'ON';
-	  services[i].ttl--;
+	}
+	services[i].ttl--;
+	if (services[i].ttl < -ttl_off_limit) {
+	  services.splice(i, 1);
 	}
       }
       //continue timer
@@ -186,6 +189,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   SocketService.on('metadata_data', function(data) {
     console.log('Metadata data: ', data);
     service.metadata.push(data);
+    CommChannel.newData('new_metadata', data);
   });
 
   SocketService.on('node_data', function(data) {

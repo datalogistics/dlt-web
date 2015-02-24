@@ -63,7 +63,7 @@ function depotService($http, UnisService, CommChannel) {
     var ip = s.accessPoint.split(':')[1].replace('//', '');
     // this search matches on measurement commands
     for(var i = 0; i < meas.length; i++) {
-      if(meas[i].configuration.command) {
+      if(meas[i].configuration && meas[i].configuration.command) {
 	if(meas[i].configuration.command.split(" ")[1] == ip) {
 	  for(var j = 0; j < metas.length; j++) {
 	    if ((seen_ets.indexOf(metas[j].eventType) == -1) &&
@@ -102,15 +102,8 @@ function depotService($http, UnisService, CommChannel) {
     return metadatas;
   };
   
-  function updateDepots() {
-    
-  };
-  
-  function createDepot(s) {
-    var mds = getMetadata(s);
-    var depot = {
-      'metadata': mds,
-    };
+  function getValues(depot) {
+    var mds = depot.metadata;
     // get values for each metadata
     mds.forEach(function(md) {
       if ([ETS.used, ETS.free].indexOf(md.eventType) >= 0) {
@@ -124,6 +117,24 @@ function depotService($http, UnisService, CommChannel) {
 	})
       }
     });
+  }
+
+  function updateDepots() {
+    for (var d in service.depots) {
+      if (!d.metadata) {
+	d.metadata = getMetadata(d.service);
+	getValues(d);
+      }
+    }
+  };
+  
+  function createDepot(s) {
+    var mds = getMetadata(s);
+    var depot = {
+      'metadata': mds,
+      'service': s
+    };
+    getValues(depot);
     service.depots[s.id] = depot;
     // save a reference to the depot object in the service entry
     s.depot = depot;
@@ -144,6 +155,11 @@ function depotService($http, UnisService, CommChannel) {
     if (s.serviceType == "ibp_server") {
       createDepot(s);
     }
+  });
+
+  CommChannel.onNewData('new_metadata', function(md) {
+    // update depot eT mappings when we see new metadata
+    updateDepots(md);
   });
   
   return service;
