@@ -8,17 +8,18 @@ function downloadMapController($scope, $routeParams, $http, UnisService, SocketS
     d3.selectAll("#map-tool-tip").each(function() {this.remove()})
   })
 
+ initProgressTarget(map.svg, 30, 300)
+
   var getAccessIp = function(x){
     return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
   };
 
   SocketService.emit("eodnDownload_request",{ id : $routeParams.id});
-  console.log("fine till here " , $routeParams.id);
 
   k = $scope ;
   SocketService.on("eodnDownload_Info", function(data){
     // Set this data in scope to display file info
-    console.log('file data ' , data);
+    console.log('Download file data ' , data);
     if(data.isError){
       $scope.error = true;
     } else {
@@ -40,11 +41,8 @@ function downloadMapController($scope, $routeParams, $http, UnisService, SocketS
     if(progress > 100 || offset > 100){
       alert('wrong data ....');
     }
-    doProgressWithOffset(map.svg, ip,progress, offset);
+    doProgressWithOffset(map.svg, ip, progress, offset);
   });
-
-
-
 
 } // end controller
 

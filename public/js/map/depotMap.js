@@ -283,58 +283,76 @@ function ipToLocation(items, then) {
 
 /// -------------------------------------------
 //   Download visualizatoin components
-function move(svg, st , end , color ) {
-  var y2 = end[1];
-  return svg.append('line')
-    .style({stroke: color , strokeWidth:2})
-    .attr('x1',st[0]).attr('y1',st[1])
-    .attr('x2',st[0]).attr('y2',st[1])
-    .transition().duration(500)
-    .attr('x2',end[0]).attr('y2',y2)
-    //.transition().duration(500).remove()
-    ;					
-}
 
-function moveLineToProgressWithOffset(svg, mapNode, progress, offsetPercent){
-  if (progress >= 100) {return;}
 
-  var ratio = 300 / 100 ;
-  var progOffset = 200 + (offsetPercent || 0) * ratio ;
-
+function moveLineToProgress(svg, mapNode, progress, offsetPercent){
   // draw bar
-  var width = 960 ///TODO: lookup
-  var prog = [width - 50 , progOffset];
-  var h = ratio * progress , w = 30 ;
+  var downloads = svg.select("#downloads")
+  var targetLeft = parseInt(downloads.attr("target-left"))
+  var targetWidth = parseInt(downloads.attr("width"))
+  var targetTop = parseInt(downloads.attr("target-top"))
 
-  var loc = d3.transform(d3.select(mapNode.node().parentNode).attr("transform")).translate
-  var color = mapNode.attr("fill")
-  console.log(loc, color)
-  move(svg, loc, prog , color)
-    .each("end", function(){						
-      svg.append('rect')
-      .attr("fill", color)
-      .attr("width", w)
-      .attr("height", h)
-      .attr('x', width - 50)
-      .attr('y', progOffset);
-    //progressStart += progress;
-    }).transition().duration(500).remove();
-}
-
-function moveLineToProgress(svg, mapNode, progress , offsetPercent){
-  //progressStart = progressStart || 0 ; 
   var progressStart = 0 //TODO: store somewhere...in map probably (like the offMapLocation counter)
   if (progressStart >= 100) {return;}
   if(progressStart + progress >= 100){
     progress = 100 - progressStart ;
   }
-  moveLineToProgressWithOffset(svg, mapNode, progress, progressStart, offset);
+  if (progress >= 100) {return;}
+
+  var ratio = 300 / 100 ;
+  var progOffset = targetTop + (offsetPercent || 0) * ratio ;
+
+
+  var end = [targetLeft, progOffset];
+  var h = ratio * progress , w = 30 ;
+  var start = d3.transform(d3.select(mapNode.node().parentNode).attr("transform")).translate
+  var color = mapNode.attr("fill")
+
+  svg.append('line')
+    .style({stroke: color , strokeWidth:2})
+    .attr('x1',start[0])
+    .attr('y1',start[1])
+    .attr('x2',start[0])
+    .attr('y2',start[1])
+    .transition().duration(500)
+       .attr('x2',end[0])
+       .attr('y2', end[1])
+    .each("end", function(){						
+      svg.append('rect')
+      .attr("class", "download-part")
+      .attr("fill", color)
+      .attr("width", w)
+      .attr("height", h)
+      .attr('x', targetLeft)
+      .attr('y', progOffset);
+    //progressStart += progress;
+    }).transition().duration(500).remove();
 }
 
 function doProgressWithOffset(svg, id, progress , offset){
   var nodes = svg.selectAll(".eodnNode").filter(function(d) {return this.getAttribute("name") == id})
   if (nodes.empty()) {return;}
   var mapNode = d3.select(nodes[0][0]) //ensures we have exactly one item
-  moveLineToProgressWithOffset(svg, mapNode, progress, offset);
+  moveLineToProgress(svg, mapNode, progress, offset);
 }
 
+//TODO: Extend this with an ID when you add multiple files, thread that ID through progress
+function initProgressTarget(svg, width, height) {
+  var left = svg.attr("width")-width
+  var top = svg.attr("height")/2 - height/2
+
+  var g = svg.append("g")
+            .attr("id", "downloads")
+            .attr("width", width)   //TODO: Push these into the rect...maybe...to support multiple downloads
+            .attr("height", height)
+            .attr("target-top", top)
+            .attr("target-left", left)
+            .attr("progress-start", 0)
+
+  g.append("rect")
+      .attr("id", "download-target")
+      .attr("transform", "translate(" + left + "," + top + ")")
+      .attr("fill", "#bbb")
+      .attr("width", width)
+      .attr("height", height)
+}
