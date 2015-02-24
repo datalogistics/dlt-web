@@ -217,12 +217,31 @@
                             <div class="loader"></div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div ng-repeat="(key,val) in usgsSearchRes">
-                            {{ key }} ->  {{ val.name }}  , {{ val.isExnode}}
+                    <div class="row top10">                        
+                        <div class="col-md-4" ng-repeat="(key,val) in usgsSearchRes">
+                            <!-- {{ key }} , {{ val.isExnode}} -->
+                            <img src="{{val.browseURL}}" class="img-responsive cursorPointer"                                 
+                                 href="{{val.browseURL}}"
+                                 ng-click="showImage($event);$event.preventDefault();" />
+                            <div ng-if="val.isExnode != true && val.isExnode !=false" style=" padding: 10px; height: 20px;background-color: rgba(200,200,200,0.3);">
+                                Loading Exnode Info ... 
+                            </div>
+                            <div ng-if="val.isExnode">
+                                <button type="button" ng-click="downloadOne(val._exnodeData.selfRef)" class="btn btn-info">Download via Exnode</button>
+                                <div classs='row'>
+                                    <div class="col-md-3">Exnode Url </div>
+                                    <div class="col-md-9"> <input type="text" disabled value="{{val._exnodeData.selfRef}}" /> </div>
+                                </div>
+                            </div>
+                            <div ng-if="val.isExnode == false">
+                                Not present in exnodes
+                            </div>
+                            <div>
+                                <a href="{{val.cartURL}}" target="_blank" class="btn btn-info">Download from USGS site</a>
+                            </div>
                         </div>
                     </div>
-                    <div class="row top10" ng-if="usgsSearchRes && !isUsgsLoading ">
+                    <!-- <div class="row top10" ng-if="usgsSearchRes && !isUsgsLoading ">
                         <div class="col-md-5 tree-browser">
                             <div>
                                 <js-tree tree-data="scope" 
@@ -258,7 +277,7 @@
                                 <button type="button" ng-click="downloadAll()" class="btn btn-info">Download Selected</button>                            
                             </div>
                         </div>
-                    </div>  
+                    </div> -->  
                 </form>
             </tab>              
         </tabset>                    

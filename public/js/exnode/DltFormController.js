@@ -207,8 +207,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
   $scope.formaterFn = function(value) {
     return $scope.prefix + value + $scope.suffix;
   };
-  $scope.showImage = function(img,ev){
-    console.log("Show image ",img);
+  $scope.showImage = function(ev){
     $(ev.target).ekkoLightbox();
   };
   $scope.delegateEvent = null;
