@@ -58,6 +58,19 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
             && item.location.latitude != 0)
   };
   
+  getInstitutionName = function(item) {
+    service.ports.forEach(function(p) {
+      if (typeof p.properties != 'undefined'
+	  && typeof p.properties.ipv4 != 'undefined'
+	  && typeof item.listeners != 'undefined') {
+	item.listeners.forEach(function(l) {
+	  if (l.tcp.split("/")[0] == p.properties.ipv4.address
+	      && !item.location.institution)
+	    item.location.institution = p.nodeRef.replace(/(.*)(domain=)(.*):.*$/, "$3");
+	})}
+    });
+  };
+  
   updateServiceEntry = function(item) {
     var now = Math.round(new Date().getTime() / 1e3) // seconds
     item.ttl = Math.round(((item.ttl + (item.ts / 1e6)) - now));
@@ -74,17 +87,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	    'zipcode': data.zip_code,
 	    'city': data.city
 	  };
-
-	  service.ports.forEach(function(p) {
-	    if (typeof p.properties != 'undefined'
-		&& typeof p.properties.ipv4 != 'undefined'
-		&& typeof item.listeners != 'undefined') {
-	      item.listeners.forEach(function(l) {
-		if (l.tcp.split("/")[0] == p.properties.ipv4.address
-		    && !item.location.institution)
-		  item.location.institution = p.nodeRef.replace(/(.*)(domain=)(.*):.*$/, "$3");
-	      })}
-	  });
+	  getInstitutionName(item);
 	}).
 	error(function(data, status, headers, config) {
 	  console.log("Error: ", status);
@@ -130,6 +133,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     var services = service.services;
     services.forEach(function(s) {
       updateServiceEntry(s)
+      // save the initial ts
+      s.firstSeen = s.ts;
     });
     
     // set timer value
@@ -162,6 +167,13 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     }
     console.log('Service data: ', data);
     var services = service.services;
+
+    // always add a new blipp service entry
+    if (services.serviceType == "ps:tools:blipp") {
+      services.push(data);
+      return;
+    }
+
     var found = false;
     // search for duplicate services
     for(var i = 0; i < services.length; i++) {      
@@ -176,30 +188,44 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 
     if (!found) {
       updateServiceEntry(data);
+      data.firstSeen = data.ts;
       services.push(data);
       CommChannel.newData('new_service', data);
     }
   });
 
   SocketService.on('measurement_data', function(data) {
-    console.log('Measurement data: ', data);
+    if (typeof data =='string') {
+      data = JSON.parse(data);
+    }
+    //console.log('Measurement data: ', data);
     service.measurements.push(data);
   });
 
   SocketService.on('metadata_data', function(data) {
-    console.log('Metadata data: ', data);
+    if (typeof data =='string') {
+      data = JSON.parse(data);
+    }
+    //console.log('Metadata data: ', data);
     service.metadata.push(data);
     CommChannel.newData('new_metadata', data);
   });
 
   SocketService.on('node_data', function(data) {
+    if (typeof data =='string') {
+      data = JSON.parse(data);
+    }
     console.log('Node data: ', data);
     service.nodes.push(data);
   });
 
   SocketService.on('port_data', function(data) {
+    if (typeof data =='string') {
+      data = JSON.parse(data);
+    }
     console.log('Port data: ', data);
     service.ports.push(data);
+    CommChannel.newData('new_port', data);
   });
   
   // We start here when the service is instantiated
@@ -215,12 +241,12 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     service.measurements = getUniqueById(res[2].data);
     service.metadata = getUniqueById(res[3].data);
     service.services = getUniqueByField(res[4].data, 'accessPoint');
-    
+
+    SocketService.emit('service_request', {});
     SocketService.emit('node_request', {});
     SocketService.emit('port_request', {});
     SocketService.emit('measurement_request', {});
     SocketService.emit('metadata_request', {});
-    SocketService.emit('service_request', {});    
     
     finish();
   });
