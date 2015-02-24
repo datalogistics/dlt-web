@@ -1,3 +1,8 @@
+// To test download through socket for downloads.  
+// Simluates a download of id 1244
+// To execute: node socketTester.js
+
+
 var  sock = require('socket.io-client')('http://localhost:42424');
 var msg = {
 		r : 'eodnDownload_register' ,

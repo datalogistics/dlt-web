@@ -66,11 +66,14 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     });
   }
   
-  $scope.getMetadataShortET = function(md) {
-      var arr = md.eventType.split(':');
-      return arr.pop();
+  $scope.getMetadataShortET = function(md, s) {
+    var arr = md.eventType.split(':');
+    if ([ETS.used, ETS.free].indexOf(md.eventType) >= 0) {
+      return arr.pop() + " (" + (s.depot[md.eventType]/1e9).toFixed(0) + ")";
+    }
+    return arr.pop();
   };
-
+  
   $scope.getServiceMetadata = function(service) {
     return DepotService.depots[service.id].metadata;
   };

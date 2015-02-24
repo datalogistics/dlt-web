@@ -125,6 +125,8 @@ function depotService($http, UnisService, CommChannel) {
       }
     });
     service.depots[s.id] = depot;
+    // save a reference to the depot object in the service entry
+    s.depot = depot;
   };
   
   // depot tracking service waits until UNIS has data
@@ -140,7 +142,7 @@ function depotService($http, UnisService, CommChannel) {
 
   CommChannel.onNewData('new_service', function(s) {
     if (s.serviceType == "ibp_server") {
-      createDepot(data);
+      createDepot(s);
     }
   });
   

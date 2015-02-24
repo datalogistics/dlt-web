@@ -5,7 +5,8 @@
  */
 
 function unisService($q, $http, $timeout, SocketService, CommChannel) {
-  var ttl_wiggle = -5;  
+  var ttl_off_limit = 60; // 1 minute
+  var ttl_wiggle = 5;  
   var service = {};
   
   service.nodes        = [];
@@ -75,10 +76,12 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	  };
 
 	  service.ports.forEach(function(p) {
-	    if (typeof p.properties.ipv4 != 'undefined'
+	    if (typeof p.properties != 'undefined'
+		&& typeof p.properties.ipv4 != 'undefined'
 		&& typeof item.listeners != 'undefined') {
 	      item.listeners.forEach(function(l) {
-		if (l.tcp.split("/")[0] == p.properties.ipv4.address)
+		if (l.tcp.split("/")[0] == p.properties.ipv4.address
+		    && !item.location.institution)
 		  item.location.institution = p.nodeRef.replace(/(.*)(domain=)(.*):.*$/, "$3");
 	      })}
 	  });
@@ -109,7 +112,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     $http.get(qstr).success(function(data) {
       //console.log('HTTP Data Response: ' + data);
       cb(data);
-      //SocketService.emit('data_request', {'id': id});
+      SocketService.emit('data_request', {'id': id});
     }).error(function(data) {
       console.log('HTTP Data Error: ' + data);
     });
@@ -131,15 +134,15 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     
     // set timer value
     onTimeout = function() {
-      for(var i = 0; i < services.length; i++) {
+      for(var i = services.length-1; i >= 0; i--) {
 	if(services[i].ttl == 0) {
 	  services[i].status = 'Unknown';
-	} else if(services[i].ttl < ttl_wiggle) {
+	} else if(services[i].ttl < -ttl_wiggle) {
 	  services[i].status = 'OFF';
 	} else {
 	  services[i].status = 'ON';
+	  services[i].ttl--;
 	}
-	services[i].ttl--;
       }
       //continue timer
       timeout = $timeout(onTimeout, 1000);
