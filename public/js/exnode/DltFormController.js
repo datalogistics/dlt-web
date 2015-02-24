@@ -49,15 +49,12 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
       });        
     }
   };
-  SocketService.on('usgs_lat_res',function(data){
-    $scope.isUsgsLoading = false;
-    console.log(data);
-  });
-  SocketService.on('usgs_row_res',function(data){
+  
+  function handleUsgsData(data){
     $scope.isUsgsLoading = false;
     var r = {};
     var data = (data || []);
-    
+    console.debug("Data rec " ,data);
     var dataAsTreeArr = data.map(function(x,i) {
       x.name = x.sceneID;
       x._treeIndex = i ;
@@ -76,59 +73,41 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     if (!r) {
       usgsSearchRes = false ;
     };
-    for (var i in r){
-      SocketService.emit('exnode_request',{name : i});
-    };
+
+    var sceneIdArr = data.map(function(x){return x.name;});
+    SocketService.emit('exnode_request',{sceneId : sceneIdArr});    
+    
     // Convert the data into e/api/usgssearch?xpected form 
     $scope.usgsSearchRes = r;      
     $scope.usgsSearchResAsArr = dataAsTreeArr;
     console.log(dataAsTreeArr);
+  };
+  SocketService.on('usgs_lat_res',handleUsgsData);
+  SocketService.on('usgs_row_res',handleUsgsData);
+  
+  SocketService.on('exnode_nodata',function(data){
+    // Bunch of ids with no data 
+    var arr = data.data;
+    var res = $scope.usgsSearchRes;
+    arr.map(function(x) {
+      var obj = res[x];
+      if (obj)
+        obj.isExnode = false;
+    });
   });
   
-  SocketService.on('exnode_data',function(data){    
-    if (data && data.length > 0){      
-      var k = $scope.usgsSearchRes[(data[0].name || "").split(".")[0]];
-      k.isPresentInExnode = true;
-      k._exData = data;
-      console.log("Exnode data ",arguments);
-    } 
+  SocketService.on('exnode_data',function(data){
+    var map = data.data ;
+    var res = $scope.usgsSearchRes;
+    for ( var i in map) {
+      var it = map[i];
+      var obj = res[i];
+      if (obj) {
+        obj.isExnode = true;
+        obj._exnodeData = it;
+      }
+    };     
   });
-  /*
-    $scope.submitUsgsForm = function(){
-    console.log(usf);    
-    ExnodeService.searchUsgsRow({
-    'sensor_name':usf.sensorName,
-    'start_date': toMMFormat(usf.startDate),
-      'end_date': toMMFormat(usf.endDate),
-      'cloud_cover': usf.cloud ,
-      'seasonal': usf.isSeasonal,
-      'aoi_entry':'path_row',
-      'begin_path': usf.pathStart,
-      'end_path': usf.pathEnd,
-      'begin_row': usf.rowStart,
-      'end_row': usf.rowEnd,
-      'output_type':'unknown'
-    }).success(function(data){      
-      data = data.searchResponse || [];      
-      var r = (data.metaData || []).map(function(x) {
-        for (var i in x) {
-          if($.isArray(x[i]) && x[i].length == 1){
-            x[i] = x[i][0];
-          }
-        };
-        x.name = x.sceneID;
-        return x;
-      });
-      $scope.isUsgsSearched = true;
-      console.log("Search Results ",r);
-      if (!r) {
-        usgsSearchRes = false ;
-      };
-      // Convert the data into e/api/usgssearch?xpected form 
-      $scope.usgsSearchRes = r;      
-    });
-      // /api/usgssearch?sensor_name=LANDSAT_8&start_date=07/21/1982&end_date=02/18/2015&cloud_cover=100&seasonal=false&aoi_entry=path_row&begin_path=12&end_path=12&begin_row=1&end_row=3&output_type=unknown
-  };*/
 
   $scope.exFields = getSchemaProperties(window.exnodeScheme);
   // Date

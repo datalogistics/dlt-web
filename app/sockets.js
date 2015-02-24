@@ -239,29 +239,76 @@ module.exports = function(client) {
       // Now use this response to 
     });        
   });
+
+  
+  function getExnodeData(sceneArr,precb , fullcb) {
+    // split array into buckets of 5
+    var Size = 5 ;
+    // Clone the array 
+    var arr = sceneArr.slice(0);
+    while (arr && arr.length > 0){
+      var idlist = arr.splice(0,Size);
+      var str = idlist.join(",");
+      http.get({
+        host : cfg.serviceMap.dev.url,
+        port : cfg.serviceMap.dev.port,
+        path : '/exnodes?fields=id,properties.metadata.scene_id&properties.metadata.scene_id'+str
+      }, function(http_res) {
+        var data = '';
+        http_res.on('data', function (chunk) {
+          data += chunk;
+        });
+        http_res.on('end',function() {
+          var obj = JSON.parse(data);
+          if(!obj || !_.isArray(obj))
+            return;
+          var notpresent = sceneArr.slice(0);
+          var sceneIdArr = obj.map(function(x) { return x.properties.metadata.scene_id;});
+          notpresent = _.difference(notpresent,sceneIdArr);
+          console.log("NOt present sceneId " , sceneArr , notpresent , sceneIdArr);
+          // Send precb with notpresent data
+          precb(notpresent);
+          // Now send http reqeust to aggregate and return remaining data to fullcb
+          var idlist = obj.map(function(x) { return x.id});
+          var str = idlist.join(",");
+          if (idlist.length > 0)
+          http.get({
+            host : cfg.serviceMap.dev.url,
+            port : cfg.serviceMap.dev.port,
+            path : '/exnodes?id='+str
+          }, function(http_res) {
+            var data = '';
+            http_res.on('data', function (chunk) {
+              data += chunk;
+            });
+            http_res.on('end',function() {
+              var obj = json.parse(data);
+              var retMap  = {};
+              obj.map(function(x) {
+                retMap[x.properties.metadata.scene_id] = x ;
+              });
+              fullcb(retMap);
+            });
+            http_res.on('error',function(e) {
+              console.log("Error for Id ",id);
+            });
+          });
+        });
+        http_res.on('error',function(e) {
+          console.log("Error for Id ",id);
+        });
+      });
+    };
+  };
+  
   client.on('exnode_request',function(data){
-    var name = data.name ;
-    http.get({
-      host : cfg.serviceMap.dev.url,
-      port : cfg.serviceMap.dev.port,
-      path : '/exnodes?name=reg='+name
-    }, function(http_res) {
-      var data = '';
-      http_res.on('data', function (chunk) {
-        data += chunk;
-      });
-      http_res.on('end',function() {
-        var obj = JSON.parse(data);
-        // console.log( obj );
-        client.emit('exnode_data',JSON.parse(data));
-        //return defer.resolve(obj);
-        //res.json( obj );
-      });
-      http_res.on('error',function(e) {
-        console.log("Error for Id ",id);
-        //return defer.reject(false);
-        // res.send( 404 );
-      });
+    var arr = data.sceneId;
+    if (!_.isArray(arr))
+      arr = [data.sceneId];
+    getExnodeData(arr, function(data){
+      client.emit('exnode_nodata', { data : data});
+    },function(map){
+      client.emit('exnode_data', {data : map});
     });
   });
 
