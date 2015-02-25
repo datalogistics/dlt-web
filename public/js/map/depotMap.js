@@ -337,13 +337,14 @@ function doProgressWithOffset(svg, id, progress , offset){
 }
 
 //TODO: Extend this with an ID when you add multiple files, thread that ID through progress
+//      Either move all this to the layout-params group or push file-specific values into the rect
 function initProgressTarget(svg, width, height) {
   var left = svg.attr("width")-width
   var top = svg.attr("height")/2 - height/2
 
   var g = svg.append("g")
             .attr("id", "downloads")
-            .attr("width", width)   //TODO: Push these into the rect...maybe...to support multiple downloads
+            .attr("width", width)
             .attr("height", height)
             .attr("target-top", top)
             .attr("target-left", left)
