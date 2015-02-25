@@ -32,6 +32,15 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     };
     $scope.fieldArr.push(x);        
   };
+  $scope.addCustomField = function(){
+    var x = {
+      id : $scope.fieldArr.length,
+      value : "",
+      isCustom : true
+    };
+    $scope.fieldArr.push(x);        
+  };
+  
   $scope.addField();
   $scope.removeField = function(ind){
     var arr = $scope.fieldArr;
@@ -51,7 +60,10 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     var sarr = [];
     $("#searchForm select").each(function(x){
       sarr.push($(this).val());
-    });        
+    });
+    $("#searchForm input.custom").each(function(x){
+      sarr.push($(this).val());
+    });
     var varr = [];
     $("#searchForm [name=searchValue]").each(function(x){
       varr.push($(this).val());

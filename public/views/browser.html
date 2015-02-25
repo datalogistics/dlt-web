@@ -52,7 +52,10 @@
                             </center>
                         </div>
                         <div class="col-sm-5">
-                            <select class="form-control searchField" ng-model="selected">
+                            <div ng-if="field.isCustom">
+                                <input type="text"  class="form-control custom" />
+                            </div>
+                            <select class="form-control searchField" ng-model="selected" ng-if="!field.isCustom">
                                 <option ng-repeat="fld in exFields" ng-value="field.name=fld.name"
                                         value="fld.name">
                                     {{fld.name}}
@@ -68,11 +71,11 @@
                     <div class="form-group">
                         <div class="col-sm-6">
                         </div>
-                        <div class="col-sm-2">
+                        <div class="col-sm-6">
                             <button ng-click="addField()"
                                     type="button" class="btn btn-default">Add Field</button>
-                        </div>
-                        <div class="col-sm-2">
+                            <button ng-click="addCustomField()"
+                                    type="button" class="btn btn-default">Add Custom Field</button>
                             <button type="submit" class="btn btn-default">Search</button>
                         </div>
                     </div>
