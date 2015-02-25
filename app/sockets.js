@@ -250,16 +250,19 @@ module.exports = function(client) {
     // split array into buckets of 5
     var Size = 5 ;
     // Clone the array 
-    var arr = sceneArr.slice(0);
+    var arr = sceneArr.slice(0);   
     while (arr && arr.length > 0){
       var idlist = arr.splice(0,Size);
-      var str = idlist.join(",");
+      idlist = idlist.map(function(x) {
+        return x.substr(0,x.length-5);
+      });
+      var str = idlist.join(",");      
       // console.log( '/exnodes?fields=id,properties.metadata.scene_id&name=reg='+str);
       http.get({
         host : cfg.serviceMap.dev.url,
         port : cfg.serviceMap.dev.port,
-        // path : '/exnodes?fields=id,properties.metadata.scene_id&properties.metadata.scene_id='+str
-        path : '/exnodes?fields=id,name&name=reg='+str
+        path : '/exnodes?fields=id,name&properties.metadata.scene_id='+str
+        // path : '/exnodes?fields=id,name&name=reg='+str
       }, function(http_res) {
         var data = '';
         http_res.on('data', function (chunk) {
@@ -288,7 +291,7 @@ module.exports = function(client) {
           }, function(http_res) {
             var data = '';
             http_res.on('data', function (chunk) {
-              data += chunk;
+              data += chunk;  
             });
             http_res.on('end',function() { 
               var obj = JSON.parse(data);

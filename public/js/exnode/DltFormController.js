@@ -140,7 +140,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
       };
     }
   });
-
+  $scope.showModel = 'all';
   $scope.exFields = getSchemaProperties(window.exnodeScheme);
   // Date
   $scope.today = function() {
