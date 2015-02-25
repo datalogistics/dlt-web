@@ -111,8 +111,8 @@
                                 <tbody>
                                     <tr ng-repeat="(key,val) in exsearchselectedIds">
                                         <td>{{val.text}}</td>
-                                        <td><input type="checkbox" value=""/></td>
-                                        <td><button type="button" ng-click="downloadOne()" class="btn btn-info">Download</button></td>
+                                        <td><input type="checkbox" value="{{val.selfRef}}"/></td>
+                                        <td><button type="button" ng-click="downloadOne(val.selfRef)" class="btn btn-info">Download</button></td>
                                     </tr>                                       
                                 </tbody>
                             </table>                            
