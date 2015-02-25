@@ -119,7 +119,7 @@
                 </div>               
             </tab>     
             <tab heading="Landsat Search"  ng-controller="DltFormController">
-                <form class="form-horizontal top5" ng-submit="submitUsgsForm()">
+                <form class="form-horizontal top5 usgsform" ng-submit="submitUsgsForm()">
                     <div class="row">
                         <div class="col-md-4">
                             <div> Sensor name </div>
@@ -217,28 +217,55 @@
                             <div class="loader"></div>
                         </div>
                     </div>
-                    <div class="row top10 imageSet">                        
+                    <div class="row top10 imageSet">
                         <div class="col-md-4" ng-repeat="(key,val) in usgsSearchRes">
                             <!-- {{ key }} , {{ val.isExnode}} -->
-                            <img src="{{val.browseURL}}" class="img-responsive cursorPointer"                                 
-                                 href="{{val.browseURL}}"
-                                 ng-click="showImage($event);$event.preventDefault();" />
-                            <div ng-if="val.isExnode != true && val.isExnode !=false" style=" padding: 10px; height: 20px;background-color: rgba(200,200,200,0.3);">
-                                Loading Exnode Info ... 
+                            <div class="row">
+                                <img src="{{val.browseURL}}" class="img-responsive cursorPointer"                                 
+                                     href="{{val.browseURL}}"
+                                     ng-click="showImage($event);$event.preventDefault();" />
                             </div>
-                            <div ng-if="val.isExnode">
-                                <button type="button" ng-click="downloadOne(val._exnodeData.selfRef)" class="btn btn-info">Download via Exnode</button>
-                                <div classs='row'>
-                                    <div class="col-md-3">Exnode Url </div>
-                                    <div class="col-md-9"> <input type="text" disabled value="{{val._exnodeData.selfRef}}" /> </div>
+                            <div class="row">                            
+                                <div ng-if="val.isExnode != true && val.isExnode !=false" style=" padding: 10px; margin: 10px 0;background-color: rgba(200,200,200,0.3);">
+                                    Loading Exnode Info ... 
                                 </div>
                             </div>
-                            <div ng-if="val.isExnode == false">
-                                Not present in exnodes
+                            <div class="row">                                
+                                <button type="button" class="trigger btn btn-default">Choose files</button>
+                                <div class="popover-markup">
+                                    <div class="head hide">Select the files to download</div> 
+                                    <div class="content hide">
+                                        <div role="form" class="form">
+                                            <div class="" ng-repeat="k in val.exFileArr">
+                                                <label>
+                                                    <div class="">
+                                                        <input id type="checkbox" ng-value="k.url" />
+                                                        {{k.name}}
+                                                    </div>
+                                                </label>
+                                            </div>
+                                            <button type="button"  class="usgsDownloadSelected btn btn-default">Download selected</button>
+                                        </div>
+                                    </div>
+                                    <div class="footer hide">test</div>
+                                </div>
                             </div>
-                            <div>
-                                <a href="{{val.cartURL}}" target="_blank" class="btn btn-info">Download from USGS site</a>
+                            <div ng-if="val.isExnode">
+                                <button type="button" ng-click="downloadAllUsgsEx(val.exFileArr)" class="btn btn-info">Download All via Exnode</button>
+                                <div classs='row'>
+                                    Exnode Url  <input type="text" disabled value="{{val._exnodeData.selfRef}}" />
+                                </div>
                             </div>
+                            <div class="row">
+                                <div ng-if="val.isExnode == false">
+                                    Not present in exnodes
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div>
+                                    <a href="{{val.cartURL}}" target="_blank" class="btn btn-info">Download from USGS site</a>
+                                </div>
+                            </div>                            
                         </div>
                     </div>
                     <!-- <div class="row top10" ng-if="usgsSearchRes && !isUsgsLoading ">

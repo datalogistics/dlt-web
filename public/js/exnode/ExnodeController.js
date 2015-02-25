@@ -131,8 +131,15 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     });
     client_action(arr, 'download');
   };
-  
-  function client_action(arr, app) {
+
+  $scope.downloadSelectedImage = function(arr) {
+    client_action(arr,'download');
+  };
+
+  $scope.downloadAllUsgsEx = function(arr) {
+    client_action(arr.map(function(x) { return x.url;}),'download');
+  };
+  function client_action(arr, app) {    
     var csv = (arr || []).join(",");
     var k = "<form action='/api/download' method='post'>"
     k += "<input type='text' name='refList' value='"+csv+"'/>"

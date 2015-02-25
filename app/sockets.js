@@ -290,12 +290,14 @@ module.exports = function(client) {
             http_res.on('data', function (chunk) {
               data += chunk;
             });
-            http_res.on('end',function() {
+            http_res.on('end',function() { 
               var obj = JSON.parse(data);
               var retMap  = {};
               obj.map(function(x) {
-                retMap[nameToSceneId(x.name)] = x ;
+                var arr = retMap[nameToSceneId(x.name)] = retMap[nameToSceneId(x.name)] || [];
+                arr.push(x);
               });
+              
               fullcb(retMap);
             });
             http_res.on('error',function(e) {

@@ -324,3 +324,11 @@ text.id {
 .imageSet > div:nth-child(3n+1){
     clear : left;
 }
+
+.imageSet .row {
+    padding : 5px 0;
+}
+.usgsform .popover ,.usgsform .popover .popover-content{
+    max-width : 400px !important;;
+    
+}
