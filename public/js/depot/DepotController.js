@@ -4,13 +4,13 @@
  * DepotController.js
  */
 
-function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService) {
+function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService,$modal) {
   var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
 	          'ps:tools:blipp:ibp_server:resource:usage:free',
 	          'ps:tools:blipp:linux:cpu:utilization:user',
 	          'ps:tools:blipp:linux:cpu:utilization:system'];
-
-  var metadata_id = $routeParams.id;
+  
+  var metadata_id = $scope.metadataId || $routeParams.id; //
   
   // place inital UnisService data into scope for view
   $scope.services = UnisService.services || [];
@@ -64,6 +64,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
           }];	 
       });
     });
+    $scope.metadataId = undefined;
   }
   
   $scope.getMetadataShortET = function(md, s) {
@@ -81,7 +82,19 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   };
   
   $scope.showData = function(metadata) {
-    $location.path('/depots/' + metadata.id);
+    $scope.metadataId = metadata.id;
+    $modal.open({
+      templateUrl: '/views/depot_data.html',
+      controller: 'DepotController',
+      scope : $scope ,
+      size : 'lg',
+      resolve: {
+	'unis': function(UnisService) {
+	  return UnisService.init
+	}
+      }
+    });
+    //$location.path('/depots/' + metadata.id);
   };
   
   $scope.showMap = function(service_id) {
