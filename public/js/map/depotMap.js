@@ -291,8 +291,8 @@ function moveLineToProgress(svg, mapNode, progress, offsetPercent){
   var targetLeft = parseInt(downloads.attr("target-left"))
   var targetWidth = parseInt(downloads.attr("width"))
   var targetTop = parseInt(downloads.attr("target-top"))
+  var progressStart = parseInt(downloads.attr("progress-start"))
 
-  var progressStart = 0 //TODO: store somewhere...in map probably (like the offMapLocation counter)
   if (progressStart >= 100) {return;}
   if(progressStart + progress >= 100){
     progress = 100 - progressStart ;
@@ -325,7 +325,9 @@ function moveLineToProgress(svg, mapNode, progress, offsetPercent){
       .attr("height", h)
       .attr('x', targetLeft)
       .attr('y', progOffset);
-    //progressStart += progress;
+
+
+    downloads.attr("progress-start", progressStart + progress)
     }).transition().duration(500).remove();
 }
 
