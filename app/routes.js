@@ -216,11 +216,11 @@ module.exports = function(app) {
   app.get('/api/ports/:id', getGenericHandlerWithId({path : '/ports', name : 'ports' , handler : registerGenericHandler}));
   
   app.get('/api/fileTree',function(req, res) {
-    var id = req.query.id || 1;
+    var id = req.query.id;
     delete req.query.id ;
     if(id ==1) {
       req.query.parent = "null=";
-    } else {
+    } else if(id) {
       req.query.parent = id;
     }
     var paramString = querystring.stringify(req.query);

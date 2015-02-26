@@ -207,8 +207,11 @@ module.exports = function(client) {
     var url = cfg.usgs_row_searchurl + "?"+paramString;
     console.log(url);
     request(url,function(err,r,resp){
+      if (err) {
+        client.emit('usgs_row_res',{error : err});
+        return;
+      }
       xmlparse(resp, function(err , result){
-        console.dir(result);      
         var data = result || {};
         data = data.searchResponse || [];      
         var r = (data.metaData || []).map(function(x) {
@@ -240,19 +243,26 @@ module.exports = function(client) {
     });        
   });
 
-  
+  function nameToSceneId(name) {
+    return name.split(/[_.]/)[0];
+  };
   function getExnodeData(sceneArr,precb , fullcb) {
     // split array into buckets of 5
     var Size = 5 ;
     // Clone the array 
-    var arr = sceneArr.slice(0);
+    var arr = sceneArr.slice(0);   
     while (arr && arr.length > 0){
       var idlist = arr.splice(0,Size);
-      var str = idlist.join(",");
+      idlist = idlist.map(function(x) {
+        return x.substr(0,x.length-5);
+      });
+      var str = idlist.join(",");      
+      // console.log( '/exnodes?fields=id,properties.metadata.scene_id&name=reg='+str);
       http.get({
         host : cfg.serviceMap.dev.url,
         port : cfg.serviceMap.dev.port,
-        path : '/exnodes?fields=id,properties.metadata.scene_id&properties.metadata.scene_id'+str
+        path : '/exnodes?fields=id,name&properties.metadata.scene_id='+str
+        // path : '/exnodes?fields=id,name&name=reg='+str
       }, function(http_res) {
         var data = '';
         http_res.on('data', function (chunk) {
@@ -262,15 +272,17 @@ module.exports = function(client) {
           var obj = JSON.parse(data);
           if(!obj || !_.isArray(obj))
             return;
+          
           var notpresent = sceneArr.slice(0);
-          var sceneIdArr = obj.map(function(x) { return x.properties.metadata.scene_id;});
+          var sceneIdArr = obj.map(function(x) { return nameToSceneId(x.name || "") ;});          
           notpresent = _.difference(notpresent,sceneIdArr);
-          console.log("NOt present sceneId " , sceneArr , notpresent , sceneIdArr);
+          //console.log("NOt present sceneId " , sceneArr , notpresent , sceneIdArr);
           // Send precb with notpresent data
+          // console.log("Not present ",notpresent , sceneIdArr);
           precb(notpresent);
           // Now send http reqeust to aggregate and return remaining data to fullcb
           var idlist = obj.map(function(x) { return x.id});
-          var str = idlist.join(",");
+          var str = idlist.join(","); 
           if (idlist.length > 0)
           http.get({
             host : cfg.serviceMap.dev.url,
@@ -279,14 +291,16 @@ module.exports = function(client) {
           }, function(http_res) {
             var data = '';
             http_res.on('data', function (chunk) {
-              data += chunk;
+              data += chunk;  
             });
-            http_res.on('end',function() {
-              var obj = json.parse(data);
+            http_res.on('end',function() { 
+              var obj = JSON.parse(data);
               var retMap  = {};
               obj.map(function(x) {
-                retMap[x.properties.metadata.scene_id] = x ;
+                var arr = retMap[nameToSceneId(x.name)] = retMap[nameToSceneId(x.name)] || [];
+                arr.push(x);
               });
+              
               fullcb(retMap);
             });
             http_res.on('error',function(e) {

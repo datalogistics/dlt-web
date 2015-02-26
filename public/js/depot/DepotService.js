@@ -12,6 +12,7 @@ var ETS = {
   'in'  : "ps:tools:blipp:linux:network:utilization:bytes:in",
   'out' : "ps:tools:blipp:linux:network:utilization:bytes:out"
 };
+var MY_ETS = [ETS.used, ETS.free];
 
 var ETS_CHART_CONFIG = {}
 
@@ -57,7 +58,7 @@ function depotService($http, UnisService, CommChannel) {
     var meas = UnisService.measurements;
     var metas = UnisService.metadata;
     var servs = UnisService.services;
-    
+
     // this case is brutal because our metadata is missing subject hrefs
     // perhaps can fix in blipp for IDMS
     var ip = s.accessPoint.split(':')[1].replace('//', '');
@@ -77,7 +78,7 @@ function depotService($http, UnisService, CommChannel) {
       }
       // this search looks for matching ports, mapped to nodes->services->meas
       UnisService.ports.forEach(function(p) {
-	if (p.properties.ipv4 && p.properties.ipv4.address == ip) {
+	if (p.properties && p.properties.ipv4 && p.properties.ipv4.address == ip) {
 	  UnisService.nodes.forEach(function(n) {
 	    if (n.ports) {
 	      n.ports.forEach(function(pref) {
@@ -102,14 +103,45 @@ function depotService($http, UnisService, CommChannel) {
     return metadatas;
   };
   
+  function getServiceByMeta(md) {
+    var ret = [];
+    UnisService.nodes.forEach(function(n) {
+      if (n.selfRef == md.subject.href) {
+	UnisService.ports.forEach(function(p) {
+	  n.ports.forEach(function(pref) {
+	    if (unescape(pref.href) == unescape(p.selfRef)) {
+	      var s = UnisService.services;
+	      for (var i=0; i<s.length; i++) {
+		if (s[i].listeners) {
+		  s[i].listeners.forEach(function(l) {
+		    var ip = l.tcp.split('/')[0];
+		    if (p.address && p.address.address == ip) {
+		      ret.push(s[i]);
+		    }
+		  })
+		}
+	      }
+	    }
+	  })
+	})
+      }
+    })
+    return getUniqueById(ret);
+  };
+
   function getValues(depot) {
     var mds = depot.metadata;
     // get values for each metadata
     mds.forEach(function(md) {
-      if ([ETS.used, ETS.free].indexOf(md.eventType) >= 0) {
+      if (MY_ETS.indexOf(md.eventType) >= 0) {
 	UnisService.getDataId(md.id, 1, function(data) {
 	  if (Object.prototype.toString.call(data) === '[object Array]') {
-	    depot[md.eventType] = parseInt(data.pop()['value'])
+	    if (data.length) {
+	      depot[md.eventType] = parseInt(data.pop()['value'])
+	    }
+	    else {
+	      depot[md.eventType] = 0;
+	    }
 	  }
 	  else {
 	    depot[md.eventType] = parseInt(data[md.id].pop()['value'])
@@ -119,12 +151,27 @@ function depotService($http, UnisService, CommChannel) {
     });
   }
 
-  function updateDepots() {
-    for (var d in service.depots) {
-      if (!d.metadata) {
-	d.metadata = getMetadata(d.service);
-	getValues(d);
-      }
+  function updateDepots(md) {
+    if (MY_ETS.indexOf(md.eventType) >= 0) {
+      var services = getServiceByMeta(md)
+      services.forEach(function(s) {
+	for (var key in service.depots) {
+	  var d = service.depots[key];
+	  if (d.service.id == s.id) {
+	    // don't duplicate
+	    var found = 0;
+	    for (var i=0; i<d.metadata.length; i++) {
+	      if (d.metadata[i].eventType === md.eventType) {
+		found = 1;
+	      }
+	    }
+	    if (!found) {
+	      d.metadata.push(md);
+	      getValues(d);
+	    }
+	  }
+	}
+      })
     }
   };
   
@@ -161,6 +208,14 @@ function depotService($http, UnisService, CommChannel) {
     // update depot eT mappings when we see new metadata
     updateDepots(md);
   });
-  
+
+  CommChannel.onNewData('new_port', function(md) {
+    // update depot service intitution names (gleaned from nodeRef URNs)
+    for (var key in service.depots) {
+      var d = service.depots[key];
+      getInstitutionName(d.service);
+    }
+  });
+
   return service;
 }

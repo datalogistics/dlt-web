@@ -95,20 +95,52 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
         obj.isExnode = false;
     });
   });
+
+  $('body').popover({
+    html: true,
+    selector : ".imageSet .trigger",
+    title: function () {
+      return $(this).parent().find('.head').html();
+    },
+    content: function () {
+      return $(this).parent().find('.content').html();
+    }
+  });
+ 
+  $('body').on('click', '.usgsDownloadSelected', function(ev){
+    var t = ev.target ;
+    var arr = [];
+    $(t).parents(".form").eq(0).find("input:checked").each(function(){
+      arr.push($(this).val());
+    });
+    $scope.downloadSelectedImage(arr);
+  });
   
   SocketService.on('exnode_data',function(data){
     var map = data.data ;
     var res = $scope.usgsSearchRes;
     for ( var i in map) {
-      var it = map[i];
-      var obj = res[i];
-      if (obj) {
-        obj.isExnode = true;
-        obj._exnodeData = it;
-      }
-    };     
+      var exArr = map[i];
+      for (var j = 0; j < exArr.length ; j++){        
+        var it = exArr[j];
+        var obj = res[i];
+        if (obj) {
+          obj.isExnode = true;
+          var arr = obj.exFileArr = obj.exFileArr || [];
+          obj.exMap = obj.exMap || {} ;
+          if (!obj.exMap[it.name]){
+            arr.push({
+              name : it.name,
+              url : it.selfRef
+            });
+            obj.exMap[it.name] = true;
+          }
+          obj._exnodeData = it;
+        }      
+      };
+    }
   });
-
+  $scope.showModel = 'all';
   $scope.exFields = getSchemaProperties(window.exnodeScheme);
   // Date
   $scope.today = function() {
@@ -201,7 +233,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     ninth: 0,
     tenth: 0
   };
-
+  
   $scope.prefix = 'Current value: ';
   $scope.suffix = '%';
   $scope.formaterFn = function(value) {
