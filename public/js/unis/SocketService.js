@@ -29,5 +29,9 @@ function socketService($rootScope, $http) {
     });
   };
 
+  //To support disconnecting listeners before the socket disconnects
+  //http://stackoverflow.com/questions/21008087/what-to-use-instead-of-socket-removealllisteners-on-the-client-side
+  service.getSocket = function() {return socket;}
+
   return service;
 }
