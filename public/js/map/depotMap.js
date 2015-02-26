@@ -296,6 +296,19 @@ function downloadStatusBar(svg, barClass, color, barOffset, barHeight) {
     .attr('y', barOffset);
 }
 
+
+function nodeRecolor(node) {
+  var colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf", //darker
+                "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7b6d2", "#c7c7c7", "#dbdb8d", "#9edae5"] //lighter
+
+  node = node.node() //Move out of d3 into vanilla DOM
+  var total = node.parentNode.childNodes.length;
+  var i =0
+  while ( (node = node.previousSibling) != null) {i++;}
+  var color = colors[i%20]
+  return color 
+}
+
 function moveLineToProgress(svg, mapNode, barOffset, barHeight){
   var downloads = svg.select("#downloads")
   var targetLeft = parseInt(downloads.attr("target-left"))
@@ -304,8 +317,16 @@ function moveLineToProgress(svg, mapNode, barOffset, barHeight){
   var end = [targetLeft, barOffset];
   var mapGroup = d3.select(mapNode.node().parentNode)
   var start = d3.transform(mapGroup.attr("transform")).translate
-  var color = mapGroup.select(".eodnNode").attr("fill")
 
+  var color = nodeRecolor(mapGroup)
+
+  mapGroup.select(".eodnNode")
+      .attr("fill", color)
+      .attr("stroke", "#555")
+
+  mapGroup.select(".count")
+     .attr("fill", "#111")
+       
   svg.append('line')
     .attr('x1',start[0])
     .attr('y1',start[1])
