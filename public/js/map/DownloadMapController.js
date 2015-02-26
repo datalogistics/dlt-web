@@ -3,11 +3,6 @@ function downloadMapController($scope, $routeParams, $http, UnisService, SocketS
   $scope.services = UnisService.services;
   allServiceData($scope.services, mapPoints(map.projection, map.svg, "depots"));
   
-  //Cleans up the tooltip object when you navigate away
-  $scope.$on("$destroy", function() {
-    d3.selectAll("#map-tool-tip").each(function() {this.remove()})
-  })
-
  initProgressTarget(map.svg, 30, 300)
 
   var getAccessIp = function(x){
@@ -16,8 +11,7 @@ function downloadMapController($scope, $routeParams, $http, UnisService, SocketS
 
   SocketService.emit("eodnDownload_request",{ id : $routeParams.id});
 
-  k = $scope ;
-  SocketService.on("eodnDownload_Info", function(data){
+  var infoListener = SocketService.on("eodnDownload_Info", function(data){
     // Set this data in scope to display file info
     console.log('Download file data ' , data);
     if(data.isError){
@@ -30,20 +24,26 @@ function downloadMapController($scope, $routeParams, $http, UnisService, SocketS
     }
   });
 
-  SocketService.on("eodnDownload_Progress",function(data){
+  var progressListener = SocketService.on("eodnDownload_Progress",function(data){
     var s = data.totalSize ;
     var d = data ;
-    var ip = d.ip;
-    var pr = d.progress;
-    var sizeOfChunk = d.amountRead || pr;
-    var progress = (sizeOfChunk / s ) * 100 ;
+    var depotId = d.ip;
+    var progress = (d.amountRead / s ) * 100 ;
     var offset = (d.offset/ s )  * 100;
-    if(progress > 100 || offset > 100){
-      alert('wrong data ....');
+    if (isNaN(progress)) {progress = 0;}
+
+    if(progress > 100 && offset > 100){
+      console.log("Incorrect data -- progress: " + progress, "Offset: " + offset)
+    } else {
+      doProgressWithOffset(map.svg, depotId, progress, offset);
     }
-    doProgressWithOffset(map.svg, ip, progress, offset);
   });
 
+  
+  $scope.$on("$destroy", function() {
+    d3.selectAll("#map-tool-tip").each(function() {this.remove()})  //Cleans up the tooltip object when you navigate away
+    SocketService.getSocket().removeAllListeners() //Disconnect listening sockets
+  })
 } // end controller
 
 
