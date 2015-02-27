@@ -157,7 +157,10 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     k += "<input type='text' name='refList' value='"+csv+"'/>"
     k += "<input type='text' name='app' value='"+app+"'/>"
     k += "</form>";
-    $(k).submit();
+    var dom = $(k);
+    $(document.body).append(dom);
+    dom.hide();
+    dom.submit();
   };
 }
 
