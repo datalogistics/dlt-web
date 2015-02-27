@@ -75,7 +75,7 @@ angular.module('periApp', ['ngRoute',
       }).
       when('/downloads/:id',{
 	templateUrl: 'views/download_map.html',
-	controller: 'DownloadVizController'
+	controller: 'DownloadMapController'
       }).
       otherwise({redirectTo: '/'});
     

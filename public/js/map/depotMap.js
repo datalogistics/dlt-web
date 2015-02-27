@@ -4,14 +4,14 @@
 // selector -- An svg selector for items.  
 // filter -- A predicate run on selected items
 function highlightMapLocations(svg, selector, filter, retries) {
-  if (typeof filter == 'undefined') {filter = function(d,i) {return true;}}
+  if (filter === undefined) {filter = function(d,i) {return true;}}
  
   var items = svg.selectAll(selector).filter(filter)
 
   if (items.empty()) {
     if (retries === undefined) {retries = 20;}
     if (retries > 0) {
-      console.log("Trying again")
+      console.log("Retry highlight")
       setTimeout(function() {highlightMapLocations(svg, selector, filter, retries-1)}, 1000)
     }
     return;
@@ -71,19 +71,34 @@ function tooltip(svg) {
   });
 }
 
+
 //Add a node with name at position latLon to svg using the projection
-function addMapLocation(projection, name, rawLonLat, svg, depot_id) {		
+//TODO: Refactor so the invisible point is always added, reduce duplciate code
+function addMapLocation(projection, name, rawLonLat, svg, depot_id, depot_ip) {		
   var lonLat = [rawLonLat[0].toFixed(2), rawLonLat[1].toFixed(2)] //Round lat/lon
 
   var translate = "translate(" + projection(lonLat) + ")"
-  var nodes = svg.selectAll(".eodnLocation").filter(function (d, i) { return d3.select(this).attr("transform") == translate })
+  var nodes = svg.selectAll(".eodnGroup").filter(function (d, i) { return d3.select(this).attr("transform") == translate })
+
+  //Function to add an invisible point to each location
+  var invisiblePoint = function(parentGroup) {
+      var circ = parentGroup.append("circle")
+         .attr("r", 1)
+         .attr("class", "eodnLocation")
+         .attr("name", name)
+         .attr("style", "display:none")
+         .attr("depot_ip", name)
+
+      if (depot_id !== undefined) {circ.attr('depot_id', depot_id)}
+      if (depot_ip !== undefined) {circ.attr('depot_ip', depot_ip)}
+  }
 
   if (nodes.empty()) {
-    var node = svg.append("g")
+    var group = svg.append("g")
         .attr("transform", function() {return translate;})
-        .attr("class", "eodnLocation")
+        .attr("class", "eodnGroup")
 
-    var circ = node.append("circle")
+    var circ = group.append("circle")
         .attr("r",7)
         .attr('fill',"#B4635F")
         .attr('stroke',"#76231F")
@@ -92,10 +107,7 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id) {
         .attr('name', name)
         .attr('location', lonLat)
 
-    if (typeof depot_id != 'undefined') {circ.attr('depot_id', depot_id)}
-
-    //nodeLocationMap[name] = node ;
-    return node
+    invisiblePoint(group)
   } else {
     nodes.each(function(d,i) {
       var group = d3.select(this)
@@ -116,15 +128,7 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id) {
       var super_circ = group.select(".eodnNode")
       var existingName = super_circ.attr("name")
       super_circ.attr("name", name + "|" + existingName)
-     
-      //Empty point to search for by name...
-      var circ = group.append("circle")
-         .attr("r", 1)
-         .attr("class", "eodnNode")
-         .attr("name", name)
-         .attr("style", "display:none")
-
-      if (typeof depot_id != 'undefined') {circ.attr('depot_id', depot_id)}
+      invisiblePoint(group)
     })
   }
 }
@@ -132,14 +136,13 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id) {
 
 //Add nodes to the side of the map, because their lat/lon is not known
 //baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
-function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id) {
+function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id, depot_ip) {
     pair = [baseLatLon[0]-idx*.3, baseLatLon[1]-idx]  //the idx*.3 straigthens out the line
-    node = addMapLocation(projection, name, pair, svg, depot_id)
+    node = addMapLocation(projection, name, pair, svg, depot_id, depot_ip)
     node.append("text")
        .attr("dx", function(d){return 10})
        .attr("dy", function(d){return 4})
        .text(function(d) {return name})
-    return node
 }
 
 
@@ -148,8 +151,7 @@ function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id) {
 //If location is [], then the item is placed off map with a printed label
 function mapPoints(projection, svg, elementId) {
   return function(points) {
-    var svg_points = svg.select("#overlay").append("g")
-      .attr("id", elementId)
+    var svg_points = svg.select("#overlay")
 
     points.forEach(function(item) {
       if (item.location.length == 0
@@ -264,8 +266,8 @@ function ipToLocation(items, then) {
         console.log("No location found for ", name, items[name])
       } else {
           var place = []
-          if (typeof raw.longitude != 'undefined'
-              && typeof raw.latitude != 'undefined') {
+          if (raw.longitude !== undefined
+              && raw.latitude !== undefined) {
             place = {latitude: raw.latitude, longitude: raw.longitude}
           }
           var id = items[raw.ip] === undefined ? "unknown" : items[raw.ip].id
@@ -274,4 +276,116 @@ function ipToLocation(items, then) {
       then(locations)
     })
   })
+}
+
+
+
+/// -------------------------------------------
+//   Download visualizatoin components
+function downloadStatusBar(svg, barClass, color, barOffset, barHeight) {
+  var downloads = svg.select("#downloads")
+  var targetLeft = parseInt(downloads.attr("target-left"))
+  var targetWidth = parseInt(downloads.attr("target-width"))
+
+  downloads.append('rect')
+    .attr("class", "download-part")
+    .attr("fill", color)
+    .attr("width", targetWidth)
+    .attr("height", barHeight)
+    .attr('x', targetLeft)
+    .attr('y', barOffset);
+}
+
+
+function nodeRecolor(node) {
+  var colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf", //darker
+                "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5", "#c49c94", "#f7b6d2", "#c7c7c7", "#dbdb8d", "#9edae5"] //lighter
+
+  node = node.node() //Move out of d3 into vanilla DOM
+  var total = node.parentNode.childNodes.length;
+  var i =0
+  while ( (node = node.previousSibling) != null) {i++;}
+  var color = colors[i%20]
+  return color 
+}
+
+function moveLineToProgress(svg, mapNode, barOffset, barHeight){
+  var downloads = svg.select("#downloads")
+  var targetLeft = parseInt(downloads.attr("target-left"))
+  var targetHeight = parseInt(downloads.attr("target-height"))
+  
+  var end = [targetLeft, barOffset];
+  var mapGroup = d3.select(mapNode.node().parentNode)
+  var start = d3.transform(mapGroup.attr("transform")).translate
+
+  var color = nodeRecolor(mapGroup)
+
+  mapGroup.select(".eodnNode")
+      .attr("fill", color)
+      .attr("stroke", "#555")
+
+  mapGroup.select(".count")
+     .attr("fill", "#111")
+       
+  svg.append('line')
+    .attr('x1',start[0])
+    .attr('y1',start[1])
+    .attr('x2',start[0])
+    .attr('y2',start[1])
+    .attr("stroke-width", 2)
+    .attr("stroke", color)
+    .transition().duration(500)
+       .attr('x2',end[0])
+       .attr('y2', end[1])
+    .each("end", function(){downloadStatusBar(svg, "source-found-segment", color, barOffset, barHeight)})
+    .transition().duration(500).remove();
+}
+
+// svg -- svg root to work with
+// id -- Id of the source node
+// progress -- Percentage of the file just read
+// offset -- Percent offset of the newest chunk
+function doProgressWithOffset(svg, id, progress , offsetPercent){
+  //Calculate geometry of the progress bar chunk
+  var downloads = svg.select("#downloads")
+  var targetTop = parseInt(downloads.attr("target-top"))
+  var targetLeft = parseInt(downloads.attr("target-left"))
+  var targetHeight = parseInt(downloads.attr("target-height"))
+  
+  var ratio = targetHeight / 100 ;
+  var barOffset = targetTop + (offsetPercent || 0) * ratio;
+  var barHeight = ratio * progress;
+  if (barHeight == 0 || isNaN(barHeight)) {barHeight=.1}
+
+  //Find the source location node
+  var nodes = svg.selectAll(".eodnLocation").filter(function(d) {return this.getAttribute("depot_ip") == id})
+  if (nodes.empty()) {
+    console.log("DownloadProgress: Node not found " + id)
+    downloadStatusBar(svg, "source-not-found-segment", "#222222", barOffset, barHeight)
+    return;}
+
+  var mapNode = d3.select(nodes[0][0]) //ensures we have exactly one item as the source
+  moveLineToProgress(svg, mapNode, barOffset, barHeight);
+}
+
+//TODO: Extend this with an ID when you add multiple files, thread that ID through progress
+//      Either move all this to the layout-params group or push file-specific values into the rect
+function initProgressTarget(svg, width, height) {
+  var left = svg.attr("width")-width
+  var top = svg.attr("height")/2 - height/2
+
+  var g = svg.append("g")
+            .attr("id", "downloads")
+            .attr("target-width", width)
+            .attr("target-height", height)
+            .attr("target-top", top)
+            .attr("target-left", left)
+            .attr("progress-start", 0)
+
+  g.append("rect")
+      .attr("id", "download-target")
+      .attr("transform", "translate(" + left + "," + top + ")")
+      .attr("fill", "#bbb")
+      .attr("width", width)
+      .attr("height", height)
 }
