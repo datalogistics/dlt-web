@@ -329,6 +329,17 @@ text.id {
     padding : 5px 0;
 }
 .usgsform .popover ,.usgsform .popover .popover-content{
-    max-width : 400px !important;;
-    
+    max-width : 700px !important;    
 }
+
+
+.nvtooltip.xy-tooltip {
+    position : fixed !important ;
+    z-index : 99999 !important;
+}
+
+.lfloat {
+    float : left;
+    margin-left : 3px;
+}
+.clear { clear : both}

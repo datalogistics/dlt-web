@@ -129,10 +129,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
           var arr = obj.exFileArr = obj.exFileArr || [];
           obj.exMap = obj.exMap || {} ;
           if (!obj.exMap[it.name]){
-            arr.push({
-              name : it.name,
-              url : it.selfRef
-            });
+            arr.push(it);
             obj.exMap[it.name] = true;
           }
           obj._exnodeData = it;
