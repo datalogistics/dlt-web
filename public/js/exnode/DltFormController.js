@@ -6,7 +6,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     endDate : "",
     sensorName : "" ,
     searchModel : 'row',
-    cloud : "" ,
+    cloud : 100 ,
     isSeasonal : false,
     latStart : "" , latEnd : "" ,
     longStart : "" , longEnd: "",    
@@ -193,49 +193,17 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     precision: 2,
     orientation: 'horizontal',  // vertical
     handle: 'round', //'square', 'triangle' or 'custom'
-    tooltip: 'show', //'hide','always'
+    tooltip: 'hide', //'hide','always'
     tooltipseparator: ':',
     tooltipsplit: false,
     enabled: true,
-    naturalarrowkeys: false,
+    naturalarrowkeys: true,
     range: false,
+    value : 100,
     ngDisabled: false,
     reversed: false
   };
-
-  $scope.range = true;
-
-  $scope.model = {
-    first: 0,
-    second: [],
-    third: 0,
-    fourth: 0,
-    fifth: 0,
-    sixth: 0,
-    seventh: 0,
-    eighth: 0,
-    ninth: 0,
-    tenth: 0
-  };
-
-  $scope.value = {
-    first: $scope.testOptions.min + $scope.testOptions.step,
-    second: [$scope.testOptions.min + $scope.testOptions.step, $scope.testOptions.max - $scope.testOptions.step],
-    third: 0,
-    fourth: 0,
-    fifth: 0,
-    sixth: 0,
-    seventh: 0,
-    eighth: 0,
-    ninth: 0,
-    tenth: 0
-  };
   
-  $scope.prefix = 'Current value: ';
-  $scope.suffix = '%';
-  $scope.formaterFn = function(value) {
-    return $scope.prefix + value + $scope.suffix;
-  };
   $scope.showImage = function(ev){
     $(ev.target).ekkoLightbox();
   };
