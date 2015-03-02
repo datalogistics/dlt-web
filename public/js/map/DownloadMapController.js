@@ -11,7 +11,7 @@ function downloadMapController($scope, $routeParams, $http, UnisService, SocketS
 
   SocketService.emit("eodnDownload_request",{ id : $routeParams.id});
 
-  var infoListener = SocketService.on("eodnDownload_Info", function(data){
+  SocketService.on("eodnDownload_Info", function(data){
     // Set this data in scope to display file info
     console.log('Download file data ' , data);
     if(data.isError){
@@ -24,7 +24,7 @@ function downloadMapController($scope, $routeParams, $http, UnisService, SocketS
     }
   });
 
-  var progressListener = SocketService.on("eodnDownload_Progress",function(data){
+  SocketService.on("eodnDownload_Progress",function(data){
     var s = data.totalSize ;
     var d = data ;
     var depotId = d.ip;

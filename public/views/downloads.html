@@ -1,6 +1,20 @@
-<div class="jumbotron text-center">
+<h2 class="lead text-center">Downloads</h2>
 
-  <p>Where are my downloads?</p>
-  <p><a href="/downloads/1244">Here's one!</a></p>
-
+<div class="table-responsive">
+  <table class="table table-hover table-condensed">
+    <tr>
+      <th>Name</th>
+      <th>Size (bytes)</th>
+      <th>Connections</th>
+    </tr>
+    <tbody ng-repeat="file in downloads">
+      <td> <a ng-href="downloads/{{file.hashId}}">{{file.filename}} </a> </td>
+      <td> {{file.totalSize}} </td>
+      <td> {{file.connections}} </td>
+    </tbody>
+  </table>
 </div>
+
+
+  <p><a href="/downloads/1244">(Test link)</a></p>
+
