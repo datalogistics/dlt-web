@@ -48,5 +48,8 @@ sock.on('connect' , function(){
     offset = offset + 360448;
     if (offset > totalSize) {clearInterval(intervalId);}
   },1000);
+
+
+  sock.emit(msg.c, {hashId: 1244})
 });
 
