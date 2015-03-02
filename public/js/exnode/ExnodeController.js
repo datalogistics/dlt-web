@@ -9,7 +9,7 @@ function getSchemaProperties(obj) {
                 desc : n[i].description
             });
         };
-    };
+    }; 
     return arr;
 };
 /*
@@ -73,6 +73,7 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     sarr.map(function (name , i) {
       params[name] = varr[i];
     });
+    $scope.isExLoading = true;
     ExnodeService.search(params, function(res){
       $scope.isSearched = true;
       console.log(res);
@@ -82,6 +83,7 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
         x.children = false;
         return x ;
       });
+      $scope.isExLoading = false ;
     });;
   };
   
