@@ -53,7 +53,7 @@ sock.on('connect' , function(){
     offset = offset + 360448;
     if (offset > totalSize) {
       clearInterval(intervalId)
-      //sock.emit(msg.c, {hashId: 1244})
+      sock.emit(msg.c, {hashId: fileId})
     }
   },1000);
 

@@ -366,9 +366,10 @@ module.exports = function(client) {
 
   client.on('eodnDownload_reqListing', function(data) {
     console.log("Listing requested")
-    registeredFiles = [] 
+    var registeredFiles = [] 
     for (var key in registeredClientMap) {
       var entry = registeredClientMap[key]
+      if (entry === undefined) {continue}
       registeredFiles.push(
          {hashId: entry.hashId,
           filename: entry.filename, 
@@ -392,8 +393,10 @@ module.exports = function(client) {
     var serve = registeredClientMap[data.hashId]
     var messageName = 'eodnDownload_clear'
     emitDataToAllConnected(serve , messageName , data)
+    
     // Kill it - will be auto gc'd
-    registeredClientMap[id] = undefined
+    registeredClientMap[data.hashId] = undefined
+
     console.log("Download cleared ", data)
   });
 
@@ -408,12 +411,10 @@ module.exports = function(client) {
 
     var old = registeredClientMap[id] || {};
     data.registeredRequestClientArr = old.registeredRequestClientArr || [];
-    //client.emit('eodnDownload_Info', {name : q.filename , size : q.totalSize , connections : q.connections});
     data.exists = true ;
     registeredClientMap[id] = data ;
     var arr = data.registeredRequestClientArr 
 
-    console.log("Registration: ", registeredClientMap[id])
     console.log("already registered clients: ",arr.length);
     client.emit('eodnDownload_listing', registeredClientMap)
 
@@ -425,6 +426,10 @@ module.exports = function(client) {
   client.on('eodnDownload_pushData', function(data) {
     var id =  data.hashId ;
     var serve = registeredClientMap[id];
+    if (serve === undefined) {
+      console.log("Message received about un-registered download: ", data)
+      return
+    }
     var messageName = 'eodnDownload_Progress' ,
     dataToBeSent = data;
     dataToBeSent.totalSize = serve.totalSize;
