@@ -407,7 +407,7 @@ module.exports = function(client) {
     var totalSize = data.totalSize
     var conn = data.connections
 
-    console.log("registered new download: ", data);
+    console.log("registered new download: ", data.hashId);
 
     var old = registeredClientMap[id] || {};
     data.registeredRequestClientArr = old.registeredRequestClientArr || [];
