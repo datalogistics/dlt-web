@@ -27,7 +27,7 @@
          name="Download Client"
          main-class="edu.crest.dlt.downloadClient.DownloadClient">
         <%for (var i=0; i< args.length; i++) { %>
-            <argument><%=args[i]%></argument>
+            <argument><%= args[i]+ "?sid="+ sessionID %></argument>
         <% } %>  
      </application-desc>
         

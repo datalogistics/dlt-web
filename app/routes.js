@@ -290,15 +290,17 @@ module.exports = function(app) {
   });
   
   app.post('/api/download',function(req, res){
+    var sessionId = req.sessionID;
     var arr = req.body.refList.split(",");
     var app = req.body.app;
     var jmap = cfg.jnlpMap[app];
     ejs.renderFile(jmap.template, _.extend(jmap,{
       jarname: jmap.jarfile,
+      sessionID : sessionId,
       codebase: jmap.codebase,
       args : arr}), function(err, html) {
 	res.set('Content-Type','data/jnlp');
-	res.set('Content-Disposition',"attachment; filename='dlt-client.jnlp'");
+	res.set('Content-Disposition',"attachment; filename=dlt-client.jnlp");
 	res.end(html);
       });
   });
