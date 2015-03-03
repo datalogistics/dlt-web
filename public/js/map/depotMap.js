@@ -229,7 +229,7 @@ function baseMap(selector, width, height) {
 //
 //Returns at most one result for each UNIQUE serviceID
 //Drops serviceID results if incomplete
-function allServiceData(services, then) {
+function allServiceData(services, match, then) {
   var uniqueServices = getUniqueById(services);
   var unknownLoc     = {}	
   var serviceDetails = []
@@ -237,8 +237,13 @@ function allServiceData(services, then) {
   for (var i =0; i < uniqueIds.length; i++) {
     var name =  uniqueIds[i]
     var item = uniqueServices[name]
+
+    if (item.serviceType && item.serviceType != match) {
+      continue;
+    }
+
     name = getServiceName(item);
-    
+
     var place = []
     if (hasLocationInfo(item)) {
       place = {longitude: item.location.longitude, latitude: item.location.latitude}

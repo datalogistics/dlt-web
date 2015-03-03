@@ -84,6 +84,9 @@ module.exports = function(client) {
         socket.on('close', function() {
           //console.log('UNIS: socket closed');
         });
+	process.on('uncaughtException', function (err) {
+	  console.error('ERROR:', err.stack);
+	});
 	// save the socket handles
 	if (!socketMap[path].sockets) {
 	  socketMap[path].sockets = [socket];
