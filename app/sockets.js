@@ -366,7 +366,17 @@ module.exports = function(client) {
 
   client.on('eodnDownload_reqListing', function(data) {
     console.log("Listing requested")
-    client.emit('eodnDownload_listing', registeredClientMap)
+    registeredFiles = [] 
+    for (var key in registeredClientMap) {
+      var entry = registeredClientMap[key]
+      registeredFiles.push(
+         {hashId: entry.hashId,
+          filename: entry.filename, 
+          totalSize: entry.totalSize, 
+          connections: entry.connections
+         })
+    }
+    client.emit('eodnDownload_listing', registeredFiles)
   });
 
   client.on('eodnDownload_request', function(data) {
@@ -405,7 +415,7 @@ module.exports = function(client) {
 
     console.log("Registration: ", registeredClientMap[id])
     console.log("already registered clients: ",arr.length);
-//    client.emit('eodnDownload_listing', registeredClientMap)
+    client.emit('eodnDownload_listing', registeredClientMap)
 
     emitDataToAllConnected(registeredClientMap[id], 'eodnDownload_Info', 
       {id : id , name : name , size : totalSize , connections : conn});
