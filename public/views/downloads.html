@@ -3,18 +3,19 @@
 <div class="table-responsive">
   <table class="table table-hover table-condensed">
     <tr>
+      <th><a href="/downloads/map?{{downloadsLink}}">Map <br>Selected</a></th>
       <th>Name</th>
       <th>Size (bytes)</th>
       <th>Connections</th>
     </tr>
     <tbody ng-repeat="file in downloads">
-      <td> <a ng-href="downloads/{{file.hashId}}">{{file.filename}} </a> </td>
-      <td> {{file.totalSize}} </td>
-      <td> {{file.connections}} </td>
-    </tbody>
-  </table>
-</div>
-
+      <td> <input type="checkbox" value="{{file.hashId}}" ng-click="toggleDownloadSelection(file.hashId)" />
+        <td> <a ng-href="downloads/map?hashIds={{file.hashId}}">{{file.filename}} </a> </td>
+        <td> {{file.totalSize}} </td>
+        <td> {{file.connections}} </td>
+      </tbody>
+    </table>
+  </div>
 
   <p><a href="/downloads/1244">(Test link)</a></p>
-
+</div>

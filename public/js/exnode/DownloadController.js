@@ -6,6 +6,18 @@
 
 function downloadController($scope, SocketService) {
   // find active download IDs and display, links to map for viz
+  $scope.selectedDownloads = [] 
+  $scope.downloadsLink = ""
+
+  $scope.toggleDownloadSelection = function(hashId) {
+    var idx = $scope.selectedDownloads.indexOf(hashId);
+    // is currently selected
+    if (idx > -1) {$scope.selectedDownloads.splice(idx, 1);}
+    else {
+      $scope.selectedDownloads.push(hashId)
+    }
+    $scope.downloadsLink = "hashIds=" + $scope.selectedDownloads.join()
+  }
 
   //Listen to what is currently loaded
   SocketService.on("eodnDownload_listing", function(data) {
@@ -16,4 +28,12 @@ function downloadController($scope, SocketService) {
 
   //Request what is currently loaded...
   SocketService.emit("eodnDownload_reqListing", {});
+
+  console.log("Selected:", $scope.selectedDownloads)
+
+  $scope.mapSelected = function() {
+    console.log("Clicked map selected")
+    if ($scope.selectedDownloads.length == 0) {return;}
+    $windowlocation.path("/"+$scope.selectedDownloads[0])
+  }
 }

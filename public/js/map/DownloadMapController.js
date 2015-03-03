@@ -1,15 +1,17 @@
-function downloadMapController($scope, $routeParams, $http, UnisService, SocketService) {
+function downloadMapController($scope, $location, $http, UnisService, SocketService) {
   var map = baseMap("#downloadMap", 960, 500);
   $scope.services = UnisService.services;
   allServiceData($scope.services, mapPoints(map.projection, map.svg, "depots"));
   
- initProgressTarget(map.svg, 30, 300)
+  initProgressTarget(map.svg, 30, 300)
 
   var getAccessIp = function(x){
     return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
   };
 
-  SocketService.emit("eodnDownload_request",{ id : $routeParams.id});
+
+  console.log("ids:" + $location.search().hashIds)
+  SocketService.emit("eodnDownload_request",{ id : $location.search().hashIds});
 
   SocketService.on("eodnDownload_Info", function(data){
     // Set this data in scope to display file info

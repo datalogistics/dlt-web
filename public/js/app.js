@@ -10,9 +10,9 @@ angular.module('periApp', ['ngRoute',
 			   'ngAnimate',
 			   'schemaForm',
 			   'ui.utils', 
-			   'ui.bootstrap',
-                           'ui.bootstrap-slider',
-			   'nvd3ChartDirectives',
+         'ui.bootstrap',
+         'ui.bootstrap-slider',
+         'nvd3ChartDirectives',
 			   'pubsub',
 			   'main',
 			   'unis',
@@ -25,59 +25,59 @@ angular.module('periApp', ['ngRoute',
     $rootScope.comm = CommChannel;
   })
   .config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
-  function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
-    cfpLoadingBarProvider.includeSpinner = false;
+      function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
+        cfpLoadingBarProvider.includeSpinner = false;
 
-    $routeProvider.
-      when('/', {
-	templateUrl: 'views/main.html',
-	controller: 'MainController'
-      }).
-      when('/status', {
-	templateUrl: 'views/depots.html',
-	controller: 'DepotController',
-	resolve: {
-	  'unis': function(UnisService) {
-	    return UnisService.init
-	  }}
-      }).
-      when('/depots/:id', {
-	templateUrl: 'views/depot_data.html',
-	controller: 'DepotController',
-	resolve: {
-	  'unis': function(UnisService) {
-	    return UnisService.init
-	  }}
-      }).
-      when('/map/', {
-	templateUrl: 'views/depot_map.html',
-	controller: 'MapController',
-	resolve: {
-	  'unis': function(UnisService) {
-	    return UnisService.init
-	  }}
-      }).
-      when('/map/:id', {
-	templateUrl: 'views/depot_map.html',
-	controller: 'MapController',
-	resolve: {
-	  'unis': function(UnisService) {
-	    return UnisService.init
-	  }}
-      }).
-      when('/browser/',{
-	templateUrl: 'views/browser.html',
-	controller: 'ExnodeController'
-      }).
-      when('/downloads/',{
-	templateUrl: 'views/downloads.html',
-	controller: 'DownloadController'
-      }).
-      when('/downloads/:id',{
-	templateUrl: 'views/download_map.html',
-	controller: 'DownloadMapController'
-      }).
-      otherwise({redirectTo: '/'});
-    
-    $locationProvider.html5Mode(true);
-  }]);
+        $routeProvider.
+    when('/', {
+      templateUrl: 'views/main.html',
+      controller: 'MainController'
+    }).
+  when('/status', {
+    templateUrl: 'views/depots.html',
+    controller: 'DepotController',
+    resolve: {
+      'unis': function(UnisService) {
+        return UnisService.init
+      }}
+  }).
+  when('/depots/:id', {
+    templateUrl: 'views/depot_data.html',
+    controller: 'DepotController',
+    resolve: {
+      'unis': function(UnisService) {
+        return UnisService.init
+      }}
+  }).
+  when('/map/', {
+    templateUrl: 'views/depot_map.html',
+    controller: 'MapController',
+    resolve: {
+      'unis': function(UnisService) {
+        return UnisService.init
+      }}
+  }).
+  when('/map/:id', {
+    templateUrl: 'views/depot_map.html',
+    controller: 'MapController',
+    resolve: {
+      'unis': function(UnisService) {
+        return UnisService.init
+      }}
+  }).
+  when('/browser/',{
+    templateUrl: 'views/browser.html',
+    controller: 'ExnodeController'
+  }).
+  when('/downloads/',{
+    templateUrl: 'views/downloads.html',
+    controller: 'DownloadController'
+  }).
+  when('/downloads/map',{
+    templateUrl: 'views/download_map.html',
+    controller: 'DownloadMapController'
+  }).
+  otherwise({redirectTo: '/'});
+
+  $locationProvider.html5Mode(true);
+      }]);
