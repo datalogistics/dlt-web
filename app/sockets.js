@@ -16,6 +16,7 @@ var WebSocket = require('ws')
 , request = require('request')
 , querystring = require('querystring')
 , cfg = require('../properties')
+, q = require('q')
 ,_ = require('underscore');
 
 
@@ -329,44 +330,86 @@ module.exports = function(client) {
     });
   });
 
-  // @SuperDangerous possibly
-  // function getAllChildExnodeFiles(id , emitId){    
-  //   if (id == null) {
-  //     id = 'null=';
-  //   }
-  //   http.get({
-  //     host : cfg.serviceMap.dev.url,
-  //     port : cfg.serviceMap.dev.port,
-  //     path : '/exnodes?parent='+ id
-  //   }, function(http_res) {
-  //     var data = '';
-  //     http_res.on('data', function (chunk) {
-  //       data += chunk;
-  //     });
-  //     http_res.on('end',function() {
-  //       var obj = JSON.parse(data);
-  //       // console.log( obj );
-  //       for (var i=0 ; i < obj.length ; i++) {
-  //         var it = obj[i];
-  //         if (it.mode == 'file') {
-  //           console.log("emitting " , it);
-  //           it.emitId = emitId;
-  //           client.emit('exnode_childFiles',it);
-  //         } else {
-  //           console.log("Proceeding with Id ",it.id);
-  //           getAllChildExnodeFiles(it.id , emitId);
-  //         }
-  //       };
-  //     });
-  //     http_res.on('error',function(e) {
-  //       console.log("Error for Id ",id);
-  //     });
-  //   });
-  // };
 
-  // client.on('exnode_getAllChildren', function(d){
-  //   getAllChildExnodeFiles(d.id , d.id);
-  // });
+  function getAllChildExFilesDriver(arr , emitId , cb) {
+    if (!arr || !arr.length) {
+      // Done
+      cb();
+      return ;
+    } else if(arr) {
+      if (arr.length > 5) {
+        // console.log(arr);
+        var tmp = arr.splice(0,4);
+        getAllChildExFilesDriver(tmp, emitId , function(narr){
+          arr.push.apply(arr,narr);
+          getAllChildExFilesDriver(arr,emitId,cb);
+        });        
+      } else {
+        var promise = getAllChildExnodeFiles(arr, emitId);
+        // console.log(promise);
+        // Just execute cb
+        if (promise && promise.then)
+          promise.then(function(arr){
+            getAllChildExFilesDriver(arr,emitId,cb);
+          });
+      }      
+    }
+  }
+
+  // @SuperDangerous possibly
+  function getAllChildExnodeFiles(id , emitId) {
+    var defer = q.defer();    
+    if (id == null) {
+      // This can never occur in an array since the parent can never be a part of a child
+      id = 'null=';
+    } else if (_.isArray(id)){   
+      id = id.join(",");
+    };    
+    
+    http.get({
+      host : cfg.serviceMap.dev.url,
+      port : cfg.serviceMap.dev.port,
+      path : '/exnodes?fields=id,parent,selfRef,mode,name&parent='+ id
+    }, function(http_res) {
+      var data = '';
+      http_res.on('data', function (chunk) {
+        data += chunk;
+      });
+      http_res.on('end',function() {
+        var obj = JSON.parse(data);
+        // console.log( obj );
+        var recArr = [];
+        var fileArr = [];
+        for (var i=0 ; i < obj.length ; i++) {
+          var it = obj[i];
+          if (it.mode == 'file') {
+            // console.log("emitting " , it); 
+            fileArr.push(it);
+          } else {
+            recArr.push(it.id);
+            //console.log("Proceeding with Id ",it.id);
+          }
+        };
+        // console.log("FIles " , fileArr);
+        client.emit('exnode_childFiles',{ arr : fileArr , emitId : emitId});
+        defer.resolve(recArr);
+        //getAllChildExnodeFiles(recArr, emitId);
+      });
+      http_res.on('error',function(e) {
+        console.log("Error for Id ",id);
+        defer.resolve([]);
+      });
+    });
+    return defer.promise;   
+  };
+
+  client.on('exnode_getAllChildren', function(d){
+    getAllChildExFilesDriver([d.id],d.id,function(){
+      // Ok Done .. DO somethig if you want ..
+      // console.log("done");
+    });
+    // getAllChildExnodeFiles(d.id , d.id);
+  });
 
   client.on('eodnDownload_request', function(data) {
     // The id according to which multiple downloads happen
