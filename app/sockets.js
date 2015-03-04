@@ -364,8 +364,11 @@ module.exports = function(client) {
   //   getAllChildExnodeFiles(d.id , d.id);
   // });
 
-  client.on('eodnDownload_reqListing', function(data) {
-    console.log("Listing requested")
+
+  function simplifyListing() {
+    //Simplifies the registeredClientMap for serialization to the download listing
+    // This is required because the download listing currently stores client objects,
+    // serialization of which results in stack overflows
     var registeredFiles = [] 
     for (var key in registeredClientMap) {
       var entry = registeredClientMap[key]
@@ -377,7 +380,12 @@ module.exports = function(client) {
           connections: entry.connections
          })
     }
-    client.emit('eodnDownload_listing', registeredFiles)
+    return registeredFiles
+  }
+
+  client.on('eodnDownload_reqListing', function(data) {
+    console.log("Listing requested")
+    client.emit('eodnDownload_listing', simplifyListing())
   });
 
   client.on('eodnDownload_request', function(data) {
@@ -415,8 +423,8 @@ module.exports = function(client) {
     registeredClientMap[id] = data ;
     var arr = data.registeredRequestClientArr 
 
-    console.log("already registered clients: ",arr.length);
-    client.emit('eodnDownload_listing', registeredClientMap)
+    console.log("already registered clients: ", arr.length);
+    client.emit('eodnDownload_listing', simplifyListing())
 
     emitDataToAllConnected(registeredClientMap[id], 'eodnDownload_Info', 
       {id : id , name : name , size : totalSize , connections : conn});

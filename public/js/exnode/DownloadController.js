@@ -22,17 +22,13 @@ function downloadController($scope, SocketService) {
   //Listen to what is currently loaded
   SocketService.on("eodnDownload_listing", function(data) {
     console.log("Listing recieved", data)
-
     $scope.downloads = data
   })
 
   //Request what is currently loaded...
   SocketService.emit("eodnDownload_reqListing", {});
 
-  console.log("Selected:", $scope.selectedDownloads)
-
   $scope.mapSelected = function() {
-    console.log("Clicked map selected")
     if ($scope.selectedDownloads.length == 0) {return;}
     $windowlocation.path("/"+$scope.selectedDownloads[0])
   }
