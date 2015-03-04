@@ -343,3 +343,10 @@ text.id {
     margin-left : 3px;
 }
 .clear { clear : both}
+
+.jstree-default .jstree-checkbox {
+    display : none ;
+}
+.jstree-default .jstree-leaf .jstree-checkbox {
+    display : inline-block ;
+}

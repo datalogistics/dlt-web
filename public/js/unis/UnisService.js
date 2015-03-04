@@ -115,7 +115,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     $http.get(qstr).success(function(data) {
       //console.log('HTTP Data Response: ' + data);
       cb(data);
-      SocketService.emit('data_request', {'id': id});
+      //SocketService.emit('data_request', {'id': id});
     }).error(function(data) {
       console.log('HTTP Data Error: ' + data);
     });
@@ -149,7 +149,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	}
 	services[i].ttl--;
 	if (services[i].ttl < -ttl_off_limit) {
-	  services.splice(i, 1);
+	  // let's not remove 'off' depots yet
+	  //services.splice(i, 1);
 	}
       }
       //continue timer

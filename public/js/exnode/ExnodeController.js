@@ -9,7 +9,7 @@ function getSchemaProperties(obj) {
                 desc : n[i].description
             });
         };
-    };
+    }; 
     return arr;
 };
 /*
@@ -73,6 +73,7 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     sarr.map(function (name , i) {
       params[name] = varr[i];
     });
+    $scope.isExLoading = true;
     ExnodeService.search(params, function(res){
       $scope.isSearched = true;
       console.log(res);
@@ -82,6 +83,7 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
         x.children = false;
         return x ;
       });
+      $scope.isExLoading = false ;
     });;
   };
   
@@ -98,21 +100,75 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
 
   // Angular will use the selected Ids to display information 
   // The generator func
+  // A map of parentNode to obj with parentId and array of child
+  var parentMap = {};
+  function childFileHandler(data){
+    console.log("Getting child data" , data.emitId , data.arr);
+    var arr = data.arr;
+    // Just for the tree in enxode Browser 
+    var prefix = "";
+    var selectedIds = $scope[prefix + 'selectedIds'] = $scope[prefix + 'selectedIds'] || {} ;
+    var emitP = parentMap[data.emitId+""] = parentMap[data.emitID+""] || {};
+    emitP.child = emitP.child  || []; 
+    for (var i=0;i < arr.length; i++){
+      var info = arr[i];
+      selectedIds[info.id] = info;
+      // console.log(info);    
+      $scope[prefix+'showDownload'] = info.isFile;
+      $scope[prefix+'downloadId'] = info.id ;
+      // Process parent and add and remove to parentMap as required
+      var p = parentMap[info.parent+""] = parentMap[info.parent+""] || {};
+      p.child = p.child || [];
+      p.child.push(info);
+      emitP.child.push(info);
+    };
+    // Now store parent info so that selection in future may not need requests    
+  };
+  
+  SocketService.on('exnode_childFiles', childFileHandler);
+  
   function selectNodeGen(prefix) {
     return function(a,b){
       var info = b.node.original;
       var selectedIds = $scope[prefix + 'selectedIds'] = $scope[prefix + 'selectedIds'] || {} ;
-      selectedIds[info.id] = info;
-      // console.log(info);    
-      $scope[prefix+'showDownload'] = info.isFile;
-      $scope[prefix+'downloadId'] = info.id ;     
+      if (!info.isFile) {
+        // Do nothing
+        return;
+        // Lets get all the child files and add it
+        // Also create a map to store info and use to remove
+        // If it exists in map , use that        
+        var par = parentMap[info.id];
+        if (par) {
+          childFileHandler({emitId : info.id , arr : par.child});
+        } else {
+          SocketService.emit('exnode_getAllChildren',{id : info.id});       
+        };
+      } else {
+        selectedIds[info.id] = info;
+        // console.log(info);    
+        $scope[prefix+'showDownload'] = info.isFile;
+        $scope[prefix+'downloadId'] = info.id ;     
+      }
     };
   };
-  k = $scope ;
+  
   function unselectNodeGen(prefix){
     return function(a,b){
       var info = b.node.original;
-      delete ($scope[prefix+'selectedIds'] || {})[info.id];
+      if(!info.isFile) {
+        // Do Nothing
+        return;
+        // Now let us remove the files we added
+        var p = parentMap[info.id];
+        if (p && p.child) {
+          for (var i =0 ; i<p.child.length ; i++) {
+            var it = p.child[i];
+            // Now remove these ids
+            delete ($scope[prefix+'selectedIds'] || {})[it.id];
+          }
+        }
+      } else 
+        delete ($scope[prefix+'selectedIds'] || {})[info.id];
     };
   };
   

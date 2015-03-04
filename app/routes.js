@@ -127,6 +127,7 @@ module.exports = function(app) {
               var obj = JSON.parse(data);
               return defer.resolve(obj);
             } catch (e) {
+              //TODO: Sometimes a stack trace comes in as data...I don't know what is making it or why
               console.log("Error parsing JSON from socket: ")
               console.log(e)
               console.log(data)
@@ -294,15 +295,17 @@ module.exports = function(app) {
   });
   
   app.post('/api/download',function(req, res){
+    var sessionId = req.sessionID;
     var arr = req.body.refList.split(",");
     var app = req.body.app;
     var jmap = cfg.jnlpMap[app];
     ejs.renderFile(jmap.template, _.extend(jmap,{
       jarname: jmap.jarfile,
+      sessionID : sessionId,
       codebase: jmap.codebase,
       args : arr}), function(err, html) {
 	res.set('Content-Type','data/jnlp');
-	res.set('Content-Disposition',"attachment; filename='dlt-client.jnlp'");
+	res.set('Content-Disposition',"attachment; filename=dlt-client.jnlp");
 	res.end(html);
       });
   });

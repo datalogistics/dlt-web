@@ -19,6 +19,8 @@ app.configure(function() {
   app.set('port', process.env.PORT || 42424);
   app.use(express.static(__dirname + '/public'));
   app.use(express.favicon(__dirname + '/public/images/favicon.ico'));
+  app.use(express.cookieParser());
+  app.use(express.session({secret: 'replaceThisss'}));
   app.use(express.logger('dev'));
   app.use(express.json());
   app.use(express.urlencoded());

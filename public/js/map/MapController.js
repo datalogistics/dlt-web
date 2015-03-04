@@ -3,7 +3,7 @@ function mapController($scope, $routeParams, $http, UnisService) {
   
   $scope.services = UnisService.services;
   
-  allServiceData($scope.services, mapPoints(map.projection, map.svg, "depots"));
+  allServiceData($scope.services, "ibp_server", mapPoints(map.projection, map.svg, "depots"));
   
   if (typeof $routeParams.id != 'undefined') {
     console.log($routeParams.id);
