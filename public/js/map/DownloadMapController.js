@@ -1,7 +1,7 @@
 function downloadMapController($scope, $location, $http, UnisService, SocketService) {
   var map = baseMap("#downloadMap", 960, 500);
   $scope.services = UnisService.services;
-  allServiceData($scope.services, mapPoints(map.projection, map.svg, "depots"));
+  allServiceData($scope.services, "ibp_server", mapPoints(map.projection, map.svg, "depots"));
   
 
 // -----------------------------------------------
@@ -20,16 +20,22 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   SocketService.on("eodnDownload_Info", function(data){
     // Set this data in scope to display file info
     console.log('Download file data ' , data);
+    if (data.isError) {return;}
     initProgressTarget(map.svg, 30, 300, data.id, data.name, data.size)
   });
 
   SocketService.on("eodnDownload_Progress",function(data){
+    var hashId = data.hashId
     var s = data.totalSize ;
     var depotId = data.ip;
-    var hashId = data.hashId
     var progress = (data.amountRead / s ) * 100 ;
     var offset = (data.offset/ s )  * 100;
     if (isNaN(progress)) {progress = 0;}
+    
+    //TODO: This skip-if-not found is because there is no way to un-register a socket on the node side
+    //      Doing so would probably require recording client ids on the client, and unregistering them by id on page close 
+    //      As is, the unwanted ones just expire when the download is done.  In the mean time, extra messages get sent
+    if (hashIds.indexOf(hashId.toString()) < 0) {return}
 
     if(progress > 100 && offset > 100){
       console.log("Incorrect data -- progress: " + progress, "Offset: " + offset)
@@ -117,6 +123,8 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   function doProgressWithOffset(svg, sourceId, fileId, progress , offsetPercent){
     //Calculate geometry of the progress bar chunk
     var target = svg.select("#" + targetId(fileId))
+    if (target.empty()) {console.error("Failed attempt to update " + fileId); return;}
+
     var targetTop = parseInt(target.attr("target-top"))
     var targetLeft = parseInt(target.attr("target-left"))
     var targetHeight = parseInt(target.attr("target-height"))
