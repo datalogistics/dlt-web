@@ -132,9 +132,11 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
       var info = b.node.original;
       var selectedIds = $scope[prefix + 'selectedIds'] = $scope[prefix + 'selectedIds'] || {} ;
       if (!info.isFile) {
+        // Do nothing
+        return;
         // Lets get all the child files and add it
         // Also create a map to store info and use to remove
-        // If it exists in map , use that 
+        // If it exists in map , use that        
         var par = parentMap[info.id];
         if (par) {
           childFileHandler({emitId : info.id , arr : par.child});
@@ -154,6 +156,8 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     return function(a,b){
       var info = b.node.original;
       if(!info.isFile) {
+        // Do Nothing
+        return;
         // Now let us remove the files we added
         var p = parentMap[info.id];
         if (p && p.child) {

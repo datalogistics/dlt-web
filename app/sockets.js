@@ -404,6 +404,8 @@ module.exports = function(client) {
   };
 
   client.on('exnode_getAllChildren', function(d){
+    // Do nothing for the time being
+    return;
     getAllChildExFilesDriver([d.id],d.id,function(){
       // Ok Done .. DO somethig if you want ..
       // console.log("done");
