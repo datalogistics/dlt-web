@@ -14,25 +14,16 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   console.log("ids:", hashIds )
   hashIds.forEach(function(id) {
     console.log("init for ", id)
-    initProgressTarget(map.svg, 30, 300, id)
     SocketService.emit("eodnDownload_request", {id : id});
   })
 
   SocketService.on("eodnDownload_Info", function(data){
     // Set this data in scope to display file info
     console.log('Download file data ' , data);
-    if(data.isError){
-      $scope.error = true;
-    } else {
-      $scope.error = false;
-      $scope.name = data.name ,
-    $scope.size = data.size , 
-    $scope.connections = data.connections;						
-    }
+    initProgressTarget(map.svg, 30, 300, data.id, data.name, data.size)
   });
 
   SocketService.on("eodnDownload_Progress",function(data){
-    console.log("progress", data)
     var s = data.totalSize ;
     var depotId = data.ip;
     var hashId = data.hashId
@@ -146,18 +137,20 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     moveLineToProgress(svg, fileId, mapNode, barOffset, barHeight);
   }
 
-  function initProgressTarget(svg, width, height, fileId) {
-    var g = svg.select("#downloads")
-    if (g.empty()) {g = svg.append("g").attr("id", "downloads")}
+  function initProgressTarget(svg, width, height, fileId, fileName) {
+    var allDownloads = svg.select("#downloads")
+    if (allDownloads.empty()) {allDownloads = svg.append("g").attr("id", "downloads")}
 
-    var count = g.select(".download-target").size()
-    var left = svg.attr("width")-(width+10)*count //10 is a pad
+    var count = allDownloads.select(".download-target").size()
+    var left = svg.attr("width")-(width+15)*count //requested width, plus a pad
     var top = svg.attr("height")/2 - height/2
+
+    var g = allDownloads.append("g").attr("class", "download-entry")
+    g.attr("transform", "translate(" + left + "," + top + ")")
 
     g.append("rect")
         .attr("id", targetId(fileId))
         .attr("class", "download-target")
-        .attr("transform", "translate(" + left + "," + top + ")")
         .attr("fill", "#bbb")
         .attr("width", width)
         .attr("height", height)
@@ -166,6 +159,15 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
         .attr("target-top", top)
         .attr("target-left", left)
         .attr("progress-start", 0)
+    
+    g.append("text")
+        .attr("class", "download-label")
+        .text(fileName)
+        .attr("baseline-shift", "-4.5px")
+        .attr("text-anchor", "start")
+        .attr("fill", "#777")
+        .attr("writing-mode", "tb")
+
   }
 
 } // end controller

@@ -459,7 +459,6 @@ function addNewConn(client, id){
     q.registeredRequestClientArr.push(client);
     // Go bonkers and emit all old messages
     var arr = q._emitPipe || [];
-    console.log('pushing all known messages' , arr);
     for ( var i = 0 ; i < arr.length ; i++){
       client.emit(arr[i].name , arr[i].data);
     }
