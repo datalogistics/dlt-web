@@ -42,10 +42,10 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
         'end_date': toMMFormat(usf.endDate),
         'cloud_cover': usf.cloud ,
         'seasonal': usf.isSeasonal,
-        'north': usf.latStart,
-        'south': usf.latEnd,
-        'west': usf.latStart,
-        'east': usf.latEnd
+        'south': usf.latStart,
+        'north': usf.latEnd,
+        'west': usf.longStart,
+        'east': usf.longEnd
       });        
     }
   };
