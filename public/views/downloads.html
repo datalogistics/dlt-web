@@ -1,6 +1,21 @@
-<div class="jumbotron text-center">
+<h2 class="lead text-center">Downloads</h2>
 
-  <p>Where are my downloads?</p>
-  <p><a href="/downloads/1244">Here's one!</a></p>
+<div class="table-responsive">
+  <table class="table table-hover table-condensed">
+    <tr>
+      <th style="width:10%"><a href="/downloads/map?{{downloadsLink}}">Map <br>Selected</a></th>
+      <th style="width:50%">Name</th>
+      <th style="width:30%">Size (bytes)</th>
+      <th style="width:10%">Connections</th>
+    </tr>
+    <tbody ng-repeat="file in downloads">
+      <td> <input type="checkbox" value="{{file.hashId}}" ng-click="toggleDownloadSelection(file.hashId)" />
+        <td> <a ng-href="downloads/map?hashIds={{file.hashId}}">{{file.filename}} </a> </td>
+        <td> {{file.totalSize}} </td>
+        <td> {{file.connections}} </td>
+      </tbody>
+    </table>
+  </div>
 
+  <p><a href="/downloads/1244">(Test link)</a></p>
 </div>

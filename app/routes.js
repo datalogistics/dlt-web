@@ -123,10 +123,15 @@ module.exports = function(app) {
             data += chunk;
           });
           http_res.on('end',function() {
-            var obj = JSON.parse(data);
-            // console.log( obj );
-            return defer.resolve(obj);
-            //res.json( obj );
+            try {
+              var obj = JSON.parse(data);
+              return defer.resolve(obj);
+            } catch (e) {
+              //TODO: Sometimes a stack trace comes in as data...I don't know what is making it or why
+              console.log("Error parsing JSON from socket: ")
+              console.log(e)
+              console.log(data)
+            }
           });
           http_res.on('error',function(e) {
             return defer.reject(false);
@@ -239,7 +244,7 @@ module.exports = function(app) {
         return {
           "id" : x.id ,
           "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
-	  "isFile": x.mode == "file" ? true: false,
+          "isFile": x.mode == "file" ? true: false,
           "parent" : x.parent == null? "#" : x.parent,
           "children" :  x.mode != "file",
           "undetermined" : true,
