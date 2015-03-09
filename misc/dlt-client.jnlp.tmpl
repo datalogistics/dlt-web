@@ -15,6 +15,14 @@
     <resources>
         <!-- Application Resources -->
         <j2se version="1.6+" max-heap-size="1024m" href="http://java.sun.com/products/autodl/j2se"/>
+        <property name="client_title" value="Data Logistics Toolkit"/>
+        <property name="exnode_namespace" value="http://loci.cs.utk.edu/exnode"/>
+        <property name="exnode_version" value="3.0"/>
+        <property name="exnode_watchdog_cycletime" value="3000"/>
+        <property name="read_timeout" value="20"/>
+        <property name="read_retries" value="3"/>
+        <property name="read_retry_cycletime" value="60000"/>
+        <property name="file_write_retries" value="3"/>
         <jar href="<%=jarname%>" main="true"/>
         <jar href="lib/commons-cli-1.2.jar"/>
         <jar href="lib/commons-io-2.4.jar"/>
