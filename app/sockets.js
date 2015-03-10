@@ -39,8 +39,9 @@ setInterval(function(){
 
 // Storing all the data in memory -- ya seriously gonna do that - Data manually deleted in 15 minutes
 // This map stores the fileData which is used to retrieve it.
+var registeredDownloadClients = [];
 var registeredClientMap = {};
-var rClientsLastProgressMap = {}
+var rClientsLastProgressMap = {};
 var rClientsLastUsedMap = {};
 var rMap = cfg.routeMap;
 
@@ -329,7 +330,7 @@ module.exports = function(client) {
       client.emit('exnode_data', {data : map});
     });
   });
-
+  
 
   function getAllChildExFilesDriver(arr , emitId , cb) {
     if (!arr || !arr.length) {
@@ -414,7 +415,7 @@ module.exports = function(client) {
 
 
   function simplifyListing() {
-    //Simplifies the registeredClientMap for serialization to the download listing
+    // Simplifies the registeredClientMap for serialization to the download listing
     // This is required because the download listing currently stores client objects,
     // serialization of which results in stack overflows
     var registeredFiles = [] 
@@ -422,10 +423,10 @@ module.exports = function(client) {
       var entry = registeredClientMap[key]
       if (entry === undefined) {continue}
       registeredFiles.push(
-         {hashId: entry.hashId,
-          filename: entry.filename, 
-          totalSize: entry.totalSize, 
-          connections: entry.connections
+         {id: entry.hashId,
+          name: entry.filename, 
+          size: entry.totalSize, 
+          conns: entry.connections
          })
     }
     return registeredFiles
@@ -433,13 +434,15 @@ module.exports = function(client) {
 
   client.on('eodnDownload_reqListing', function(data) {
     console.log("Listing requested")
+    // save the client for future updates
+    registeredDownloadClients.push(client)
     client.emit('eodnDownload_listing', simplifyListing())
   });
 
   client.on('eodnDownload_request', function(data) {
     // The id according to which multiple downloads happen
     var id = data.id ;
-    console.log('all fine till here ');
+    console.log("Request info for download: " + id);
     client.emit('eodnDownload_Nodes', {data : {}});
     // AddNewConnection
     addNewConn(client, id);
@@ -452,7 +455,7 @@ module.exports = function(client) {
     
     // Kill it - will be auto gc'd
     registeredClientMap[data.hashId] = undefined
-
+    
     console.log("Download cleared ", data)
   });
 
@@ -463,19 +466,28 @@ module.exports = function(client) {
     var totalSize = data.totalSize
     var conn = data.connections
 
+    var emitData = {id: id, name: name, size: totalSize, conns: conn};
+    
     console.log("registered new download: ", data.hashId);
 
     var old = registeredClientMap[id] || {};
     data.registeredRequestClientArr = old.registeredRequestClientArr || [];
-    data.exists = true ;
-    registeredClientMap[id] = data ;
-    var arr = data.registeredRequestClientArr 
+    data.exists = true;
+    registeredClientMap[id] = data;
+    var arr = data.registeredRequestClientArr
+    
+    for (var i=registeredDownloadClients.length-1; i>=0; i--) {
+      var c = registeredDownloadClients[i];
+      if (c.connected) {
+	c.emit('eodnDownload_Info', emitData);
+      }
+      else {
+	registeredDownloadClients.splice(i, 1);
+      }
+    }
 
     console.log("already registered clients: ", arr.length);
-    client.emit('eodnDownload_listing', simplifyListing())
-
-    emitDataToAllConnected(registeredClientMap[id], 'eodnDownload_Info', 
-      {id : id , name : name , size : totalSize , connections : conn});
+    emitDataToAllConnected(registeredClientMap[id], 'eodnDownload_Info', emitData);
 
   });
 

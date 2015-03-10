@@ -9,13 +9,14 @@
       <th style="width:10%">Connections</th>
     </tr>
     <tbody ng-repeat="file in downloads">
-      <td> <input type="checkbox" value="{{file.hashId}}" ng-click="toggleDownloadSelection(file.hashId)" />
-        <td> <a ng-href="downloads/map?hashIds={{file.hashId}}">{{file.filename}} </a> </td>
-        <td> {{file.totalSize}} </td>
-        <td> {{file.connections}} </td>
-      </tbody>
-    </table>
-  </div>
-
-  <p><a href="/downloads/1244">(Test link)</a></p>
+      <td> <input type="checkbox" value="{{file.id}}" ng-click="toggleDownloadSelection(file.id)" />
+      <td> <a ng-href="downloads/map?hashIds={{file.id}}">{{file.name}} </a> </td>
+      <td> {{file.size}} </td>
+      <td> {{file.conns}} </td>
+    </tbody>
+  </table>
 </div>
+<!--
+<p><a href="/downloads/1244">(Test link)</a></p>
+</div>
+-->

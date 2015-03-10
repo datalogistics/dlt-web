@@ -25,6 +25,12 @@ function downloadController($scope, SocketService) {
     $scope.downloads = data
   })
 
+  //Get updates
+  SocketService.on("eodnDownload_Info", function(data) {
+    console.log("New download received", data)
+    $scope.downloads.push(data)
+  })
+  
   //Request what is currently loaded...
   SocketService.emit("eodnDownload_reqListing", {});
 
