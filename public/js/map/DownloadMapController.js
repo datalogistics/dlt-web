@@ -26,9 +26,9 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
   SocketService.on("peri_download_progress",function(data){
     var sessionId = data.sessionId
-    var s = data.totalSize ;
-    var depotId = data.ip;
-    var progress = (data.amountRead / s ) * 100 ;
+    var s = data.size;
+    var host = data.host;
+    var progress = (data.length / s ) * 100 ;
     var offset = (data.offset/ s )  * 100;
     if (isNaN(progress)) {progress = 0;}
     
@@ -40,7 +40,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     if(progress > 100 && offset > 100){
       console.log("Incorrect data -- progress: " + progress, "Offset: " + offset)
     } else {
-      doProgressWithOffset(map.svg, depotId, sessionId, progress, offset);
+      doProgressWithOffset(map.svg, host, sessionId, progress, offset);
     }
   });
 
@@ -135,7 +135,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     if (barHeight == 0 || isNaN(barHeight)) {barHeight=.1}
 
     //Find the source location node
-    var nodes = svg.selectAll(".depotLocation").filter(function(d) {return this.getAttribute("depot_ip") == sourceId})
+    var nodes = svg.selectAll(".depotLocation").filter(function(d) {return this.getAttribute("name") == sourceId})
     if (nodes.empty()) {
       console.log("DownloadProgress: Node not found " + sourceId)
       downloadFragmentBar(svg, fileId, "source-not-found-segment", "#222222", barOffset, barHeight)

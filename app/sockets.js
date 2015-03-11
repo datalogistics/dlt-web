@@ -424,7 +424,7 @@ module.exports = function(client) {
       registeredFiles.push(
          {sessionId: entry.sessionId,
           filename: entry.filename, 
-          totalSize: entry.totalSize, 
+          size : entry.size, 
           connections: entry.connections
          })
     }
@@ -460,7 +460,7 @@ module.exports = function(client) {
   client.on('peri_download_register', function(data) {
     var id = data.sessionId
     var name = data.filename
-    var totalSize = data.totalSize
+    var size = data.size
     var conn = data.connections
 
     console.log("registered new download: ", data.sessionId);
@@ -475,7 +475,7 @@ module.exports = function(client) {
     client.emit('peri_download_listing', simplifyListing())
 
     emitDataToAllConnected(registeredClientMap[id], 'peri_download_info', 
-      {id : id , name : name , size : totalSize , connections : conn});
+      {id : id , name : name , size : size, connections : conn});
 
   });
 
@@ -488,7 +488,7 @@ module.exports = function(client) {
     }
     var messageName = 'peri_download_progress' ,
     dataToBeSent = data;
-    dataToBeSent.totalSize = serve.totalSize;
+    dataToBeSent.size = serve.size;
 
     if(serve){
       emitDataToAllConnected(serve , messageName , dataToBeSent);
@@ -538,7 +538,6 @@ function emitDataToAllConnected(serve , messageName , dataToBeSent) {
       if(arr[i].connected){
         flag = true ;
         arr[i].emit(messageName, dataToBeSent);
-        //{data : { ip : "24.1.111.131" , progress : 5}});
       }
       if(arr[i].connected || arr[i].connecting){
         // add to array

@@ -19,7 +19,7 @@ sock.on('connect' , function(){
   sock.emit(msg.r , {
     sessionId : sessionId,
     filename : fileName,
-    totalSize : totalSize,
+    size: totalSize,
     connections : 4
   });
 
@@ -28,27 +28,27 @@ sock.on('connect' , function(){
     console.log("Sending for ", sessionId, fileName)
     sock.emit(msg.p, { 
       sessionId : sessionId,
-      ip : 'dresci.incntre.iu.edu',
+      host : 'dresci.incntre.iu.edu',
       offset : offset,
-      amountRead : 65536
+      length : 65536
     });
     sock.emit(msg.p, {
       sessionId : sessionId,
-      ip : 'pcvm2-2.utahddc.geniracks.net',
+      host : 'pcvm2-2.utahddc.geniracks.net',
       offset : offset + 65536,
-      amountRead : 32768
+      length : 32768
     });
     sock.emit(msg.p, {
       sessionId : sessionId,
-      ip : '155.99.144.103',
+      host : '155.99.144.103',
       offset : offset + 98304,
-      amountRead : 49152
+      length : 49152
     });
     sock.emit(msg.p, {
       sessionId : sessionId,
-      ip : '152.54.14.7',
+      host : '152.54.14.7',
       offset : offset + 98304,
-      amountRead : 262144
+      length : 262144
     });
     offset = offset + 360448;
     if (offset > totalSize) {

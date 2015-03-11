@@ -74,7 +74,7 @@ function tooltip(svg) {
 
 //Add a node with name at position latLon to svg using the projection
 //TODO: Refactor so the invisible point is always added, reduce duplciate code
-function addMapLocation(projection, name, rawLonLat, svg, depot_id, depot_ip) {		
+function addMapLocation(projection, name, rawLonLat, svg, depot_id) {		
   var lonLat = [rawLonLat[0].toFixed(2), rawLonLat[1].toFixed(2)] //Round lat/lon
 
   var translate = "translate(" + projection(lonLat) + ")"
@@ -87,10 +87,8 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id, depot_ip) {
          .attr("class", "depotLocation")
          .attr("name", name)
          .attr("style", "display:none")
-         .attr("depot_ip", name)
 
       if (depot_id !== undefined) {circ.attr('depot_id', depot_id)}
-      if (depot_ip !== undefined) {circ.attr('depot_ip', depot_ip)}
   }
 
   if (nodes.empty()) {
@@ -136,9 +134,9 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id, depot_ip) {
 
 //Add nodes to the side of the map, because their lat/lon is not known
 //baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
-function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id, depot_ip) {
+function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id) {
     pair = [baseLatLon[0]-idx*.3, baseLatLon[1]-idx]  //the idx*.3 straigthens out the line
-    node = addMapLocation(projection, name, pair, svg, depot_id, depot_ip)
+    node = addMapLocation(projection, name, pair, svg, depot_id)
     node.append("text")
        .attr("dx", function(d){return 10})
        .attr("dy", function(d){return 4})
