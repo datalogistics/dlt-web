@@ -9,33 +9,39 @@ function downloadController($scope, SocketService) {
   $scope.selectedDownloads = [] 
   $scope.downloadsLink = ""
 
-  $scope.toggleDownloadSelection = function(hashId) {
-    var idx = $scope.selectedDownloads.indexOf(hashId);
+  $scope.toggleDownloadSelection = function(sessionId) {
+    var idx = $scope.selectedDownloads.indexOf(sessionId);
     // is currently selected
     if (idx > -1) {$scope.selectedDownloads.splice(idx, 1);}
     else {
-      $scope.selectedDownloads.push(hashId)
+      $scope.selectedDownloads.push(sessionId)
     }
-    $scope.downloadsLink = "hashIds=" + $scope.selectedDownloads.join()
+    $scope.downloadsLink = "sessionIds=" + $scope.selectedDownloads.join()
   }
 
   //Listen to what is currently loaded
-  SocketService.on("eodnDownload_listing", function(data) {
+  SocketService.on("peri_download_listing", function(data) {
     console.log("Listing recieved", data)
     $scope.downloads = data
   })
 
   //Get updates
-  SocketService.on("eodnDownload_Info", function(data) {
+  SocketService.on("peri_download_info", function(data) {
     console.log("New download received", data)
     $scope.downloads.push(data)
   })
   
   //Request what is currently loaded...
-  SocketService.emit("eodnDownload_reqListing", {});
+  SocketService.emit("peri_download_req_listing", {});
 
   $scope.mapSelected = function() {
     if ($scope.selectedDownloads.length == 0) {return;}
     $windowlocation.path("/"+$scope.selectedDownloads[0])
   }
+
+  $scope.$on("$destroy", function() {
+    SocketService.getSocket().removeAllListeners() //Disconnect listening sockets
+  })
+
+
 }

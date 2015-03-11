@@ -10,37 +10,37 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
   };
 
-  var hashIds = $location.search().hashIds.split(",")
-  console.log("ids:", hashIds )
-  hashIds.forEach(function(id) {
+  var sessionIds = $location.search().sessionIds.split(",")
+  console.log("ids:", sessionIds )
+  sessionIds.forEach(function(id) {
     console.log("init for ", id)
-    SocketService.emit("eodnDownload_request", {id : id});
+    SocketService.emit("peri_download_request", {id : id});
   })
 
-  SocketService.on("eodnDownload_Info", function(data){
+  SocketService.on("peri_download_info", function(data){
     // Set this data in scope to display file info
     console.log('Download file data ' , data);
     if (data.isError) {return;}
-    initProgressTarget(map.svg, 30, 300, data.id, data.name, data.size)
+    initProgressTarget(map.svg, 30, 300, data.sessionId, data.filename, data.size)
   });
 
-  SocketService.on("eodnDownload_Progress",function(data){
-    var hashId = data.hashId
-    var s = data.totalSize ;
-    var depotId = data.ip;
-    var progress = (data.amountRead / s ) * 100 ;
+  SocketService.on("peri_download_progress",function(data){
+    var sessionId = data.sessionId
+    var s = data.size;
+    var host = data.host;
+    var progress = (data.length / s ) * 100 ;
     var offset = (data.offset/ s )  * 100;
     if (isNaN(progress)) {progress = 0;}
     
     //TODO: This skip-if-not found is because there is no way to un-register a socket on the node side
     //      Doing so would probably require recording client ids on the client, and unregistering them by id on page close 
     //      As is, the unwanted ones just expire when the download is done.  In the mean time, extra messages get sent
-    if (hashIds.indexOf(hashId.toString()) < 0) {return}
+    if (sessionIds.indexOf(sessionId) < 0) {return}
 
     if(progress > 100 && offset > 100){
       console.log("Incorrect data -- progress: " + progress, "Offset: " + offset)
     } else {
-      doProgressWithOffset(map.svg, depotId, hashId, progress, offset);
+      doProgressWithOffset(map.svg, host, sessionId, progress, offset);
     }
   });
 
@@ -95,7 +95,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
     var color = nodeRecolor(mapGroup)
 
-    mapGroup.select(".eodnNode")
+    mapGroup.select(".depotNode")
         .attr("fill", color)
         .attr("stroke", "#555")
 
@@ -135,7 +135,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     if (barHeight == 0 || isNaN(barHeight)) {barHeight=.1}
 
     //Find the source location node
-    var nodes = svg.selectAll(".eodnLocation").filter(function(d) {return this.getAttribute("depot_ip") == sourceId})
+    var nodes = svg.selectAll(".depotLocation").filter(function(d) {return this.getAttribute("name") == sourceId})
     if (nodes.empty()) {
       console.log("DownloadProgress: Node not found " + sourceId)
       downloadFragmentBar(svg, fileId, "source-not-found-segment", "#222222", barOffset, barHeight)
@@ -145,7 +145,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     moveLineToProgress(svg, fileId, mapNode, barOffset, barHeight);
   }
 
-  function initProgressTarget(svg, width, height, fileId, fileName) {
+  function initProgressTarget(svg, width, height, sessionId, fileName) {
     var allDownloads = svg.select("#downloads")
     if (allDownloads.empty()) {allDownloads = svg.append("g").attr("id", "downloads")}
 
@@ -157,7 +157,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     g.attr("transform", "translate(" + left + "," + top + ")")
 
     g.append("rect")
-        .attr("id", targetId(fileId))
+        .attr("id", targetId(sessionId))
         .attr("class", "download-target")
         .attr("fill", "#bbb")
         .attr("width", width)
@@ -175,7 +175,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
         .attr("text-anchor", "start")
         .attr("fill", "#777")
         .attr("writing-mode", "tb")
-
   }
 
 } // end controller

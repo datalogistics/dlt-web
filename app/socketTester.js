@@ -5,55 +5,55 @@
 
 var  sock = require('socket.io-client')('http://localhost:42424');
 var msg = {
-  r : 'eodnDownload_register' ,
-  c : 'eodnDownload_clear',
-  p : 'eodnDownload_pushData'
+  r : 'peri_download_register' ,
+  c : 'peri_download_clear',
+  p : 'peri_download_pushdata'
 };
 var totalSize = 16777216
 
-var fileId = process.argv[2] || 1244
+var sessionId = String(process.argv[2] || 1244)
 var fileName = process.argv[3] || "test_image.tiff"
 
 sock.on('connect' , function(){
   console.log('connected successfully ');
   sock.emit(msg.r , {
-    hashId : fileId,
+    sessionId : sessionId,
     filename : fileName,
-    totalSize : totalSize,
+    size: totalSize,
     connections : 4
   });
 
   var offset = 0;
   var intervalId = setInterval(function(){
-    console.log("Sending for ", fileId, fileName)
+    console.log("Sending for ", sessionId, fileName)
     sock.emit(msg.p, { 
-      hashId : fileId,
-      ip : 'dresci.incntre.iu.edu',
+      sessionId : sessionId,
+      host : 'dresci.incntre.iu.edu',
       offset : offset,
-      amountRead : 65536
+      length : 65536
     });
     sock.emit(msg.p, {
-      hashId : fileId,
-      ip : 'pcvm2-2.utahddc.geniracks.net',
+      sessionId : sessionId,
+      host : 'pcvm2-2.utahddc.geniracks.net',
       offset : offset + 65536,
-      amountRead : 32768
+      length : 32768
     });
     sock.emit(msg.p, {
-      hashId : fileId,
-      ip : '155.99.144.103',
+      sessionId : sessionId,
+      host : '155.99.144.103',
       offset : offset + 98304,
-      amountRead : 49152
+      length : 49152
     });
     sock.emit(msg.p, {
-      hashId : fileId,
-      ip : '152.54.14.7',
+      sessionId : sessionId,
+      host : '152.54.14.7',
       offset : offset + 98304,
-      amountRead : 262144
+      length : 262144
     });
     offset = offset + 360448;
     if (offset > totalSize) {
       clearInterval(intervalId)
-      sock.emit(msg.c, {hashId: fileId})
+      sock.emit(msg.c, {sessionId: sessionId})
     }
   },1000);
 

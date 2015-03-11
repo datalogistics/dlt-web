@@ -58,7 +58,7 @@ function mapController($scope, $routeParams, $http, UnisService) {
   
   if (typeof $routeParams.id != 'undefined') {
     console.log($routeParams.id);
-    highlightMapLocations(map.svg, ".eodnLocation", function(d) {return this.getAttribute("depot_id") == $routeParams.id})
+    highlightMapLocations(map.svg, ".depotLocation", function(d) {return this.getAttribute("depot_id") == $routeParams.id})
   }
 
 
