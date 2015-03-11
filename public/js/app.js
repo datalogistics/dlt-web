@@ -80,4 +80,4 @@ angular.module('periApp', ['ngRoute',
   otherwise({redirectTo: '/'});
 
   $locationProvider.html5Mode(true);
-      }]);
+    }]);

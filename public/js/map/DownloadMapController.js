@@ -10,9 +10,9 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
   };
 
-  var hashIds = $location.search().hashIds.split(",")
-  console.log("ids:", hashIds )
-  hashIds.forEach(function(id) {
+  var sessionIds = $location.search().sessionIds.split(",")
+  console.log("ids:", sessionIds )
+  sessionIds.forEach(function(id) {
     console.log("init for ", id)
     SocketService.emit("peri_download_request", {id : id});
   })
@@ -25,7 +25,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   });
 
   SocketService.on("peri_download_progress",function(data){
-    var hashId = data.hashId
+    var sessionId = data.sessionId
     var s = data.totalSize ;
     var depotId = data.ip;
     var progress = (data.amountRead / s ) * 100 ;
@@ -35,12 +35,12 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     //TODO: This skip-if-not found is because there is no way to un-register a socket on the node side
     //      Doing so would probably require recording client ids on the client, and unregistering them by id on page close 
     //      As is, the unwanted ones just expire when the download is done.  In the mean time, extra messages get sent
-    if (hashIds.indexOf(hashId.toString()) < 0) {return}
+    if (sessionIds.indexOf(sessionId) < 0) {return}
 
     if(progress > 100 && offset > 100){
       console.log("Incorrect data -- progress: " + progress, "Offset: " + offset)
     } else {
-      doProgressWithOffset(map.svg, depotId, hashId, progress, offset);
+      doProgressWithOffset(map.svg, depotId, sessionId, progress, offset);
     }
   });
 

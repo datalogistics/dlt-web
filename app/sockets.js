@@ -25,9 +25,9 @@ setInterval(function(){
   var time = (new Date()).getTime();
   for(var i in registeredClientMap){
     var c = registeredClientMap[i] ;
-    if(!c || !c.hashId)
+    if(!c || !c.sessionId)
       continue ;
-    var id = c.hashId,
+    var id = c.sessionId,
     lastProgressTime = rClientsLastProgressMap[id]
     lastUsedTime = rClientsLastUsedMap[id];
     // If it has been used in last 5 minutes then keep it or else remove it
@@ -422,7 +422,7 @@ module.exports = function(client) {
       var entry = registeredClientMap[key]
       if (entry === undefined) {continue}
       registeredFiles.push(
-         {hashId: entry.hashId,
+         {sessionId: entry.sessionId,
           filename: entry.filename, 
           totalSize: entry.totalSize, 
           connections: entry.connections
@@ -446,24 +446,24 @@ module.exports = function(client) {
   });
 
   client.on("peri_download_clear",function(data){
-    var serve = registeredClientMap[data.hashId]
+    var serve = registeredClientMap[data.sessionId]
     var messageName = 'peri_download_clear'
     emitDataToAllConnected(serve , messageName , data)
     
     // Kill it - will be auto gc'd
-    registeredClientMap[data.hashId] = undefined
+    registeredClientMap[data.sessionId] = undefined
 
     console.log("Download cleared ", data)
   });
 
   // The latest download hashmap
   client.on('peri_download_register', function(data) {
-    var id = data.hashId
+    var id = data.sessionId
     var name = data.filename
     var totalSize = data.totalSize
     var conn = data.connections
 
-    console.log("registered new download: ", data.hashId);
+    console.log("registered new download: ", data.sessionId);
 
     var old = registeredClientMap[id] || {};
     data.registeredRequestClientArr = old.registeredRequestClientArr || [];
@@ -480,10 +480,10 @@ module.exports = function(client) {
   });
 
   client.on('peri_download_pushdata', function(data) {
-    var id =  data.hashId ;
+    var id =  data.sessionId ;
     var serve = registeredClientMap[id];
     if (serve === undefined) {
-      console.log("Message received about un-registered download: ", data.hashId)
+      console.log("Message received about un-registered download: ", data.sessionId)
       return
     }
     var messageName = 'peri_download_progress' ,
@@ -528,7 +528,7 @@ function emitDataToAllConnected(serve , messageName , dataToBeSent) {
     serve._emitPipe.push({name : messageName , data : dataToBeSent});
     var arr = serve.registeredRequestClientArr || [] ;
     var time = (new Date()).getTime();
-    var id = serve.hashId || serve.id;
+    var id = serve.sessionId || serve.id;
     rClientsLastProgressMap[id] = time ;
     // Publish to all sockets in the array
     var nArr = [] , flag = false;
