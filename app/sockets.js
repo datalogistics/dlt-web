@@ -498,6 +498,7 @@ module.exports = function(client) {
     var messageName = 'peri_download_progress' ,
     dataToBeSent = data;
     dataToBeSent.size = serve.size;
+    dataToBeSent.ts = Date.now() //TODO: Remove when the incomming messages grow timestamps
 
     if(serve){
       emitDataToAllConnected(serve , messageName , dataToBeSent);
