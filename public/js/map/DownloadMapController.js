@@ -14,17 +14,17 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   console.log("ids:", hashIds )
   hashIds.forEach(function(id) {
     console.log("init for ", id)
-    SocketService.emit("eodnDownload_request", {id : id});
+    SocketService.emit("peri_download_request", {id : id});
   })
 
-  SocketService.on("eodnDownload_Info", function(data){
+  SocketService.on("peri_download_info", function(data){
     // Set this data in scope to display file info
     console.log('Download file data ' , data);
     if (data.isError) {return;}
     initProgressTarget(map.svg, 30, 300, data.id, data.name, data.size)
   });
 
-  SocketService.on("eodnDownload_Progress",function(data){
+  SocketService.on("peri_download_progress",function(data){
     var hashId = data.hashId
     var s = data.totalSize ;
     var depotId = data.ip;
@@ -95,7 +95,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
     var color = nodeRecolor(mapGroup)
 
-    mapGroup.select(".eodnNode")
+    mapGroup.select(".depotNode")
         .attr("fill", color)
         .attr("stroke", "#555")
 
@@ -135,7 +135,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     if (barHeight == 0 || isNaN(barHeight)) {barHeight=.1}
 
     //Find the source location node
-    var nodes = svg.selectAll(".eodnLocation").filter(function(d) {return this.getAttribute("depot_ip") == sourceId})
+    var nodes = svg.selectAll(".depotLocation").filter(function(d) {return this.getAttribute("depot_ip") == sourceId})
     if (nodes.empty()) {
       console.log("DownloadProgress: Node not found " + sourceId)
       downloadFragmentBar(svg, fileId, "source-not-found-segment", "#222222", barOffset, barHeight)

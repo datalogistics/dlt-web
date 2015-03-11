@@ -5,9 +5,9 @@
 
 var  sock = require('socket.io-client')('http://localhost:42424');
 var msg = {
-  r : 'eodnDownload_register' ,
-  c : 'eodnDownload_clear',
-  p : 'eodnDownload_pushData'
+  r : 'peri_download_register' ,
+  c : 'peri_download_clear',
+  p : 'peri_download_pushdata'
 };
 var totalSize = 16777216
 

@@ -431,23 +431,23 @@ module.exports = function(client) {
     return registeredFiles
   }
 
-  client.on('eodnDownload_reqListing', function(data) {
+  client.on('peri_download_req_listing', function(data) {
     console.log("Listing requested")
-    client.emit('eodnDownload_listing', simplifyListing())
+    client.emit('peri_download_listing', simplifyListing())
   });
 
-  client.on('eodnDownload_request', function(data) {
+  client.on('peri_download_request', function(data) {
     // The id according to which multiple downloads happen
     var id = data.id ;
     console.log('all fine till here ');
-    client.emit('eodnDownload_Nodes', {data : {}});
+    client.emit('peri_download_Nodes', {data : {}});
     // AddNewConnection
     addNewConn(client, id);
   });
 
-  client.on("eodnDownload_clear",function(data){
+  client.on("peri_download_clear",function(data){
     var serve = registeredClientMap[data.hashId]
-    var messageName = 'eodnDownload_clear'
+    var messageName = 'peri_download_clear'
     emitDataToAllConnected(serve , messageName , data)
     
     // Kill it - will be auto gc'd
@@ -457,7 +457,7 @@ module.exports = function(client) {
   });
 
   // The latest download hashmap
-  client.on('eodnDownload_register', function(data) {
+  client.on('peri_download_register', function(data) {
     var id = data.hashId
     var name = data.filename
     var totalSize = data.totalSize
@@ -472,21 +472,21 @@ module.exports = function(client) {
     var arr = data.registeredRequestClientArr 
 
     console.log("already registered clients: ", arr.length);
-    client.emit('eodnDownload_listing', simplifyListing())
+    client.emit('peri_download_listing', simplifyListing())
 
-    emitDataToAllConnected(registeredClientMap[id], 'eodnDownload_Info', 
+    emitDataToAllConnected(registeredClientMap[id], 'peri_download_info', 
       {id : id , name : name , size : totalSize , connections : conn});
 
   });
 
-  client.on('eodnDownload_pushData', function(data) {
+  client.on('peri_download_pushdata', function(data) {
     var id =  data.hashId ;
     var serve = registeredClientMap[id];
     if (serve === undefined) {
       console.log("Message received about un-registered download: ", data.hashId)
       return
     }
-    var messageName = 'eodnDownload_Progress' ,
+    var messageName = 'peri_download_progress' ,
     dataToBeSent = data;
     dataToBeSent.totalSize = serve.totalSize;
 
@@ -494,7 +494,7 @@ module.exports = function(client) {
       emitDataToAllConnected(serve , messageName , dataToBeSent);
     } else {
       // Do some error stuff or fallbaCK
-      client.emit('eodnDownload_fail');
+      client.emit('peri_download_fail');
     }
   });
 }
@@ -512,7 +512,7 @@ function addNewConn(client, id){
     }
   } else {
     // Send an error for now , then store it for later use anyway
-    client.emit('eodnDownload_Info', {isError : true });
+    client.emit('peri_download_info', {isError : true });
     registeredClientMap[id] = registeredClientMap[id] || {} ;
     var arr = registeredClientMap[id].registeredRequestClientArr || [];
     arr.push(client);

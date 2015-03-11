@@ -20,13 +20,13 @@ function downloadController($scope, SocketService) {
   }
 
   //Listen to what is currently loaded
-  SocketService.on("eodnDownload_listing", function(data) {
+  SocketService.on("peri_download_listing", function(data) {
     console.log("Listing recieved", data)
     $scope.downloads = data
   })
 
   //Request what is currently loaded...
-  SocketService.emit("eodnDownload_reqListing", {});
+  SocketService.emit("peri_download_req_listing", {});
 
   $scope.mapSelected = function() {
     if ($scope.selectedDownloads.length == 0) {return;}

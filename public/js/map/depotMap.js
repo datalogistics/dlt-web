@@ -62,7 +62,7 @@ function tooltip(svg) {
   }
 
   var timer;
-  svg.selectAll("circle.eodnNode").on('mouseover', function(){
+  svg.selectAll("circle.depotNode").on('mouseover', function(){
       clearTimeout(timer);
       tip.show.apply(this,arguments);
   })
@@ -78,13 +78,13 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id, depot_ip) {
   var lonLat = [rawLonLat[0].toFixed(2), rawLonLat[1].toFixed(2)] //Round lat/lon
 
   var translate = "translate(" + projection(lonLat) + ")"
-  var nodes = svg.selectAll(".eodnGroup").filter(function (d, i) { return d3.select(this).attr("transform") == translate })
+  var nodes = svg.selectAll(".depotGroup").filter(function (d, i) { return d3.select(this).attr("transform") == translate })
 
   //Function to add an invisible point to each location
   var invisiblePoint = function(parentGroup) {
       var circ = parentGroup.append("circle")
          .attr("r", 1)
-         .attr("class", "eodnLocation")
+         .attr("class", "depotLocation")
          .attr("name", name)
          .attr("style", "display:none")
          .attr("depot_ip", name)
@@ -96,14 +96,14 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id, depot_ip) {
   if (nodes.empty()) {
     var group = svg.append("g")
         .attr("transform", function() {return translate;})
-        .attr("class", "eodnGroup")
+        .attr("class", "depotGroup")
 
     var circ = group.append("circle")
         .attr("r",7)
         .attr('fill',"#B4635F")
         .attr('stroke',"#76231F")
         .attr('stroke-width', '1.25')
-        .attr('class', "eodnNode")
+        .attr('class', "depotNode")
         .attr('name', name)
         .attr('location', lonLat)
 
@@ -125,7 +125,7 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id, depot_ip) {
         count.text(function (d) {return val})
       }
 
-      var super_circ = group.select(".eodnNode")
+      var super_circ = group.select(".depotNode")
       var existingName = super_circ.attr("name")
       super_circ.attr("name", name + "|" + existingName)
       invisiblePoint(group)
