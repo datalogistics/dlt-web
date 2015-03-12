@@ -26,7 +26,7 @@ function downloadController($scope, SocketService) {
   })
 
   //Get updates
-  SocketService.on("peri_download_info", function(data) {
+  SocketService.on("peri_download_list_info", function(data) {
     console.log("New download received", data)
     $scope.downloads.push(data)
   })

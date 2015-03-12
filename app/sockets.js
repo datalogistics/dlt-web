@@ -554,8 +554,11 @@ module.exports = function(client) {
 
   client.on('peri_download_req_listing', function(data) {
     console.log("Listing requested")
-    // save the client for future updates
-    registeredDownloadClients.push(client)
+    // save the client for future updates if not already known
+    if (registeredDownloadClients.indexOf(client) < 0) {
+      registeredDownloadClients.push(client)
+    }
+
     client.emit('peri_download_listing', simplifyListing())
   });
 
@@ -597,7 +600,7 @@ module.exports = function(client) {
     for (var i=registeredDownloadClients.length-1; i>=0; i--) {
       var c = registeredDownloadClients[i];
       if (c.connected) {
-        c.emit('peri_download_info', emitData);
+        c.emit('peri_download_list_info', emitData); //Remove if we start keeping a single list of clients instead of separate list and progress lists 
       }
       else {
         registeredDownloadClients.splice(i, 1);
