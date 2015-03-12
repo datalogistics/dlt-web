@@ -10,37 +10,46 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
   };
 
-  var hashIds = $location.search().hashIds.split(",")
-  console.log("ids:", hashIds )
-  hashIds.forEach(function(id) {
+  var sessionIds = $location.search().sessionIds.split(",")
+  console.log("ids:", sessionIds )
+  sessionIds.forEach(function(id) {
     console.log("init for ", id)
-    SocketService.emit("eodnDownload_request", {id : id});
+    SocketService.emit("peri_download_request", {id : id});
   })
 
-  SocketService.on("eodnDownload_Info", function(data){
+  SocketService.on("peri_download_info", function(data){
     // Set this data in scope to display file info
     console.log('Download file data ' , data);
     if (data.isError) {return;}
-    initProgressTarget(map.svg, 30, 300, data.id, data.name, data.size)
+    initProgressTarget(map.svg, 30, 300, data.sessionId, data.filename, data.size)
   });
 
-  SocketService.on("eodnDownload_Progress",function(data){
-    var hashId = data.hashId
-    var s = data.totalSize ;
-    var depotId = data.ip;
-    var progress = (data.amountRead / s ) * 100 ;
+
+  var rateTracker = {}
+  SocketService.on("peri_download_progress",function(data){
+    var sessionId = data.sessionId
+    var s = data.size;
+    var host = data.host;
+    var progress = (data.length / s ) * 100 ;
     var offset = (data.offset/ s )  * 100;
     if (isNaN(progress)) {progress = 0;}
+
+    var rateInfo = rateTracker[sessionId] || {minTime: data.ts, maxTime: data.ts+1, totalBytes:0}
+    rateInfo.minTime = Math.min(rateInfo.minTime, data.ts)
+    rateInfo.maxTime = Math.max(rateInfo.maxTime, data.ts)
+    rateInfo.totalBytes = rateInfo.totalBytes + data.size
+    rateTracker[sessionId] = rateInfo
     
     //TODO: This skip-if-not found is because there is no way to un-register a socket on the node side
     //      Doing so would probably require recording client ids on the client, and unregistering them by id on page close 
     //      As is, the unwanted ones just expire when the download is done.  In the mean time, extra messages get sent
-    if (hashIds.indexOf(hashId.toString()) < 0) {return}
+    if (sessionIds.indexOf(sessionId) < 0) {return}
 
     if(progress > 100 && offset > 100){
       console.log("Incorrect data -- progress: " + progress, "Offset: " + offset)
     } else {
-      doProgressWithOffset(map.svg, depotId, hashId, progress, offset);
+      doProgressWithOffset(map.svg, host, sessionId, progress, offset);
+      reportRate(map.svg, sessionId, rateInfo)
     }
   });
 
@@ -51,14 +60,33 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   })
 
 
-
   // -------------------------------------------
   //   Download map visualization components
   function targetId(id) {return "download-target-"+id;}
 
-  function downloadFragmentBar(svg, fileId, barClass, color, barOffset, barHeight) {
+  function reportRate(svg, sessionId, rateInfo) {
+    var rate = rateInfo.totalBytes/((rateInfo.maxTime - rateInfo.minTime)/1000)
+    var magnitude = Math.floor(Math.log(rate)/Math.log(1024))
+    var suffix = " B/sec"
+
+    if (magnitude == 1) {
+      suffix = " KB/sec (avg)"
+      rate = rate/1024
+    } else if (magnitude == 2) {
+      suffix = " MB/sec (avg)" 
+      rate = rate/Math.pow(1024,2)
+    } else if (magnitude > 2) {
+      suffix = " GB/sec (avg)" 
+      rate = rate/Math.pow(1024,3)
+    }
+
+    var target = svg.select("#download-rate-" + targetId(sessionId))
+    target.text(rate.toFixed(1) + suffix)
+  }
+
+  function downloadFragmentBar(svg, sessionId, barClass, color, barOffset, barHeight) {
     var downloads = svg.select("#downloads") 
-    var target = svg.select("#" + targetId(fileId))
+    var target = svg.select("#" + targetId(sessionId))
     var targetLeft = parseInt(target.attr("target-left"))
     var targetWidth = parseInt(target.attr("target-width"))
 
@@ -84,8 +112,8 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     return color 
   }
 
-  function moveLineToProgress(svg, fileId, mapNode, barOffset, barHeight){
-    var target = svg.select("#" + targetId(fileId))
+  function moveLineToProgress(svg, sessionId, mapNode, barOffset, barHeight){
+    var target = svg.select("#" + targetId(sessionId))
     var targetLeft = parseInt(target.attr("target-left"))
     var targetHeight = parseInt(target.attr("target-height"))
     
@@ -95,7 +123,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
     var color = nodeRecolor(mapGroup)
 
-    mapGroup.select(".eodnNode")
+    mapGroup.select(".depotNode")
         .attr("fill", color)
         .attr("stroke", "#555")
 
@@ -112,7 +140,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       .transition().duration(500)
          .attr('x2',end[0])
          .attr('y2', end[1])
-      .each("end", function(){downloadFragmentBar(svg, fileId, "source-found-segment", color, barOffset, barHeight)})
+      .each("end", function(){downloadFragmentBar(svg, sessionId, "source-found-segment", color, barOffset, barHeight)})
       .transition().duration(500).remove();
   }
 
@@ -120,10 +148,10 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   // id -- Id of the source node
   // progress -- Percentage of the file just read
   // offset -- Percent offset of the newest chunk
-  function doProgressWithOffset(svg, sourceId, fileId, progress , offsetPercent){
+  function doProgressWithOffset(svg, sourceId, sessionId, progress , offsetPercent){
     //Calculate geometry of the progress bar chunk
-    var target = svg.select("#" + targetId(fileId))
-    if (target.empty()) {console.error("Failed attempt to update " + fileId); return;}
+    var target = svg.select("#" + targetId(sessionId))
+    if (target.empty()) {console.error("Failed attempt to update " + sessionId); return;}
 
     var targetTop = parseInt(target.attr("target-top"))
     var targetLeft = parseInt(target.attr("target-left"))
@@ -135,17 +163,17 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     if (barHeight == 0 || isNaN(barHeight)) {barHeight=.1}
 
     //Find the source location node
-    var nodes = svg.selectAll(".eodnLocation").filter(function(d) {return this.getAttribute("depot_ip") == sourceId})
+    var nodes = svg.selectAll(".depotLocation").filter(function(d) {return this.getAttribute("name") == sourceId})
     if (nodes.empty()) {
       console.log("DownloadProgress: Node not found " + sourceId)
-      downloadFragmentBar(svg, fileId, "source-not-found-segment", "#222222", barOffset, barHeight)
+      downloadFragmentBar(svg, sessionId, "source-not-found-segment", "#222222", barOffset, barHeight)
       return;}
 
     var mapNode = d3.select(nodes[0][0]) //ensures we have exactly one item as the source
-    moveLineToProgress(svg, fileId, mapNode, barOffset, barHeight);
+    moveLineToProgress(svg, sessionId, mapNode, barOffset, barHeight);
   }
 
-  function initProgressTarget(svg, width, height, fileId, fileName) {
+  function initProgressTarget(svg, width, height, sessionId, fileName) {
     var allDownloads = svg.select("#downloads")
     if (allDownloads.empty()) {allDownloads = svg.append("g").attr("id", "downloads")}
 
@@ -157,7 +185,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     g.attr("transform", "translate(" + left + "," + top + ")")
 
     g.append("rect")
-        .attr("id", targetId(fileId))
+        .attr("id", targetId(sessionId))
         .attr("class", "download-target")
         .attr("fill", "#bbb")
         .attr("width", width)
@@ -169,13 +197,22 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
         .attr("progress-start", 0)
     
     g.append("text")
+        .attr("id", "download-rate-" + targetId(sessionId))
+        .attr("class", "download-rate-label")
+        .text("-- B/sec")
+        .attr("text-anchor", "end")
+        .attr("fill", "#777")
+        .attr("transform", "translate(0," + height + ")")
+        .attr("writing-mode", "tb")
+        .attr("baseline-shift", "-4.5px")
+
+    g.append("text")
         .attr("class", "download-label")
         .text(fileName)
         .attr("baseline-shift", "-4.5px")
         .attr("text-anchor", "start")
         .attr("fill", "#777")
         .attr("writing-mode", "tb")
-
   }
 
 } // end controller

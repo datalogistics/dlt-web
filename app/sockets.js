@@ -25,9 +25,9 @@ setInterval(function(){
   var time = (new Date()).getTime();
   for(var i in registeredClientMap){
     var c = registeredClientMap[i] ;
-    if(!c || !c.hashId)
+    if(!c || !c.sessionId)
       continue ;
-    var id = c.hashId,
+    var id = c.sessionId,
     lastProgressTime = rClientsLastProgressMap[id]
     lastUsedTime = rClientsLastUsedMap[id];
     // If it has been used in last 5 minutes then keep it or else remove it
@@ -39,8 +39,9 @@ setInterval(function(){
 
 // Storing all the data in memory -- ya seriously gonna do that - Data manually deleted in 15 minutes
 // This map stores the fileData which is used to retrieve it.
+var registeredDownloadClients = [];
 var registeredClientMap = {};
-var rClientsLastProgressMap = {}
+var rClientsLastProgressMap = {};
 var rClientsLastUsedMap = {};
 var rMap = cfg.routeMap;
 
@@ -450,7 +451,7 @@ module.exports = function(client) {
       client.emit('exnode_data', {data : map});
     });
   });
-
+  
 
   function getAllChildExFilesDriver(arr , emitId , cb) {
     if (!arr || !arr.length) {
@@ -534,7 +535,7 @@ module.exports = function(client) {
 
 
   function simplifyListing() {
-    //Simplifies the registeredClientMap for serialization to the download listing
+    // Simplifies the registeredClientMap for serialization to the download listing
     // This is required because the download listing currently stores client objects,
     // serialization of which results in stack overflows
     var registeredFiles = [] 
@@ -542,79 +543,88 @@ module.exports = function(client) {
       var entry = registeredClientMap[key]
       if (entry === undefined) {continue}
       registeredFiles.push(
-         {hashId: entry.hashId,
+         {sessionId: entry.sessionId,
           filename: entry.filename, 
-          totalSize: entry.totalSize, 
+          size : entry.size, 
           connections: entry.connections
          })
     }
     return registeredFiles
   }
 
-  client.on('eodnDownload_reqListing', function(data) {
+  client.on('peri_download_req_listing', function(data) {
     console.log("Listing requested")
-    client.emit('eodnDownload_listing', simplifyListing())
+    // save the client for future updates
+    registeredDownloadClients.push(client)
+    client.emit('peri_download_listing', simplifyListing())
   });
 
-  client.on('eodnDownload_request', function(data) {
+  client.on('peri_download_request', function(data) {
     // The id according to which multiple downloads happen
     var id = data.id ;
-    console.log('all fine till here ');
-    client.emit('eodnDownload_Nodes', {data : {}});
+    console.log("Request info for download: " + id);
+    client.emit('peri_download_Nodes', {data : {}});
     // AddNewConnection
     addNewConn(client, id);
   });
 
-  client.on("eodnDownload_clear",function(data){
-    var serve = registeredClientMap[data.hashId]
-    var messageName = 'eodnDownload_clear'
+  client.on("peri_download_clear",function(data){
+    var serve = registeredClientMap[data.sessionId]
+    var messageName = 'peri_download_clear'
     emitDataToAllConnected(serve , messageName , data)
     
     // Kill it - will be auto gc'd
-    registeredClientMap[data.hashId] = undefined
-
+    registeredClientMap[data.sessionId] = undefined
     console.log("Download cleared ", data)
   });
 
   // The latest download hashmap
-  client.on('eodnDownload_register', function(data) {
-    var id = data.hashId
+  client.on('peri_download_register', function(data) {
+    var id = data.sessionId
     var name = data.filename
-    var totalSize = data.totalSize
+    var size = data.size
     var conn = data.connections
-
-    console.log("registered new download: ", data.hashId);
+    var emitData = {sessionId: id, filename: name, size: size, connections: conn};
+    
+    console.log("registered new download: ", data.sessionId);
 
     var old = registeredClientMap[id] || {};
     data.registeredRequestClientArr = old.registeredRequestClientArr || [];
-    data.exists = true ;
-    registeredClientMap[id] = data ;
-    var arr = data.registeredRequestClientArr 
+    data.exists = true;
+    registeredClientMap[id] = data;
+    var arr = data.registeredRequestClientArr
+    
+    for (var i=registeredDownloadClients.length-1; i>=0; i--) {
+      var c = registeredDownloadClients[i];
+      if (c.connected) {
+        c.emit('peri_download_info', emitData);
+      }
+      else {
+        registeredDownloadClients.splice(i, 1);
+      }
+    }
 
     console.log("already registered clients: ", arr.length);
-    client.emit('eodnDownload_listing', simplifyListing())
-
-    emitDataToAllConnected(registeredClientMap[id], 'eodnDownload_Info', 
-      {id : id , name : name , size : totalSize , connections : conn});
-
+    emitDataToAllConnected(registeredClientMap[id], 'peri_download_info', emitData);
   });
 
-  client.on('eodnDownload_pushData', function(data) {
-    var id =  data.hashId ;
+  client.on('peri_download_pushdata', function(data) {
+    var id =  data.sessionId ;
     var serve = registeredClientMap[id];
     if (serve === undefined) {
-      console.log("Message received about un-registered download: ", data.hashId)
+      console.log("Message received about un-registered download: ", data.sessionId)
       return
     }
-    var messageName = 'eodnDownload_Progress' ,
+    var messageName = 'peri_download_progress' ,
     dataToBeSent = data;
-    dataToBeSent.totalSize = serve.totalSize;
+    dataToBeSent.size = serve.size;
+    dataToBeSent.ts = Date.now() //TODO: Remove when the incomming messages grow timestamps
 
     if(serve){
       emitDataToAllConnected(serve , messageName , dataToBeSent);
     } else {
       // Do some error stuff or fallbaCK
-      client.emit('eodnDownload_fail');
+      client.emit('peri_download_fail');
     }
   });
 }
@@ -632,7 +642,7 @@ function addNewConn(client, id){
     }
   } else {
     // Send an error for now , then store it for later use anyway
-    client.emit('eodnDownload_Info', {isError : true });
+    client.emit('peri_download_info', {isError : true });
     registeredClientMap[id] = registeredClientMap[id] || {} ;
     var arr = registeredClientMap[id].registeredRequestClientArr || [];
     arr.push(client);
@@ -648,7 +658,7 @@ function emitDataToAllConnected(serve , messageName , dataToBeSent) {
     serve._emitPipe.push({name : messageName , data : dataToBeSent});
     var arr = serve.registeredRequestClientArr || [] ;
     var time = (new Date()).getTime();
-    var id = serve.hashId || serve.id;
+    var id = serve.sessionId || serve.id;
     rClientsLastProgressMap[id] = time ;
     // Publish to all sockets in the array
     var nArr = [] , flag = false;
@@ -658,7 +668,6 @@ function emitDataToAllConnected(serve , messageName , dataToBeSent) {
       if(arr[i].connected){
         flag = true ;
         arr[i].emit(messageName, dataToBeSent);
-        //{data : { ip : "24.1.111.131" , progress : 5}});
       }
       if(arr[i].connected || arr[i].connecting){
         // add to array

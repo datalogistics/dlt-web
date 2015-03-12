@@ -261,7 +261,7 @@ function downloadVizController($scope,$routeParams,$rootScope,$http,UnisService,
         $scope.error = false;
         $scope.name = data.name ,
       $scope.size = data.size , 
-      $scope.connections = data.connections;						
+      $scope.connections = data.conns;
       }
     });
     SocketService.on("eodnDownload_Progress",function(data){
