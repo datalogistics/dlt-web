@@ -634,8 +634,11 @@ function addNewConn(client, id){
   var downloadAgent = registeredClientMap[id];
   if(downloadAgent && downloadAgent.exists){
     var q = downloadAgent;
-    // Push the current socket so that it can get the emitted download info
-    q.registeredRequestClientArr.push(client);
+    // Push the current socket so that it can get the emitted download info, if its not already
+    if (q.registeredRequestClientArr.indexOf(client) < 0) {
+      q.registeredRequestClientArr.push(client);
+    }
+
     // Go bonkers and emit all old messages
     var arr = q._emitPipe || [];
     for ( var i = 0 ; i < arr.length ; i++){
