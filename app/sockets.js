@@ -46,14 +46,62 @@ var rMap = cfg.routeMap;
 
 var socketMap = {};
 var resourceMap = {};
-  
+// A map of maps from path to client
+var pathIdObj = (function(){
+  // Store the map of maps used to register client for each path , each id
+  var pmap = {};
+  // Store the map of maps from path to client Id to array of pmap leaf obj
+  var clmap = {};
+  return{    
+    isRegClient : function (clientId,path,id) {
+      var pm = pmap[path] = pmap[path] || {};
+      var im = pm[id] || {};
+      return im[clientId]? true : false;
+    },
+    regClient : function (clientId,path,id) {
+      // Add the client id to the map
+      var pm = pmap[path] = pmap[path] || {};
+      var im = pm[id] || {};
+      pm[id] = im;
+      im[clientId] = true;
+      // Should not conflict with client id - risking for simplicity
+      im.__count__  = im.__count__ || 0;
+      im.__count__++;
+      
+      clmap[path] = clmap[path] || {};
+      clmap[path][clientId] = clmap[path][clientId] || [];
+      clmap[path][clientId].push(im);
+    },
+    // Removes client from map of all ids
+    unregclients : function(clientId , path){
+      var arr = (clmap[path]|| {})[clientId] || [];
+      for (var i=0; i < arr.length;i++){
+        // Now remove all the references
+        var x = arr[i];
+        x[clientId] = false;
+        x.__count__--;
+        if (x.__count__ <= 0){
+          var sockets = socketMap[path].sockets;
+          // Emit message to kill the channel as well
+          sockets.map(function(socket){
+            socket.send(JSON.stringify({ id : clientId , disconnect : true }));          
+          });
+        };
+      };
+      // Kill the array
+      arr.length = 0;
+    }
+  }
+})();
+
+
 // export function for listening to the socket
 module.exports = function(client) {
   
   function getGenericHandler(resource, emitName){
     var opt = cfg.getHttpOptions({'name': resource});
 
-    function createWebSocket(path, name, emit) {
+    function createWebSocket(path, name, emit , isAggregate , onopencb) {
       for (var i = 0; i < opt.hostArr.length; i++) {
         var proto = "ws";
         var ssl_opts = {};
@@ -63,24 +111,47 @@ module.exports = function(client) {
             'key': fs.readFileSync(opt.keyArr[i])};
           ssl_opts = _.extend(ssl_opts, cfg.sslOptions);
         }
+        if (isAggregate) {
+          var pathname = "/subscribeAgg/" + path ;
+        } else {
+          var pathname = "/subscribe/" + path ;
+        }
         var urlstr = url.format({'protocol': proto,
-          'slashes' : true,
-            'hostname': opt.hostArr[i],
-            'port'    : opt.portArr[i],
-            'pathname': "/subscribe/" + path});
+                                 'slashes' : true,
+                                 'hostname': opt.hostArr[i],
+                                 'port'    : opt.portArr[i],
+                                 'pathname': pathname});
 
-       console.log("Creating websocket for: " + urlstr);
+        console.log("Creating websocket for: " + urlstr);
 
         var socket = new WebSocket(urlstr, ssl_opts);
-        socket.on('open', function() {
-          //console.log('UNIS socket opened');
+        socket.on('open', function() {          
+          if (onopencb)
+            onopencb();
         });
         socket.on('message', function(data) {
-          //console.log('UNIS socket ('+name+'): '+data);        
+//          if (/data/.test(name))
+          //console.log('UNIS socket (): ',data);
+          var smap =  socketMap;
+          smap[path] = smap[path] || {};
+          if (!smap[path].clients)
+            return;          
           data.__source = name;
-          socketMap[path].clients.forEach(function(client) {
-            client.emit(emit, data);
-          });
+          //smap[path].clients = smap[path].clients || [];
+          //console.log("Emitting to client " , smap[path].clients );
+          if(!isAggregate) {
+            smap[path].clients.forEach(function(client) {
+              client.emit(emit, data);
+            }); 
+          } else {
+            var dataId1 = _.keys(JSON.parse(data))[0];
+            smap[path].clients.filter(function(x){
+              // Returns true if path doesn't exist
+              return pathIdObj.isRegClient(x.id , path , dataId1);            
+            }).forEach(function(client) {
+              client.emit(emit, data);
+            }); 
+          }
         });
         socket.on('close', function() {
           //console.log('UNIS: socket closed');
@@ -89,29 +160,71 @@ module.exports = function(client) {
           console.error('ERROR:', err.stack);
         });
         // save the socket handles
-        if (!socketMap[path].sockets) {
-          socketMap[path].sockets = [socket];
-        }
-        else {
-          socketMap[path].sockets.push(socket);
-        }
+        var smap = socketMap;
+        socketMap = socketMap || {};
+        socketMap[path] = socketMap[path] || {};
+        socketMap[path].sockets = socketMap[path].sockets || [];
+        socketMap[path].sockets.push(socket);
       }
     }
 
     return function(data) {
       var path = resource;
       var emit = emitName;
-      if (data && data.id) {
-        path = path + '/' + data.id;
-        emit = emit + '_' + data.id;
+      // if (data && data.id) {
+      //   path = path + '/' + data.id;
+      //   emit = emit + '_' + data.id;
+      // }
+      var smap = socketMap[path];
+      if (data.id) {
+        var obj = {
+          id : data.id 
+        };        
+        // Sockets using /subscribeAgg gets its own map
+        // console.log("Id" ,data.id);
+        if(!pathIdObj.isRegClient(client.id, path , data.id)) {
+          pathIdObj.regClient(client.id,path,data.id);
+          if (!smap) {
+            socketMap[path] = {'clients': [client]};
+            createWebSocket(path, resource, emit,true,function(){
+              smap = socketMap[path];
+              smap.sockets.forEach(function (x) {
+                x.send(JSON.stringify(obj));
+              });
+            });
+          }
+          else { 
+            smap = socketMap[path];
+            smap.sockets.forEach(function (x) {
+              // Assuming it is open
+              try{
+                x.send(JSON.stringify(obj));
+                // console.log("Sent daata ", JSON.stringify(obj));
+              } catch(e) {
+                // If not opened
+                x.on('open', function(){             
+                  x.send(JSON.stringify(obj));
+                });
+              }
+            });
+            smap.clients = smap.clients || [];
+            smap.clients.push(client);
+          }
+        } else {         
+          // Avoid multi pushing for same client
+          //socketMap[path].clients.push(client);
+        }
+      } else {
+        if (!socketMap[path]) {
+          socketMap[path] = {'clients': [client]};
+          createWebSocket(path, resource, emit);
+        }
+        else {
+          socketMap[path].clients.push(client);
+        }
+        smap = socketMap;
       }
-      if (!socketMap[path]) {
-        socketMap[path] = {'clients': [client]};
-        createWebSocket(path, resource, emit);
-      }
-      else {
-        socketMap[path].clients.push(client);
-      }
+      
       if (!resourceMap[client.id]) {
         resourceMap[client.id] = [path];
       }
@@ -130,20 +243,28 @@ module.exports = function(client) {
     console.log('Client disconnected:', client.conn.remoteAddress);
     if (resourceMap[client.id]) {
       resourceMap[client.id].forEach(function(type) {
-        var clients = socketMap[type].clients;
-        for (var i = clients.length - 1; i >= 0; i--) {
-          if (client.id == clients[i].id) {
-            clients.splice(i, 1);
+        var smap = socketMap[type] || {};
+        var clients = smap.clients;
+        if (clients) {
+          for (var i = clients.length - 1; i >= 0; i--) {
+            if (client.id == clients[i].id) {
+              clients.splice(i, 1);
+            }
           }
-        }
-        // close the web socket to UNIS if the last client disconnected
-        if (clients.length == 0) {
-          console.log("Last client disconnected, closing sockets for: " + type);
-          socketMap[type].sockets.forEach(function(s) {
-            s.close();
-          });
-          delete socketMap[type];
-        }
+          pathIdObj.unregclients(client.id,type);
+          // remove any subscribed channels
+          
+          
+          // close the web socket to UNIS if the last client disconnected
+          // if (clients.length == 0) {
+          //   console.log("Last client disconnected, closing sockets for: " + type);
+          //   smap.sockets.forEach(function(s) {
+          //     s.close();
+          //   });
+          //   // Don't ever delete - 5 socket connections per server always remain until server is killed 
+          //   //delete socketMap[type];
+          // }
+        }        
         return false;
       });
       delete resourceMap[client.id];
@@ -385,8 +506,7 @@ module.exports = function(client) {
             // console.log("emitting " , it); 
             fileArr.push(it);
           } else {
-            recArr.push(it.id);
-            //console.log("Proceeding with Id ",it.id);
+            recArr.push(it.id);            //console.log("Proceeding with Id ",it.id);
           }
         };
         // console.log("FIles " , fileArr);
