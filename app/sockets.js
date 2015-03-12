@@ -566,7 +566,6 @@ module.exports = function(client) {
     // The id according to which multiple downloads happen
     var id = data.id ;
     console.log("Request info for download: " + id);
-    client.emit('peri_download_Nodes', {data : {}});
     // AddNewConnection
     addNewConn(client, id);
   });
