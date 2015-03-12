@@ -34,9 +34,9 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     var offset = (data.offset/ s )  * 100;
     if (isNaN(progress)) {progress = 0;}
 
-    var rateInfo = rateTracker[sessionId] || {minTime: data.ts, maxTime: data.ts+1, totalBytes:0}
-    rateInfo.minTime = Math.min(rateInfo.minTime, data.ts)
-    rateInfo.maxTime = Math.max(rateInfo.maxTime, data.ts)
+    var rateInfo = rateTracker[sessionId] || {minTime: data.timestamp, maxTime: data.timestamp+1, totalBytes:0}
+    rateInfo.minTime = Math.min(rateInfo.minTime, data.timestamp)
+    rateInfo.maxTime = Math.max(rateInfo.maxTime, data.timestamp)
     rateInfo.totalBytes = rateInfo.totalBytes + data.size
     rateTracker[sessionId] = rateInfo
     
