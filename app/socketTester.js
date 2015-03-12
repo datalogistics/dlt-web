@@ -13,7 +13,6 @@ var totalSize = 16777216
 
 var sessionId = String(process.argv[2] || 1244)
 var fileName = process.argv[3] || "test_image.tiff"
-
 sock.on('connect' , function(){
   console.log('connected successfully ');
   sock.emit(msg.r , {
@@ -26,7 +25,7 @@ sock.on('connect' , function(){
 
   var offset = 0;
   var intervalId = setInterval(function(){
-    console.log("Sending for ", sessionId, fileName)
+    console.log("Sending for ", sessionId, fileName, offset)
     sock.emit(msg.p, { 
       sessionId : sessionId,
       host : 'dresci.incntre.iu.edu',
@@ -44,25 +43,22 @@ sock.on('connect' , function(){
     sock.emit(msg.p, {
       sessionId : sessionId,
       host : '155.99.144.103',
-      offset : offset + 98304,
+      offset : offset + 98304+32768,
       length : 49152,
       timestamp: Date.now()
     });
     sock.emit(msg.p, {
       sessionId : sessionId,
       host : '152.54.14.7',
-      offset : offset + 98304,
+      offset : offset + 98304 +32768+49152,
       length : 262144,
       timestamp: Date.now()
     });
-    offset = offset + 360448;
+    offset = offset + 98304 +32768+49152+262144
     if (offset > totalSize) {
       clearInterval(intervalId)
       sock.emit(msg.c, {sessionId: sessionId})
     }
-  },1000);
-
-
-  
+  },500);
 });
 
