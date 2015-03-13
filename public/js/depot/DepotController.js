@@ -85,8 +85,10 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     }
   };
   
-  $scope.showData = function(metadata) {
+  $scope.showData = function(metadata , name , buttonName) {
     $scope.metadataId = metadata.id;
+    $scope.depotInstitutionName = name;
+    $scope.dialogButtonName = buttonName;
     var modal = $modal.open({
       templateUrl: '/views/depot_data.html',
       controller: 'DepotController',
