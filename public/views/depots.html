@@ -12,7 +12,7 @@
       <th>Data Charts</th>
     </tr>
     <input type="text" class="form-control" ng-model="q.accessPoint" placeholder="Filter by service access point..." />
-    <tbody ng-repeat="service in services | filter: {serviceType: 'ibp_server'} | filter:q:strict | orderBy:'[location.state, location.city]' | unique:'accessPoint'">
+     <tbody ng-repeat="service in services | filter: {serviceType: 'ibp_server'} | filter:q:strict | orderBy:'[location.state, location.city]' | unique:'accessPoint'">
       <td>
         <button ng-show="service.status === 'ON'" class="btn btn-success disabled">ON</button>
         <button ng-show="service.status === 'Unknown'" class="btn btn-warning disabled">Unknown</button>
@@ -25,7 +25,8 @@
       <td>{{service.location.institution}}</td>
       <td><button ng-click="showMap(service.id)" class="btn btn-info">{{service.location.city}} {{service.location.state}}</button></td>
       <td ng-repeat="metadata in getServiceMetadata(service)">
-	<button ng-click="showData(metadata)" class="btn btn-info">{{getMetadataShortET(metadata,service)}}</button></td>
+	  <button ng-click="showData(metadata,service.location.institution || service.accessPoint,getMetadataShortET(metadata,service))"
+                  class="btn btn-info">{{getMetadataShortET(metadata,service)}}</button></td>
     </tbody>
   </table>
 </div>

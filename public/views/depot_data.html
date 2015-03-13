@@ -1,5 +1,7 @@
-<h2 class="lead text-center">{{ eventType }}</h2>
-
+<h2 class="lead text-center">
+    <div>{{ depotInstitutionName}} ({{dialogButtonName}})</div>
+    <div>{{ eventType }} </div>    
+</h2>
 <!---This visibility trick is not great. 
 It is required because the angular bindings for nvd3 do
 not support functions setting axis label based on a function

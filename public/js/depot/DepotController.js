@@ -43,7 +43,9 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	
 	if (Object.prototype.toString.call(data) === '[object Array]') {
           angular.forEach(data.reverse(), function(key, value) {
-            arrayData.push([key.ts, key.value]);
+            if (typeof key.ts == "number" && typeof key.value == "number") {
+              arrayData.push([key.ts, key.value]);
+            }            
           });
 
           $scope.xAxisTickFormat_Date_Format = chartconfig.xformat;
@@ -52,7 +54,9 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	}
 	else {
 	  angular.forEach(data[metadata_id], function(key, value) {
-            arrayData.push([key.ts, key.value]);
+            if (typeof key.ts == "number" && typeof key.value == "number") {
+              arrayData.push([key.ts, key.value]);
+            }
           });
 	}
         
@@ -81,9 +85,11 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     }
   };
   
-  $scope.showData = function(metadata) {
+  $scope.showData = function(metadata , name , buttonName) {
     $scope.metadataId = metadata.id;
-    $modal.open({
+    $scope.depotInstitutionName = name;
+    $scope.dialogButtonName = buttonName;
+    var modal = $modal.open({
       templateUrl: '/views/depot_data.html',
       controller: 'DepotController',
       scope : $scope ,
@@ -93,6 +99,10 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	  return UnisService.init
 	}
       }
+    });
+    modal.result.finally(function(){
+      // Kill the socket
+      UnisService.unregisterId(metadata.id);
     });
     //$location.path('/depots/' + metadata.id);
   };

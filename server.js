@@ -13,7 +13,7 @@ var express = require('express')
 var app = module.exports = express();
 var server = http.createServer(app);
 var io = socketio.listen(server);
-
+io.sockets.setMaxListeners(0);
 // app configuration
 app.configure(function() {
   app.set('port', process.env.PORT || 42424);
