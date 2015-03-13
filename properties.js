@@ -33,8 +33,8 @@ var self = {
     'measurements_id' : [],
     'metadata': [],
     'metadata_id' : [],
-    'data': ['monitor_ms'],
-    'data_id': ['monitor_ms'],
+    'data': ['dlt_ms', 'monitor_ms'],
+    'data_id': ['dlt_ms', 'monitor_ms'],
     'ports': [],
     'ports_id' : []
   },

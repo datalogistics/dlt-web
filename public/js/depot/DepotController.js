@@ -52,7 +52,6 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	}
 	else {
 	  angular.forEach(data[metadata_id], function(key, value) {
-	    console.log("pushing: ", [key.ts, Number(key.value)]);
             arrayData.push([Number(key.ts), Number(key.value)]);
           })
 	}

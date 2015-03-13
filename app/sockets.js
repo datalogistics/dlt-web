@@ -226,7 +226,10 @@ module.exports = function(client) {
               createWebSocket(path, resource, emit,true,function(){              
                 smap = socketMap[path];
                 smap.sockets.forEach(function (x) {
-                  x.send(JSON.stringify(obj));
+		  // only attempt if connected
+		  if (x.connected) {
+                    x.send(JSON.stringify(obj));
+		  }
                 });
               });
 	      //console.log("registering client: ", client.id, path, data.id);
