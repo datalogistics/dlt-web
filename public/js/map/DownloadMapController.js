@@ -43,7 +43,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     rateInfo.maxTime = Math.max(rateInfo.maxTime, data.timestamp)
     rateInfo.totalBytes = rateInfo.totalBytes + data.length
     rateTracker[sessionId] = rateInfo
-    console.log(rateInfo, data.size, data.length) //TODO: Remove after testing
     
     //TODO: This skip-if-not found is because there is no way to un-register a socket on the node side
     //      Doing so would probably require recording client ids on the client, and unregistering them by id on page close 
