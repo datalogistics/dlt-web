@@ -606,9 +606,9 @@ module.exports = function(client) {
     emitDataToAllConnected(registeredClientMap[id], 'peri_download_info', emitData);
 
 
-    var sessionsOnReporter = progressReportingConnections[client.connection] || []
+    var sessionsOnReporter = progressReportingConnections[client.conn.id] || []
     sessionsOnReporter.push(id)
-    progressReportingConnections[client.connection] = sessionsOnReporter
+    progressReportingConnections[client.conn.id] = sessionsOnReporter
     console.log("Registered for connection", sessionsOnReporter)
   });
 
@@ -632,18 +632,19 @@ module.exports = function(client) {
   });
 
   client.on('disconnect', function(data) {
-    var sessions = progressReportingConnections[client.connection] || [] //remote-client:[sessionId...] listing
+    var connectionId = client.conn.id
+    var sessions = progressReportingConnections[connectionId] || [] //remote-client:[sessionId...] listing
     if (sessions.length > 0) {
       sessions = sessions.slice() //Copy sessions list to ensure deletes go as expected
       console.log("Client disconnected.  Clearing sessions: ", sessions)
-      sessions.forEach(function(sessionId) {clearDownload(sessionId, client.connection, "Discconnected")})
+      sessions.forEach(function(sessionId) {clearDownload(sessionId, connectionId, "Discconnected")})
     }
-    progressReportingConnections[client] = undefined
+    progressReportingConnections[connectionId] = undefined
   })
 
 }
 
-function clearDownload(sessionId, reportingConnection, reason) {
+function clearDownload(sessionId, connectionId, reason) {
   var msg = {sessionId: sessionId, status: reason}
   var serve = registeredClientMap[sessionId]
   emitDataToAllConnected(serve , 'peri_download_clear', msg)
@@ -653,11 +654,11 @@ function clearDownload(sessionId, reportingConnection, reason) {
     client.emit('peri_download_clear', msg); 
   })
 
-  var reportingSessions = progressReportingConnections[reportingConnection]
+  var reportingSessions = progressReportingConnections[connectionId]
   var sessionIdx = reportingSessions.indexOf(sessionId)
   if (sessionIdx >= 0) {reportingSessions.splice(sessionIdx, 1);}
   if (reportingSessions.length == 0) {
-    progressReportingConnections[reportingConnection] = undefined
+    progressReportingConnections[connectionId] = undefined
   }
   console.log("Download cleared ", sessionId)
 }
