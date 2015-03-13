@@ -25,7 +25,7 @@
       <td>{{service.location.institution}}</td>
       <td><button ng-click="showMap(service.id)" class="btn btn-info">{{service.location.city}} {{service.location.state}}</button></td>
       <td ng-repeat="metadata in getServiceMetadata(service)">
-	  <button ng-click="showData(metadata,service.location.institution,getMetadataShortET(metadata,service))"
+	  <button ng-click="showData(metadata,service.location.institution || service.accessPoint,getMetadataShortET(metadata,service))"
                   class="btn btn-info">{{getMetadataShortET(metadata,service)}}</button></td>
     </tbody>
   </table>
