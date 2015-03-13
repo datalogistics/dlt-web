@@ -49,7 +49,10 @@ function downloadController($scope, SocketService) {
   })
 
   $scope.$on("$destroy", function() {
-    SocketService.getSocket().removeAllListeners() //Disconnect listening sockets
+    SocketService.getSocket().removeAllListeners("peri_download_req_listing")
+    SocketService.getSocket().removeAllListeners("peri_download_list_info")
+    SocketService.getSocket().removeAllListeners("peri_download_listing") 
+    SocketService.getSocket().removeAllListeners("peri_download_clear") 
   })
 
 

@@ -60,7 +60,9 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   
   $scope.$on("$destroy", function() {
     d3.selectAll("#map-tool-tip").each(function() {this.remove()})  //Cleans up the tooltip object when you navigate away
-    SocketService.getSocket().removeAllListeners() //Disconnect listening sockets
+    SocketService.getSocket().removeAllListeners("peri_download_info")
+    SocketService.getSocket().removeAllListeners("peri_download_progress")
+    SocketService.getSocket().removeAllListeners("peri_download_clear")
   })
 
 
