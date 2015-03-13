@@ -19,7 +19,7 @@ var WebSocket = require('ws')
 , q = require('q')
 ,_ = require('underscore');
 
-
+WebSocket.super_.defaultMaxListeners = 0;
 // Clearout unused items every 15 minutes
 setInterval(function(){
   var time = (new Date()).getTime();
@@ -53,7 +53,16 @@ var pathIdObj = (function(){
   var pmap = {};
   // Store the map of maps from path to client Id to array of pmap leaf obj
   var clmap = {};
-  return{    
+  return{
+    isRegId : function(path , id) {
+      var pm = pmap[path] = pmap[path] || {};
+      var im = pm[id] || {};
+      return im.__count__ > 0 ? true : false; // Just more verbose
+    },
+    isClientOnPath : function(clientId , path){
+      clmap[path] = clmap[path] || {};
+      return (clmap[path][clientId] || []).length > 0 ? true : false;
+    },
     isRegClient : function (clientId,path,id) {
       var pm = pmap[path] = pmap[path] || {};
       var im = pm[id] || {};
@@ -85,7 +94,7 @@ var pathIdObj = (function(){
           var sockets = socketMap[path].sockets;
           // Emit message to kill the channel as well
           sockets.map(function(socket){
-            socket.send(JSON.stringify({ id : clientId , disconnect : true }));          
+            socket.send(JSON.stringify({ id : clientId , disconnect : true }));            
           });
         };
       };
@@ -144,8 +153,9 @@ module.exports = function(client) {
             smap[path].clients.forEach(function(client) {
               client.emit(emit, data);
             }); 
-          } else {
+          } else {            
             var dataId1 = _.keys(JSON.parse(data))[0];
+            // console.log("Number of connected clients " ,smap[path].clients.length , smap[path].clients.map(function(x){ return x.id;}));
             smap[path].clients.filter(function(x){
               // Returns true if path doesn't exist
               return pathIdObj.isRegClient(x.id , path , dataId1);            
@@ -184,10 +194,9 @@ module.exports = function(client) {
         // Sockets using /subscribeAgg gets its own map
         // console.log("Id" ,data.id);
         if(!pathIdObj.isRegClient(client.id, path , data.id)) {
-          pathIdObj.regClient(client.id,path,data.id);
           if (!smap) {
-            socketMap[path] = {'clients': [client]};
-            createWebSocket(path, resource, emit,true,function(){
+            socketMap[path] = {'clients': [client]};            
+            createWebSocket(path, resource, emit,true,function(){              
               smap = socketMap[path];
               smap.sockets.forEach(function (x) {
                 x.send(JSON.stringify(obj));
@@ -196,20 +205,25 @@ module.exports = function(client) {
           }
           else { 
             smap = socketMap[path];
-            smap.sockets.forEach(function (x) {
-              // Assuming it is open
-              try{
-                x.send(JSON.stringify(obj));
-                // console.log("Sent daata ", JSON.stringify(obj));
-              } catch(e) {
-                // If not opened
-                x.on('open', function(){             
+            if (!pathIdObj.isRegId(data.id , path)) {
+              smap.sockets.forEach(function (x) {
+                // Assuming it is open
+                try{
                   x.send(JSON.stringify(obj));
-                });
-              }
-            });
-            smap.clients = smap.clients || [];
-            smap.clients.push(client);
+                  // console.log("Sent daata ", JSON.stringify(obj));
+                } catch(e) {
+                  // If not opened
+                  x.on('open', function(){             
+                    x.send(JSON.stringify(obj));
+                  });
+                }
+              });
+            }
+            if (!pathIdObj.isClientOnPath(client.id , path)) {              
+              smap.clients = smap.clients || [];
+              smap.clients.push(client);
+            }
+            pathIdObj.regClient(client.id,path,data.id);
           }
         } else {         
           // Avoid multi pushing for same client

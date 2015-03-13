@@ -106,6 +106,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       });
   };
   
+  var idToCbMap = {};
   service.getDataId = function(id, n, cb) {
     var qstr = '/api/data/' + id;
     if (!n) {
@@ -115,19 +116,28 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     $http.get(qstr).success(function(data) {
       //console.log('HTTP Data Response: ' + data);
       cb(data);
-      //SocketService.emit('data_request', {'id': id});
+      SocketService.emit('data_request', {'id': id});
+      idToCbMap[id] = cb;
     }).error(function(data) {
       console.log('HTTP Data Error: ' + data);
     });
-    
-    SocketService.on('data_data_' + id, function(data) {
-      if (typeof data =='string') {
-	data = JSON.parse(data);
-      }
-      //console.log('Incoming data for ' + id + ' : ', data);
-      cb(data);
-    });
   };
+
+  SocketService.on('data_data', function(data) {
+    var id ;
+    if (typeof data != 'object'){
+      data = JSON.parse(data);
+    };
+    for (var i in data) {
+      id = i;
+      break;
+    };
+    console.log('Incoming data for ' + id + ' : ', data);
+    var cb = idToCbMap[id];
+    if (cb) { 
+      cb(data);
+    }    
+  });
   
   finish = function() {
     var services = service.services;
