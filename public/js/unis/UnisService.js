@@ -8,6 +8,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   var ttl_off_limit = 60; // 1 minute
   var ttl_wiggle = 5;  
   var service = {};
+  var dataIdCbMap = {};
   
   service.nodes        = [];
   service.ports        = [];
@@ -106,7 +107,6 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       });
   };
   
-  var idToCbMap = {};
   service.getDataId = function(id, n, cb) {
     var qstr = '/api/data/' + id;
     if (!n) {
@@ -116,16 +116,28 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     $http.get(qstr).success(function(data) {
       //console.log('HTTP Data Response: ' + data);
       cb(data);
-      SocketService.emit('data_request', {'id': id});
-      idToCbMap[id] = cb;
+      service.subDataId(id, cb);
     }).error(function(data) {
       console.log('HTTP Data Error: ' + data);
     });
   };
-  service.unregisterId = function(id){
-    // Disconnect the channel , modal is now closed
+
+  service.subDataId = function(id, cb) {
+    if (id in dataIdCbMap) {
+      dataIdCbMap[id].push(cb);
+    }
+    else {
+      //console.log("emitting data request for: ", id, cb);
+      SocketService.emit('data_request', {'id': id});
+      dataIdCbMap[id] = [cb];
+    }
+  };
+  
+  service.unsubDataId = function(id) {
+    // need to reference count this or something
     SocketService.emit('data_request', {'id': id , 'disconnect' : true});
-  }
+  };
+
   SocketService.on('data_data', function(data) {
     var id ;
     if (typeof data != 'object'){
@@ -135,11 +147,15 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       id = i;
       break;
     };
-    console.log('Incoming data for ' + id + ' : ', data);
-    var cb = idToCbMap[id];
-    if (cb) { 
-      cb(data);
-    }    
+
+    //console.log('Incoming data for ' + id + ' : ', data);
+    if (id in dataIdCbMap) {
+      dataIdCbMap[id].forEach(function(cb) {
+	if (cb) { 
+	  cb(data);
+	}
+      })
+    }
   });
   
   finish = function() {

@@ -196,7 +196,7 @@ module.exports = function(app) {
     return function(req, res) {
       // Get all parameters and just forward it to UNIS 
       var paramString = querystring.stringify(req.query);
-      console.log("node id: " + req.params.id);
+      //console.log("node id: " + req.params.id);
       // console.log('STATUS: ' + res.statusCode);
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       // console.log('BODY: ' + JSON.stringify(res.body));

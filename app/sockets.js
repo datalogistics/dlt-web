@@ -162,8 +162,7 @@ module.exports = function(client) {
             onopencb();
         });
         socket.on('message', function(data) {
-//          if (/data/.test(name))
-          //console.log('UNIS socket (): ',data);
+          //console.log('UNIS socket (): ', data);
           var smap =  socketMap;
           smap[path] = smap[path] || {};
           if (!smap[path].clients)
@@ -177,7 +176,8 @@ module.exports = function(client) {
             });
           } else {            
             var dataId1 = _.keys(JSON.parse(data))[0];
-            // console.log("Number of connected clients " ,smap[path].clients.length , smap[path].clients.map(function(x){ return x.id;}));
+            //console.log("Number of connected clients ", smap[path].clients.length,
+	    //            smap[path].clients.map(function(x){ return x.id;}));
             smap[path].clients.filter(function(x){
               // Returns true if path doesn't exist
               return pathIdObj.isRegClient(x.id , path , dataId1);            
@@ -215,19 +215,22 @@ module.exports = function(client) {
         };
         if (data.disconnect) {
           // Unregister the channel for the client
+	  //console.log("unregistering client:", client.id, path, data.id);
           pathIdObj.unregisterId(client.id , path,data.id);
         } else {
           // Sockets using /subscribeAgg gets its own map
           // console.log("Id" ,data.id);
           if(!pathIdObj.isRegClient(client.id, path , data.id)) {
             if (!smap) {
-              socketMap[path] = {'clients': [client]};            
+              socketMap[path] = {'clients': [client]};        
               createWebSocket(path, resource, emit,true,function(){              
                 smap = socketMap[path];
                 smap.sockets.forEach(function (x) {
                   x.send(JSON.stringify(obj));
                 });
               });
+	      //console.log("registering client: ", client.id, path, data.id);
+              pathIdObj.regClient(client.id,path,data.id);
             }
             else { 
               smap = socketMap[path];
@@ -249,6 +252,7 @@ module.exports = function(client) {
                 smap.clients = smap.clients || [];
                 smap.clients.push(client);
               }
+	      //console.log("registering client: ", client.id, path, data.id);
               pathIdObj.regClient(client.id,path,data.id);
             }
           } else {         
@@ -296,17 +300,14 @@ module.exports = function(client) {
           }
           pathIdObj.unregclients(client.id,type);
           // remove any subscribed channels
-          
-          
-          // close the web socket to UNIS if the last client disconnected
-          // if (clients.length == 0) {
-          //   console.log("Last client disconnected, closing sockets for: " + type);
-          //   smap.sockets.forEach(function(s) {
-          //     s.close();
-          //   });
-          //   // Don't ever delete - 5 socket connections per server always remain until server is killed 
-          //   //delete socketMap[type];
-          // }
+          //close the web socket to UNIS if the last client disconnected
+          if (clients.length == 0) {
+            console.log("Last client disconnected, closing sockets for: " + type);
+            smap.sockets.forEach(function(s) {
+              s.close();
+            });
+            delete socketMap[type];
+          }
         }        
         return false;
       });

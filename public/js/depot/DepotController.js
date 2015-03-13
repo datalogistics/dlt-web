@@ -26,7 +26,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     UnisService.getMetadataId(metadata_id, function(metadata) {
       var eventType = metadata.eventType;
       var arrayData = [];
-      
+
       for (i=0; i< metadata.length; i++) {
         if (eventType === undefined) {
           eventType = metadata[i].eventType
@@ -43,23 +43,19 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	
 	if (Object.prototype.toString.call(data) === '[object Array]') {
           angular.forEach(data.reverse(), function(key, value) {
-            if (typeof key.ts == "number" && typeof key.value == "number") {
-              arrayData.push([key.ts, key.value]);
-            }            
-          });
-
+            arrayData.push([Number(key.ts), Number(key.value)]);
+	  });
+	  
           $scope.xAxisTickFormat_Date_Format = chartconfig.xformat;
           $scope.yAxisFormatFunction = chartconfig.yformat;
 	  $scope.eventType = eventType;
 	}
 	else {
 	  angular.forEach(data[metadata_id], function(key, value) {
-            if (typeof key.ts == "number" && typeof key.value == "number") {
-              arrayData.push([key.ts, key.value]);
-            }
-          });
+	    console.log("pushing: ", [key.ts, Number(key.value)]);
+            arrayData.push([Number(key.ts), Number(key.value)]);
+          })
 	}
-        
 	// should not rely on the scope here or above
 	$scope.graphData = [
           {
@@ -102,7 +98,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     });
     modal.result.finally(function(){
       // Kill the socket
-      UnisService.unregisterId(metadata.id);
+      UnisService.unsubDataId(metadata.id);
     });
     //$location.path('/depots/' + metadata.id);
   };
