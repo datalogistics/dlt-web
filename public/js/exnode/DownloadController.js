@@ -38,6 +38,15 @@ function downloadController($scope, SocketService) {
     if ($scope.selectedDownloads.length == 0) {return;}
     $windowlocation.path("/"+$scope.selectedDownloads[0])
   }
+  
+  SocketService.on("peri_download_clear", function(data){
+    console.log("Download cleared", data)
+    var delIdx = []
+    for (i =0; i<$scope.downloads.length; i++) {
+      if ($scope.downloads[i].sessionId == data.sessionId) {delIdx.push(i)}
+    }
+    delIdx.forEach(function() {$scope.downloads.splice(delIdx, 1)})
+  })
 
   $scope.$on("$destroy", function() {
     SocketService.getSocket().removeAllListeners() //Disconnect listening sockets

@@ -12,7 +12,7 @@ var msg = {
 var totalSize = 16777216
 
 var sessionId = String(process.argv[2] || 1244)
-var fileName = process.argv[3] || "test_image.tiff"
+var fileName = process.argv[3] || "test_image-" + sessionId + ".tiff"
 sock.on('connect' , function(){
   console.log('connected successfully ');
   sock.emit(msg.r , {

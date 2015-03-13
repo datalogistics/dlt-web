@@ -39,8 +39,9 @@ setInterval(function(){
 
 // Storing all the data in memory -- ya seriously gonna do that - Data manually deleted in 15 minutes
 // This map stores the fileData which is used to retrieve it.
-var registeredDownloadClients = [];
-var registeredClientMap = {};
+var registeredDownloadClients = []; //List of angular clients listening for registrations
+var registeredClientMap = {}; //List of clients listening for download progress
+var progressReportingConnections = {} //connection:[sessionId...] listing
 var rClientsLastProgressMap = {};
 var rClientsLastUsedMap = {};
 var rMap = cfg.routeMap;
@@ -570,14 +571,10 @@ module.exports = function(client) {
     addNewConn(client, id);
   });
 
-  client.on("peri_download_clear",function(data){
+  client.on("peri_download_clear", function(data){
     var serve = registeredClientMap[data.sessionId]
     var messageName = 'peri_download_clear'
-    emitDataToAllConnected(serve , messageName , data)
-    
-    // Kill it - will be auto gc'd
-    registeredClientMap[data.sessionId] = undefined
-    console.log("Download cleared ", data)
+    clearDownload(data.sessionId, client, "complete")
   });
 
   // The latest download hashmap
@@ -606,8 +603,13 @@ module.exports = function(client) {
       }
     }
 
-    console.log("already registered clients: ", arr.length);
     emitDataToAllConnected(registeredClientMap[id], 'peri_download_info', emitData);
+
+
+    var sessionsOnReporter = progressReportingConnections[client.connection] || []
+    sessionsOnReporter.push(id)
+    progressReportingConnections[client.connection] = sessionsOnReporter
+    console.log("Registered for connection", sessionsOnReporter)
   });
 
   client.on('peri_download_pushdata', function(data) {
@@ -628,6 +630,36 @@ module.exports = function(client) {
       client.emit('peri_download_fail');
     }
   });
+
+  client.on('disconnect', function(data) {
+    var sessions = progressReportingConnections[client.connection] || [] //remote-client:[sessionId...] listing
+    if (sessions.length > 0) {
+      sessions = sessions.slice() //Copy sessions list to ensure deletes go as expected
+      console.log("Client disconnected.  Clearing sessions: ", sessions)
+      sessions.forEach(function(sessionId) {clearDownload(sessionId, client.connection, "Discconnected")})
+    }
+    progressReportingConnections[client] = undefined
+  })
+
+}
+
+function clearDownload(sessionId, reportingConnection, reason) {
+  var msg = {sessionId: sessionId, status: reason}
+  var serve = registeredClientMap[sessionId]
+  emitDataToAllConnected(serve , 'peri_download_clear', msg)
+  registeredClientMap[sessionId] = undefined
+  
+  registeredDownloadClients.forEach(function(client) {
+    client.emit('peri_download_clear', msg); 
+  })
+
+  var reportingSessions = progressReportingConnections[reportingConnection]
+  var sessionIdx = reportingSessions.indexOf(sessionId)
+  if (sessionIdx >= 0) {reportingSessions.splice(sessionIdx, 1);}
+  if (reportingSessions.length == 0) {
+    progressReportingConnections[reportingConnection] = undefined
+  }
+  console.log("Download cleared ", sessionId)
 }
 
 function addNewConn(client, id){

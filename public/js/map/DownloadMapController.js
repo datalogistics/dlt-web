@@ -23,6 +23,10 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     if (data.isError) {return;}
     initProgressTarget(map.svg, 30, 300, data.sessionId, data.filename, data.size)
   });
+  
+  SocketService.on("peri_download_clear", function(data){
+    console.log("Download cleared", data)
+  })
 
 
   var rateTracker = {}
@@ -35,13 +39,11 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     if (isNaN(progress)) {progress = 0;}
 
     var rateInfo = rateTracker[sessionId] || {minTime: data.timestamp, maxTime: data.timestamp+1, totalBytes:0}
-    console.log(rateInfo, data.size, data.length, data.offset)
     rateInfo.minTime = Math.min(rateInfo.minTime, data.timestamp)
     rateInfo.maxTime = Math.max(rateInfo.maxTime, data.timestamp)
     rateInfo.totalBytes = rateInfo.totalBytes + data.length
     rateTracker[sessionId] = rateInfo
-    console.log(rateInfo, data.size, data.length)
-    console.log("------")
+    console.log(rateInfo, data.size, data.length) //TODO: Remove after testing
     
     //TODO: This skip-if-not found is because there is no way to un-register a socket on the node side
     //      Doing so would probably require recording client ids on the client, and unregistering them by id on page close 
