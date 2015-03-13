@@ -122,7 +122,10 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       console.log('HTTP Data Error: ' + data);
     });
   };
-
+  service.unregisterId = function(id){
+    // Disconnect the channel , modal is now closed
+    SocketService.emit('data_request', {'id': id , 'disconnect' : true});
+  }
   SocketService.on('data_data', function(data) {
     var id ;
     if (typeof data != 'object'){
