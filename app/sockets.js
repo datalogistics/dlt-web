@@ -41,7 +41,7 @@ setInterval(function(){
 // This map stores the fileData which is used to retrieve it.
 var registeredDownloadClients = []; //List of angular clients listening for registrations
 var registeredClientMap = {}; //List of clients listening for download progress
-var progressReportingConnections = {} //connection:[sessionId...] listing
+var progressReportingConnections = {} //client.conn.id:[sessionId...] listing
 var rClientsLastProgressMap = {};
 var rClientsLastUsedMap = {};
 var rMap = cfg.routeMap;
@@ -574,7 +574,7 @@ module.exports = function(client) {
   client.on("peri_download_clear", function(data){
     var serve = registeredClientMap[data.sessionId]
     var messageName = 'peri_download_clear'
-    clearDownload(data.sessionId, client, "complete")
+    clearDownload(data.sessionId, client.conn.id, "complete")
   });
 
   // The latest download hashmap
@@ -654,13 +654,17 @@ function clearDownload(sessionId, connectionId, reason) {
     client.emit('peri_download_clear', msg); 
   })
 
-  var reportingSessions = progressReportingConnections[connectionId]
-  var sessionIdx = reportingSessions.indexOf(sessionId)
-  if (sessionIdx >= 0) {reportingSessions.splice(sessionIdx, 1);}
-  if (reportingSessions.length == 0) {
-    progressReportingConnections[connectionId] = undefined
+  var reportingSessions = progressReportingConnections[connectionId] 
+  if (reportingSessions === undefined) {
+    console.log("Error looking up reporting information on clear.", sessionId, connectionId, reason)
+  } else {
+    var sessionIdx = reportingSessions.indexOf(sessionId)
+    if (sessionIdx >= 0) {reportingSessions.splice(sessionIdx, 1);}
+    if (reportingSessions.length == 0) {
+      progressReportingConnections[connectionId] = undefined
+    }
+    console.log("Download cleared ", sessionId)
   }
-  console.log("Download cleared ", sessionId)
 }
 
 function addNewConn(client, id){

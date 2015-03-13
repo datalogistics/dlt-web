@@ -25,7 +25,7 @@ sock.on('connect' , function(){
 
   var offset = 0;
   var intervalId = setInterval(function(){
-    console.log("Sending for ", sessionId, fileName, offset)
+    console.log("Sending for ", sessionId, fileName)
     sock.emit(msg.p, { 
       sessionId : sessionId,
       host : 'dresci.incntre.iu.edu',
