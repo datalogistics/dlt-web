@@ -1,8 +1,12 @@
 function downloadMapController($scope, $location, $http, UnisService, SocketService) {
   var map = baseMap("#downloadMap", 960, 500);
   $scope.services = UnisService.services;
-  allServiceData($scope.services, "ibp_server", mapPoints(map.projection, map.svg, "depots"));
-  
+  $http.get('/api/natmap')
+    .then(function(res) {
+      var natmap = res.data;
+      allServiceData($scope.services, "ibp_server", natmap,
+		     mapPoints(map.projection, map.svg, "depots"));
+    });
 
 // -----------------------------------------------
 // Download Map data acquisition/basic processing

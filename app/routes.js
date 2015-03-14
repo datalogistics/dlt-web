@@ -5,6 +5,7 @@
  */
 var path = require('path')
 , fs = require('fs')
+, readline = require('readline')
 , http = require('http')
 , https = require('https')
 , url = require('url')
@@ -308,6 +309,39 @@ module.exports = function(app) {
 	res.set('Content-Disposition',"attachment; filename=dlt-client.jnlp");
 	res.end(html);
       });
+  });
+
+  app.get('/api/natmap',function(req, res) {
+    var rmap = {};
+    var stream = fs.createReadStream(cfg.nat_map_file)
+      .on ("error", function (error){
+        console.log (error);
+	res.json({});
+      })
+      .on("end", function () {
+	stream.close();
+	res.json(rmap);
+      });
+    
+    var rd = readline.createInterface({
+      input: stream,
+      output: process.stdout,
+      terminal: false
+    });
+    
+    rd.on('line', function(line) {
+      if (line[0] != '#') {
+	var ary = line.split(':');
+	if (ary[4]) {
+	  rmap[ary[4]] = {
+	    'data_ip' : ary[0],
+	    'internal': ary[1],
+	    'port'    : ary[2],
+	    'external': ary[3]
+	  };
+	}
+      }
+    });
   });
 
   app.get('*', function(req, res) {

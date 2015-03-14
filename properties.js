@@ -1,12 +1,9 @@
 /* Configuration file - Configure all source info here .. remove all URL related info from other files */
 var fs = require('fs'),
 _ = require('underscore');
-var unis_cert = './dlt-client.pem';
-var unis_key  = './dlt-client.pem';
-//var key  = fs.readFileSync(unis_key);
-//var cert = fs.readFileSync(unis_cert);
 
 var self = {    
+  nat_map_file : './misc/idms_nat_map',
   jnlpMap : {
     'download': {
       'template': './misc/dlt-client.jnlp.tmpl',

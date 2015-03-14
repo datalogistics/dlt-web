@@ -55,7 +55,7 @@ function tooltip(svg) {
               .attr('id', "map-tool-tip")
               .html(function() {
                 var x = d3.select(this);
-                return x.attr('name').replace(/\|/g, "</p>")
+                return x.attr('name').replace(/\|/g,"</p>")
               })
 
     svg.call(tip);
@@ -74,37 +74,38 @@ function tooltip(svg) {
 
 //Add a node with name at position latLon to svg using the projection
 //TODO: Refactor so the invisible point is always added, reduce duplciate code
-function addMapLocation(projection, name, rawLonLat, svg, depot_id) {		
+function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {		
   var lonLat = [rawLonLat[0].toFixed(2), rawLonLat[1].toFixed(2)] //Round lat/lon
-
+  
   var translate = "translate(" + projection(lonLat) + ")"
   var nodes = svg.selectAll(".depotGroup").filter(function (d, i) { return d3.select(this).attr("transform") == translate })
-
+  
   //Function to add an invisible point to each location
   var invisiblePoint = function(parentGroup) {
-      var circ = parentGroup.append("circle")
-         .attr("r", 1)
-         .attr("class", "depotLocation")
-         .attr("name", name)
-         .attr("style", "display:none")
-
-      if (depot_id !== undefined) {circ.attr('depot_id', depot_id)}
+    var circ = parentGroup.append("circle")
+      .attr("r", 1)
+      .attr("class", "depotLocation")
+      .attr("name", name)
+      .attr("port", port)
+      .attr("style", "display:none")
+    
+    if (depot_id !== undefined) {circ.attr('depot_id', depot_id)}
   }
-
+  
   if (nodes.empty()) {
     var group = svg.append("g")
-        .attr("transform", function() {return translate;})
-        .attr("class", "depotGroup")
-
+      .attr("transform", function() {return translate;})
+      .attr("class", "depotGroup")
+    
     var circ = group.append("circle")
-        .attr("r",7)
-        .attr('fill',"#B4635F")
-        .attr('stroke',"#76231F")
-        .attr('stroke-width', '1.25')
-        .attr('class', "depotNode")
-        .attr('name', name)
-        .attr('location', lonLat)
-
+      .attr("r",7)
+      .attr('fill',"#B4635F")
+      .attr('stroke',"#76231F")
+      .attr('stroke-width', '1.25')
+      .attr('class', "depotNode")
+      .attr('name', name + ":" + port)
+      .attr('location', lonLat)
+    
     invisiblePoint(group)
   } else {
     nodes.each(function(d,i) {
@@ -112,22 +113,22 @@ function addMapLocation(projection, name, rawLonLat, svg, depot_id) {
       var count = group.select(".count")
       if (count.empty()) {
         group.append("text")
-            .text(function (d) {return 2})
-            .attr("class", "count")
-            .attr("baseline-shift", "-4.5px")
-            .attr("text-anchor", "middle")
-            .attr("fill", "#D99490")
+          .text(function (d) {return 2})
+          .attr("class", "count")
+          .attr("baseline-shift", "-4.5px")
+          .attr("text-anchor", "middle")
+          .attr("fill", "#D99490")
       } else{
         var val = parseInt(count.text())
         val = val + 1;
         count.text(function (d) {return val})
       }
-
+      
       var super_circ = group.select(".depotNode")
       var existingName = super_circ.attr("name")
-      super_circ.attr("name", name + "|" + existingName)
+      super_circ.attr("name", name + ":" + port + "|" + existingName)
       invisiblePoint(group)
-    })
+    });
   }
 }
 
@@ -162,7 +163,7 @@ function mapPoints(projection, svg, elementId) {
         addOffMapLocation(projection, offmap, [-72, 40], item.name, svg_points, item.depot_id)
       } else {
         pair = [item.location.longitude, item.location.latitude]
-        node = addMapLocation(projection, item.name, pair, svg_points, item.depot_id)
+        node = addMapLocation(projection, item.name, item.port, pair, svg_points, item.depot_id)
       }
       tooltip(svg)
     })
@@ -227,7 +228,7 @@ function baseMap(selector, width, height) {
 //
 //Returns at most one result for each UNIQUE serviceID
 //Drops serviceID results if incomplete
-function allServiceData(services, match, then) {
+function allServiceData(services, match, natmap, then) {
   var uniqueServices = getUniqueById(services);
   var unknownLoc     = {}	
   var serviceDetails = []
@@ -240,12 +241,17 @@ function allServiceData(services, match, then) {
       continue;
     }
 
+    port = 6714;
     name = getServiceName(item);
+    if (natmap && name in natmap) {
+      port = natmap[name].port || port
+      name = natmap[name].external || name
+    }
 
     var place = []
     if (hasLocationInfo(item)) {
       place = {longitude: item.location.longitude, latitude: item.location.latitude}
-      serviceDetails.push({name: name, location: place, depot_id: item.id})
+      serviceDetails.push({name: name, location: place, depot_id: item.id, port: port})
     } else {
       unknownLoc[name] = {id: item.id};
     }
