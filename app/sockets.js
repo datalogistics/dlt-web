@@ -20,7 +20,10 @@ var WebSocket = require('ws')
 ,_ = require('underscore');
 
 WebSocket.super_.defaultMaxListeners = 0;
-// Clearout unused items every 15 minutes
+
+var timeout        = 5 * 1e6;      // clear client socket after 5 minutes of inactivity
+var check_interval = 2 * 1e6;      // check all registered clients every 2 minutes
+
 setInterval(function(){
   var time = (new Date()).getTime();
   for(var i in registeredClientMap){
@@ -30,12 +33,11 @@ setInterval(function(){
     var id = c.sessionId,
     lastProgressTime = rClientsLastProgressMap[id]
     lastUsedTime = rClientsLastUsedMap[id];
-    // If it has been used in last 5 minutes then keep it or else remove it
-    if(!(time - lastProgressTime > 300000 || time - lastUsedTime > 300000)){
+    if ( (time - lastProgressTime) > timeout || (time - lastUsedTime) > timeout ) {
       registeredClientMap[id] = undefined ;
     }
   };
-},300000);
+}, check_interval);
 
 // Storing all the data in memory -- ya seriously gonna do that - Data manually deleted in 15 minutes
 // This map stores the fileData which is used to retrieve it.
@@ -641,7 +643,8 @@ module.exports = function(client) {
     for (var i=registeredDownloadClients.length-1; i>=0; i--) {
       var c = registeredDownloadClients[i];
       if (c.connected) {
-        c.emit('peri_download_list_info', emitData); //Remove if we start keeping a single list of clients instead of separate list and progress lists 
+	//Remove if we start keeping a single list of clients instead of separate list and progress lists 
+        c.emit('peri_download_list_info', emitData);
       }
       else {
         registeredDownloadClients.splice(i, 1);
@@ -667,7 +670,7 @@ module.exports = function(client) {
     var messageName = 'peri_download_progress' ,
     dataToBeSent = data;
     dataToBeSent.size = serve.size;
-
+    
     if(serve){
       emitDataToAllConnected(serve , messageName , dataToBeSent);
     } else {
