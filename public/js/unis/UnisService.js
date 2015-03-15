@@ -107,7 +107,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       });
   };
   
-  service.getDataId = function(id, n, cb) {
+  service.getDataId = function(id, n, cb , unName) {
     var qstr = '/api/data/' + id;
     if (!n) {
       n = 300;
@@ -116,33 +116,45 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     $http.get(qstr).success(function(data) {
       //console.log('HTTP Data Response: ' + data);
       cb(data);
-      service.subDataId(id, cb);
+      service.subDataId(id, cb, unName);
     }).error(function(data) {
       console.log('HTTP Data Error: ' + data);
     });
   };
 
-  service.subDataId = function(id, cb) {
+  service.subDataId = function(id, cb,uname) {
+    uname = uname || "__nvrDelete"+ Math.random();
     if (id in dataIdCbMap) {
-      dataIdCbMap[id].push(cb);
+      dataIdCbMap[id][uname] = cb;      
     }
     else {
       //console.log("emitting data request for: ", id, cb);
       SocketService.emit('data_request', {'id': id});
-      dataIdCbMap[id] = [cb];
+      var obj = {};
+      obj[uname] = cb;
+      dataIdCbMap[id] = obj;      
     }
   };
   
-  service.unsubDataId = function(id) {
-    // need to reference count this or something
-    SocketService.emit('data_request', {'id': id , 'disconnect' : true});
+  service.unsubDataId = function(id,uname) {
+    if (uname) {
+      var map = dataIdCbMap[id];
+      if (map) {
+        delete map[uname];
+      }
+      // Sticking to object keys as general assumption is that map counter cannot be much greater than 38-380
+      if (Object.keys(map).length == 0) {
+        // Unsubscribe the data id
+        SocketService.emit('data_request', {'id': id , 'disconnect' : true});
+      }
+    }
   };
 
   SocketService.on('data_data', function(data) {
     var id ;
     if (typeof data != 'object'){
       data = JSON.parse(data);
-    };
+    };    
     for (var i in data) {
       id = i;
       break;
@@ -150,11 +162,11 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 
     //console.log('Incoming data for ' + id + ' : ', data);
     if (id in dataIdCbMap) {
-      dataIdCbMap[id].forEach(function(cb) {
-	if (cb) { 
-	  cb(data);
-	}
-      })
+      var map = dataIdCbMap[id];
+      for (var i in map) {
+        var cb = map[i];
+        cb(data);
+      }
     }
   });
   

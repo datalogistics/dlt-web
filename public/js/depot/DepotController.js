@@ -61,7 +61,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
             "key": "Data Point",
             "values": arrayData
           }];	 
-      });
+      },"dialog");
     });
     $scope.metadataId = undefined;
   }
@@ -97,7 +97,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     });
     modal.result.finally(function(){
       // Kill the socket
-      UnisService.unsubDataId(metadata.id);
+      UnisService.unsubDataId(metadata.id,"dialog");
     });
     //$location.path('/depots/' + metadata.id);
   };
