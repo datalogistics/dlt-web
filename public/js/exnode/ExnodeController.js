@@ -205,7 +205,7 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   };
 
   $scope.downloadAllUsgsEx = function(arr) {
-    client_action(arr.map(function(x) { return x.url;}),'download');
+    client_action(arr.map(function(x) { return x.url || x.selfRef;}),'download');
   };
   function client_action(arr, app) {    
     var csv = (arr || []).join(",");
