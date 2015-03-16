@@ -73,7 +73,10 @@ function mapController($scope, $routeParams, $http, UnisService) {
       });
     })
   .then(function() {
-    var svg = map.svg.insert("g", "#overlay").attr("name", "network")
+    var svg = map.svg.insert("g", "#overlay")
+                   .attr("name", "network")
+                   .attr("pointer-events", "none")
+
     for (key in link_map) {
       var link = link_map[key]
       add_link(svg, map.projection, link.endpoint_a, link.endpoint_z, link.type)
@@ -124,4 +127,3 @@ function screen_location(svg, projection, endpoint, then) {
     then(d3.transform(mapGroup.attr("transform")).translate)
   }
 }
-
