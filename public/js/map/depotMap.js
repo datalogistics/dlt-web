@@ -337,10 +337,15 @@ function backplaneLinks(map, natmap) {
       return undefined
     }
     endpoint = mapping.external
+    port = mapping.port
 
-    var mapNode = svg.selectAll(".depotLocation").filter(function(d) {return this.getAttribute("name") == endpoint})
+    var mapNode = svg.selectAll(".depotLocation").filter(function(d) {
+      return ((this.getAttribute("name") == endpoint) &&
+	      (this.getAttribute("port") == port))
+    })
+    
     if (mapNode.empty()) {
-      console.log("link endpoint not in depot map: ", endpoint)
+      console.log("link endpoint not in depot map: ", endpoint, port)
       return undefined;
     }
 
