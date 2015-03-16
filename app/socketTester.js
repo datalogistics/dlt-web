@@ -24,8 +24,9 @@ sock.on('connect' , function(){
   });
 
   var offset = 0;
+  var group = 0
   var intervalId = setInterval(function(){
-    console.log("Sending for ", sessionId, fileName)
+    console.log("Sending for ", sessionId, fileName, group)
     sock.emit(msg.p, { 
       sessionId : sessionId,
       host : 'dresci.incntre.iu.edu',
@@ -55,6 +56,7 @@ sock.on('connect' , function(){
       timestamp: Date.now()
     });
     offset = offset + 98304 +32768+49152+262144
+    group = group +1
     if (offset > totalSize) {
       clearInterval(intervalId)
       sock.emit(msg.c, {sessionId: sessionId})
