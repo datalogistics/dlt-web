@@ -64,8 +64,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     if (entry !== undefined) {
       entry.percent = ((rateInfo.totalBytes/entry.size)*100).toFixed(1)
       entry.speed = formatRate(data.sesisonId, rateInfo)
-    console.log("percent: ", rateInfo.totalBytes, entry.size, entry.percent)
-
       $scope.downloads[data.sessionId] = entry //forces update on the view...
     }
 
@@ -79,8 +77,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       console.log("Incorrect data -- progress: " + progress, "Offset: " + offset)
     } else {
       doProgressWithOffset(map.svg, host, sessionId, progress, offset);
-      var target = map.svg.select("#download-rate-" + targetId(sessionId))
-      target.text(formatRate(data.sesionId, rateInfo))
     }
   });
 
@@ -207,7 +203,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     if (allDownloads.empty()) {allDownloads = svg.append("g").attr("id", "downloads")}
 
     var count = allDownloads.select(".download-target").size()
-    var left = svg.attr("width")-(width+15)*count //requested width, plus a pad
+    var left = svg.attr("width")-((width+15)*count) //requested width, plus a pad...asumes all are the same width
     var top = svg.attr("height")/2 - height/2
 
     var g = allDownloads.append("g").attr("class", "download-entry")
@@ -224,16 +220,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
         .attr("target-top", top)
         .attr("target-left", left)
         .attr("progress-start", 0)
-
-    g.append("text")
-        .attr("id", "download-rate-" + targetId(sessionId))
-        .attr("class", "download-rate-label")
-        .text("-- B/sec")
-        .attr("text-anchor", "end")
-        .attr("fill", "#777")
-        .attr("transform", "translate(0," + height + ")")
-        .attr("writing-mode", "tb")
-        .attr("baseline-shift", "-4.5px")
 
     g.append("text")
         .attr("class", "download-label")

@@ -49,11 +49,11 @@ sock.on('connect' , function(){
     sock.emit(msg.p, {
       sessionId : sessionId,
       host : '152.54.14.7',
-      offset : offset + 98304 +32768+49152,
+      offset : offset + 98304 + 32768 + 49152,
       length : 262144,
       timestamp: Date.now()
     });
-    offset = offset + 98304 +32768+49152+262144
+    offset = offset + 98304 + 32768 + 49152 + 262144
     console.log("Sent for ", sessionId, fileName, offset)
     if (offset > totalSize) {
       clearInterval(intervalId)
@@ -61,4 +61,3 @@ sock.on('connect' , function(){
     }
   },500);
 });
-
