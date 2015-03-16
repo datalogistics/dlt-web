@@ -427,11 +427,11 @@ module.exports = function(client) {
     var arr = sceneArr.slice(0);   
     while (arr && arr.length > 0){
       var idlist = arr.splice(0,Size);
-      idlist = idlist.map(function(x) {
-        return x.substr(0,x.length-5);
-      });
+      // idlist = idlist.map(function(x) {
+      //   return x.substr(0,x.length-5);
+      // });
       var str = idlist.join(",");      
-      // console.log( '/exnodes?fields=id,properties.metadata.scene_id&name=reg='+str);
+      // console.log( '/exnodes?fields=id,properties.metadata.scene_id='+str);
       http.get({
         host : cfg.serviceMap.dev.url,
         port : cfg.serviceMap.dev.port,
