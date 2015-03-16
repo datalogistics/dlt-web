@@ -31,6 +31,11 @@ function depotService($http, UnisService, CommChannel) {
       return (d/1e9).toFixed(2); // GB
     }
   }
+  var format_rate = function(){
+    return function(d){
+      return (d/1).toFixed(3);
+    }
+  }
   
   var format_percent = function() {
     return function(d) {return (d*100).toFixed(2)}
@@ -44,10 +49,10 @@ function depotService($http, UnisService, CommChannel) {
 				xformat: format_timestamp, yformat: format_percent};
   ETS_CHART_CONFIG[ETS.sys]  = {selector: "#CHART-Time-Percent",
 				xformat: format_timestamp, yformat: format_percent};
-  ETS_CHART_CONFIG[ETS.in]   = {selector: "#CHART-Time-GB",
-				xformat: format_timestamp, yformat: format_GB};
-  ETS_CHART_CONFIG[ETS.out]  = {selector: "#CHART-Time-GB",
-				xformat: format_timestamp, yformat: format_GB};
+  ETS_CHART_CONFIG[ETS.in]   = {selector: "#CHART-Time-Rate",
+				xformat: format_timestamp, yformat: format_rate};
+  ETS_CHART_CONFIG[ETS.out]  = {selector: "#CHART-Time-Rate",
+				xformat: format_timestamp, yformat: format_rate};
   
   // depots is a map of service IDs
   service.depots = {};

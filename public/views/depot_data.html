@@ -26,6 +26,23 @@ A better long-term option is probably to scrap nvd3 and use vanilla d3
   </nvd3-line-chart>
 </div>
 
+<div id="CHART-Time-Rate" style="display: none">
+  <nvd3-line-chart
+    data="graphData"
+    width="600"
+    height="400"
+    margin="{left:100,top:50,bottom:0,right:0}"
+    showXAxis="true"
+    showYAxis="true"
+    tooltips="true"
+    noData="No Data for this Event Type"
+    xAxisTickFormat="xAxisTickFormat_Date_Format()"
+    yAxisTickFormat="yAxisFormatFunction()"
+    xAxisLabel="Time"
+    yAxisLabel="{{ yAxisLabel }}"
+    interactive="true">
+  </nvd3-line-chart>
+</div>
 
 <div id="CHART-Time-Percent" style="display: none">
   <nvd3-line-chart

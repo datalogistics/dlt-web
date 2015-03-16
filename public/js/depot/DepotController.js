@@ -3,6 +3,23 @@
  * public/js/depot/
  * DepotController.js
  */
+function getRate(x,y,oldx,oldy) {
+  var timeD = x/1e6 - oldx/1e6
+  console.log("get Rate " , arguments);
+  if (oldx >= x || timeD == 0) {
+    console.log("No Change");
+    return;
+  }  
+  // Now use this old value to calculate rate 
+  var yVal = (y - oldy) / timeD;
+  var xVal = x;
+  var newArr = [xVal,yVal];
+  // Hitch orignal values to this array
+  newArr.x = x;
+  newArr.y = y;
+  console.log("get Rate Ret",newArr);
+  return newArr;
+}
 
 function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService,$modal) {
   var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
@@ -35,32 +52,58 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 
       var chartconfig = ETS_CHART_CONFIG[eventType]
       d3.select(chartconfig.selector).attr("style", "")
-
+      
       UnisService.getDataId(metadata_id, null, function(data) {
         if (typeof data =='string') {
-	  data = JSON.parse(data);
+	  data = JSON.parse(data);          
 	}
-	
-	if (Object.prototype.toString.call(data) === '[object Array]') {
-          angular.forEach(data.reverse(), function(key, value) {
-            arrayData.push([Number(key.ts), Number(key.value)]);
-	  });
-	  
+        var isAbsolute = true , isRate = false ;
+        if (/network:/.test(eventType)) {
+          // Show graph as rate
+          isAbsolute = false ;
+          isRate = true;
+        }
+        var arr = [];
+        if ($.isArray(data)) {
+          arr = data.reverse();
           $scope.xAxisTickFormat_Date_Format = chartconfig.xformat;
           $scope.yAxisFormatFunction = chartconfig.yformat;
 	  $scope.eventType = eventType;
-	}
-	else {
-	  angular.forEach(data[metadata_id], function(key, value) {
-            arrayData.push([Number(key.ts), Number(key.value)]);
-          })
-	}
+        } else {
+          arr = data[metadata_id];
+          // Splice the existing array by that many entries so that the graph actually moves instead of compressing
+          // There might be a much better way to do this, e.g time difference based - this causes ugly shakes
+          arrayData.splice(0,arr.length);
+        };
+        
+        if (isRate){
+          $scope.yAxisLabel= "Bytes per second";
+        }
+        var oldx, oldy;  
+        arr.forEach(function(key) {
+          var x = Number(key.ts);
+          var y = Number(key.value);
+          if (isAbsolute) {
+            arrayData.push([x,y]);
+          } else if (isRate) {            
+            if (!oldx) {
+              oldx = x , oldy = y;
+            } else {
+              var arr = getRate(x,y,oldx,oldy);
+              if (arr && arr[0] && arr[1]) {
+                oldx = arr.x , oldy = arr.y;
+                arrayData.push(arr);
+              }
+            }
+          }
+        });
+	
 	// should not rely on the scope here or above
 	$scope.graphData = [
           {
-            "key": "Data Point",
-            "values": arrayData
-          }];	 
+          "key": "Data Point",
+          "values": arrayData
+        }];	 
       },"dialog");
     });
     $scope.metadataId = undefined;
