@@ -286,3 +286,65 @@ function ipToLocation(items, then) {
     })
   })
 }
+
+
+function backplaneLinks(map, natmap) {
+  d3.json("./api/linkmap", function(link_map) {
+    var overlay = map.svg.insert("g", "#overlay").attr("name", "network")
+    for (key in link_map) {
+      var link = link_map[key]
+      add_link(overlay, map, natmap, link)
+    }
+  })
+  
+
+  function add_link(overlay, map, natmap, link) {
+    var a = screen_location(map.svg, natmap, link.endpoint_a)
+    var z = screen_location(map.svg, natmap, link.endpoint_z)
+
+    if (a === undefined | z === undefined) {return;}
+
+    overlay.append("path")
+      .attr("d", link_arc(a, z))
+      .attr("stroke-width", (link.capacity/100000)+.5)
+      .attr("fill", "none")
+      .attr("stroke", link_color(link.type))
+      .attr("class", "geni_link")
+  }
+
+  function link_color(type) {
+    if (type == "ion") {
+      return "#102D46"
+    } else if (type == "al2s") {
+      return "#5A788E"
+    } else {
+      return "#6E5D5C"
+    }
+  }
+
+  //from: http://bl.ocks.org/mbostock/1153292
+  function link_arc(source, target) {
+    var dx = target[0] - source[0],
+        dy = target[1] - source[1],
+        dr = Math.sqrt(dx * dx + dy * dy);
+    return "M" + source[0] + "," + source[1] + "A" + dr + "," + dr + " 0 0,1 " + target[0] + "," + target[1];
+  }
+
+  function screen_location(svg, natmap, endpoint) {
+    var mapping = natmap[endpoint]
+    if (mapping === undefined) {
+      console.log("link endpoint not in natmap: ", endpoint)
+      return undefined
+    }
+    endpoint = mapping.external
+
+    var mapNode = svg.selectAll(".depotLocation").filter(function(d) {return this.getAttribute("name") == endpoint})
+    if (mapNode.empty()) {
+      console.log("link endpoint not in depot map: ", endpoint)
+      return undefined;
+    }
+
+    var mapGroup = d3.select(mapNode.node().parentNode)
+    return d3.transform(mapGroup.attr("transform")).translate
+  }
+}
