@@ -123,7 +123,7 @@ function screen_location(svg, projection, endpoint, then) {
         if (error) {
           console.log("could not locate ", endpoint)
         } else {
-          var place = [raw.longitude.toFixed(2), raw.latitude.toFixed(2)]
+          var place = [raw.longitude.toFixed(1), raw.latitude.toFixed(1)]
           then(projection(place))
         }
       })

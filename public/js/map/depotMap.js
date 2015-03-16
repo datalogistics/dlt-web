@@ -75,7 +75,7 @@ function tooltip(svg) {
 //Add a node with name at position latLon to svg using the projection
 //TODO: Refactor so the invisible point is always added, reduce duplciate code
 function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {		
-  var lonLat = [rawLonLat[0].toFixed(2), rawLonLat[1].toFixed(2)] //Round lat/lon
+  var lonLat = [rawLonLat[0].toFixed(1), rawLonLat[1].toFixed(1)] //Round lat/lon
   
   var translate = "translate(" + projection(lonLat) + ")"
   var nodes = svg.selectAll(".depotGroup").filter(function (d, i) { return d3.select(this).attr("transform") == translate })
