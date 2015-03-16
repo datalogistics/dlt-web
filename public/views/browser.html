@@ -231,7 +231,7 @@
                         <div class="row top10">
                             <div class="btn-group">
                                 <label class="btn btn-primary" ng-model="showModel" btn-radio="'all'">Show All</label>
-                                <label class="btn btn-primary" ng-model="showModel" btn-radio="'exnodes'">Show exnodes</label>
+                                <label class="btn btn-primary" ng-model="showModel" btn-radio="'exnodes'">Show in EODN</label>
                             </div>
                         </div>
                         <div class="row top10 imageSet" >
@@ -288,10 +288,10 @@
                                         </div>
                                     </div>
                                     <div class="row" ng-if="val.isExnode">
-                                        <button type="button" ng-click="downloadAllUsgsEx(val.exFileArr)" class="btn btn-info">Download All via Exnode</button>
+                                        <button type="button" ng-click="downloadAllUsgsEx(val.exFileArr)" class="btn btn-info">Download All via EODN</button>
                                     </div>
                                     <div class="row" ng-if="val.isExnode == false">
-                                        Not present in exnodes
+                                        Not present in EODN-IDMS
                                     </div>
                                     <div class="row">
                                         <a href="{{val.cartURL}}" target="_blank" class="btn btn-info">Download from USGS site</a>
