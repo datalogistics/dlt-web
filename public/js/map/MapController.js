@@ -73,37 +73,42 @@ function mapController($scope, $routeParams, $http, UnisService) {
       });
     })
   .then(function() {
-    var svg = map.svg.insert("g", "#overlay")
-                   .attr("name", "network")
-                   .attr("pointer-events", "none")
-
+    var svg = map.svg.insert("g", "#overlay").attr("name", "network")
     for (key in link_map) {
       var link = link_map[key]
-      add_link(svg, map.projection, link.endpoint_a, link.endpoint_z, link.type)
+      add_link(svg, map.projection, link)
     }
   })
 } // end controller
 
 
-function add_link(svg, projection, endpoint_a, endpoint_b, label) {
-  console.log("endpoints: ", endpoint_a, endpoint_b)
-
-  screen_location(svg, projection, endpoint_a,
+function add_link(svg, projection, link) {
+  screen_location(svg, projection, link.endpoint_a,
       function(a) {
-        screen_location(svg, projection, endpoint_b,
-          function(b) {
+        screen_location(svg, projection, link.endpoint_z,
+          function(z) {
           svg.append("path")
-             .attr("d", linkArc(a, b))
-             .attr("stroke-width", 2)
+             .attr("d", link_arc(a, z))
+             .attr("stroke-width", (link.capacity/100000)+.5)
              .attr("fill", "none")
-             .attr("stroke", "#6E5D5C")
+             .attr("stroke", link_color(link.type))
              .attr("class", "geni_link")
           })
       })
 }
 
+function link_color(type) {
+  if (type == "ion") {
+    return "#102D46"
+  } else if (type == "al2s") {
+    return "#5A788E"
+  } else {
+    return "#6E5D5C" 
+  }
+}
+
 //from: http://bl.ocks.org/mbostock/1153292
-function linkArc(source, target) {
+function link_arc(source, target) {
   var dx = target[0] - source[0],
       dy = target[1] - source[1],
       dr = Math.sqrt(dx * dx + dy * dy);
