@@ -8,13 +8,16 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     .then(function(res) {
       var natmap = res.data;
       allServiceData($scope.services, "ibp_server", natmap,
-		     mapPoints(map.projection, map.svg, "depots"));
+        mapPoints(map.projection, map.svg, "depots"));
 
       sessionIds.forEach(function(id) {
-	console.log("init for ", id)
-	SocketService.emit("peri_download_request", {id : id});
+        console.log("init for ", id)
+        SocketService.emit("peri_download_request", {id : id});
       })
-    });
+      return natmap
+    })
+    .then(function(natmap) {backplaneLinks(map, natmap)})
+
 
 // -----------------------------------------------
 // Download Map data acquisition/basic processing
