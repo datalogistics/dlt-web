@@ -25,17 +25,25 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
   };
 
+  $scope.downloads = {}
+
   SocketService.on("peri_download_info", function(data){
     // Set this data in scope to display file info
     console.log('Download file data ' , data);
     if (data.isError) {return;}
     initProgressTarget(map.svg, 30, 300, data.sessionId, data.filename, data.size)
+    $scope.downloads[data.sessionId] = {
+      filename: data.filename,
+      size: data.size,
+      connections: data.connections,
+      speed: "--",
+      percent: "--"
+    }
   });
-  
+
   SocketService.on("peri_download_clear", function(data){
     console.log("Download cleared", data)
   })
-
 
   var rateTracker = {}
   SocketService.on("peri_download_progress",function(data){
@@ -51,7 +59,15 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     rateInfo.maxTime = Math.max(rateInfo.maxTime, data.timestamp)
     rateInfo.totalBytes = rateInfo.totalBytes + data.length
     rateTracker[sessionId] = rateInfo
-    
+
+    var entry = $scope.downloads[data.sessionId]
+    if (entry !== undefined) {
+      entry.percent = ((rateInfo.totalBytes/entry.size)*100).toFixed(1)
+      entry.speed = formatRate(data.sesisonId, rateInfo)
+      $scope.downloads[data.sessionId] = entry //forces update on the view...
+    }
+
+
     //TODO: This skip-if-not found is because there is no way to un-register a socket on the node side
     //      Doing so would probably require recording client ids on the client, and unregistering them by id on page close 
     //      As is, the unwanted ones just expire when the download is done.  In the mean time, extra messages get sent
@@ -61,11 +77,9 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       console.log("Incorrect data -- progress: " + progress, "Offset: " + offset)
     } else {
       doProgressWithOffset(map.svg, host, sessionId, progress, offset);
-      reportRate(map.svg, sessionId, rateInfo)
     }
   });
 
-  
   $scope.$on("$destroy", function() {
     d3.selectAll("#map-tool-tip").each(function() {this.remove()})  //Cleans up the tooltip object when you navigate away
     SocketService.getSocket().removeAllListeners("peri_download_info")
@@ -77,8 +91,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   // -------------------------------------------
   //   Download map visualization components
   function targetId(id) {return "download-target-"+id;}
-
-  function reportRate(svg, sessionId, rateInfo) {
+  function formatRate(sessionId, rateInfo) {
     var rate = rateInfo.totalBytes/((rateInfo.maxTime - rateInfo.minTime)/1000)
     var magnitude = Math.floor(Math.log(rate)/Math.log(1024))
     var suffix = " B/sec"
@@ -87,19 +100,17 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       suffix = " KB/sec (avg)"
       rate = rate/1024
     } else if (magnitude == 2) {
-      suffix = " MB/sec (avg)" 
+      suffix = " MB/sec (avg)"
       rate = rate/Math.pow(1024,2)
     } else if (magnitude > 2) {
-      suffix = " GB/sec (avg)" 
+      suffix = " GB/sec (avg)"
       rate = rate/Math.pow(1024,3)
     }
-
-    var target = svg.select("#download-rate-" + targetId(sessionId))
-    target.text(rate.toFixed(1) + suffix)
+    return rate.toFixed(1) + suffix
   }
 
   function downloadFragmentBar(svg, sessionId, barClass, color, barOffset, barHeight) {
-    var downloads = svg.select("#downloads") 
+    var downloads = svg.select("#downloads")
     var target = svg.select("#" + targetId(sessionId))
     var targetLeft = parseInt(target.attr("target-left"))
     var targetWidth = parseInt(target.attr("target-width"))
@@ -130,7 +141,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     var target = svg.select("#" + targetId(sessionId))
     var targetLeft = parseInt(target.attr("target-left"))
     var targetHeight = parseInt(target.attr("target-height"))
-    
+
     var end = [targetLeft, barOffset];
     var mapGroup = d3.select(mapNode.node().parentNode)
     var start = d3.transform(mapGroup.attr("transform")).translate
@@ -143,7 +154,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
     mapGroup.select(".count")
        .attr("fill", "#111")
-         
+
     svg.append('line')
       .attr('x1',start[0])
       .attr('y1',start[1])
@@ -170,7 +181,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     var targetTop = parseInt(target.attr("target-top"))
     var targetLeft = parseInt(target.attr("target-left"))
     var targetHeight = parseInt(target.attr("target-height"))
-    
+
     var ratio = targetHeight / 100 ;
     var barOffset = targetTop + (offsetPercent || 0) * ratio;
     var barHeight = ratio * progress;
@@ -192,7 +203,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     if (allDownloads.empty()) {allDownloads = svg.append("g").attr("id", "downloads")}
 
     var count = allDownloads.select(".download-target").size()
-    var left = svg.attr("width")-(width+15)*count //requested width, plus a pad
+    var left = svg.attr("width")-((width+15)*count) //requested width, plus a pad...asumes all are the same width
     var top = svg.attr("height")/2 - height/2
 
     var g = allDownloads.append("g").attr("class", "download-entry")
@@ -209,16 +220,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
         .attr("target-top", top)
         .attr("target-left", left)
         .attr("progress-start", 0)
-    
-    g.append("text")
-        .attr("id", "download-rate-" + targetId(sessionId))
-        .attr("class", "download-rate-label")
-        .text("-- B/sec")
-        .attr("text-anchor", "end")
-        .attr("fill", "#777")
-        .attr("transform", "translate(0," + height + ")")
-        .attr("writing-mode", "tb")
-        .attr("baseline-shift", "-4.5px")
 
     g.append("text")
         .attr("class", "download-label")

@@ -94,7 +94,7 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
   
   if (nodes.empty()) {
     var group = svg.append("g")
-      .attr("transform", function() {return translate;})
+      .attr("transform", translate)
       .attr("class", "depotGroup")
     
     var circ = group.append("circle")
@@ -287,7 +287,6 @@ function ipToLocation(items, then) {
   })
 }
 
-
 function backplaneLinks(map, natmap) {
   d3.json("./api/linkmap", function(link_map) {
     var overlay = map.svg.insert("g", "#overlay").attr("name", "network")
@@ -295,8 +294,33 @@ function backplaneLinks(map, natmap) {
       var link = link_map[key]
       add_link(overlay, map, natmap, link)
     }
+
+    //HACK: There are better ways to do this..
+    var legend = overlay.append("g").attr("class", "legend").attr("transform","translate(30, 10)")
+
+    legend.append("text").text("Link Types")
+    legendEntry(legend, "ion", 0, 10)
+    legendEntry(legend, "al2s", 0, 25)
   })
   
+  function legendEntry(svg, label, x, y) {
+    svg = svg.append("g").attr("transform", "translate(" + x + "," + y + ")")
+
+    svg.append("line")
+       .attr("x1", 0)
+       .attr("y1", 0)
+       .attr("x2", 15)
+       .attr("y2", 0)
+       .attr("stroke", link_color(label))
+       .attr("stroke-width", 3)
+
+    svg.append("text")
+       .attr("x", 20)
+       .attr("y", 4)
+       .attr("text-anchor", "left")
+       .text(label)
+
+  }
 
   function add_link(overlay, map, natmap, link) {
     var a = screen_location(map.svg, natmap, link.endpoint_a)

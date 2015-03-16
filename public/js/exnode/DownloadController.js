@@ -6,7 +6,7 @@
 
 function downloadController($scope, SocketService) {
   // find active download IDs and display, links to map for viz
-  $scope.selectedDownloads = [] 
+  $scope.selectedDownloads = []
   $scope.downloadsLink = ""
 
   $scope.toggleDownloadSelection = function(sessionId) {
@@ -30,7 +30,7 @@ function downloadController($scope, SocketService) {
     console.log("New download received", data)
     $scope.downloads.push(data)
   })
-  
+
   //Request what is currently loaded...
   SocketService.emit("peri_download_req_listing", {});
 
@@ -38,7 +38,7 @@ function downloadController($scope, SocketService) {
     if ($scope.selectedDownloads.length == 0) {return;}
     $windowlocation.path("/"+$scope.selectedDownloads[0])
   }
-  
+
   SocketService.on("peri_download_clear", function(data){
     console.log("Download cleared", data)
     var delIdx = []
@@ -51,8 +51,8 @@ function downloadController($scope, SocketService) {
   $scope.$on("$destroy", function() {
     SocketService.getSocket().removeAllListeners("peri_download_req_listing")
     SocketService.getSocket().removeAllListeners("peri_download_list_info")
-    SocketService.getSocket().removeAllListeners("peri_download_listing") 
-    SocketService.getSocket().removeAllListeners("peri_download_clear") 
+    SocketService.getSocket().removeAllListeners("peri_download_listing")
+    SocketService.getSocket().removeAllListeners("peri_download_clear")
   })
 
 

@@ -26,7 +26,6 @@ sock.on('connect' , function(){
   var offset = 0;
   var group = 0
   var intervalId = setInterval(function(){
-    console.log("Sending for ", sessionId, fileName, group)
     sock.emit(msg.p, { 
       sessionId : sessionId,
       host : 'dresci.incntre.iu.edu',
@@ -51,16 +50,15 @@ sock.on('connect' , function(){
     sock.emit(msg.p, {
       sessionId : sessionId,
       host : '152.54.14.7',
-      offset : offset + 98304 +32768+49152,
+      offset : offset + 98304 + 32768 + 49152,
       length : 262144,
       timestamp: Date.now()
     });
-    offset = offset + 98304 +32768+49152+262144
-    group = group +1
+    offset = offset + 98304 + 32768 + 49152 + 262144
+    console.log("Sent for ", sessionId, fileName, offset)
     if (offset > totalSize) {
       clearInterval(intervalId)
       sock.emit(msg.c, {sessionId: sessionId})
     }
   },500);
 });
-
