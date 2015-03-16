@@ -621,7 +621,7 @@ module.exports = function(client) {
   client.on("peri_download_clear", function(data){
     var serve = registeredClientMap[data.sessionId]
     var messageName = 'peri_download_clear'
-    clearDownload(data.sessionId, client.conn.id, "complete")
+    //clearDownload(data.sessionId, client.conn.id, "complete")
   });
 
   // The latest download hashmap
@@ -685,7 +685,7 @@ module.exports = function(client) {
     if (sessions.length > 0) {
       sessions = sessions.slice() //Copy sessions list to ensure deletes go as expected
       console.log("Client disconnected.  Clearing sessions: ", sessions)
-      sessions.forEach(function(sessionId) {clearDownload(sessionId, connectionId, "Discconnected")})
+      //sessions.forEach(function(sessionId) {clearDownload(sessionId, connectionId, "Discconnected")})
     }
     progressReportingConnections[connectionId] = undefined
   })

@@ -59,10 +59,16 @@ function depotService($http, UnisService, CommChannel) {
   
   function getMetadata(s) {
     var metadatas = [];
-    var seen_ets = [];
     var meas = UnisService.measurements;
     var metas = UnisService.metadata;
     var servs = UnisService.services;
+
+    addIfNew = function(md, seen) {
+      if (((md.eventType in seen) && (seen[md.eventType].ts < md.ts)) ||
+	  (!(md.eventType in seen) && (md.eventType in ETS_CHART_CONFIG))) {
+	seen[md.eventType] = md;
+      }
+    };
 
     // this case is brutal because our metadata is missing subject hrefs
     // perhaps can fix in blipp for IDMS
@@ -72,11 +78,8 @@ function depotService($http, UnisService, CommChannel) {
       if(meas[i].configuration && meas[i].configuration.command) {
 	if(meas[i].configuration.command.split(" ")[1] == ip) {
 	  for(var j = 0; j < metas.length; j++) {
-	    if ((seen_ets.indexOf(metas[j].eventType) == -1) &&
-		(metas[j].parameters.measurement.href.split('/')[4] ==
-		 meas[i].id)) {
-	      metadatas.push(metas[j]);
-	      seen_ets.push(metas[j].eventType);
+	    if (metas[j].parameters.measurement.href.split('/')[4] == meas[i].id) {
+	      addIfNew(metas[j], metadatas);
 	    }
 	  }
 	}
@@ -87,17 +90,14 @@ function depotService($http, UnisService, CommChannel) {
 	  UnisService.nodes.forEach(function(n) {
 	    if (n.ports) {
 	      n.ports.forEach(function(pref) {
-		if (pref.href == p.selfRef) {
+		if (unescape(pref.href) == unescape(p.selfRef)) {
 		  servs.forEach(function(s) {
-		    if (s.runningOn && s.runningOn.href == n.selfRef) {
+		    if (s.runningOn && unescape(s.runningOn.href) == unescape(n.selfRef)) {
 		      meas.forEach(function(m) {
-			if (m.service == s.selfRef) {
+			if (unescape(m.service) == unescape(s.selfRef)) {
 			  metas.forEach(function(md) {
-			    if (md.parameters.measurement.href == m.selfRef &&
-				seen_ets.indexOf(md.eventType) == -1 &&
-				Object.keys(ETS_CHART_CONFIG).indexOf(md.eventType) >= 0) {
-			      metadatas.push(md);
-			      seen_ets.push(md.eventType);
+			    if (unescape(md.parameters.measurement.href) == unescape(m.selfRef)) {
+			      addIfNew(md, metadatas);
 			    }})
 			}})
 		    }})
@@ -105,13 +105,18 @@ function depotService($http, UnisService, CommChannel) {
 	    }})
 	}});
     }
-    return metadatas;
+    
+    var ret = [];
+    for (var key in metadatas) {
+      ret.push(metadatas[key])
+    }
+    return ret
   };
   
   function getServiceByMeta(md) {
     var ret = [];
     UnisService.nodes.forEach(function(n) {
-      if (n.selfRef == md.subject.href) {
+      if (n.ports && (n.selfRef == md.subject.href)) {
 	UnisService.ports.forEach(function(p) {
 	  n.ports.forEach(function(pref) {
 	    if (unescape(pref.href) == unescape(p.selfRef)) {

@@ -17,7 +17,7 @@
                                 <thead>
                                     <tr>
                                         <th> Name </th>
-                                        <th> Id </th>
+                                        <th> Size (MB) </th>
                                         <th> Select </th>
                                         <th> Download</th>                                        
                                     </tr>
@@ -25,7 +25,7 @@
                                 <tbody>
                                     <tr ng-repeat="(key,val) in selectedIds">
                                         <td>{{val.name || val.text}}</td>
-                                        <td>{{val.id}}</td> 
+                                        <td>{{(val.size/(1024*1024)).toFixed(1)}}</td> 
                                         <td><input type="checkbox" value="{{val.selfRef}}"/></td>
                                         <td><button ng-click="downloadOne(val.selfRef)" class="btn btn-info">Download</button></td>
                                     </tr>                                       

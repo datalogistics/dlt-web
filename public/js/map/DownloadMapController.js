@@ -1,4 +1,7 @@
 function downloadMapController($scope, $location, $http, UnisService, SocketService) {
+  var sessionIds = $location.search().sessionIds.split(",")
+  console.log("ids:", sessionIds )
+
   var map = baseMap("#downloadMap", 960, 500);
   $scope.services = UnisService.services;
   $http.get('/api/natmap')
@@ -6,6 +9,11 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       var natmap = res.data;
       allServiceData($scope.services, "ibp_server", natmap,
 		     mapPoints(map.projection, map.svg, "depots"));
+
+      sessionIds.forEach(function(id) {
+	console.log("init for ", id)
+	SocketService.emit("peri_download_request", {id : id});
+      })
     });
 
 // -----------------------------------------------
@@ -13,13 +21,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   var getAccessIp = function(x){
     return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
   };
-
-  var sessionIds = $location.search().sessionIds.split(",")
-  console.log("ids:", sessionIds )
-  sessionIds.forEach(function(id) {
-    console.log("init for ", id)
-    SocketService.emit("peri_download_request", {id : id});
-  })
 
   SocketService.on("peri_download_info", function(data){
     // Set this data in scope to display file info
