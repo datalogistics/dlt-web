@@ -25,11 +25,20 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
   };
 
+  $scope.downloads = {}
+
   SocketService.on("peri_download_info", function(data){
     // Set this data in scope to display file info
     console.log('Download file data ' , data);
     if (data.isError) {return;}
     initProgressTarget(map.svg, 30, 300, data.sessionId, data.filename, data.size)
+    $scope.downloads[data.sessionId] = {
+      filename: data.filename,
+      size: data.size,
+      connections: data.connections,
+      speed: "--",
+      percent: "--"
+    }
   });
 
   SocketService.on("peri_download_clear", function(data){
@@ -51,6 +60,16 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     rateInfo.totalBytes = rateInfo.totalBytes + data.length
     rateTracker[sessionId] = rateInfo
 
+    var entry = $scope.downloads[data.sessionId]
+    if (entry !== undefined) {
+      entry.percent = ((rateInfo.totalBytes/entry.size)*100).toFixed(1)
+      entry.speed = formatRate(data.sesisonId, rateInfo)
+    console.log("percent: ", rateInfo.totalBytes, entry.size, entry.percent)
+
+      $scope.downloads[data.sessionId] = entry //forces update on the view...
+    }
+
+
     //TODO: This skip-if-not found is because there is no way to un-register a socket on the node side
     //      Doing so would probably require recording client ids on the client, and unregistering them by id on page close 
     //      As is, the unwanted ones just expire when the download is done.  In the mean time, extra messages get sent
@@ -60,7 +79,8 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       console.log("Incorrect data -- progress: " + progress, "Offset: " + offset)
     } else {
       doProgressWithOffset(map.svg, host, sessionId, progress, offset);
-      reportRate(map.svg, sessionId, rateInfo)
+      var target = map.svg.select("#download-rate-" + targetId(sessionId))
+      target.text(formatRate(data.sesionId, rateInfo))
     }
   });
 
@@ -75,8 +95,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   // -------------------------------------------
   //   Download map visualization components
   function targetId(id) {return "download-target-"+id;}
-
-  function reportRate(svg, sessionId, rateInfo) {
+  function formatRate(sessionId, rateInfo) {
     var rate = rateInfo.totalBytes/((rateInfo.maxTime - rateInfo.minTime)/1000)
     var magnitude = Math.floor(Math.log(rate)/Math.log(1024))
     var suffix = " B/sec"
@@ -91,9 +110,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       suffix = " GB/sec (avg)"
       rate = rate/Math.pow(1024,3)
     }
-
-    var target = svg.select("#download-rate-" + targetId(sessionId))
-    target.text(rate.toFixed(1) + suffix)
+    return rate.toFixed(1) + suffix
   }
 
   function downloadFragmentBar(svg, sessionId, barClass, color, barOffset, barHeight) {
