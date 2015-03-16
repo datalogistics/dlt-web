@@ -41,6 +41,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     UnisService.getMetadataId(metadata_id, function(metadata) {
       var eventType = metadata.eventType;
       var arrayData = [];
+      arrayData.max = 0;
 
       for (i=0; i< metadata.length; i++) {
         if (eventType === undefined) {
@@ -72,12 +73,18 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
           // Splice the existing array by that many entries so that the graph actually moves instead of compressing
           // There might be a much better way to do this, e.g time difference based - this causes ugly shakes
           arrayData.splice(0,arr.length);
+          // Get the max in this array          
+          arrayData.forEach(function(x) {
+            if (x[1] > max) {
+              max = x[1];
+            };
+          });
         };
         
         if (isRate){
           $scope.yAxisLabel= "Bytes per second";
         }
-        var oldx, oldy;  
+        var oldx, oldy;
         arr.forEach(function(key) {
           var x = Number(key.ts);
           var y = Number(key.value);
@@ -88,6 +95,9 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
               oldx = x , oldy = y;
             } else {
               var arr = getRate(x,y,oldx,oldy);
+              if (arr[1] > arrayData.max) {
+                arrayData.max = arr[1];
+              }
               if (arr && arr[0] && arr[1]) {
                 oldx = arr.x , oldy = arr.y;
                 arrayData.push(arr);
@@ -95,6 +105,30 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
             }
           }
         });
+        // Use the max to change graph text and formatter function as required
+        if (isRate) {
+          // Use arraydata max to scale graph
+          var max = arrayData.max;
+          var label = "Bytes ";
+          var divValue = 1 ;
+          if (max > 1e3 && max < 1e6) {
+            // Make it kb
+            label = "Kbs";
+            divValue = 1e3 ;
+          } else if(max >= 1e6 && max < 1e9) {
+            label = "Mbs";
+            divValue = 1e6;
+          } else if (max >= 1e9) {
+            label = "Gbs";
+            divValue = 1e9;
+          }
+          $scope.yAxisLabel = label + " per second";
+          $scope.yAxisFormatFunction = function(){
+            return function(d){
+              return (d/divValue).toFixed(3);
+            }
+          }
+        }
 	
 	// should not rely on the scope here or above
 	$scope.graphData = [
