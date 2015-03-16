@@ -5,7 +5,6 @@
  */
 function getRate(x,y,oldx,oldy) {
   var timeD = x/1e6 - oldx/1e6
-  console.log("get Rate " , arguments);
   if (oldx >= x || timeD == 0) {
     console.log("No Change");
     return;
@@ -17,7 +16,6 @@ function getRate(x,y,oldx,oldy) {
   // Hitch orignal values to this array
   newArr.x = x;
   newArr.y = y;
-  console.log("get Rate Ret",newArr);
   return newArr;
 }
 
