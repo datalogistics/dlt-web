@@ -113,13 +113,13 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
           var divValue = 1 ;
           if (max > 1e3 && max < 1e6) {
             // Make it kb
-            label = "Kbs";
+            label = "KBs";
             divValue = 1e3 ;
           } else if(max >= 1e6 && max < 1e9) {
-            label = "Mbs";
+            label = "MBs";
             divValue = 1e6;
           } else if (max >= 1e9) {
-            label = "Gbs";
+            label = "GBs";
             divValue = 1e9;
           }
           $scope.yAxisLabel = label + " per second";
