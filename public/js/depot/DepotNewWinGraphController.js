@@ -1,40 +1,7 @@
-/*
- * Depot Controller
- * public/js/depot/
- * DepotController.js
- */
-function getRate(x,y,oldx,oldy) {
-  var timeD = x/1e6 - oldx/1e6
-  if (oldx >= x || timeD == 0) {
-    console.log("No Change");
-    return;
-  }  
-  // Now use this old value to calculate rate 
-  var yVal = (y - oldy) / timeD;
-  var xVal = x;
-  var newArr = [xVal,yVal];
-  // Hitch orignal values to this array
-  newArr.x = x;
-  newArr.y = y;
-  return newArr;
-}
-
-function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService,$modal,$window) {
-  var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
-	          'ps:tools:blipp:ibp_server:resource:usage:free',
-	          'ps:tools:blipp:linux:cpu:utilization:user',
-	          'ps:tools:blipp:linux:cpu:utilization:system'];
-  
-  var metadata_id = $scope.metadataId || $routeParams.id; //
-  
-  // place inital UnisService data into scope for view
-  $scope.services = UnisService.services || [];
-  $scope.measurements = UnisService.measurements || [];
-  $scope.metadata = UnisService.metadata || [];
-  $scope.nodes = UnisService.nodes || [];
-  $scope.ports = UnisService.ports || [];
-
-  if (metadata_id != null) {
+function depotNewWinGraphController($scope, $routeParams, $location, $filter, $rootScope,$modal, UnisService) {
+  console.log($routeParams);
+  var metadata_id = $routeParams.id;
+    if (metadata_id) {
 
     $scope.eventType = [];
 
@@ -138,56 +105,5 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
         }];	 
       },"dialog");
     });
-    $scope.metadataId = undefined;
   }
-  
-  $scope.getMetadataShortET = function(md, s) {
-    var arr = md.eventType.split(':');
-    if (MY_ETS.indexOf(md.eventType) >= 0) {
-      return arr.pop() + " (" + (s.depot[md.eventType]/1e9).toFixed(0) + ")";
-    }
-    return arr.pop();
-  };
-  
-  $scope.getServiceMetadata = function(service) {
-    if (service.serviceType == "ibp_server") {
-      return DepotService.depots[service.id].metadata;
-    }
-  };
-  
-  $scope.showData = function(metadata , name , buttonName) {
-    if (false) {
-      var params = {
-        id : metadata.id,
-        name : name ,
-        buttonName : buttonName
-      }
-      $window.open('/popup/graphs?'+$.param(params));
-    } else {
-      $scope.metadataId = metadata.id;
-      $scope.depotInstitutionName = name;
-      $scope.dialogButtonName = buttonName;
-      var modal = $modal.open({
-        templateUrl: '/views/depot_data.html',
-        controller: 'DepotController',
-        scope : $scope ,
-        size : 'lg',
-        resolve: {
-	  'unis': function(UnisService) {
-	    return UnisService.init()
-	  }
-        }
-      });
-      modal.result.finally(function(){
-        // Kill the socket
-        UnisService.unsubDataId(metadata.id,"dialog");
-      });
-    }
-
-    //$location.path('/depots/' + metadata.id);
-  };
-  
-  $scope.showMap = function(service_id) {
-    $location.path('/map/' + service_id);
-  };
 }

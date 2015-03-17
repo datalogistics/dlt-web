@@ -15,44 +15,44 @@ var ETS = {
 var MY_ETS = [ETS.used, ETS.free];
 
 var ETS_CHART_CONFIG = {}
+var format_timestamp = function(){
+  return function(d){
+    var ts = d/1e3;
+    return d3.time.format('%X')(new Date(ts));
+  }
+}
+
+var format_GB = function(){
+  return function(d){
+    return (d/1e9).toFixed(2); // GB
+  }
+}
+var format_rate = function(){
+  return function(d){
+    return (d/1).toFixed(3);
+  }
+}
+
+var format_percent = function() {
+  return function(d) {return (d*100).toFixed(2)}
+}
+
+ETS_CHART_CONFIG[ETS.used] = {selector: "#CHART-Time-GB",
+			      xformat: format_timestamp, yformat: format_GB};
+ETS_CHART_CONFIG[ETS.free] = {selector: "#CHART-Time-GB",
+			      xformat: format_timestamp, yformat: format_GB};
+ETS_CHART_CONFIG[ETS.user] = {selector: "#CHART-Time-Percent",
+			      xformat: format_timestamp, yformat: format_percent};
+ETS_CHART_CONFIG[ETS.sys]  = {selector: "#CHART-Time-Percent",
+			      xformat: format_timestamp, yformat: format_percent};
+ETS_CHART_CONFIG[ETS.in]   = {selector: "#CHART-Time-Rate",
+			      xformat: format_timestamp, yformat: format_rate};
+ETS_CHART_CONFIG[ETS.out]  = {selector: "#CHART-Time-Rate",
+			      xformat: format_timestamp, yformat: format_rate};
 
 function depotService($http, UnisService, CommChannel) {
   var service = {};
   
-  var format_timestamp = function(){
-    return function(d){
-      var ts = d/1e3;
-      return d3.time.format('%X')(new Date(ts));
-    }
-  }
-  
-  var format_GB = function(){
-    return function(d){
-      return (d/1e9).toFixed(2); // GB
-    }
-  }
-  var format_rate = function(){
-    return function(d){
-      return (d/1).toFixed(3);
-    }
-  }
-  
-  var format_percent = function() {
-    return function(d) {return (d*100).toFixed(2)}
-  }
-
-  ETS_CHART_CONFIG[ETS.used] = {selector: "#CHART-Time-GB",
-				xformat: format_timestamp, yformat: format_GB};
-  ETS_CHART_CONFIG[ETS.free] = {selector: "#CHART-Time-GB",
-				xformat: format_timestamp, yformat: format_GB};
-  ETS_CHART_CONFIG[ETS.user] = {selector: "#CHART-Time-Percent",
-				xformat: format_timestamp, yformat: format_percent};
-  ETS_CHART_CONFIG[ETS.sys]  = {selector: "#CHART-Time-Percent",
-				xformat: format_timestamp, yformat: format_percent};
-  ETS_CHART_CONFIG[ETS.in]   = {selector: "#CHART-Time-Rate",
-				xformat: format_timestamp, yformat: format_rate};
-  ETS_CHART_CONFIG[ETS.out]  = {selector: "#CHART-Time-Rate",
-				xformat: format_timestamp, yformat: format_rate};
   
   // depots is a map of service IDs
   service.depots = {};
@@ -198,7 +198,7 @@ function depotService($http, UnisService, CommChannel) {
   };
   
   // depot tracking service waits until UNIS has data
-  UnisService.init.then(function() {
+  UnisService.init().then(function() {
     console.log("Depot service initializing...");
     
     UnisService.services.forEach(function(s) {

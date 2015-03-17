@@ -10,9 +10,9 @@ angular.module('periApp', ['ngRoute',
 			   'ngAnimate',
 			   'schemaForm',
 			   'ui.utils', 
-         'ui.bootstrap',
-         'ui.bootstrap-slider',
-         'nvd3ChartDirectives',
+                           'ui.bootstrap',
+                           'ui.bootstrap-slider',
+                           'nvd3ChartDirectives',
 			   'pubsub',
 			   'main',
 			   'unis',
@@ -27,7 +27,7 @@ angular.module('periApp', ['ngRoute',
   .config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
       function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
         cfpLoadingBarProvider.includeSpinner = false;
-
+        
         $routeProvider.
     when('/', {
       templateUrl: 'views/main.html',
@@ -38,7 +38,7 @@ angular.module('periApp', ['ngRoute',
     controller: 'DepotController',
     resolve: {
       'unis': function(UnisService) {
-        return UnisService.init
+        return UnisService.init()
       }}
   }).
   when('/depots/:id', {
@@ -46,7 +46,7 @@ angular.module('periApp', ['ngRoute',
     controller: 'DepotController',
     resolve: {
       'unis': function(UnisService) {
-        return UnisService.init
+        return UnisService.init()
       }}
   }).
   when('/map/', {
@@ -54,7 +54,7 @@ angular.module('periApp', ['ngRoute',
     controller: 'MapController',
     resolve: {
       'unis': function(UnisService) {
-        return UnisService.init
+        return UnisService.init()
       }}
   }).
   when('/map/:id', {
@@ -62,7 +62,7 @@ angular.module('periApp', ['ngRoute',
     controller: 'MapController',
     resolve: {
       'unis': function(UnisService) {
-        return UnisService.init
+        return UnisService.init()
       }}
   }).
   when('/browser/',{

@@ -271,27 +271,29 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   });
   
   // We start here when the service is instantiated
-  service.init = $q.all([
-    $http.get('/api/nodes', { cache: true}),
-    $http.get('/api/ports', { cache: true}),
-    $http.get('/api/measurements', { cache: true}),
-    $http.get('/api/metadata', { cache: true}),
-    $http.get('/api/services', { cache: true})
-  ]).then(function(res) {
-    service.nodes = getUniqueById(res[0].data);
-    service.ports = getUniqueById(res[1].data);
-    service.measurements = getUniqueById(res[2].data);
-    service.metadata = getUniqueById(res[3].data);
-    service.services = getUniqueByField(res[4].data, 'accessPoint');
+  service.init = function() {
+    return $q.all([
+      $http.get('/api/nodes', { cache: true}),
+      $http.get('/api/ports', { cache: true}),
+      $http.get('/api/measurements', { cache: true}),
+      $http.get('/api/metadata', { cache: true}),
+      $http.get('/api/services', { cache: true})
+    ]).then(function(res) {
+      service.nodes = getUniqueById(res[0].data);
+      service.ports = getUniqueById(res[1].data);
+      service.measurements = getUniqueById(res[2].data);
+      service.metadata = getUniqueById(res[3].data);
+      service.services = getUniqueByField(res[4].data, 'accessPoint');
 
-    SocketService.emit('service_request', {});
-    SocketService.emit('node_request', {});
-    SocketService.emit('port_request', {});
-    SocketService.emit('measurement_request', {});
-    SocketService.emit('metadata_request', {});
-    
-    finish();
-  });
+      SocketService.emit('service_request', {});
+      SocketService.emit('node_request', {});
+      SocketService.emit('port_request', {});
+      SocketService.emit('measurement_request', {});
+      SocketService.emit('metadata_request', {});
+      
+      finish();
+    });
+  };
     
   return service;
 }

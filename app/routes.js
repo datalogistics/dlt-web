@@ -397,7 +397,9 @@ module.exports = function(app) {
       }
     });
   });
-
+  app.get('/popup/*', function(req,res) {
+    res.sendfile('./public/popup.html');
+  });
   app.get('*', function(req, res) {
     res.sendfile('./public/index.html');
   });
