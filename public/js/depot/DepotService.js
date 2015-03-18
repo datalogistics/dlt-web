@@ -21,7 +21,23 @@ var format_timestamp = function(){
     return d3.time.format('%X')(new Date(ts));
   }
 }
+ETS_CHART_CONFIG['used'] = {selector: "#CHART-Time-GB",
+			      xformat: format_timestamp, yformat: format_GB};
+ETS_CHART_CONFIG['free'] = {selector: "#CHART-Time-GB",
+			      xformat: format_timestamp, yformat: format_GB};
+ETS_CHART_CONFIG['user'] = {selector: "#CHART-Time-Percent",
+			      xformat: format_timestamp, yformat: format_percent};
+ETS_CHART_CONFIG['system']  = {selector: "#CHART-Time-Percent",
+			      xformat: format_timestamp, yformat: format_percent};
+ETS_CHART_CONFIG['in']   = {selector: "#CHART-Time-Rate",
+			      xformat: format_timestamp, yformat: format_rate};
+ETS_CHART_CONFIG['out']  = {selector: "#CHART-Time-Rate",
+			      xformat: format_timestamp, yformat: format_rate};
 
+function getETSChartConfig(key){  
+  var arr = key.split(":");
+  return ETS_CHART_CONFIG[arr[arr.length-1]];
+};
 var format_GB = function(){
   return function(d){
     return (d/1e9).toFixed(2); // GB

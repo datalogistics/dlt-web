@@ -49,7 +49,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
         }
       }
 
-      var chartconfig = ETS_CHART_CONFIG[eventType]
+      var chartconfig = getETSChartConfig(eventType);
       d3.select(chartconfig.selector).attr("style", "")
       
       UnisService.getDataId(metadata_id, null, function(data) {
@@ -144,7 +144,9 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   $scope.getMetadataShortET = function(md, s) {
     var arr = md.eventType.split(':');
     if (MY_ETS.indexOf(md.eventType) >= 0) {
-      return arr.pop() + " (" + (s.depot[md.eventType]/1e9).toFixed(0) + ")";
+      var ss = 0 ;
+      try{ ss = s.depot[md.eventType] } catch(e){};
+      return arr.pop() + " (" + (ss/1e9).toFixed(0) + ")";
     }
     return arr.pop();
   };
@@ -156,7 +158,9 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   };
   
   $scope.showData = function(metadata , name , buttonName) {
-    if (false) {
+    // TODO add a way to configure which labels or event types open up in a dialog and which open in a new window
+    // Maybe give a button which can be used to toggle behavior
+    if (true) {
       var params = {
         id : metadata.id,
         name : name ,

@@ -1,22 +1,27 @@
 function depotNewWinGraphController($scope, $routeParams, $location, $filter, $rootScope,$modal, UnisService) {
   console.log($routeParams);
   var metadata_id = $routeParams.id;
-    if (metadata_id) {
-
+  var name = $routeParams.name;
+  var buttonName = $routeParams.buttonName;
+  if (metadata_id) {    
     $scope.eventType = [];
+    $scope.metadataId = metadata_id;
+    $scope.depotInstitutionName = name;
+    $scope.dialogButtonName = buttonName;
 
     UnisService.getMetadataId(metadata_id, function(metadata) {
       var eventType = metadata.eventType;
-      var arrayData = [];
-      arrayData.max = 0;
-
       for (i=0; i< metadata.length; i++) {
-        if (eventType === undefined) {
-          eventType = metadata[i].eventType
+        if (!eventType) {
+          eventType = metadata[i].eventType;
         }
       }
 
-      var chartconfig = ETS_CHART_CONFIG[eventType]
+      var arrayData = [];
+      arrayData.max = 0;
+
+
+      var chartconfig = getETSChartConfig(eventType);
       d3.select(chartconfig.selector).attr("style", "")
       
       UnisService.getDataId(metadata_id, null, function(data) {
