@@ -19,7 +19,7 @@ a.header {
   color: #f5f4ec;
 }
 
-a.header:hover {
+a.header:focus,a.header:hover {
   color: #990000;
   background: #f5f4ec;
 }
