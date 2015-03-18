@@ -271,8 +271,9 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   });
   
   // We start here when the service is instantiated
+  var initServicePromise;
   service.init = function() {
-    return $q.all([
+    initServicePromise = initServicePromise || $q.all([
       $http.get('/api/nodes', { cache: true}),
       $http.get('/api/ports', { cache: true}),
       $http.get('/api/measurements', { cache: true}),
@@ -290,9 +291,9 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       SocketService.emit('port_request', {});
       SocketService.emit('measurement_request', {});
       SocketService.emit('metadata_request', {});
-      
       finish();
     });
+    return initServicePromise;
   };
     
   return service;
