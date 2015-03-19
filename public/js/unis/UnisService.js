@@ -107,7 +107,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       });
   };
   
-  service.getDataId = function(id, n, cb , unName) {
+  // Note: getting also invokes subscription
+  service.getDataId = function(id, n, cb, uname) {
     var qstr = '/api/data/' + id;
     if (!n) {
       n = 300;
@@ -116,13 +117,13 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     $http.get(qstr).success(function(data) {
       //console.log('HTTP Data Response: ' + data);
       cb(data);
-      service.subDataId(id, cb, unName);
+      service.subDataId(id, cb, uname);
     }).error(function(data) {
       console.log('HTTP Data Error: ' + data);
     });
   };
 
-  service.subDataId = function(id, cb,uname) {
+  service.subDataId = function(id, cb, uname) {
     uname = uname || "__nvrDelete"+ Math.random();
     if (id in dataIdCbMap) {
       dataIdCbMap[id][uname] = cb;      

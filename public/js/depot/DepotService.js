@@ -12,15 +12,30 @@ var ETS = {
   'in'  : "ps:tools:blipp:linux:network:utilization:bytes:in",
   'out' : "ps:tools:blipp:linux:network:utilization:bytes:out"
 };
-var MY_ETS = [ETS.used, ETS.free];
 
-var ETS_CHART_CONFIG = {}
+var MY_ETS = [ETS.used, ETS.free, ETS.in, ETS.out];
+
+var format_GB = function(){
+  return function(d){
+    return (d/1e9).toFixed(2); // GB
+  }
+}
+var format_rate = function(){
+  return function(d){
+    return (d/1).toFixed(3);
+  }
+}
+var format_percent = function() {
+  return function(d) {return (d*100).toFixed(2)}
+}
 var format_timestamp = function(){
   return function(d){
     var ts = d/1e3;
     return d3.time.format('%X')(new Date(ts));
   }
 }
+
+var ETS_CHART_CONFIG = {}
 ETS_CHART_CONFIG['used'] = {selector: "#CHART-Time-GB",
 			      xformat: format_timestamp, yformat: format_GB};
 ETS_CHART_CONFIG['free'] = {selector: "#CHART-Time-GB",
@@ -33,26 +48,6 @@ ETS_CHART_CONFIG['in']   = {selector: "#CHART-Time-Rate",
 			      xformat: format_timestamp, yformat: format_rate};
 ETS_CHART_CONFIG['out']  = {selector: "#CHART-Time-Rate",
 			      xformat: format_timestamp, yformat: format_rate};
-
-function getETSChartConfig(key){  
-  var arr = key.split(":");
-  return ETS_CHART_CONFIG[arr[arr.length-1]];
-};
-var format_GB = function(){
-  return function(d){
-    return (d/1e9).toFixed(2); // GB
-  }
-}
-var format_rate = function(){
-  return function(d){
-    return (d/1).toFixed(3);
-  }
-}
-
-var format_percent = function() {
-  return function(d) {return (d*100).toFixed(2)}
-}
-
 ETS_CHART_CONFIG[ETS.used] = {selector: "#CHART-Time-GB",
 			      xformat: format_timestamp, yformat: format_GB};
 ETS_CHART_CONFIG[ETS.free] = {selector: "#CHART-Time-GB",
@@ -66,11 +61,15 @@ ETS_CHART_CONFIG[ETS.in]   = {selector: "#CHART-Time-Rate",
 ETS_CHART_CONFIG[ETS.out]  = {selector: "#CHART-Time-Rate",
 			      xformat: format_timestamp, yformat: format_rate};
 
+function getETSChartConfig(key){  
+  var arr = key.split(":");
+  return ETS_CHART_CONFIG[arr[arr.length-1]];
+};
+
 function depotService($http, UnisService, CommChannel) {
   var service = {};
   
-  
-  // depots is a map of service IDs
+    // depots is a map of service IDs
   service.depots = {};
   
   function getMetadata(s) {
@@ -157,10 +156,13 @@ function depotService($http, UnisService, CommChannel) {
 
   function getValues(depot) {
     var mds = depot.metadata;
+
     // get values for each metadata
     mds.forEach(function(md) {
       if (MY_ETS.indexOf(md.eventType) >= 0) {
-	UnisService.getDataId(md.id, 1, function(data) {
+
+	onData = function(data) {
+	  // in case we do ask for the most recent value right away again...
 	  if (Object.prototype.toString.call(data) === '[object Array]') {
 	    if (data.length) {
 	      depot[md.eventType] = parseInt(data.pop()['value'])
@@ -169,13 +171,17 @@ function depotService($http, UnisService, CommChannel) {
 	      depot[md.eventType] = 0;
 	    }
 	  }
+	  // data from the subscription
 	  else {
+	    // this gets the last element, which is the most recent in a published message
 	    depot[md.eventType] = parseInt(data[md.id].pop()['value'])
 	  }
-	})
+	};
+	
+	UnisService.subDataId(md.id, onData, "depot_"+md.id)
       }
     });
-  }
+  };
 
   function updateDepots(md) {
     if (MY_ETS.indexOf(md.eventType) >= 0) {
