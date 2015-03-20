@@ -175,18 +175,22 @@ function mapPoints(projection, svg, elementId) {
 //width -- how wide to make the map
 //height -- how tall to make the map
 //returns the map projection 
-function baseMap(selector, width, height) {
+function baseMap(selector, width, height, svg) {
   projection = d3.geo.albersUsa()
       .scale(1070)
       .translate([width / 2, height / 2]);
 
 
-  var svg = d3.select(selector).append("svg")
+  if (svg === undefined) {
+    svg = d3.select(selector).append("svg")
                .attr("width", width)
                .attr("height", height)
+  }
   
   var map = svg.append("g")
                .attr("id", "map")
+               .attr("width", width)
+               .attr("height", height)
 
   map.append("g").attr("id", "states")
   svg.append("g").attr("id", "overlay")

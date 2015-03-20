@@ -2,7 +2,12 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   var sessionIds = $location.search().sessionIds.split(",")
   console.log("ids:", sessionIds )
 
-  var map = baseMap("#downloadMap", 960, 500);
+  var svg = d3.select("#downloadMap").append("svg")
+               .attr("width", 1200)
+               .attr("height", 500)
+
+  var map = baseMap("#downloadMap", 960, 500, svg);
+
   $scope.services = UnisService.services;
   $http.get('/api/natmap')
     .then(function(res) {
@@ -199,12 +204,17 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   }
 
   function initProgressTarget(svg, width, height, sessionId, fileName) {
+    var pad = 15;
+
     var allDownloads = svg.select("#downloads")
     if (allDownloads.empty()) {allDownloads = svg.append("g").attr("id", "downloads")}
 
-    var count = allDownloads.select(".download-target").size()
-    var left = svg.attr("width")-((width+15)*count) //requested width, plus a pad...asumes all are the same width
+    var mapWidth = parseInt(svg.select("#map").attr("width"))
+
+    var count = allDownloads.selectAll(".download-target").size()
+    var left = mapWidth-(4*pad)+((width+pad)*count) //Start near the edge of the map, move right 
     var top = svg.attr("height")/2 - height/2
+
 
     var g = allDownloads.append("g").attr("class", "download-entry")
     g.attr("transform", "translate(" + left + "," + top + ")")
@@ -229,5 +239,4 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
         .attr("fill", "#777")
         .attr("writing-mode", "tb")
   }
-
 } // end controller
