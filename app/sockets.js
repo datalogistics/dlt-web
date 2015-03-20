@@ -21,8 +21,8 @@ var WebSocket = require('ws')
 
 WebSocket.super_.defaultMaxListeners = 0;
 
-var timeout        = 5 * 1e6;      // clear client socket after 5 minutes of inactivity
-var check_interval = 2 * 1e6;      // check all registered clients every 2 minutes
+var timeout        = 5 * (6 * 1e4);    // clear client socket after 5 minutes of inactivity
+var check_interval = 2 * (6 * 1e4);    // check all registered clients every 2 minutes
 
 setInterval(function(){
   var time = (new Date()).getTime();
@@ -35,9 +35,16 @@ setInterval(function(){
     lastUsedTime = rClientsLastUsedMap[id];
     if ( (time - lastProgressTime) > timeout || (time - lastUsedTime) > timeout ) {
       registeredClientMap[id] = undefined ;
+      
+      //Send a 'clear message' 
+      var msg = {sessionId: id, status: "timeout"}
+      registeredDownloadClients.forEach(function(client) {
+        client.emit('peri_download_clear', msg); 
+      })
     }
   };
 }, check_interval);
+
 
 // Storing all the data in memory -- ya seriously gonna do that - Data manually deleted in 15 minutes
 // This map stores the fileData which is used to retrieve it.
@@ -667,6 +674,7 @@ module.exports = function(client) {
       console.log("Message received about un-registered download: ", data.sessionId)
       return
     }
+
     var messageName = 'peri_download_progress' ,
     dataToBeSent = data;
     dataToBeSent.size = serve.size;
@@ -701,6 +709,8 @@ function clearDownload(sessionId, connectionId, reason) {
   registeredDownloadClients.forEach(function(client) {
     client.emit('peri_download_clear', msg); 
   })
+
+  if (connectionId === undefined) {return}
 
   var reportingSessions = progressReportingConnections[connectionId] 
   if (reportingSessions === undefined) {
