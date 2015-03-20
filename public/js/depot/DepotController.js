@@ -166,7 +166,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
         name : name ,
         buttonName : buttonName
       }
-      $window.open('/popup/graphs?'+$.param(params));
+      window.open('/popup/graphs?'+$.param(params),"Graph", "width=600,height=530,resizable,scrollbars,status");
     } else {
       $scope.metadataId = metadata.id;
       $scope.depotInstitutionName = name;
