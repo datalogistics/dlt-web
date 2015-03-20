@@ -56,4 +56,9 @@ function downloadController($scope, SocketService) {
   })
 
 
+  $scope.hideCurrent = function() {
+    console.log("hide current")
+    $scope.downloads.splice(0, $scope.downloads.length)
+  }
+
 }
