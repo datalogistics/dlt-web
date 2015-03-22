@@ -47,7 +47,8 @@ ngJSTree.directive('jsTree', ['$http', function($http) {
 
         if (config.plugins.indexOf('checkbox') >= 0) {
           config.checkbox = $.extend(config.checkbox, {
-              tie_selection : false 
+            tie_selection : false ,
+            three_state: false
           });
           
           config.checkbox.keep_selected_style = false;

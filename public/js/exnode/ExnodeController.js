@@ -31,7 +31,7 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
       value : ""
     };
     $scope.fieldArr.push(x);        
-  };
+  };  
   $scope.addCustomField = function(){
     var x = {
       id : $scope.fieldArr.length,
@@ -126,7 +126,14 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   };
   
   SocketService.on('exnode_childFiles', childFileHandler);
-  
+
+  $scope.clearState = function(a,b){
+    var info = b.node.original;
+    if (!info.isFile) {
+      var jstr = jQuery.jstree.reference(this);
+      jstr.get_node(info.id).state.loaded = false;
+    }
+  }
   function selectNodeGen(prefix) {
     return function(a,b){
       var info = b.node.original;
