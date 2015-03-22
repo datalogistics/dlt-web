@@ -342,11 +342,14 @@ function backplaneLinks(map, natmap) {
 
   function link_color(type) {
     if (type == "ion") {
-      return "#102D46"
+	return "#494F7C"
+//	return "#102D46"
     } else if (type == "al2s") {
-      return "#5A788E"
+	return "#4A8C52"
+//	return "#5A788E"
     } else {
-      return "#6E5D5C"
+	return "#AA8739"
+//	return "#6E5D5C"
     }
   }
 
