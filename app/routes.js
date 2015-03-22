@@ -334,7 +334,7 @@ module.exports = function(app) {
       "tamu-mizz" : {
         "type": "al2s",
         "capacity": 200000,
-        "endpoint_a": "128.194.6.134",
+        "endpoint_a": "128.194.6.159",
         "endpoint_z": "128.206.119.41"
       },
       "mizz-nyser" : {
