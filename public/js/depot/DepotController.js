@@ -145,7 +145,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     var arr = md.eventType.split(':');
     if (MY_ETS.indexOf(md.eventType) >= 0) {
       var ss = 0 ;
-      try{ ss = s.depot[md.eventType] } catch(e){};
+      try{ ss = s.depot[md.eventType] || ss; } catch(e){};
       return arr.pop() + " (" + (ss/1e9).toFixed(0) + ")";
     }
     return arr.pop();
