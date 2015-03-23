@@ -70,7 +70,7 @@ function depotNewWinGraphController($scope, $routeParams, $location, $filter, $r
               if (arr[1] > arrayData.max) {
                 arrayData.max = arr[1];
               }
-              if (arr && arr[0] && arr[1]) {
+              if (arr && (arr[0] || arr[0] == 0) &&  (arr[1]==0 || arr[1])) {
                 oldx = arr.x , oldy = arr.y;
                 arrayData.push(arr);
               }

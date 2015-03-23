@@ -4,7 +4,7 @@
  * DepotController.js
  */
 function getRate(x,y,oldx,oldy) {
-  var timeD = x/1e6 - oldx/1e6
+  var timeD = x/1e6 - oldx/1e6;
   if (oldx >= x || timeD == 0) {
     console.log("No Change");
     return;
@@ -98,7 +98,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
               if (arr[1] > arrayData.max) {
                 arrayData.max = arr[1];
               }
-              if (arr && arr[0] && arr[1]) {
+              if (arr && (arr[0] || arr[0] == 0) &&  (arr[1]==0 || arr[1])) {
                 oldx = arr.x , oldy = arr.y;
                 arrayData.push(arr);
               }
