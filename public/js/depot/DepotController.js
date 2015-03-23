@@ -98,7 +98,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
               if (arr[1] > arrayData.max) {
                 arrayData.max = arr[1];
               }
-              if (arr && (arr[0] || arr[0] == 0) &&  (arr[1]==0 || arr[1])) {
+              if (arr && (arr[0] || arr[0] == 0) &&  (arr[1]==0 || arr[1])) {                
                 oldx = arr.x , oldy = arr.y;
                 arrayData.push(arr);
               }
@@ -109,7 +109,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
         if (isRate) {
           // Use arraydata max to scale graph
           var max = arrayData.max;
-          var label = "Bytes ";
+          var label = "Bytes "; 
           var divValue = 1 ;
           if (max > 1e3 && max < 1e6) {
             // Make it kb
@@ -145,8 +145,29 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     var arr = md.eventType.split(':');
     if (MY_ETS.indexOf(md.eventType) >= 0) {
       var ss = 0 ;
-      try{ ss = s.depot[md.eventType] || ss; } catch(e){};
-      return arr.pop() + " (" + (ss/1e9).toFixed(0) + ")";
+      if (/network:/.test(md.eventType)) {        
+        try{ ss = ((s.depot[md.eventType] || ss)/1).toFixed(0);} catch(e){};
+        var divValue,label; 
+        if (ss > 1e3 && ss < 1e6) {
+          // Make it kb
+          label = "K";
+          divValue = 1e3 ;
+        } else if(ss >= 1e6 && ss < 1e9) {
+          label = "M";
+          divValue = 1e6;
+        } else if (ss >= 1e9) {
+          label = "G";
+          divValue = 1e9;
+        } else {
+          divValue= 1;
+          label = "B";
+        }
+        ss = (ss/divValue).toFixed(2) + " "+ label;
+      }
+      else {
+        try{ ss = ((s.depot[md.eventType] || ss)/1e9).toFixed(0);} catch(e){};
+      }
+      return arr.pop() + " (" + ss + ")";
     }
     return arr.pop();
   };

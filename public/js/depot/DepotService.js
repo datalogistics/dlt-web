@@ -160,25 +160,41 @@ function depotService($http, UnisService, CommChannel) {
     // get values for each metadata
     mds.forEach(function(md) {
       if (MY_ETS.indexOf(md.eventType) >= 0) {
-
 	onData = function(data) {
+          var isRate = false;
+          if (/network:/.test(md.eventType)) {
+            isRate = true;
+          }
 	  // in case we do ask for the most recent value right away again...
-	  if (Object.prototype.toString.call(data) === '[object Array]') {
-	    if (data.length) {
-	      depot[md.eventType] = parseInt(data.pop()['value'])
-	    }
-	    else {
-	      depot[md.eventType] = 0;
-	    }
-	  }
-	  // data from the subscription
-	  else {
-	    // this gets the last element, which is the most recent in a published message
-	    depot[md.eventType] = parseInt(data[md.id].pop()['value'])
-	  }
-	};
-	
-	UnisService.subDataId(md.id, onData, "depot_"+md.id)
+          var depotData = [];
+          var oldDepotDt = [];
+          if($.isArray(data)) {
+            // data from the subscription
+            depotData = data.pop();
+            oldDepotDt = data[data.length-1];
+          } else {
+            // this gets the last element, which is the most recent in a published message
+            depotData = data[md.id].pop();
+            oldDepotDt = data[md.id][data[md.id].length-1];
+          }
+          var y = Number(depotData.value) || 0;
+          if (isRate) {
+            var x = Number(depotData.ts) || 0;
+            var oldx = Number(oldDepotDt.ts) || 0;
+            var oldy = Number(oldDepotDt.value) || 0;            
+            var timeD = x/1e6 - oldx/1e6;
+            // Now use this old value to calculate rate
+            var yVal;
+            if (Math.round(timeD) == 0)
+              yVal = y;
+            else 
+              yVal = ((y - oldy) / timeD).toFixed(2);
+            depot[md.eventType] =  yVal;
+          } else {            
+            depot[md.eventType] = y;
+          }
+	};	
+	UnisService.subDataId(md.id, onData, "depot_"+md.id);
       }
     });
   };
