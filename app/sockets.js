@@ -106,7 +106,9 @@ var pathIdObj = (function(){
             var sockets = socketMap[path].sockets;
             // Emit message to kill the channel as well
             sockets.map(function(socket){
-              socket.send(JSON.stringify({ id : clientId , disconnect : true }));            
+              // Checking if socket is open before sending for cleanup - 1 implies it is open
+              if (socket.readyState == 1)
+                socket.send(JSON.stringify({ id : clientId , disconnect : true }));            
             });
           };
           break;
@@ -125,7 +127,10 @@ var pathIdObj = (function(){
           var sockets = socketMap[path].sockets;
           // Emit message to kill the channel as well
           sockets.map(function(socket){
-            socket.send(JSON.stringify({ id :x.__id__, disconnect : true }));            
+            // Checking if socket is open before sending for cleanup - 1 implies it is open
+            if (socket.readyState == 1) {
+              socket.send(JSON.stringify({ id :x.__id__, disconnect : true }));
+            }
           });
         };
       };
