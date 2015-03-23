@@ -70,9 +70,6 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	  $scope.eventType = eventType;
         } else {
           arr = data[metadata_id];
-          // Splice the existing array by that many entries so that the graph actually moves instead of compressing
-          // There might be a much better way to do this, e.g time difference based - this causes ugly shakes
-          arrayData.splice(0,arr.length);
           // Get the max in this array          
           arrayData.forEach(function(x) {
             if (x[1] > max) {
@@ -85,6 +82,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
           $scope.yAxisLabel= "Bytes per second";
         }
         var oldx, oldy;
+        var spliceCount = 0;
         arr.forEach(function(key) {
           var x = Number(key.ts);
           var y = Number(key.value);
@@ -98,13 +96,18 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
               if (arr[1] > arrayData.max) {
                 arrayData.max = arr[1];
               }
-              if (arr && (arr[0] || arr[0] == 0) &&  (arr[1]==0 || arr[1])) {                
+              if (arr && (arr[0] || arr[0] == 0) &&  (arr[1]==0 || arr[1])) {
+                spliceCount++;
                 oldx = arr.x , oldy = arr.y;
                 arrayData.push(arr);
               }
             }
           }
         });
+        // Splice the existing array by that many entries so that the graph actually moves instead of compressing
+        // There might be a much better way to do this, e.g time difference based - this causes ugly shakes
+        arrayData.splice(0,spliceCount);
+
         // Use the max to change graph text and formatter function as required
         if (isRate) {
           // Use arraydata max to scale graph
