@@ -246,6 +246,9 @@ text.id {
     font-size: 120px;
     color: grey;
 }
+.avtext.avstext {
+    font-size: 42px;    
+}
 
 .loader {
   font-size: 20px;
