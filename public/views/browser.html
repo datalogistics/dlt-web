@@ -234,10 +234,9 @@
                                 <label class="btn btn-primary" ng-model="showModel" btn-radio="'exnodes'">Show in EODN</label>
                             </div>
                         </div>
-                        <div class="row top10 imageSet" >
-                            
-                            <div class="col-md-4" ng-repeat="(key,val) in usgsSearchRes">                            
-                                <div ng-if="showModel != 'exnodes' || val.isExnode == true">
+                        <div class="row top10 imageSet" >                            
+                            <div class="col-md-4" ng-repeat="(key,val) in usgsSearchRes" ng-if="showModel != 'exnodes' || val.isExnode == true">
+                                <div>
                                     <img src="{{val.browseURL}}" class="img-responsive cursorPointer"                                 
                                          href="{{val.browseURL}}"
                                          ng-click="showImage($event);$event.preventDefault();" />
@@ -258,7 +257,7 @@
                                                             <div class="" ng-repeat="k in val.exFileArr">
                                                                 <label>
                                                                     <div class="">
-                                                                        <input id type="checkbox" ng-value="k.url" />
+                                                                        <input id type="checkbox" ng-value="k.selfRef" />
                                                                         {{k.name}}
                                                                     </div>
                                                                 </label>
