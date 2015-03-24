@@ -143,7 +143,12 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     });
     $scope.metadataId = undefined;
   }
-  
+
+  $scope.getButtonName = function(md, s) {
+    var arr = md.eventType.split(':');
+    return arr.pop();
+  };
+
   $scope.getMetadataShortET = function(md, s) {
     var arr = md.eventType.split(':');
     if (MY_ETS.indexOf(md.eventType) >= 0) {
