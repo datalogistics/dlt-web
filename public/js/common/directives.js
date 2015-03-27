@@ -19,7 +19,10 @@ function formatRate(ret) {
 angular.module('avDirective', [])
   .controller('avController', function($scope, $rootScope, $filter, UnisService, DepotService) {
     getDepotCount = function() {
-      return $filter('filter')(UnisService.services, { serviceType: 'ibp_server' }).length;
+      var count = $filter('filter')(UnisService.services, { serviceType: 'ibp_server' }).length;
+      // If count is 0 , its still loading 
+      if (count > 0)
+        return "<div class='avtext'>"+ count + "</div>";        
     };
     getNetworkUsage = function() {
       var ret = 0;
@@ -78,7 +81,9 @@ angular.module('avDirective', [])
       link: function(scope, element, attrs) {
 	function updateValue() {
 	  var val = scope.type.datafn();
-          if (typeof val == "string") {
+          if (!val && val != 0) {
+            scope.dclass = "loader";
+          } else if (typeof val == "string") {
             scope.dclass = "avtext avstext";
 	    scope.value  = val;
           } else {
