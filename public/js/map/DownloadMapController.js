@@ -1,5 +1,7 @@
 function downloadMapController($scope, $location, $http, UnisService, SocketService) {
-  var sessionIds = $location.search().sessionIds.split(",")
+  var allIds = $location.search().sessionIds
+  if (allIds == undefined) {allIds = ""}
+  var sessionIds = allIds.split(",")
   console.log("ids:", sessionIds )
 
   var svg = d3.select("#downloadMap").append("svg")
@@ -36,14 +38,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     // Set this data in scope to display file info
     console.log('Download file data ' , data);
     if (data.isError) {return;}
-    initProgressTarget(map.svg, 30, 300, data.sessionId, data.filename, data.size)
-    $scope.downloads[data.sessionId] = {
-      filename: data.filename,
-      size: data.size,
-      connections: data.connections,
-      speed: "--",
-      percent: "--"
-    }
+    initProgressTarget(map.svg, 200, 30, data.sessionId, data.filename, data.size)
   });
 
   SocketService.on("peri_download_clear", function(data){
@@ -53,10 +48,10 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   var rateTracker = {}
   SocketService.on("peri_download_progress",function(data){
     var sessionId = data.sessionId
-    var s = data.size;
+    var size = data.size;
     var host = data.host;
-    var progress = (data.length / s ) * 100 ;
-    var offset = (data.offset/ s )  * 100;
+    var progress = (data.length / size) * 100 ;
+    var offset = (data.offset/ size)  * 100;
     if (isNaN(progress)) {progress = 0;}
 
     var rateInfo = rateTracker[sessionId] || {minTime: data.timestamp, maxTime: data.timestamp+1, totalBytes:0}
@@ -65,12 +60,9 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     rateInfo.totalBytes = rateInfo.totalBytes + data.length
     rateTracker[sessionId] = rateInfo
 
-    var entry = $scope.downloads[data.sessionId]
-    if (entry !== undefined) {
-      entry.percent = ((rateInfo.totalBytes/entry.size)*100).toFixed(1)
-      entry.speed = formatRate(data.sesisonId, rateInfo)
-      $scope.downloads[data.sessionId] = entry //forces update on the view...
-    }
+    var percent = ((rateInfo.totalBytes/size)*100).toFixed(1)
+    var speed = formatRate(data.sesisonId, rateInfo)
+    updateProgressTarget(svg, data.sessionId, percent, speed)
 
 
     //TODO: This skip-if-not found is because there is no way to un-register a socket on the node side
@@ -102,31 +94,31 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     var suffix = " B/sec"
 
     if (magnitude == 1) {
-      suffix = " KB/sec (avg)"
+      suffix = " KB/sec"
       rate = rate/1024
     } else if (magnitude == 2) {
-      suffix = " MB/sec (avg)"
+      suffix = " MB/sec"
       rate = rate/Math.pow(1024,2)
     } else if (magnitude > 2) {
-      suffix = " GB/sec (avg)"
+      suffix = " GB/sec"
       rate = rate/Math.pow(1024,3)
     }
     return rate.toFixed(1) + suffix
   }
 
-  function downloadFragmentBar(svg, sessionId, barClass, color, barOffset, barHeight) {
-    var downloads = svg.select("#downloads")
+  function downloadFragmentBar(svg, sessionId, barClass, color, barOffset, barSize) {
+    var downloads = svg.select("#downloads").select("#session-"+sessionId).select(".download-ticks")
     var target = svg.select("#" + targetId(sessionId))
-    var targetLeft = parseInt(target.attr("target-left"))
-    var targetWidth = parseInt(target.attr("target-width"))
+    var targetOffset = 0 
+    var targetSize = parseInt(target.attr("target-height"))
 
     downloads.append('rect')
       .attr("class", "download-part")
       .attr("fill", color)
-      .attr("width", targetWidth)
-      .attr("height", barHeight)
-      .attr('x', targetLeft)
-      .attr('y', barOffset);
+      .attr("width", barSize)
+      .attr("height", targetSize)
+      .attr('x', barOffset)
+      .attr('y', targetOffset);
   }
 
 
@@ -142,12 +134,12 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     return color 
   }
 
-  function moveLineToProgress(svg, sessionId, mapNode, barOffset, barHeight){
+  function moveLineToProgress(svg, sessionId, mapNode, barOffset, barSize){
     var target = svg.select("#" + targetId(sessionId))
+    var targetTop = parseInt(target.attr("target-top"))
     var targetLeft = parseInt(target.attr("target-left"))
     var targetHeight = parseInt(target.attr("target-height"))
 
-    var end = [targetLeft, barOffset];
     var mapGroup = d3.select(mapNode.node().parentNode)
     var start = d3.transform(mapGroup.attr("transform")).translate
 
@@ -168,9 +160,9 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       .attr("stroke-width", 2)
       .attr("stroke", color)
       .transition().duration(500)
-         .attr('x2',end[0])
-         .attr('y2', end[1])
-      .each("end", function(){downloadFragmentBar(svg, sessionId, "source-found-segment", color, barOffset, barHeight)})
+         .attr('x2',barOffset+targetLeft)
+         .attr('y2', targetTop)
+      .each("end", function(){downloadFragmentBar(svg, sessionId, "source-found-segment", color, barOffset, barSize)})
       .transition().duration(500).remove();
   }
 
@@ -178,46 +170,45 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   // id -- Id of the source node
   // progress -- Percentage of the file just read
   // offset -- Percent offset of the newest chunk
-  function doProgressWithOffset(svg, sourceId, sessionId, progress , offsetPercent){
+  function doProgressWithOffset(svg, sourceId, sessionId, progress, offsetPercent){
     //Calculate geometry of the progress bar chunk
     var target = svg.select("#" + targetId(sessionId))
     if (target.empty()) {console.error("Failed attempt to update " + sessionId); return;}
 
-    var targetTop = parseInt(target.attr("target-top"))
-    var targetLeft = parseInt(target.attr("target-left"))
-    var targetHeight = parseInt(target.attr("target-height"))
+    var targetSize = parseInt(target.attr("target-width"))
 
-    var ratio = targetHeight / 100 ;
-    var barOffset = targetTop + (offsetPercent || 0) * ratio;
-    var barHeight = ratio * progress;
-    if (barHeight == 0 || isNaN(barHeight)) {barHeight=.1}
+    var ratio = targetSize / 100 ;
+    var barOffset = (offsetPercent || 0) * ratio;
+    var barSize = ratio * progress;
+    if (barSize == 0 || isNaN(barSize)) {barSize = .1}
 
     //Find the source location node
     var nodes = svg.selectAll(".depotLocation").filter(function(d) {return this.getAttribute("name") == sourceId})
     if (nodes.empty()) {
       console.log("DownloadProgress: Node not found " + sourceId)
-      downloadFragmentBar(svg, sessionId, "source-not-found-segment", "#222222", barOffset, barHeight)
+      downloadFragmentBar(svg, sessionId, "source-not-found-segment", "#222222", barOffset, barSize)
       return;}
 
     var mapNode = d3.select(nodes[0][0]) //ensures we have exactly one item as the source
-    moveLineToProgress(svg, sessionId, mapNode, barOffset, barHeight);
+    moveLineToProgress(svg, sessionId, mapNode, barOffset, barSize);
   }
 
+  //TODO: Add size...probably take the whole info object as an arg instead of just parts...
   function initProgressTarget(svg, width, height, sessionId, fileName) {
-    var pad = 15;
-
     var allDownloads = svg.select("#downloads")
     if (allDownloads.empty()) {allDownloads = svg.append("g").attr("id", "downloads")}
 
     var mapWidth = parseInt(svg.select("#map").attr("width"))
 
     var count = allDownloads.selectAll(".download-target").size()
-    var left = mapWidth-(4*pad)+((width+pad)*count) //Start near the edge of the map, move right 
-    var top = svg.attr("height")/2 - height/2
+    var left = mapWidth + 150
+    var top = 100 
 
 
-    var g = allDownloads.append("g").attr("class", "download-entry")
-    g.attr("transform", "translate(" + left + "," + top + ")")
+    var g = allDownloads.append("g")
+                 .attr("class", "download-entry")
+                 .attr("id", "session-"+sessionId)
+                 .attr("transform", "translate(" + left + "," + top + ")")
 
     g.append("rect")
         .attr("id", targetId(sessionId))
@@ -231,12 +222,37 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
         .attr("target-left", left)
         .attr("progress-start", 0)
 
+    g.append("g").attr("class", "download-ticks")
+
+    g.append("text")
+        .attr("class", "percent-complete")
+        .text("---")
+        .attr("text-anchor", "middle")
+        .attr("fill", "#FFF")
+        .attr("x", width/2)
+        .attr("y", height/2+4)
+    
+    g.append("text")
+        .attr("class", "speed")
+        .text("---")
+        .attr("x", width + 15)
+        .attr("y", height/2+4)
+
     g.append("text")
         .attr("class", "download-label")
         .text(fileName)
-        .attr("baseline-shift", "-4.5px")
-        .attr("text-anchor", "start")
-        .attr("fill", "#777")
-        .attr("writing-mode", "tb")
+        .attr("text-anchor", "left")
+        .attr("x", width + 100)
+        .attr("y", height/2+4)
+
+    
+  }
+
+  function updateProgressTarget(svg, sessionId, percent, speed) {
+    var spd = svg.select("#session-"+sessionId).select(".speed")
+    var pct = svg.select("#session-"+sessionId).select(".percent-complete")
+
+    spd.text(speed)
+    pct.text(percent + " %")
   }
 } // end controller
