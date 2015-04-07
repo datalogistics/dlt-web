@@ -22,8 +22,6 @@ module.exports = function(client) {
                 connections: entry.connections}
       })
 
-    console.log(summary)
-
     client.emit('peri_download_listing', summary)
     rememberListener(client)
   });
@@ -71,11 +69,7 @@ module.exports = function(client) {
     
     console.log("registered new download: ", data.sessionId);
 
-    var oldEntry = downloadStatus[id] || {};
-    var listeners = oldEntry.sessionUpdateListeners || []
-    
     //TODO: Add some session-status tracking information here -- Open, finished, disconnected, timedout???
-    data.sessionUpdateListeners = listeners;
     data.exists = true;
     data.updates = []
     data.lastTouched = Date.now()
@@ -104,7 +98,7 @@ module.exports = function(client) {
    
     downloadListeners.forEach(function(conn) {conn.emit('peri_download_progress', data)})
     status.updates.push(data)
-    status.touched = Date.now()
+    status.lastTouched = Date.now()
   });
 
 
@@ -136,16 +130,16 @@ var check_interval = 1 * (6 * 1e4);    // check all registered clients every min
 setInterval(function(){
   var time = Date.now()
   
-  var sessions = Object.keys(downloadStatus)
-  for (session in sessions) {
+  for (session in downloadStatus) {
     var lastProgressTime = downloadStatus[session].lastTouched
     if ((time - lastProgressTime) > timeout) {
-      downloadStatus[session] = undefined;
+      delete downloadStatus[session] 
 
-      var msg = {sessionId: id, status: "timeout"}
-      registeredDownloadClients.forEach(function(client) {
+      var msg = {sessionId: session, status: "timeout"}
+      downloadListeners.forEach(function(client) {
         client.emit('peri_download_clear', msg); 
       })
+      console.log("Timeout for ", session)
     }
   }
 }, check_interval);
