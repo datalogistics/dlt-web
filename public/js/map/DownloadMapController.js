@@ -38,7 +38,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     // Set this data in scope to display file info
     console.log('Download file data ' , data);
     if (data.isError) {return;}
-    initProgressTarget(map.svg, 200, 30, data.sessionId, data.filename, data.size)
+    initProgressTarget(map.svg, 200, 30, data)
   });
 
   SocketService.on("peri_download_clear", function(data){
@@ -51,7 +51,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     var size = data.size;
     var host = data.host;
     var progress = (data.length / size) * 100 ;
-    var offset = (data.offset/ size)  * 100;
+    var offsetPercent = (data.offset/ size);
     if (isNaN(progress)) {progress = 0;}
 
     var rateInfo = rateTracker[sessionId] || {minTime: data.timestamp, maxTime: data.timestamp+1, totalBytes:0}
@@ -70,10 +70,10 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     //      As is, the unwanted ones just expire when the download is done.  In the mean time, extra messages get sent
     if (sessionIds.indexOf(sessionId) < 0) {return}
 
-    if(progress > 100 && offset > 100){
-      console.log("Incorrect data -- progress: " + progress, "Offset: " + offset)
+    if(progress > 100 && offsetPercent > 1){
+      console.log("Incorrect data -- progress: " + progress, "Offset: " + offsetPercent)
     } else {
-      doProgressWithOffset(map.svg, host, sessionId, progress, offset);
+      doProgressWithOffset(map.svg, host, sessionId, progress, offsetPercent);
     }
   });
 
@@ -134,7 +134,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     return color 
   }
 
-  function moveLineToProgress(svg, sessionId, mapNode, barOffset, barSize){
+  function moveLineToProgress(svg, sessionId, mapNode, offsetPercent, barOffset, barSize){
     var target = svg.select("#" + targetId(sessionId))
     var targetTop = parseInt(target.attr("target-top"))
     var targetLeft = parseInt(target.attr("target-left"))
@@ -160,8 +160,8 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       .attr("stroke-width", 2)
       .attr("stroke", color)
       .transition().duration(500)
-         .attr('x2',barOffset+targetLeft)
-         .attr('y2', targetTop)
+         .attr('x2',barOffset + targetLeft)
+         .attr('y2', targetTop + targetHeight*offsetPercent)
       .each("end", function(){downloadFragmentBar(svg, sessionId, "source-found-segment", color, barOffset, barSize)})
       .transition().duration(500).remove();
   }
@@ -178,7 +178,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     var targetSize = parseInt(target.attr("target-width"))
 
     var ratio = targetSize / 100 ;
-    var barOffset = (offsetPercent || 0) * ratio;
+    var barOffset = (offsetPercent*100|| 0) * ratio;
     var barSize = ratio * progress;
     if (barSize == 0 || isNaN(barSize)) {barSize = .1}
 
@@ -190,19 +190,20 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       return;}
 
     var mapNode = d3.select(nodes[0][0]) //ensures we have exactly one item as the source
-    moveLineToProgress(svg, sessionId, mapNode, barOffset, barSize);
+    moveLineToProgress(svg, sessionId, mapNode, offsetPercent, barOffset, barSize);
   }
 
   //TODO: Add size...probably take the whole info object as an arg instead of just parts...
-  function initProgressTarget(svg, width, height, sessionId, fileName) {
+  function initProgressTarget(svg, width, height, entry) {
+    var sessionId=entry.sessionId
     var allDownloads = svg.select("#downloads")
     if (allDownloads.empty()) {allDownloads = svg.append("g").attr("id", "downloads")}
 
     var mapWidth = parseInt(svg.select("#map").attr("width"))
 
     var count = allDownloads.selectAll(".download-target").size()
-    var left = mapWidth + 150
-    var top = 100 
+    var left = mapWidth + 100
+    var top = 100 + count*(1.5*height)
 
 
     var g = allDownloads.append("g")
@@ -229,23 +230,29 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
         .text("---")
         .attr("text-anchor", "middle")
         .attr("fill", "#FFF")
-        .attr("x", width/2)
+        .attr("x", width/3)
         .attr("y", height/2+4)
-    
+
+    g.append("text")
+        .attr("class", "size")
+        .text((entry.size/1e6).toFixed(1) + " MB")
+        .attr("fill", "#FFF")
+        .attr("x", width/3*2)
+        .attr("y", height/2+4)
+
     g.append("text")
         .attr("class", "speed")
         .text("---")
+        .attr("fill", "#bbb")
         .attr("x", width + 15)
-        .attr("y", height/2+4)
+        .attr("y", height-4)
 
     g.append("text")
         .attr("class", "download-label")
-        .text(fileName)
+        .text(entry.filename)
         .attr("text-anchor", "left")
-        .attr("x", width + 100)
-        .attr("y", height/2+4)
-
-    
+        .attr("x", width + 15)
+        .attr("y", 10)
   }
 
   function updateProgressTarget(svg, sessionId, percent, speed) {
