@@ -49,3 +49,4 @@ server.listen(app.get('port'), function(){
 
 // setup socket.io communication
 io.sockets.on('connection', require('./app/sockets'));
+io.sockets.on('connection', require('./app/downloadSockets'));
