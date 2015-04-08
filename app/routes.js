@@ -16,6 +16,7 @@ var path = require('path')
 , xmlparse = require('xml2js').parseString
 , request = require('request')
 , ejs = require('ejs')
+, usgsapi = require('./usgsapi')
 , q = require('q');
 
 var getHttpOptions = cfg.getHttpOptions;
@@ -397,6 +398,8 @@ module.exports = function(app) {
       }
     });
   });
+  
+  usgsapi.addRoutes('/usgsapi/',app);  
   app.get('/popup/*', function(req,res) {
     res.sendfile('./public/popup.html');
   });
