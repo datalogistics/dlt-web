@@ -1,0 +1,24 @@
+.toggle-details {
+  stroke-width: 2px;
+  stroke: #35A9D3;
+}
+
+.toggle-details-true {
+  fill: #48B3D8;
+}
+
+.toggle-details-true:hover {
+  fill: #2AA3D0;
+}
+
+.toggle-details-false {
+  fill: #FFF;
+}
+
+.toggle-details-false:hover {
+  fill: #BBB;
+}
+
+.inverseText {fill: #FFF; text-anchor: middle;}
+.speed {fill: #BBB; font-size: 10px;}
+.download-lable {fill: #FFF; font-size: 12px;}

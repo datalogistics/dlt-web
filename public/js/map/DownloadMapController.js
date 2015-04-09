@@ -56,6 +56,10 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     //Get updates
     SocketService.on("peri_download_list_info", function(data) {
       console.log("New download received", data)
+      if (sessionIds.length == detailSessions.length) {
+        detailSessions.push(data.sessionId)
+      }
+      sessionIds.push(data.sessionId)
       SocketService.emit("peri_download_request", {id : data.sessionId});
     })
 
@@ -76,14 +80,14 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
   function toggleUpdates(toState) {
     var e = d3.select(this)
-    var newState = toState !== undefined ? toState : e.attr("selected") != "true"
+    var newState = toState !== undefined ? toState : !e.classed("toggle-details-true")
     if (newState == true) {
-      e.attr("selected", "true")
-      e.attr("fill", "#bbb")
+      e.classed("toggle-details-true", true)
+       .classed("toggle-details-false", false)
       showUpdates(e.attr("sessionId"), true)
     } else {
-      e.attr("selected", "false")
-      e.attr("fill", "#fff")
+      e.classed("toggle-details-true", false)
+       .classed("toggle-details-false", true)
       showUpdates(e.attr("sessionId"), false)
     }
   }
@@ -102,8 +106,8 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   function detailNoSessions() {
     detailSessions = []
     svg.selectAll(".toggle-details")
-      .attr("fill", "#fff")
-      .attr("selected", "false")
+      .classed("toggle-details-true", false)
+      .classed("toggle-details-false", true)
   }
 
   $scope.detailAll = detailAllSessions 
@@ -241,7 +245,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       .attr("stroke-width", 2)
       .attr("stroke", color)
       .transition().duration(500)
-//         .attr('x2',barOffset + targetLeft)
          .attr("x2", targetLeft)
          .attr('y2', targetTop + targetHeight*offsetPercent)
       .each("end", function(){downloadFragmentBar(svg, sessionId, "source-found-segment", color, barOffset, barSize)})
@@ -313,46 +316,38 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     g.append("g").attr("class", "download-ticks")
 
     g.append("text")
-        .attr("class", "percent-complete")
+        .attr("class", "percent-complete inverseText")
         .text("---")
-        .attr("text-anchor", "middle")
-        .attr("fill", "#FFF")
         .attr("x", width/3)
         .attr("y", height/2+4)
 
     g.append("text")
-        .attr("class", "size")
+        .attr("class", "size inverseText")
         .text((entry.size/1e6).toFixed(1) + " MB")
-        .attr("fill", "#FFF")
         .attr("x", width/3*2)
         .attr("y", height/2+4)
 
     g.append("text")
         .attr("class", "speed")
         .text("---")
-        .attr("fill", "#bbb")
-        .attr("x", width + 15)
+        .attr("x", width + 20)
         .attr("y", height-4)
 
     g.append("text")
         .attr("class", "download-label")
         .text(entry.filename)
         .attr("text-anchor", "left")
-        .attr("x", width + 15)
+        .attr("x", width + 20)
         .attr("y", 10)
     
     var updates = g.append("rect")
-        .attr("class", "toggle-details")
-        .attr("x", width + 150)
-        .attr("y", height/2)
-        .attr("rx", "2px")
-        .attr("ry", "2px")
+        .attr("class", "toggle-details toggle-details-true")
+        .attr("x", width + 4)
+        .attr("y", height/2-(height/2.5/2))
+        .attr("rx", 2)
+        .attr("ry", 2)
         .attr("width", height/2.5)
         .attr("height", height/2.5)
-        .attr("stroke", "#999")
-        .attr("stroke-width", 2)
-        .attr("fill", "#bbb")
-        .attr("selected", "true")
         .attr("sessionId", sessionId)
         .on('click', toggleUpdates)
   }
