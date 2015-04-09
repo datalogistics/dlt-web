@@ -67,7 +67,6 @@ module.exports = function(client) {
     var conn = data.connections
     var emitData = {sessionId: id, filename: name, size: size, connections: conn};
     
-    console.log("registered new download: ", data.sessionId);
 
     //TODO: Add some session-status tracking information here -- Open, finished, disconnected, timedout???
     data.exists = true;
@@ -80,7 +79,7 @@ module.exports = function(client) {
     var sessionsOnPublisher = downloadPublishers[client.conn.id] || []
     sessionsOnPublisher.push(id)
     downloadPublishers[client.conn.id] = sessionsOnPublisher
-    console.log("Registered for connection", client.conn.id, sessionsOnPublisher)
+    console.log("registered new download: ", data.sessionId);
   });
 
 
@@ -139,7 +138,7 @@ setInterval(function(){
       downloadListeners.forEach(function(client) {
         client.emit('peri_download_clear', msg); 
       })
-      console.log("Timeout for ", session)
+      console.log("Timeout for session: ", session)
     }
   }
 }, check_interval);

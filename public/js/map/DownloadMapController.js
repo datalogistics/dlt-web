@@ -123,7 +123,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
   SocketService.on("peri_download_info", function(data){
     // Set this data in scope to display file info
-    console.log('Download file data ' , data);
     if (data.isError) {return;}
     initProgressTarget(map.svg, 200, 30, data)
   });
