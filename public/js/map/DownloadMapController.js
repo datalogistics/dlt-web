@@ -10,6 +10,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
   var map = baseMap("#downloadMap", 960, 500, svg);
 
+
   $scope.services = UnisService.services;
   $http.get('/api/natmap')
     .then(function(res) {
@@ -25,14 +26,64 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     })
     .then(function(natmap) {backplaneLinks(map, natmap)})
 
+  
+  //Update toggle tracking ----------------------------------------------
+  //keep a list of what should have *details* shown    
+  var detailSessions = sessionIds.slice() //copy...so no toes are stepped upon
+  if (sessionIds.length > 5) { hideAllUpdates() }
 
-// -----------------------------------------------
-// Download Map data acquisition/basic processing
+  function showUpdates(sessionId, show) {
+      if (show == true) {
+        var idx = detailSessions.indexOf(sessionId)
+        if (idx < 0) {detailSessions.push(sessionId)}
+      } else {
+        var idx = detailSessions.indexOf(sessionId)
+        if (idx >= 0) {detailSessions.splice(idx, 1)}
+      }
+      console.log(detailSessions)
+  }
+
+  function toggleUpdates(toState) {
+    var e = d3.select(this)
+    console.log("clicked")
+    var newState = toState !== undefined ? toState : e.attr("selected") != "true"
+    if (newState == true) {
+      e.attr("selected", "true")
+      e.attr("fill", "#bbb")
+      showUpdates(e.attr("sessionId"), true)
+    } else {
+      e.attr("selected", "false")
+      e.attr("fill", "#fff")
+      showUpdates(e.attr("sessionId"), false)
+    }
+  }
+
+  function showAllUpdates() {
+    console.log("showing all")
+    detailSessions = []
+    var all = svg.selectAll(".toggle-details")
+    all.each(function (d, i) {
+      var item = d3.select(this)
+      toggleUpdates.call(this, true)
+    })
+  }
+
+  function hideAllUpdates() {
+    console.log("hiding all")
+    detailSessions = []
+    svg.selectAll(".toggle-details")
+      .attr("fill", "#fff")
+      .attr("selected", "false")
+  }
+   
+  $scope.hideAll = hideAllUpdates
+  $scope.showAll = showAllUpdates
+  
+  
+  //Mapping of downloads ----------------------------------------------
   var getAccessIp = function(x){
     return ((x.accessPoint || "").split("://")[1] || "").split(":")[0] || ""; 
   };
-
-  $scope.downloads = {}
 
   SocketService.on("peri_download_info", function(data){
     // Set this data in scope to display file info
@@ -64,16 +115,13 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     var speed = formatRate(data.sesisonId, rateInfo)
     updateProgressTarget(svg, data.sessionId, percent, speed)
 
-
-    //TODO: This skip-if-not found is because there is no way to un-register a socket on the node side
-    //      Doing so would probably require recording client ids on the client, and unregistering them by id on page close 
-    //      As is, the unwanted ones just expire when the download is done.  In the mean time, extra messages get sent
-    if (sessionIds.indexOf(sessionId) < 0) {return}
-
+    if (sessionIds.indexOf(sessionId) < 0) {return} // Actively ignore this item entirely...
+    
     if(progress > 100 && offsetPercent > 1){
       console.log("Incorrect data -- progress: " + progress, "Offset: " + offsetPercent)
     } else {
-      doProgressWithOffset(map.svg, host, sessionId, progress, offsetPercent);
+      var detail = detailSessions.indexOf(sessionId) >= 0
+      doProgressWithOffset(map.svg, host, sessionId, progress, offsetPercent, detail);
     }
   });
 
@@ -87,7 +135,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
   // -------------------------------------------
   //   Download map visualization components
-  function targetId(id) {return "download-target-"+id;}
+  function groupId(id) {return "sesison-"+id;}
   function formatRate(sessionId, rateInfo) {
     var rate = rateInfo.totalBytes/((rateInfo.maxTime - rateInfo.minTime)/1000)
     var magnitude = Math.floor(Math.log(rate)/Math.log(1024))
@@ -107,8 +155,9 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   }
 
   function downloadFragmentBar(svg, sessionId, barClass, color, barOffset, barSize) {
-    var downloads = svg.select("#downloads").select("#session-"+sessionId).select(".download-ticks")
-    var target = svg.select("#" + targetId(sessionId))
+    var group = svg.select("#" + groupId(sessionId))
+    var downloads = group.select(".download-ticks")
+    var target = group.select(".download-target") 
     var targetOffset = 0 
     var targetSize = parseInt(target.attr("target-height"))
 
@@ -135,7 +184,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   }
 
   function moveLineToProgress(svg, sessionId, mapNode, offsetPercent, barOffset, barSize){
-    var target = svg.select("#" + targetId(sessionId))
+    var target = svg.select("#" + groupId(sessionId)).select(".download-target")
     var targetTop = parseInt(target.attr("target-top"))
     var targetLeft = parseInt(target.attr("target-left"))
     var targetHeight = parseInt(target.attr("target-height"))
@@ -160,7 +209,8 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       .attr("stroke-width", 2)
       .attr("stroke", color)
       .transition().duration(500)
-         .attr('x2',barOffset + targetLeft)
+//         .attr('x2',barOffset + targetLeft)
+         .attr("x2", targetLeft)
          .attr('y2', targetTop + targetHeight*offsetPercent)
       .each("end", function(){downloadFragmentBar(svg, sessionId, "source-found-segment", color, barOffset, barSize)})
       .transition().duration(500).remove();
@@ -170,9 +220,9 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   // id -- Id of the source node
   // progress -- Percentage of the file just read
   // offset -- Percent offset of the newest chunk
-  function doProgressWithOffset(svg, sourceId, sessionId, progress, offsetPercent){
+  function doProgressWithOffset(svg, sourceId, sessionId, progress, offsetPercent, detail){
     //Calculate geometry of the progress bar chunk
-    var target = svg.select("#" + targetId(sessionId))
+    var target = svg.select("#" + groupId(sessionId)).select(".download-target")
     if (target.empty()) {console.error("Failed attempt to update " + sessionId); return;}
 
     var targetSize = parseInt(target.attr("target-width"))
@@ -190,7 +240,14 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       return;}
 
     var mapNode = d3.select(nodes[0][0]) //ensures we have exactly one item as the source
-    moveLineToProgress(svg, sessionId, mapNode, offsetPercent, barOffset, barSize);
+
+    if (detail && detail == true) {
+      moveLineToProgress(svg, sessionId, mapNode, offsetPercent, barOffset, barSize);
+    } else {
+      var mapGroup = d3.select(mapNode.node().parentNode)
+      var color = nodeRecolor(mapGroup)
+      downloadFragmentBar(svg, sessionId, "source-not-found-segment", color, barOffset, barSize)
+    }
   }
 
   //TODO: Add size...probably take the whole info object as an arg instead of just parts...
@@ -202,17 +259,16 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     var mapWidth = parseInt(svg.select("#map").attr("width"))
 
     var count = allDownloads.selectAll(".download-target").size()
-    var left = mapWidth + 100
+    var left = mapWidth + 30
     var top = 100 + count*(1.5*height)
 
 
     var g = allDownloads.append("g")
                  .attr("class", "download-entry")
-                 .attr("id", "session-"+sessionId)
+                 .attr("id", groupId(sessionId))
                  .attr("transform", "translate(" + left + "," + top + ")")
 
     g.append("rect")
-        .attr("id", targetId(sessionId))
         .attr("class", "download-target")
         .attr("fill", "#bbb")
         .attr("width", width)
@@ -253,11 +309,26 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
         .attr("text-anchor", "left")
         .attr("x", width + 15)
         .attr("y", 10)
+    
+    var updates = g.append("rect")
+        .attr("class", "toggle-details")
+        .attr("x", width + 150)
+        .attr("y", height/2)
+        .attr("rx", "2px")
+        .attr("ry", "2px")
+        .attr("width", height/2.5)
+        .attr("height", height/2.5)
+        .attr("stroke", "#999")
+        .attr("stroke-width", 2)
+        .attr("fill", "#bbb")
+        .attr("selected", "true")
+        .attr("sessionId", sessionId)
+        .on('click', toggleUpdates)
   }
-
+  
   function updateProgressTarget(svg, sessionId, percent, speed) {
-    var spd = svg.select("#session-"+sessionId).select(".speed")
-    var pct = svg.select("#session-"+sessionId).select(".percent-complete")
+    var spd = svg.select("#" + groupId(sessionId)).select(".speed")
+    var pct = svg.select("#" + groupId(sessionId)).select(".percent-complete")
 
     spd.text(speed)
     pct.text(percent + " %")
