@@ -10,4 +10,3 @@ angular.module('exnode', [])
   }])
   .controller('ExnodeController', exnodeController)
   .controller('DltFormController', dltFormController)
-  .controller('DownloadController', downloadController);
