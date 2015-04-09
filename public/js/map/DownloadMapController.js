@@ -50,6 +50,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
         detailSessions.push(entry.sessionId)
         SocketService.emit("peri_download_request", {id : entry.sessionId});
       })
+      //TODO: May turn details off is total number of sessions exceeds some number...
     })
 
     //Get updates
@@ -87,7 +88,8 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     }
   }
 
-  function showAllUpdates() {
+  //Toggle detailing on for all sessions
+  function detailAllSessions() {
     detailSessions = []
     var all = svg.selectAll(".toggle-details")
     all.each(function (d, i) {
@@ -96,18 +98,19 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     })
   }
 
-  function hideAllUpdates() {
+  //Toggle detailing off for all sessions
+  function detailNoSessions() {
     detailSessions = []
     svg.selectAll(".toggle-details")
       .attr("fill", "#fff")
       .attr("selected", "false")
   }
 
-  $scope.hideAll = hideAllUpdates
-  $scope.showAll = showAllUpdates
+  $scope.detailAll = detailAllSessions 
+  $scope.detailNone = detailNoSessions 
 
   $scope.resetFilter = function() {$location.path("/downloads").search("sessionIds", undefined)}
-  $scope.filterMap = function() {
+  $scope.filterSessions = function() {
     if (detailSessions.length == 0) {return;}
     //var url = "/downloads/map"
     //var url = "/downloads/filter\?sessionIds="+detailSessions.join(",")
@@ -279,7 +282,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
     }
   }
 
-  //TODO: Add size...probably take the whole info object as an arg instead of just parts...
   function initProgressTarget(svg, width, height, entry) {
     var sessionId=entry.sessionId
     var allDownloads = svg.select("#downloads")
