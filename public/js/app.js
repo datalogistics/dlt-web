@@ -70,14 +70,14 @@ angular.module('periApp', ['ngRoute',
     controller: 'ExnodeController'
   }).
   when('/downloads/',{
-    templateUrl: 'views/downloads.html',
-    controller: 'DownloadController'
-  }).
-  when('/downloads/map',{
     templateUrl: 'views/download_map.html',
     controller: 'DownloadMapController'
   }).
-  otherwise({redirectTo: '/'});
+  when('/downloads/filter',{
+    templateUrl: 'views/download_map.html',
+    controller: 'DownloadMapController'
+  })
+  .otherwise({redirectTo: '/'});
 
   $locationProvider.html5Mode(true);
     }]);

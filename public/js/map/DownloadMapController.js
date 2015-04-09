@@ -1,8 +1,8 @@
 function downloadMapController($scope, $location, $http, UnisService, SocketService) {
   var allIds = $location.search().sessionIds
-  if (allIds == undefined) {allIds = ""}
-  var sessionIds = allIds.split(",")
-  console.log("ids:", sessionIds )
+  var limitSessionIds = []
+  if (allIds != undefined && allIds.trim() != "") {limitSessionIds = allIds.split(",")}
+  console.log("ids:", limitSessionIds)
 
   var svg = d3.select("#downloadMap").append("svg")
                .attr("width", 1200)
@@ -10,28 +10,59 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
   var map = baseMap("#downloadMap", 960, 500, svg);
 
+  var detailSessions = limitSessionIds.slice()
+  var sessionIds = []
 
-  $scope.services = UnisService.services;
+  $scope.services = UnisService.services
   $http.get('/api/natmap')
     .then(function(res) {
       var natmap = res.data;
       allServiceData($scope.services, "ibp_server", natmap,
         mapPoints(map.projection, map.svg, "depots"));
 
-      sessionIds.forEach(function(id) {
+      limitSessionIds.forEach(function(id) {
         console.log("init for ", id)
+        sessionIds.push(id)
         SocketService.emit("peri_download_request", {id : id});
       })
       return natmap
     })
     .then(function(natmap) {backplaneLinks(map, natmap)})
+  
+  $scope.$on("$destroy", function() {
+    d3.selectAll("#map-tool-tip").each(function() {this.remove()})  //Cleans up the tooltip object when you navigate away
+    SocketService.getSocket().removeAllListeners("peri_download_info")
+    SocketService.getSocket().removeAllListeners("peri_download_progress")
+    SocketService.getSocket().removeAllListeners("peri_download_clear")
+    SocketService.getSocket().removeAllListeners("peri_download_list_info")
+    SocketService.getSocket().removeAllListeners("peri_download_listing")
+  })
 
+
+  //Manage full listing ----------------------------------
+  if (limitSessionIds.length == 0) {
+    console.log("Retrieving full session listing...")
+    SocketService.on("peri_download_listing", function(data) {
+      console.log("Listing recieved", data)
+      data.forEach(function(entry) {
+        console.log("listing init for ", entry.sessionId)
+        sessionIds.push(entry.sessionId)
+        detailSessions.push(entry.sessionId)
+        SocketService.emit("peri_download_request", {id : entry.sessionId});
+      })
+    })
+
+    //Get updates
+    SocketService.on("peri_download_list_info", function(data) {
+      console.log("New download received", data)
+      SocketService.emit("peri_download_request", {id : data.sessionId});
+    })
+
+    //Request what is currently loaded...
+    SocketService.emit("peri_download_req_listing", {});
+  }
   
   //Update toggle tracking ----------------------------------------------
-  //keep a list of what should have *details* shown    
-  var detailSessions = sessionIds.slice() //copy...so no toes are stepped upon
-  if (sessionIds.length > 5) { hideAllUpdates() }
-
   function showUpdates(sessionId, show) {
       if (show == true) {
         var idx = detailSessions.indexOf(sessionId)
@@ -40,12 +71,10 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
         var idx = detailSessions.indexOf(sessionId)
         if (idx >= 0) {detailSessions.splice(idx, 1)}
       }
-      console.log(detailSessions)
   }
 
   function toggleUpdates(toState) {
     var e = d3.select(this)
-    console.log("clicked")
     var newState = toState !== undefined ? toState : e.attr("selected") != "true"
     if (newState == true) {
       e.attr("selected", "true")
@@ -59,7 +88,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   }
 
   function showAllUpdates() {
-    console.log("showing all")
     detailSessions = []
     var all = svg.selectAll(".toggle-details")
     all.each(function (d, i) {
@@ -69,16 +97,24 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   }
 
   function hideAllUpdates() {
-    console.log("hiding all")
     detailSessions = []
     svg.selectAll(".toggle-details")
       .attr("fill", "#fff")
       .attr("selected", "false")
   }
-   
+
   $scope.hideAll = hideAllUpdates
   $scope.showAll = showAllUpdates
-  
+
+  $scope.resetFilter = function() {$location.path("/downloads").search("sessionIds", undefined)}
+  $scope.filterMap = function() {
+    if (detailSessions.length == 0) {return;}
+    //var url = "/downloads/map"
+    //var url = "/downloads/filter\?sessionIds="+detailSessions.join(",")
+    //console.log(url) 
+    //$location.path(url)
+    $location.path("/downloads").search("sessionIds", detailSessions.join(","))
+  }
   
   //Mapping of downloads ----------------------------------------------
   var getAccessIp = function(x){
@@ -94,6 +130,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
   SocketService.on("peri_download_clear", function(data){
     console.log("Download cleared", data)
+    //TODO: Modify the entry to indicate it was 'cleared' on the server
   })
 
   var rateTracker = {}
@@ -124,13 +161,6 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
       doProgressWithOffset(map.svg, host, sessionId, progress, offsetPercent, detail);
     }
   });
-
-  $scope.$on("$destroy", function() {
-    d3.selectAll("#map-tool-tip").each(function() {this.remove()})  //Cleans up the tooltip object when you navigate away
-    SocketService.getSocket().removeAllListeners("peri_download_info")
-    SocketService.getSocket().removeAllListeners("peri_download_progress")
-    SocketService.getSocket().removeAllListeners("peri_download_clear")
-  })
 
 
   // -------------------------------------------
