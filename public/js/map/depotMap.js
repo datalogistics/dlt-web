@@ -11,7 +11,7 @@ function highlightMapLocations(svg, selector, filter, retries) {
   if (items.empty()) {
     if (retries === undefined) {retries = 20;}
     if (retries > 0) {
-      console.log("Retry highlight")
+      console.error("Retry highlight")
       setTimeout(function() {highlightMapLocations(svg, selector, filter, retries-1)}, 1000)
     }
     return;
@@ -276,7 +276,7 @@ function ipToLocation(items, then) {
       if (error) {
         var id = items[name] === undefined ? "unknown" : items[name].id
         locations.push({name: name, location: [], depot_id: id})
-        console.log("No location found for ", name, items[name])
+        console.error("No location found for ", name, items[name])
       } else {
           var place = []
           if (raw.longitude !== undefined
@@ -364,7 +364,7 @@ function backplaneLinks(map, natmap) {
   function screen_location(svg, natmap, endpoint) {
     var mapping = natmap[endpoint]
     if (mapping === undefined) {
-      console.log("link endpoint not in natmap: ", endpoint)
+      console.error("link endpoint not in natmap: ", endpoint)
       return undefined
     }
     endpoint = mapping.external
@@ -376,7 +376,7 @@ function backplaneLinks(map, natmap) {
     })
     
     if (mapNode.empty()) {
-      console.log("link endpoint not in depot map: ", endpoint, port)
+      console.error("link endpoint not in depot map: ", endpoint, port)
       return undefined;
     }
 

@@ -1,22 +1,14 @@
 <h2 class="lead text-center">Download Progress</h2>
 
-<div class="table-responsive">
-  <table class="table table-hover table-condensed">
-    <tr>
-      <th style="width:30%">Name</th>
-      <th style="width:20%">Size (MB)</th>
-      <th style="width:10%">Connections</th>
-      <th style="width:10%">Speed</th>
-      <th style="width:10%">% Complete</th>
-    </tr>
-    <tbody ng-repeat="(key, entry) in downloads">
-      <td> {{entry.filename}} </td>
-      <td> {{(entry.size/1e6).toFixed(1)}} </td>
-      <td> {{entry.connections}} </td>
-      <td> {{entry.speed}} </td>
-      <td> {{entry.percent}} </td>
-    </tbody>
-  </table>
+<div style="float: right; margin-bottom: 2px">
+  <button type="button" id="filter" ng-click="filterSessions()" class="btn btn-info">Filter</button>
+  <button type="button" id="filter" ng-click="resetFilter()" class="btn btn-info">Clear Filter</button>
 </div>
+<div style="clear: both;"></div>
+<div style="float:right">
+  <button type="button" id="hide_all" ng-click="detailNone()" class="btn btn-info">Detail None</button>
+  <button type="button" id="show_all" ng-click="detailAll()" class="btn btn-info">Detail All</button>
+</div>
+
 
 <div id='downloadMap'></div>
