@@ -42,10 +42,10 @@ function paginateFunc(func,arr,otherArgs,isWait) {
   }
 };
 
-function getIfPresent(idList) {
+function getIfPresent(idList, ifNotPresentcb , ifPresentCb) {
   var promArr = [];
   opt.map(function(x) {
-    var tmp = paginateFunc(getIfExnodePresent,idList.slice(0),x);
+    var tmp = paginateFunc(getExnodeData,idList.slice(0),x);
     if (_.isArray(tmp)) {
       promArr.push.apply(promArr,tmp);
     } else {
@@ -75,15 +75,15 @@ function getIfPresent(idList) {
             // Already got the data for this
           }
         });
-        console.log("Not Present " , rejArr);
+        ifNotPresentcb(rejArr);
         var presentArr = [];
         res.present.forEach(function(x) {
           idMap[nameToSceneId(x.name)] = -111; // Arbitrary num
           presentArr.push(x);
-        });        
-        console.log("Data " ,presentArr);
+        });
+        ifPresentCb(presentArr);
       });
-    }     
+    }
   }
 };
 
@@ -92,7 +92,7 @@ function nameToSceneId(name) {
   return name.split(/[_.]/)[0];
 };
 
-function getIfExnodePresent(idlist,hdetails) {
+function getExnodeData(idlist,hdetails) {
   //console.log("ID list " ,idlist , hdetails);
   var defer = q.defer();
   var str = idlist.join(",");
@@ -100,7 +100,7 @@ function getIfExnodePresent(idlist,hdetails) {
   http.get({
     host : hdetails.url,
     port : hdetails.port,
-    path : '/exnodes?fields=id,name&properties.metadata.scene_id='+str
+    path : '/exnodes?properties.metadata.scene_id='+str
   }, function(http_res) {
     http_res.on('data', function (chunk) {
       data += chunk;
@@ -126,101 +126,12 @@ function getIfExnodePresent(idlist,hdetails) {
   return defer.promise;
 };
 
-function getExnodeData(objlist) {
-  var idlist = objlist.map(function(x) { return x.id});
-  var str = idlist.join(","); 
-  if (idlist.length > 0)
-    http.get({
-      host : cfg.serviceMap.dev.url,
-      port : cfg.serviceMap.dev.port,
-      path : '/exnodes?id='+str
-    }, function(http_res) {
-      var data = '';
-      http_res.on('data', function (chunk) {
-        data += chunk;  
-      });
-      http_res.on('end',function() { 
-        var obj = JSON.parse(data);
-        var retMap  = {};
-        obj.map(function(x) {
-          var arr = retMap[nameToSceneId(x.name)] = retMap[nameToSceneId(x.name)] || [];
-          arr.push(x);
-        });
-        
-        fullcb(retMap);
-      });
-      http_res.on('error',function(e) {
-        console.log("Error for Id ",id);
-      });
-    });
-}
 
+//getIfPresent(['LC80440322015096LGN00',2,2,3,4,4,6,7,8,83,2,3]);
 
-getIfPresent(['LC80440322015096LGN00',2,2,3,4,4,6,7,8,83,2,3]);
-function handleNotPresent(arr) {
-}
-
-
-function getExnodeData(sceneArr,precb , fullcb) {
-  // split array into buckets of 5
-  var Size = 5 ;
-  // Clone the array 
-  var arr = sceneArr.slice(0);   
-  while (arr && arr.length > 0){
-    var idlist = arr.splice(0,Size);
-    var str = idlist.join(",");
-    http.get({
-      host : cfg.serviceMap.dev.url,
-      port : cfg.serviceMap.dev.port,
-      path : '/exnodes?fields=id,name&properties.metadata.scene_id='+str
-    }, function(http_res) {
-      var data = '';
-      http_res.on('data', function (chunk) {
-          data += chunk;
-      });
-      http_res.on('end',function() {
-        var obj = JSON.parse(data);
-        if(!obj || !_.isArray(obj))
-          return;
-        
-        var notpresent = sceneArr.slice(0);
-        var sceneIdArr = obj.map(function(x) { return nameToSceneId(x.name || "") ;});          
-        notpresent = _.difference(notpresent,sceneIdArr);
-        //console.log("NOt present sceneId " , sceneArr , notpresent , sceneIdArr);
-        // Send precb with notpresent data
-        // console.log("Not present ",notpresent , sceneIdArr);
-        precb(notpresent);
-        // Now send http reqeust to aggregate and return remaining data to fullcb
-        var idlist = obj.map(function(x) { return x.id});
-        var str = idlist.join(","); 
-        if (idlist.length > 0)
-          http.get({
-            host : cfg.serviceMap.dev.url,
-            port : cfg.serviceMap.dev.port,
-            path : '/exnodes?id='+str
-          }, function(http_res) {
-            var data = '';
-            http_res.on('data', function (chunk) {
-              data += chunk;  
-            });
-            http_res.on('end',function() { 
-              var obj = JSON.parse(data);
-              var retMap  = {};
-              obj.map(function(x) {
-                var arr = retMap[nameToSceneId(x.name)] = retMap[nameToSceneId(x.name)] || [];
-                arr.push(x);
-              });
-              
-              fullcb(retMap);
-            });
-            http_res.on('error',function(e) {
-              console.log("Error for Id ",id);
-            });
-          });
-      });
-      http_res.on('error',function(e) {
-        console.log("Error for Id ",id);
-      });
-    });
-  };
+module.exports = {
+  getExnodeDataIfPresent : getIfPresent,
+  paginateFunc : paginateFunc,
+  getExnodeData : getExnodeData,
+  nameToSceneId : nameToSceneId
 };
