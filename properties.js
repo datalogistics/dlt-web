@@ -81,6 +81,18 @@ var self = {
   getSocketOptions : function () {
     
   },
+  // Correct way
+  getOptions : function(cfg) {
+    var rmap = self.routeMap;
+    var smap = self.serviceMap;
+    // Using the name - make it get the http options        
+    cfg = cfg || {};
+    var pr = rmap[cfg.name];
+    var hostList = !_.isEmpty(pr) ? pr : rmap.default;
+    return hostList.map(function(x) {
+      return smap[x];
+    });
+  },
   getHttpOptions : function (cfg) {
     var rmap = self.routeMap;
     var smap = self.serviceMap;
