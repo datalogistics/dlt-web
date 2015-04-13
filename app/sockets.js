@@ -18,6 +18,7 @@ var WebSocket = require('ws')
 , cfg = require('../properties')
 , q = require('q')
 , exnodeApi = require('./exnodeApi')
+, usgsapi = require("./usgsapi")
 ,_ = require('underscore');
 
 WebSocket.super_.defaultMaxListeners = 0;
@@ -501,6 +502,38 @@ module.exports = function(client) {
     });
     // getAllChildExnodeFiles(d.id , d.id);
   });
+
+
+  client.on('getShoppingCart' , function (d) {
+    console.log(d);
+    usgsapi.login(d.username,d.password)
+      .then(function(r) {
+        var usgsKey = r.data;
+        usgsapi.getShoppingCart(usgsKey).then(function(r) {
+          //console.log(JSON.stringify(r.data.bulkDownloadItemBasket,null));
+          var items = r.data.orderItemBasket;          
+          items.forEach(function(x) {
+            var idArr = x.orderScenes.map(function(x) { return x.entityId;});
+            usgsapi.getMetaData(usgsKey,idArr)
+              .then(function(res) {
+                client.emit('cart_data_res',{ data : res.data });
+                exnodeApi.getExnodeDataIfPresent(idArr , function(arr){
+                  client.emit("cart_nodata",{ data : arr });
+                  console.log("Not present " , arr);
+                }, function(obj) {
+                  var retMap  = {};
+                  obj.map(function(x) {
+                    var arr = retMap[nameToSceneId(x.name)] = retMap[nameToSceneId(x.name)] || [];
+                    arr.push(x);
+                  });
+                  client.emit("cart_data",{ data : retMap});
+                  console.log("Present " , arr);
+                });
+              });
+          });          
+        });
+      })
+  });;
 
 var _nodeLocationMap = {};
 function getAllIpLocationMap(array , cb){

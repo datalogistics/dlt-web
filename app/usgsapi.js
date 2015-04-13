@@ -5,6 +5,7 @@ var path = require('path')
 , https = require('https')
 , url = require('url')
 // , cfg = require('../properties')
+, exApi = require('./exnodeApi')
 , util = require('util')
 , _ = require('underscore')
 , querystring = require('querystring')
@@ -39,8 +40,10 @@ var usgsapi = {
     });
   },
   getShoppingCart : function(key) {
-    console.log(key);
     return this._call("itembasket", { apiKey : key });
+  },
+  getMetaData : function(key , idlist) {
+    return this._call("metadata",{apiKey : key , node : 'EE', 'datasetName' : "LANDSAT_8"  , "entityIds" : idlist});
   },
   clearCart : function(key , node , datasetName ) {  
     this._call("clearorder", { apiKey : key, node : node , datasetName : datasetName});
@@ -63,8 +66,22 @@ var usgsapi = {
 //   .then(function(r) {
 //     //    console.log(r);
 //     var usgsKey = r.data;
-//     usgsapi.getShoppingCart(usgsKey).then(function(r) {      
-//       console.log(JSON.stringify(r.data.bulkDownloadItemBasket,null));
+//     usgsapi.getShoppingCart(usgsKey).then(function(r) {
+//       //console.log(JSON.stringify(r.data.orderItemBasket,null));
+//       var items = r.data.orderItemBasket;
+//       items.forEach(function(x) {
+//         var idArr = x.orderScenes.map(function(x) { return x.entityId;});
+//         usgsapi.getMetaData(usgsKey,idArr)
+//           .then(function(res) {
+//             console.log("Metadata " , res);
+//             exApi.getExnodeDataIfPresent(idArr , function(arr){
+//               console.log("Not present " , arr);
+//             }, function(arr) {
+//               console.log("Present " , arr);
+//             })
+//           });
+//       });
+//       //console.log(JSON.stringify(r.data.bulkDownloadItemBasket,null));
 //     });
     
 //   });

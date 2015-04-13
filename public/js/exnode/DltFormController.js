@@ -80,7 +80,6 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     // Convert the data into e/api/usgssearch?xpected form 
     $scope.usgsSearchRes = r;      
     $scope.usgsSearchResAsArr = dataAsTreeArr;
-    console.log(dataAsTreeArr);
   };
   SocketService.on('usgs_lat_res',handleUsgsData);
   SocketService.on('usgs_row_res',handleUsgsData);
@@ -217,4 +216,51 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     }
     $scope.delegateEvent = event;
   };
+}
+
+function shoppingCartController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService) {
+  $scope.cartRes = {};
+  SocketService.emit('getShoppingCart', { username : 'indianadlt', password : 'indiana2014'});
+  SocketService.on('cart_data_res', function(x) {
+    console.log("Cart Data Res " ,x);
+    var map = {};
+    x.data.map(function(x) {
+      map[x.entityId] = x;
+      console.log(x.browseUrl);
+    });
+    $scope.cartRes = map;
+  });
+  
+  SocketService.on('cart_nodata',function(data){
+    // Bunch of ids with no data 
+    var arr = data.data;
+    var res = $scope.cartRes;
+    arr.map(function(x) {
+      var obj = res[x];
+      if (obj)
+        obj.isExnode = false;
+    });
+  });
+  
+  SocketService.on('cart_data',function(data){
+    var map = data.data ;
+    var res = $scope.cartRes;
+    for ( var i in map) {
+      var exArr = map[i];
+      for (var j = 0; j < exArr.length ; j++){        
+        var it = exArr[j];
+        var obj = res[i];
+        if (obj) {
+          obj.isExnode = true;
+          var arr = obj.exFileArr = obj.exFileArr || [];
+          obj.exMap = obj.exMap || {} ;
+          if (!obj.exMap[it.name]){
+            arr.push(it);
+            obj.exMap[it.name] = true;
+          }
+          obj._exnodeData = it;
+        }      
+      };
+    }
+  });
 }
