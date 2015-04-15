@@ -230,7 +230,9 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     });
     $scope.cartRes = map;
   });
-  
+  $scope.showImage = function(ev){
+    $(ev.target).ekkoLightbox();
+  };
   SocketService.on('cart_nodata',function(data){
     // Bunch of ids with no data 
     var arr = data.data;

@@ -509,9 +509,11 @@ module.exports = function(client) {
     usgsapi.login(d.username,d.password)
       .then(function(r) {
         var usgsKey = r.data;
+        console.log("USGS Key " , usgsKey);
         usgsapi.getShoppingCart(usgsKey).then(function(r) {
-          //console.log(JSON.stringify(r.data.bulkDownloadItemBasket,null));
-          var items = r.data.orderItemBasket;          
+          var items = r.data.orderItemBasket || [];
+          items.push.apply(items,r.data.bulkDownloadItemBasket);
+          
           items.forEach(function(x) {
             var idArr = x.orderScenes.map(function(x) { return x.entityId;});
             usgsapi.getMetaData(usgsKey,idArr)
