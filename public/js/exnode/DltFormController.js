@@ -218,9 +218,22 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
   };
 }
 
+var USGS_COOKIE_NAME = 'usgsApiKey';
 function shoppingCartController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService) {
   $scope.cartRes = {};
-  SocketService.emit('getShoppingCart', { username : 'indianadlt', password : 'indiana2014'});
+  //
+  $.ajax({
+    method : 'post',
+    url : '/usgsapi/login',
+    data : { username : 'indianadlt', password : 'indiana2014'}    
+  }).done(function(data) {
+    if (data.data) {
+      document.cookies = USGS_COOKIE_NAME + "=" + data.data;
+      SocketService.emit('getShoppingCart',{key : data.data});
+    } else {
+      alert("error: " + data.error);
+    }
+  });
   SocketService.on('cart_data_res', function(x) {
     console.log("Cart Data Res " ,x);
     var map = {};

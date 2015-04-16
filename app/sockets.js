@@ -504,37 +504,33 @@ module.exports = function(client) {
   });
 
 
-  client.on('getShoppingCart' , function (d) {
-    console.log(d);
-    usgsapi.login(d.username,d.password)
-      .then(function(r) {
-        var usgsKey = r.data;
-        console.log("USGS Key " , usgsKey);
-        usgsapi.getShoppingCart(usgsKey).then(function(r) {
-          var items = r.data.orderItemBasket || [];
-          items.push.apply(items,r.data.bulkDownloadItemBasket);
-          
-          items.forEach(function(x) {
-            var idArr = x.orderScenes.map(function(x) { return x.entityId;});
-            usgsapi.getMetaData(usgsKey,idArr)
-              .then(function(res) {
-                client.emit('cart_data_res',{ data : res.data });
-                exnodeApi.getExnodeDataIfPresent(idArr , function(arr){
-                  client.emit("cart_nodata",{ data : arr });
-                  console.log("Not present " , arr);
-                }, function(obj) {
-                  var retMap  = {};
-                  obj.map(function(x) {
-                    var arr = retMap[nameToSceneId(x.name)] = retMap[nameToSceneId(x.name)] || [];
-                    arr.push(x);
-                  });
-                  client.emit("cart_data",{ data : retMap});
-                  console.log("Present " , arr);
-                });
+  client.on('getShoppingCart' , function (d) {    
+    var usgsKey = d.key;
+    console.log("USGS Key " , usgsKey);
+    usgsapi.getShoppingCart(usgsKey).then(function(r) {
+      var items = r.data.orderItemBasket || [];
+      items.push.apply(items,r.data.bulkDownloadItemBasket);
+      
+      items.forEach(function(x) {
+        var idArr = x.orderScenes.map(function(x) { return x.entityId;});
+        usgsapi.getMetaData(usgsKey,idArr)
+          .then(function(res) {
+            client.emit('cart_data_res',{ data : res.data });
+            exnodeApi.getExnodeDataIfPresent(idArr , function(arr){
+              client.emit("cart_nodata",{ data : arr });
+              console.log("Not present " , arr);
+            }, function(obj) {
+              var retMap  = {};
+              obj.map(function(x) {
+                var arr = retMap[nameToSceneId(x.name)] = retMap[nameToSceneId(x.name)] || [];
+                arr.push(x);
               });
-          });          
-        });
-      })
+              client.emit("cart_data",{ data : retMap});
+              console.log("Present " , arr);
+            });
+          });
+      });          
+    });
   });;
 
 var _nodeLocationMap = {};

@@ -39,6 +39,9 @@ var usgsapi = {
       console.log(resp);
     });
   },
+  removeItems : function(key, dsname , arr) {
+    return this._call("itembasket", { apiKey : key ,node : 'EE', 'dsname' : "LANDSAT_8", entityIds : arr  });
+  },
   getShoppingCart : function(key) {
     return this._call("itembasket", { apiKey : key });
   },
@@ -50,10 +53,10 @@ var usgsapi = {
   },
   addRoutes : function(prefix , app) {    
     app.post(prefix + 'login', function (req ,res) {
-      var uname = req.params.username;
-      var pwd = req.params.password;
+      var uname = req.body.username;
+      var pwd = req.body.password;
       usgsapi.login(uname,pwd).then(function(data){
-        res.json({ key : data.data });
+        res.json(data);
       });
     });
     app.get(prefix + 'cart' , function(req,res) {
@@ -64,10 +67,10 @@ var usgsapi = {
 
 // usgsapi.login("indianadlt","indiana2014")
 //   .then(function(r) {
-//     //    console.log(r);
+//        console.log(r);
 //     var usgsKey = r.data;
 //     usgsapi.getShoppingCart(usgsKey).then(function(r) {
-//       //console.log(JSON.stringify(r.data.orderItemBasket,null));
+//       console.log(JSON.stringify(r.data.orderItemBasket,null));
 //       var items = r.data.orderItemBasket;
 //       items.forEach(function(x) {
 //         var idArr = x.orderScenes.map(function(x) { return x.entityId;});
