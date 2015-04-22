@@ -218,22 +218,53 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
   };
 }
 
-var USGS_COOKIE_NAME = 'usgsApiKey';
+var USGS_KEY_NAME = 'usgsApiKey';
+var USGS_KEY_TIME = 'usgsApiKeyTime';
 function shoppingCartController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService) {
+  $scope.usgs = {}; 
   $scope.cartRes = {};
+  $scope.isShoppingCartLoading = false;
+  var existing_key = localStorage.getItem(USGS_KEY_NAME);
+  var existing_time = localStorage.getItem(USGS_KEY_TIME);
+  var timeDiff = new Date().getTime() - existing_time;  
+  if (timeDiff > 0 && (timeDiff / 1000) < 3600) {
+    console.log("Key Still valid ");
+    $scope.hideLogin = true;
+    populate_cart(existing_key);
+  }
+
+  function populate_cart(key) {
+    SocketService.emit('getShoppingCart',{key : key});
+    $scope.isShoppingCartLoading = true;
+    $scope.hideLogin = true;
+  }
+  $scope.showLogin = function() {
+    $scope.tryAnotherLogin = true;
+    $scope.usgsShoppingNoData = false;
+    $scope.loginFailed = false;
+    $scope.hideLogin = false;
+  }
+  $scope.loginAndPopulateCart = function(e) {
+    var username = $(e.target).find("input[name=username]").val();
+    var password = $(e.target).find("input[name=password]").val();
+    $.ajax({
+      method : 'post',
+      url : '/usgsapi/login',
+      data : { username : username, password : password}    
+    }).done(function(data) {
+      if (data.data) {
+        $scope.loginFailed = false;
+        localStorage.setItem(USGS_KEY_NAME,data.data);
+        localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
+        populate_cart(data.data);
+      } else {
+        $scope.loginFailed = true;
+        $(e.target).find("input[name=username]").focus();
+      }
+    });
+  };
   //
-  $.ajax({
-    method : 'post',
-    url : '/usgsapi/login',
-    data : { username : 'indianadlt', password : 'indiana2014'}    
-  }).done(function(data) {
-    if (data.data) {
-      document.cookies = USGS_COOKIE_NAME + "=" + data.data;
-      SocketService.emit('getShoppingCart',{key : data.data});
-    } else {
-      alert("error: " + data.error);
-    }
-  });
+
   SocketService.on('cart_data_res', function(x) {
     console.log("Cart Data Res " ,x);
     var map = {};
@@ -241,15 +272,19 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
       map[x.entityId] = x;
       console.log(x.browseUrl);
     });
+    $scope.isShoppingCartLoading = false;    
     $scope.cartRes = map;
   });
   $scope.showImage = function(ev){
     $(ev.target).ekkoLightbox();
   };
   SocketService.on('cart_nodata',function(data){
+    if (data.size == 0) 
+      $scope.usgsShoppingNoData = true;
     // Bunch of ids with no data 
     var arr = data.data;
     var res = $scope.cartRes;
+    $scope.isShoppingCartLoading = false;
     arr.map(function(x) {
       var obj = res[x];
       if (obj)
@@ -271,7 +306,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
           obj.exMap = obj.exMap || {} ;
           if (!obj.exMap[it.name]){
             arr.push(it);
-            obj.exMap[it.name] = true;
+            obj.exMap[it.name] = true;  
           }
           obj._exnodeData = it;
         }      
