@@ -28,20 +28,17 @@ describe('Sockets', function() {
 
   it("should get some metadata" , function(done) {
     request(socketURL + "/api/metadata", function(err,r,resp){
-      var arr = JSON.parse(resp) ;
+      var arr = JSON.parse(resp) ;      
       arr.forEach(function(x) {
-        console.log(x.id);
         client.emit('data_request',{id : x.id});
       });
       done();
     });
   });
   
-  //for (var i = 0; i < 10000;i++)
-  it("should get measurements constantly" , function (done) {
+  it("should get atleast one measurement" , function (done) {
     this.timeout(0);        
     client.on('data_data',function(data) {
-      console.log(data);
       done();
     });
     //client.emit('service_request',{});

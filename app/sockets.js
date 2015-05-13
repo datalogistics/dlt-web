@@ -160,8 +160,8 @@ module.exports = function(client) {
             smap[path].clients.forEach(function(client) {
               client.emit(emit, data);
             });
-          } else {            
-            var dataId1 = _.keys(JSON.parse(data))[0];
+          } else {
+            var dataId1 = (JSON.parse(data)).id;
             //console.log("Number of connected clients ", smap[path].clients.length,
 	    //            smap[path].clients.map(function(x){ return x.id;}));
             smap[path].clients.filter(function(x){
@@ -173,7 +173,7 @@ module.exports = function(client) {
           }
         });
         socket.on('close', function() {
-          //console.log('UNIS: socket closed');
+          console.log('UNIS: socket closed');
         });
         process.on('uncaughtException', function (err) {
           console.error('ERROR:', err.stack);
