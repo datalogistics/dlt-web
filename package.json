@@ -20,6 +20,7 @@
     "ejs": "^2.2.4",
     "express": "3.5.1",
     "forever": "^0.11.1",
+    "jasmine": "^2.3.1",
     "karma": "0.12.16",
     "mongoose": "3.8.x",
     "node-freegeoip": "0.0.1",
@@ -35,5 +36,11 @@
   "repository": {
     "type": "git",
     "url": "git@github.com:periscope-ps/periscope.git"
+  },
+  "devDependencies": {
+    "karma-jasmine": "^0.3.5",
+    "karma-phantomjs-launcher-nonet": "^0.1.3",
+    "mocha": "^2.2.4",
+    "should": "^6.0.1"
   }
 }
