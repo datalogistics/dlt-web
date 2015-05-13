@@ -72,6 +72,21 @@ else
 
 `$ npm start`
 
+## Run test cases
+Install mocha if not installed by using
+`npm install -g mocha`
+
+Then run test cases as
+
+`mocha --recursive mochaTest`
+
+##### TODO for test
+
+- Aim is to cover all server side functionality using mocha test cases and client side using possibly karma or intern
+- Mocha Test cases should ensure that all server side functionality i.e /api's and all socket handlers work correctly
+- It should also ensure that the settings in properties.js points to the correct UNIS and all the UNIS end points work correctly
+
+
 ## App Routes
 
 [GUI localhost:42424](http://localhost:42424)
