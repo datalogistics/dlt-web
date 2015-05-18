@@ -119,7 +119,7 @@ module.exports = function(app) {
       return function() {
 	//console.log(opt);
         var defer = q.defer();
-        method.get(opt, function(http_res) {
+        method.get(opt, function(http_res,err) {
           var data = '';
           http_res.on('data', function (chunk) {
             data += chunk;
@@ -130,22 +130,25 @@ module.exports = function(app) {
               return defer.resolve(obj);
             } catch (e) {
               //TODO: Sometimes a stack trace comes in as data...I don't know what is making it or why
-              console.log("Error parsing JSON from socket: ")
-              console.log(e)
-              console.log(data)
+              console.log("Error parsing JSON from socket: ");
+              console.log(e);
+              console.log(data);
             }
           });
           http_res.on('error',function(e) {
+            res.send( 404 );
             return defer.reject(false);
-            // res.send( 404 );
           });
+        }).on('error', function(){
+          defer.reject(false);
         });
         return defer.promise;
       };
     });
     if (cb) {
       q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
-        cb(obj);
+        if (obj)
+          cb(obj);
       });
     } else {
       q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
@@ -159,6 +162,7 @@ module.exports = function(app) {
         } else {
           res.send(404);
         }
+
       });
       
     }
