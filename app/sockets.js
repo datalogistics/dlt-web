@@ -133,9 +133,9 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
                              'hostname': opt.hostArr[i],
                              'port'    : opt.portArr[i],
                              'pathname': pathname});
-
+    
     console.log("Creating websocket for: " + urlstr);
-
+    
     try{ 
       var socket = new WebSocket(urlstr, ssl_opts);
     } catch(e) {
@@ -206,7 +206,7 @@ function _getGenericHandler(resource, emitName,client){
         pathIdObj.unregisterId(client.id , path,data.id);
       } else {
         // Sockets using /subscribeAgg gets its own map
-        // console.log("Id" ,data.id);
+        //console.log("Id" ,data.id);
         if(!pathIdObj.isRegClient(client.id, path , data.id)) {
           if (!smap) {
             socketMap[path] = {'clients': [client]};        
@@ -226,17 +226,17 @@ function _getGenericHandler(resource, emitName,client){
             smap = socketMap[path];
             if (!pathIdObj.isRegId(data.id , path)) {
               smap.sockets.forEach(function (x) {
-                                   // Assuming it is open
-                                   try{
-                                     x.send(JSON.stringify(obj));
-                                     // console.log("Sent daata ", JSON.stringify(obj));
-                                   } catch(e) {
-                                     // If not opened
-                                     x.on('open', function(){             
-                                                                  x.send(JSON.stringify(obj));
-                                                                });
-                                   }
-                                 });
+                // Assuming it is open
+                try{
+                  x.send(JSON.stringify(obj));
+                  // console.log("Sent daata ", JSON.stringify(obj));
+                } catch(e) {
+                  // If not opened
+                  x.on('open', function(){             
+                    x.send(JSON.stringify(obj));
+                  });
+                }
+              });
             }
             if (!pathIdObj.isClientOnPath(client.id , path)) {              
               smap.clients = smap.clients || [];
