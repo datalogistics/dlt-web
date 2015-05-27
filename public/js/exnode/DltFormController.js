@@ -224,17 +224,17 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
   $scope.usgs = {}; 
   $scope.cartRes = {};
   $scope.isShoppingCartLoading = false;
-  var existing_key = localStorage.getItem(USGS_KEY_NAME);
-  var existing_time = localStorage.getItem(USGS_KEY_TIME);
-  var timeDiff = new Date().getTime() - existing_time;  
-  if (timeDiff > 0 && (timeDiff / 1000) < 3600) {
-    console.log("Key Still valid ");
-    $scope.hideLogin = true;
-    populate_cart(existing_key);
-  }
+  // var existing_key = localStorage.getItem(USGS_KEY_NAME);
+  // var existing_time = localStorage.getItem(USGS_KEY_TIME);
+  // var timeDiff = new Date().getTime() - existing_time;  
+  // if (timeDiff > 0 && (timeDiff / 1000) < 3600) {
+  //   console.log("Key Still valid ");
+  //   $scope.hideLogin = true;
+  //   populate_cart(existing_key);
+  // }
 
-  function populate_cart(key) {
-    SocketService.emit('getShoppingCart',{key : key});
+  function populate_cart(uname , pwd) {
+    SocketService.emit('getShoppingCart',{username : uname, password : pwd});
     $scope.isShoppingCartLoading = true;
     $scope.hideLogin = true;
   }
@@ -247,21 +247,8 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
   $scope.loginAndPopulateCart = function(e) {
     var username = $(e.target).find("input[name=username]").val();
     var password = $(e.target).find("input[name=password]").val();
-    $.ajax({
-      method : 'post',
-      url : '/usgsapi/login',
-      data : { username : username, password : password}    
-    }).done(function(data) {
-      if (data.data) {
-        $scope.loginFailed = false;
-        localStorage.setItem(USGS_KEY_NAME,data.data);
-        localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
-        populate_cart(data.data);
-      } else {
-        $scope.loginFailed = true;
-        $(e.target).find("input[name=username]").focus();
-      }
-    });
+    $scope.loginFailed = false;
+    populate_cart(username,password);
   };
   //
 
