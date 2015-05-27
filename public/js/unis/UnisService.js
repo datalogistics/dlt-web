@@ -152,21 +152,19 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   };
 
   SocketService.on('data_data', function(data) {
-    var id ;
+    var id;
     if (typeof data != 'object'){
       data = JSON.parse(data);
-    };    
-    for (var i in data) {
-      id = i;
-      break;
     };
-
-    //console.log('Incoming data for ' + id + ' : ', data);
-    if (id in dataIdCbMap) {
-      var map = dataIdCbMap[id];
-      for (var i in map) {
-        var cb = map[i];
-        cb(data);
+    if ("id" in data) {
+      id = data['id'];
+      //console.log('Incoming data for ' + id + ' : ', data);
+      if (id in dataIdCbMap) {
+	var map = dataIdCbMap[id];
+	for (var i in map) {
+          var cb = map[i];
+          cb(data['data']);
+	}
       }
     }
   });
