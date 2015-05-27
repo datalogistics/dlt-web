@@ -21,7 +21,7 @@ var usgsapi = {
     var jsonStr = JSON.stringify(params);
     request.get(baseurlHtpps + name + '?jsonRequest='+jsonStr  , function(err,r,resp) {
       resp = JSON.parse(resp);
-      def.resolve(resp);
+      def.resolve(resp);      
       if (cb)
         cb.apply(this,arguments);
     });
@@ -42,11 +42,14 @@ var usgsapi = {
   removeItems : function(key, dsname , arr) {
     return this._call("itembasket", { apiKey : key ,node : 'EE', 'dsname' : "LANDSAT_8", entityIds : arr  });
   },
+  addToCart : function(key) {
+    return this._call("itembasket", { apiKey : key });
+  },
   getShoppingCart : function(key) {
     return this._call("itembasket", { apiKey : key });
   },
-  getMetaData : function(key , idlist) {
-    return this._call("metadata",{apiKey : key , node : 'EE', 'datasetName' : "LANDSAT_8"  , "entityIds" : idlist});
+  getMetaData : function(key , collection , idlist) {
+    return this._call("metadata",{apiKey : key , node : 'EE', 'datasetName' : collection  , "entityIds" : idlist});
   },
   clearCart : function(key , node , datasetName ) {  
     this._call("clearorder", { apiKey : key, node : node , datasetName : datasetName});

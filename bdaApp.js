@@ -115,10 +115,11 @@ var auth = {"message":"1.5.3","requester":"bda",
 
 
 var sock = tls.connect(4448,"eebulk.cr.usgs.gov",{
-  rejectUnauthorized : false,
+
+rejectUnauthorized : false,
   ciphers : "ADH-RC4-MD5",
-  secureProtocol : "SSLv23_method",
-  secureOptions : "SSL_OP_NO_SSLv2",
+  // secureProtocol : "SSLv23_method",
+  // secureOptions : "SSL_OP_NO_SSLv2",
   handshakeTimeout : 3000
 },function(){
   console.log('client connected',arguments);
@@ -134,8 +135,10 @@ var sock = tls.connect(4448,"eebulk.cr.usgs.gov",{
   // },500);
 });
 
-sock.on('connect',function() {
+sock.once('connect',function() {
   console.log('connected');
+  console.log("Session id " , sock.getSession());
+
 });
 sock.on('data',function(data) {
   console.log("Data received ",data.toString());
@@ -149,24 +152,14 @@ sock.on('error',function(){
 });
 sock.on('close',function(){  
   console.log("Closed",arguments);
+  sock.renegotiate({} , function(){
+    console.log("Reneged ");
+  });
 });
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
-var options = {
-  url: 'https://eebulk.cr.usgs.gov:4448',
-  agentOptions: {
-    // cert: fs.readFileSync(certFile),
-    // key: fs.readFileSync(keyFile),
-    // Or use `pfx` property replacing `cert` and `key` when using private key, certificate and CA certs in PFX or PKCS12 format:
-    // pfx: fs.readFileSync(pfxFilePath),
-    username : 'indianadlt',
-    requester : 'bda',
-    password : 'indiana2014',
-    passphrase: 'indiana2014',
-    securityOptions: 'SSL_DH_anon_WITH_RC4_128_MD5'
-  }
-};
+
+
 
 // request.get(options,function(){
 //   console.dir(arguments); 

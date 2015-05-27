@@ -19,6 +19,7 @@ var WebSocket = require('ws')
 , q = require('q')
 , exnodeApi = require('./exnodeApi')
 , usgsapi = require("./usgsapi")
+, bdaApi = require("./bdaApp")
 ,_ = require('underscore');
 
 WebSocket.super_.defaultMaxListeners = 0;
@@ -133,7 +134,7 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
                              'hostname': opt.hostArr[i],
                              'port'    : opt.portArr[i],
                              'pathname': pathname});
-
+    
     console.log("Creating websocket for: " + urlstr);
 
     try{ 
@@ -278,7 +279,9 @@ function _getGenericHandler(resource, emitName,client){
 // export function for listening to the socket
 module.exports = function(client) {
   var getGenericHandler = function() {
-    var args = Array.prototype.slice.call(arguments);
+    var args = [];
+    for (var i= 0;i<arguments.length;i++)
+      args.push(arguments[i]);
     args.push(client);
     return _getGenericHandler.apply(this,args);
   };
@@ -315,6 +318,7 @@ module.exports = function(client) {
 
   // establish client socket
   console.log('Client connected:', client.conn.remoteAddress);
+
 
   client.on('node_request', getGenericHandler('node','node_data'));
   client.on('service_request', getGenericHandler('service','service_data'));
@@ -511,36 +515,39 @@ module.exports = function(client) {
     });
     // getAllChildExnodeFiles(d.id , d.id);
   });
-
-
+  
   client.on('getShoppingCart' , function (d) {    
-    var usgsKey = d.key;    
-    usgsapi.getShoppingCart(usgsKey).then(function(r) {
-      var items = r.data.orderItemBasket || [];
-      items.push.apply(items,r.data.bulkDownloadItemBasket);
-
-      client.emit("cart_nodata", { data : [] , size : items.length });
-      items.forEach(function(x) {
-        var idArr = x.orderScenes.map(function(x) { return x.entityId;});
-        usgsapi.getMetaData(usgsKey,idArr)
-          .then(function(res) {
-            client.emit('cart_data_res',{ data : res.data });
-            exnodeApi.getExnodeDataIfPresent(idArr , function(arr){
-              client.emit("cart_nodata",{ data : arr , size : items.length  });
-              console.log("Not present " , arr);
-            }, function(obj) {
-              var retMap  = {};
-              obj.map(function(x) {
-                var arr = retMap[nameToSceneId(x.name)] = retMap[nameToSceneId(x.name)] || [];
-                arr.push(x);
+    var usgsKey = d.key;
+    var password = d.password;
+    var username = d.username;
+    bdaApi.getAllOrders(username,password)    
+      .then(function(r) {        
+        var items = r;
+        // var items = r.data.orderItemBasket || [];
+        // items.push.apply(items,r.data.bulkDownloadItemBasket);        
+        client.emit("cart_nodata", { data : [] , size : items.length });
+        return usgsapi.login("indianadlt","indiana2014")
+          .then(function(r) {
+            var usgsKey = r.data;            
+            usgsapi.getMetaData(usgsKey,"LANDSAT_8",items)
+              .then(function(res) {
+                client.emit('cart_data_res',{ data : res.data });
+                exnodeApi.getExnodeDataIfPresent(idArr , function(arr){
+                  client.emit("cart_nodata",{ data : arr , size : items.length  });
+                  console.log("Not present " , arr);
+                }, function(obj) {
+                  var retMap  = {};
+                  obj.map(function(x) {
+                    var arr = retMap[nameToSceneId(x.name)] = retMap[nameToSceneId(x.name)] || [];
+                    arr.push(x);
+                  });
+                  client.emit("cart_data",{ data : retMap, size : items.length });
+                  console.log("Present " , arr);
+                });
               });
-              client.emit("cart_data",{ data : retMap, size : items.length });
-              console.log("Present " , arr);
-            });
           });
-      });          
-    });
-  });;
+      });
+  });
   
   var _nodeLocationMap = {};
   function getAllIpLocationMap(array , cb){
