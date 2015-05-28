@@ -1,4 +1,4 @@
-var fs = require('fs')
+var fs = require('fs') 
 , path = require('path')
 , tls = require('tls')
 , q = require('q')
@@ -265,7 +265,6 @@ var bdaSocket = function () {
   };  
 };
 
-var soc = new bdaSocket();
 // soc.login("indianadlt","indiana2014").then(function() {
 //   return soc.getOrders();
 // }).then(function(res) {
@@ -274,6 +273,7 @@ var soc = new bdaSocket();
 var bdaApi = {
   _smap : {},  
   getAllOrders : function (username, password) {
+    var soc = new bdaSocket();
     return soc.login(username,password)
       .then(soc.getOrders)
       .then(function(res) {
@@ -319,7 +319,9 @@ var bdaApi = {
         //   });
       }); 
   }  
-};
-//bdaApi.getAllOrders("indianadlt","indiana2014").then(function(x) { console.log(x);});
+}; 
+// bdaApi.getAllOrders("indianadlt","indiana2014").then(function(x) { console.log(x);});
+// bdaApi.getAllOrders("prakraja","prak8673").then(function(x) { console.log(x);});
+
 module.exports = bdaApi;
 
