@@ -506,8 +506,8 @@ module.exports = function(client) {
     return defer.promise;   
   };
 
-  client.on('exnode_getAllChildren', function(d){
-    // Do nothing for the time being
+  client.on('exnode_getAllChildren', function(d) {
+    // Do nothing for the time being 
     return;
     getAllChildExFilesDriver([d.id],d.id,function(){
       // Ok Done .. DO somethig if you want ..
@@ -516,15 +516,16 @@ module.exports = function(client) {
     // getAllChildExnodeFiles(d.id , d.id);
   });
   
-  client.on('getShoppingCart' , function (d) {    
+  client.on('getShoppingCart', function(d) {
     var usgsKey = d.key;
     var password = d.password;
     var username = d.username;
+    // console.log(username);
     bdaApi.getAllOrders(username,password)    
-      .then(function(r) {        
+      .then(function(r) {
         var items = r;
         // var items = r.data.orderItemBasket || [];
-        // items.push.apply(items,r.data.bulkDownloadItemBasket);        
+        // items.push.apply(items,r.data.bulkDownloadItemBasket);
         client.emit("cart_nodata", { data : [] , size : items.length });
         return usgsapi.login("indianadlt","indiana2014")
           .then(function(r) {
@@ -546,6 +547,9 @@ module.exports = function(client) {
                 });
               });
           });
+      })
+      .fail(function(x) {
+        client.emit("cart_error", { error : x});
       });
   });
   

@@ -3,6 +3,7 @@ var fs = require('fs')
 , tls = require('tls')
 , q = require('q')
 , _ = require ('underscore')
+, repeatedPromises = require('./repeatedPromises')
 , usgsapi = require('./usgsapi');
 
 function Encryption() {
@@ -155,6 +156,7 @@ var bdaSocket = function () {
       
       sock.once("connect",function() {
         isConnected = true; isLoggedIn = false;
+        // console.log("Session id ",sock.getSession());
         prom.resolve(sock);
       });
       
@@ -163,11 +165,15 @@ var bdaSocket = function () {
         isConnected = false; isLoggedIn = false;
         sock.destroy();
       });
+
+      sock.on('newSession',function(sid) {
+        console.log("New Sesson ",sid);
+      });
       
       sock.once('close',function(){  
         isConnected = false; isLoggedIn = false;
         sock.destroy();
-        console.log("Closed",arguments);
+        // console.log("Closed",arguments);
       });
       
       sock.on('data',function(data) {
@@ -246,7 +252,9 @@ var bdaSocket = function () {
     });
     return prom.promise;
   };
-
+  this.close = function() {
+    this.sock.destroy();
+  };
   this.getEnityIds = function (orderId) {
     var json = bdaRequest.getOrderDetailsJson(orderId);
     var prom = q.defer();
@@ -270,10 +278,15 @@ var bdaSocket = function () {
 // }).then(function(res) {
 //   console.log("Response ", res);
 // });
+
+var prQ = repeatedPromises.getPromiseQueue(30);
+// Lets just start the promise queue
+prQ.run();
+
 var bdaApi = {
   _smap : {},  
-  getAllOrders : function (username, password) {
-    var soc = new bdaSocket();
+  _getAllOrders : function (username, password) {
+    var soc = new bdaSocket();    
     return soc.login(username,password)
       .then(soc.getOrders)
       .then(function(res) {
@@ -299,6 +312,7 @@ var bdaApi = {
       })
       .then(function (elist) {
         var entity_list = elist.map(function(x) { return x.entityId ;});
+        soc.close();
         return entity_list;
         // var entityIdMap = elist.reduce(function(x,y) {
         //   if (!x[y.collection])
@@ -317,11 +331,45 @@ var bdaApi = {
         //     }
         //     return q.allSettled(promArr);         
         //   });
-      }); 
-  }  
-}; 
+      });
+  },
+  getAllOrders : function(username,password) {
+    var d = q.defer();
+    var queFun = (function() {
+      return function() {
+        var prom = bdaApi._getAllOrders(username,password);
+        prom.then(function(x) {
+          d.resolve(x);
+        });
+        prom.fail(function(x) {
+          d.reject(x);
+        });
+        return prom;
+      };
+    })();
+    prQ.addToQueue(queFun);
+    return d.promise;
+  }
+};
+
+
 // bdaApi.getAllOrders("indianadlt","indiana2014").then(function(x) { console.log(x);});
 // bdaApi.getAllOrders("prakraja","prak8673").then(function(x) { console.log(x);});
 
-module.exports = bdaApi;
+// for (var i = 0; i < 1000 ; i++) {
+//   var queFun = (function(i) {
+//     return function() {
+//       var prom = bdaApi.getAllOrders("indianadlt","indiana2014");
+//       prom.then(function(x) {
+//         console.log(i, " : ",x);
+//       });
+//       prom.fail(function(x) {
+//         console.log("Err ");
+//       });
+//       return prom;
+//     };
+//   })(i);
+//   prQ.addToQueue(queFun);
+// }
 
+module.exports = bdaApi;
