@@ -338,37 +338,45 @@
                  </div> -->  
                 </form>
             </tab>
-            <tab heading="USGS Shopping Cart" ng-controller="ShoppingCartController">                
-                <form class="row" ng-submit="loginAndPopulateCart($event)" ng-if="!hideLogin">
-                    <div class="alert alert-danger" role="alert" ng-if="loginFailed">
-                        <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-                        <span class="sr-only">Error:</span>
-                        Login Failed - Try again
-                    </div>
-                    <div class="col-md-4">
-                        <label>
-                            Username :
-                            <input id="username" type="text" class="form-control" name="username"/>
-                        </label>
-                    </div>
-                    <div class="col-md-4">
-                        <label>
-                            Password :
-                            <input id="password" type="password" class="form-control" name="password"/>
-                        </label>
-                    </div>                    
-                    <div class="col-md-4">
-                        <input type="submit" class="btn btn-primary" value="Login"/>
-                    </div>                    
-                </form>
+            <tab heading="USGS Shopping Cart" ng-controller="ShoppingCartController">
                 <div class="row">                            
                     <div ng-if="isShoppingCartLoading" style=" padding: 10px; margin: 10px 0;background-color: rgba(200,200,200,0.3);">
                         Loading Shopping cart ... 
                     </div>
+                    <div ng-if="cartErrorMsg" class="alert alert-danger">
+                        {{ cartErrorMsg }}
+                    </div>
+                    <div ng-if="usgsShoppingNoData">
+                        No Data present in shopping cart
+                    </div>
                 </div>
-                <div class="row" ng-if="usgsShoppingNoData">
-                    No Data present in shopping cart <button class="btn btn-default" ng-click="showLogin()" type="button"> Try Another login </button>
-                </div>
+                <div class="row">
+                    <form  ng-submit="loginAndPopulateCart($event)" ng-if="!hideLogin">
+                        <div class="alert alert-danger" role="alert" ng-if="loginFailed">
+                            <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                            <span class="sr-only">Error:</span>
+                            Login Failed - Try again
+                        </div>
+                        <div class="col-md-4">
+                            <label>
+                                Username :
+                                <input id="username" type="text" class="form-control" name="username"/>
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <label>
+                                Password :
+                                <input id="password" type="password" class="form-control" name="password"/>
+                            </label>
+                        </div>                    
+                        <div class="col-md-4">
+                            <input type="submit" class="btn btn-primary" value="Login"/>
+                        </div>                    
+                    </form>
+                    <div ng-if="hideLogin">
+                        <button class="btn btn-default" ng-click="showLogin()" type="button"> Try Another </button>
+                    </div>
+                </div>                                
                 <div class="row top10 imageSet">
                     <div class="col-md-4" ng-repeat="(key,val) in cartRes" ng-if="true || showModel != 'exnodes' || val.isExnode == true">
                         <div>

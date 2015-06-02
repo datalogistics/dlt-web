@@ -220,21 +220,32 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
 
 var USGS_KEY_NAME = 'usgsApiKey';
 var USGS_KEY_TIME = 'usgsApiKeyTime';
+// Valid for 10 hours
+var USGS_TIME_DIFF = 3600 * 10;
 function shoppingCartController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService) {
   $scope.usgs = {}; 
   $scope.cartRes = {};
   $scope.isShoppingCartLoading = false;
-  // var existing_key = localStorage.getItem(USGS_KEY_NAME);
-  // var existing_time = localStorage.getItem(USGS_KEY_TIME);
-  // var timeDiff = new Date().getTime() - existing_time;  
-  // if (timeDiff > 0 && (timeDiff / 1000) < 3600) {
-  //   console.log("Key Still valid ");
-  //   $scope.hideLogin = true;
-  //   populate_cart(existing_key);
-  // }
-
-  function populate_cart(uname , pwd) {
+  var existing_key = localStorage.getItem(USGS_KEY_NAME);
+  var existing_time = localStorage.getItem(USGS_KEY_TIME);
+  var timeDiff = new Date().getTime() - existing_time;  
+  if (timeDiff > 0 && (timeDiff / 1000) < USGS_TIME_DIFF) {
+    console.log("Key Still valid ");
+    $scope.hideLogin = true;
+    populate_cart_with_key(existing_key);
+  } else {
+    localStorage.setItem(USGS_KEY_NAME,"");
+    // localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
+  }
+  function populate_cart_with_key(key) {
+    SocketService.emit('getShoppingCart',{token : key , isToken : true});
+    $scope.cartRes = {};
+    $scope.isShoppingCartLoading = true;
+    $scope.hideLogin = true;
+  }
+  function populate_cart(uname , pwd) {    
     SocketService.emit('getShoppingCart',{username : uname, password : pwd});
+    $scope.cartRes = {};
     $scope.isShoppingCartLoading = true;
     $scope.hideLogin = true;
   }
@@ -243,7 +254,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     $scope.usgsShoppingNoData = false;
     $scope.loginFailed = false;
     $scope.hideLogin = false;
-  }
+  };
   $scope.loginAndPopulateCart = function(e) {
     var username = $(e.target).find("input[name=username]").val();
     var password = $(e.target).find("input[name=password]").val();
@@ -254,10 +265,13 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
 
   SocketService.on('cart_data_res', function(x) {
     console.log("Cart Data Res " ,x);
+    if(x.token) {
+      localStorage.setItem(USGS_KEY_NAME,x.token);
+      localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
+    }
     var map = {};
     x.data.map(function(x) {
       map[x.entityId] = x;
-      console.log(x.browseUrl);
     });
     $scope.isShoppingCartLoading = false;    
     $scope.cartRes = map;
@@ -266,6 +280,10 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     $(ev.target).ekkoLightbox();
   };
   SocketService.on('cart_nodata',function(data){
+    if(data.token) {
+      localStorage.setItem(USGS_KEY_NAME,data.token);
+      localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
+    }
     if (data.size == 0) 
       $scope.usgsShoppingNoData = true;
     // Bunch of ids with no data 
@@ -280,6 +298,10 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
   });
   
   SocketService.on('cart_data',function(data){
+    if(data.token) {
+      localStorage.setItem(USGS_KEY_NAME,data.token);
+      localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
+    }
     var map = data.data ;
     var res = $scope.cartRes;
     for ( var i in map) {
@@ -298,6 +320,17 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
           obj._exnodeData = it;
         }      
       };
+    }
+  });
+  SocketService.on('cart_error',function(err) {
+    $scope.isShoppingCartLoading = false;
+    if (err.errorMsg) {
+      $scope.cartErrorMsg = err.error;
+      if (/password/i.test(err.error))
+        $scope.showLogin();
+    } else {
+      // Print out as System error and log it in the console
+      $scope.cartErrorMsg = "Unknown error - This is probably an issue with the EarthExplorer ";
     }
   });
 }

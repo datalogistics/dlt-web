@@ -1,3 +1,4 @@
+'use strict';
 var fs = require('fs') 
 , path = require('path')
 , tls = require('tls')
@@ -94,10 +95,13 @@ function Encryption() {
     }    
   };
   this.encrypt = function(source) {
-    var part1 = source.substring(0, source.length / 2);
-    var part2 = source.substring(source.length / 2);
-    var saltedSource = part1 + this._saltValue + part2;      
-    return this._encrypt(this._defaultEncryptionKey, saltedSource, 0);
+    if (source) {
+      var part1 = source.substring(0, source.length / 2);
+      var part2 = source.substring(source.length / 2);
+      var saltedSource = part1 + this._saltValue + part2;      
+      return this._encrypt(this._defaultEncryptionKey, saltedSource, 0);
+    } else
+      return "";
   };
 };
 
@@ -115,11 +119,11 @@ var auth = {"message":"1.5.3",
 
 
 var bdaRequest = {  
-  getLoginJson : function (username, password) {
+  getLoginJson : function (username, password,isEncrypted) {
     return {"message":"","requester":"bda",
             "requestType":2,
-            "username":encrypt.encrypt(username),
-            "password":encrypt.encrypt(password),
+            "username":isEncrypted ? username : encrypt.encrypt(username),
+            "password":isEncrypted ? password : encrypt.encrypt(password),
             "clientDetails":{"os":"Windows 8.1 (build 6.3, amd64)","javaVersion":"1.7.0_75"},
             "version":"1.5.3"};
   },
@@ -141,7 +145,11 @@ var bdaSocket = function () {
   var isLoggedIn = false;
   // Request to promise map
   var reqMap = {};
-  
+  var errorHandler = function(err) {
+    console.log("ErrHandler ");
+    sock.close();
+    return err;
+  };
   var doConnect = function () {
     var prom = q.defer();
     if (!isConnected) {
@@ -160,14 +168,11 @@ var bdaSocket = function () {
         prom.resolve(sock);
       });
       
-      sock.on('error',function(){
-        console.log("BDA Sock Error " , arguments);
+      sock.on('error',function(err){
         isConnected = false; isLoggedIn = false;
         sock.destroy();
-      });
-
-      sock.on('newSession',function(sid) {
-        console.log("New Sesson ",sid);
+        prom.reject(err);
+        // console.log("BDA Sock Error " , arguments);
       });
       
       sock.once('close',function(){  
@@ -197,11 +202,11 @@ var bdaSocket = function () {
     return doConnect().then(function (sock) {
       var prom = reqMap[json.requestType];
       function cb() {
-        prom = q.defer();        
+        prom = q.defer();
         sock.write(JSON.stringify(json) + "\r\n",'utf-8');
         reqMap[json.requestType] = prom;
         return prom.promise;
-      };      
+      };
       if (prom) {
         return prom.promise.then(cb);
       } else {
@@ -214,23 +219,23 @@ var bdaSocket = function () {
   
   this.sock = sock;
 
-  var doLogin = this.login = function (uname,pwd) {
+  var doLogin = this.login = function (uname,pwd,isEncrypted) {
     var prom = q.defer();
     if (isLoggedIn) {
       prom.resolve();
     } else if (!uname || !pwd) {
       prom.reject("No Username or password");
-    } else {
-      var json = bdaRequest.getLoginJson(uname,pwd);
-      doConnect().then(function(sock) {
-        return doReq(json);
-      }).then(function (res) {
+    } else {      
+      var json = bdaRequest.getLoginJson(uname,pwd,isEncrypted);
+      doReq(json).then(function (res) {
         if (res.errorCode == 0) {
           isLoggedIn = true;
           prom.resolve();
         } else {
           prom.reject(res.message);
         }
+      },function(err) {
+        prom.reject(err);
       });
     };
     return prom.promise;
@@ -284,10 +289,11 @@ var prQ = repeatedPromises.getPromiseQueue(30);
 prQ.run();
 
 var bdaApi = {
+  Encryption : Encryption,
   _smap : {},  
-  _getAllOrders : function (username, password) {
+  _getAllOrders : function (username, password,isEncrypted) {
     var soc = new bdaSocket();    
-    return soc.login(username,password)
+    return soc.login(username,password,isEncrypted)
       .then(soc.getOrders)
       .then(function(res) {
         return res.orders.map(function(x) {return x.orderId;});
@@ -333,11 +339,11 @@ var bdaApi = {
         //   });
       });
   },
-  getAllOrders : function(username,password) {
+  getAllOrders : function(username,password,isEncrypted) {
     var d = q.defer();
     var queFun = (function() {
       return function() {
-        var prom = bdaApi._getAllOrders(username,password);
+        var prom = bdaApi._getAllOrders(username,password,isEncrypted);
         prom.then(function(x) {
           d.resolve(x);
         });
@@ -353,23 +359,23 @@ var bdaApi = {
 };
 
 
-// bdaApi.getAllOrders("indianadlt","indiana2014").then(function(x) { console.log(x);});
-// bdaApi.getAllOrders("prakraja","prak8673").then(function(x) { console.log(x);});
-
-// for (var i = 0; i < 1000 ; i++) {
-//   var queFun = (function(i) {
-//     return function() {
-//       var prom = bdaApi.getAllOrders("indianadlt","indiana2014");
-//       prom.then(function(x) {
-//         console.log(i, " : ",x);
-//       });
-//       prom.fail(function(x) {
-//         console.log("Err ");
-//       });
-//       return prom;
-//     };
-//   })(i);
-//   prQ.addToQueue(queFun);
+// bdaApi.getAllOrders("indianadlt","indiana2014").then(function(x) { console.log(x);}).catch(function(x) {
+//   console.log(x,arguments);
+//});
+// bdaApi.getAllOrders("prakraja","prak8673").then(function(x) { console.log(x);}).catch(function(x) {
+//   console.log(x,arguments);
+// });
+// prQ.run();
+// for (var i = 0; i < 1000 ; i++) {  
+//   var prom = bdaApi.getAllOrders("indianadlt","indiana2014");
+//   prom.then(function(x) {
+//     console.log(i, " : ",x);
+//   }).catch(function(x) {
+//     console.log("Err ",x);
+//   });
+    
+//   // })(i);
+//   // prQ.addToQueue(queFun);
 // }
 
 module.exports = bdaApi;

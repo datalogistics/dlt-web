@@ -78,8 +78,9 @@ var self = {
   },
   usgs_row_searchurl : "http://landsat.usgs.gov/includes/scripts/get_metadata.php",
   usgs_lat_searchurl : "http://earthexplorer.usgs.gov/EE/InventoryStream/latlong",
-  getSocketOptions : function () {
-    
+  usgs_api_credentials : {
+    username : "indianadlt",
+    password : "indiana2014"
   },
   // Correct way
   getOptions : function(cfg) {
