@@ -234,6 +234,9 @@ module.exports = function(app) {
     } else if(id) {
       req.query.parent = id;
     }
+    // Ascending sort by name
+    // Since all path and rows have 0 appened to them, so an ordinary string sort will work even though they are numbers
+    req.query.sort= "name:1";
     var paramString = querystring.stringify(req.query);
     var arr = [];
     var options = _.extend({
@@ -242,7 +245,7 @@ module.exports = function(app) {
       name : 'exnodes'
     },getHttpOptions({
       name : 'exnodes'
-    }));      
+    }));
     registerGenericHandler(options, function(obj){
       var exjson =  obj[0].value;
       // Return matching id children
