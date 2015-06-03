@@ -110,7 +110,7 @@ var pathIdObj = (function(){
       // Kill the array
       arr.length = 0;
     }
-  }
+  };
 })();
 
 
@@ -536,7 +536,11 @@ module.exports = function(client) {
     isEncrypted = true;
     bdaApi.getAllOrders(username,password,isEncrypted)
       .then(function(r) {
-        var items = r;
+        var EntityIdMap = {};
+        var items = r.map(function(x) {
+          EntityIdMap[x.entityId] = x;
+          return x.entityId ;
+        });
         // var items = r.data.orderItemBasket || [];
         // items.push.apply(items,r.data.bulkDownloadItemBasket);
         client.emit("cart_nodata", { data : [] , size : items.length , token : tokenStr});
@@ -547,8 +551,17 @@ module.exports = function(client) {
             var usgsKey = r.data;            
             usgsapi.getMetaData(usgsKey,"LANDSAT_8",items)
               .then(function(res) {
+                // Lets group results by orderId
+                var orderIdToDataMap = {};
+                res.data.forEach(function(x) {
+                  var orderId = EntityIdMap[x.entityId].orderId;
+                  if (!orderIdToDataMap[orderId])
+                    orderIdToDataMap[orderId] = [];
+                  var arr = orderIdToDataMap[orderId];
+                  arr.push(x);                  
+                });
                 client.emit('cart_data_res',{ data : res.data , token : tokenStr});
-                exnodeApi.getExnodeDataIfPresent(idArr , function(arr){
+                exnodeApi.getExnodeDataIfPresent(items , function(arr){
                   client.emit("cart_nodata",{ data : arr , size : items.length , token : tokenStr});
                   // console.log("Not present " , arr);
                 }, function(obj) {
@@ -600,3 +613,9 @@ module.exports = function(client) {
     });  
   }
 }
+
+// exnodeApi.getExnodeDataIfPresent(['LC80100262015146LGN00'],function(arr) {
+//   console.log(arr);
+// },function(arr) {
+//   console.log(arr);
+// });
