@@ -35,7 +35,16 @@ describe('Sockets', function() {
       done();
     });
   });
-  
+
+  it("should get cart" , function(done) {
+    this.timeout(10000);
+    client.emit('getShoppingCart',{username : "prakraja", password : "prak8673"});
+    client.on('cart_data_res',function(x) {
+      console.log(x);
+      done();
+    });
+  });
+   
   it("should get atleast one measurement" , function (done) {
     this.timeout(0);        
     client.on('data_data',function(data) {

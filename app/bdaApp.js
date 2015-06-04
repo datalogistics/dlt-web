@@ -313,30 +313,9 @@ var bdaApi = {
         var entity_list = arr.reduce(function(x,y) {
           x.push.apply(x,y);
           return x;
-        },[]);           
-        return entity_list;
-      })
-      .then(function (elist) {
-        var entity_list = elist.map(function(x) { return x.entityId ;});
+        },[]);
         soc.close();
         return entity_list;
-        // var entityIdMap = elist.reduce(function(x,y) {
-        //   if (!x[y.collection])
-        //     x[y.collection] = [];      
-        //   var arr = x[y.collection];
-        //   arr.push(y.entityId);
-        //   return x;
-        // },{});        
-        // return usgsapi.login("indianadlt","indiana2014")
-        //   .then(function(r) {
-        //     console.log("Logged in " , r);
-        //     var usgsKey = r.data;
-        //     var promArr = [];
-        //     for ( var i in entityIdMap) {
-        //       promArr.push(usgsapi.getMetaData(usgsKey,"LANDSAT_8",entityIdMap[i]));
-        //     }
-        //     return q.allSettled(promArr);         
-        //   });
       });
   },
   getAllOrders : function(username,password,isEncrypted) {
