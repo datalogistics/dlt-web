@@ -20,7 +20,8 @@
     "jstree-directive": "~0.1.4",
     "angular-bootstrap-slider": "~0.1.1",
     "ekko-lightbox": "~3.2.2",
-    "jstree": "~3.0.9"
+    "jstree": "~3.0.9",
+    "topojson": "~1.6.19"
   },
   "resolutions": {
     "angular": "~1.2.6",
