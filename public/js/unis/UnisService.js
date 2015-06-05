@@ -44,9 +44,9 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   getServiceName = function(item) {
     var name;
     if (typeof item.accessPoint != 'undefined') {
-      name = ((item.accessPoint || "").split("://")[1] || "").split(":")[0] || "" 
+      name = ((item.accessPoint || "").split("://")[1] || "").split(":")[0] || "" ;
     } else if (typeof item.name != 'undefined') {
-      name = item.name
+      name = item.name;
     }
     return name;
   };
@@ -56,7 +56,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
             && typeof item.location.longitude != 'undefined'
             && typeof item.location.latitude != 'undefined'
             && item.location.longitude != 0
-            && item.location.latitude != 0)
+            && item.location.latitude != 0);
   };
   
   getInstitutionName = function(item) {
@@ -68,7 +68,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	  if (l.tcp.split("/")[0] == p.properties.ipv4.address
 	      && !item.location.institution)
 	    item.location.institution = p.nodeRef.replace(/(.*)(domain=)(.*):.*$/, "$3");
-	})}
+	});
+      };
     });
   };
   
@@ -92,7 +93,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	}).
 	error(function(data, status, headers, config) {
 	  console.log("Error: ", status);
-	})
+	});
     }
     var d = $q.defer();
     d.resolve();
