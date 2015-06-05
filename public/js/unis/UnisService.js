@@ -78,7 +78,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     
     if (!hasLocationInfo(item)) {
       var url = "http://freegeoip.net/json/" + getServiceName(item);
-      $http.get(url).
+      return $http.get(url).
 	success(function(data, status, headers, config) {
 	  item.location = {
 	    'latitude': data.latitude,
@@ -94,6 +94,10 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	  console.log("Error: ", status);
 	})
     }
+    var d = $q.defer();
+    d.resolve();
+    // send a resolve promise anyway
+    return d.promise;
   };
 
   service.getMetadataId = function(id, cb) {
@@ -171,8 +175,9 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   
   finish = function() {
     var services = service.services;
+    var prom = [] ;
     services.forEach(function(s) {
-      updateServiceEntry(s)
+      prom.push(updateServiceEntry(s));
       // save the initial ts
       s.firstSeen = s.ts;
     });
@@ -198,7 +203,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     }
     
     // start timer
-    var timeout = $timeout(onTimeout, 1000);   
+    var timeout = $timeout(onTimeout, 1000);
+    return $q.all(prom);
   };
     
   // socket handlers...
@@ -290,7 +296,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       SocketService.emit('port_request', {});
       SocketService.emit('measurement_request', {});
       SocketService.emit('metadata_request', {});
-      finish();
+      return finish();
     });
     return initServicePromise;
   };

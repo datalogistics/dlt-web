@@ -19,7 +19,7 @@ function getRate(x,y,oldx,oldy) {
   return newArr;
 }
 
-function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService,$modal,$window) {
+function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService,$modal,$window,$filter) {
   var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
 	          'ps:tools:blipp:ibp_server:resource:usage:free',
 	          'ps:tools:blipp:linux:cpu:utilization:user',
@@ -33,9 +33,27 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   $scope.metadata = UnisService.metadata || [];
   $scope.nodes = UnisService.nodes || [];
   $scope.ports = UnisService.ports || [];
-
+  // Group services by parameter 
+  var currentKey = "location"; // Can be anyother property
+  $scope.$watch('services', function(serv) {    
+    var services = $filter('filter')(serv.slice(0),{serviceType: 'ibp_server'}) || [];    
+    $scope.groupedServiceMap = services.reduce(function (y,x) {
+      var key = x[currentKey];
+      // Special casing location - Could technically just try to put this into its toString method
+      if (currentKey == "location") {
+        var k  = (key.city || "") + " "  + (key.state || "");        
+        key = k.trim();
+      };
+      if (!y[key]) {
+        y[key] = y[key] || [];
+      };
+      console.log(key,x);
+      y[key].push(x);
+      return y;
+    },{});
+  });  
+  
   if (metadata_id != null) {
-
     $scope.eventType = [];
 
     UnisService.getMetadataId(metadata_id, function(metadata) {
@@ -45,12 +63,12 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 
       for (i=0; i< metadata.length; i++) {
         if (eventType === undefined) {
-          eventType = metadata[i].eventType
+          eventType = metadata[i].eventType;
         }
       }
 
       var chartconfig = getETSChartConfig(eventType);
-      d3.select(chartconfig.selector).attr("style", "")
+      d3.select(chartconfig.selector).attr("style", "");
       
       UnisService.getDataId(metadata_id, null, function(data) {
         if (typeof data =='string') {
@@ -194,7 +212,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
         id : metadata.id,
         name : name ,
         buttonName : buttonName
-      }
+      };
       window.open('/popup/graphs?'+$.param(params),null, "width=600,height=420,resizable,scrollbars,status");
     } else {
       $scope.metadataId = metadata.id;
