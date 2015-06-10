@@ -118,7 +118,7 @@ var auth = {"message":"1.5.3",
             "version":"1.5.3"};
 
 
-var bdaRequest = {  
+var bdaRequest = {
   getLoginJson : function (username, password,isEncrypted) {
     return {"message":"","requester":"bda",
             "requestType":2,
@@ -181,11 +181,18 @@ var bdaSocket = function () {
         // console.log("Closed",arguments);
       });
       
+      var tmp = "";
       sock.on('data',function(data) {
-        var json = JSON.parse(data.toString());
-        var prom = reqMap[json.requestType];
-        if (prom) {
-          prom.resolve(json);
+        var dStr = data.toString();
+        tmp += dStr;
+        // Message from server finishes with \n
+        if (dStr.indexOf("\n") != -1) {
+          var json = JSON.parse(tmp);
+          var prom = reqMap[json.requestType];
+          if (prom) {
+            prom.resolve(json);
+          }
+          tmp = "";
         }
       });
     } else {
@@ -338,9 +345,9 @@ var bdaApi = {
 };
 
 
-// bdaApi.getAllOrders("indianadlt","indiana2014").then(function(x) { console.log(x);}).catch(function(x) {
+// bdaApi.getAllOrders("prblackwell","g00d4USGS").then(function(x) { console.log(x);}).catch(function(x) {
 //   console.log(x,arguments);
-//});
+// });
 // bdaApi.getAllOrders("prakraja","prak8673").then(function(x) { console.log(x);}).catch(function(x) {
 //   console.log(x,arguments);
 // });
