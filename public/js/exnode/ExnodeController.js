@@ -188,12 +188,20 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   $scope.usgsNodeSelected = selectNodeGen("usgs");
   $scope.usgsNodeUnselected = unselectNodeGen("usgs");
 
-  $scope.uncheckAll = function() {
-    $scope.selectedIds = {};
+  $scope.selectToggle = function() {
+    var flag = true; 
+    $(".exnodeFileList tbody input").each(function(x) {
+      flag = flag && $(this).prop("checked");
+      // Break if flag true
+      return flag;
+    });    
+    if (!flag) {
+      $(".exnodeFileList input").prop("checked",true);
+    } else {
+      $(".exnodeFileList input").prop("checked",false);
+    }
   };
-  $scope.checkAll = function (a,b) {
-    console.log(arguments);
-  }
+
 
   $scope.downloadOne = function(id){
     console.log("Downloading this file ",id);

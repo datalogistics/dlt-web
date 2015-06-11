@@ -13,14 +13,14 @@
                     </div>
                     <div class="col-md-7 file-viewer">
                         <div>
-                            <table class="table-striped table exnodeFileList">
-                                <thead>
-                                    <tr>
-                                        <th> Name </th>
-                                        <th> Size (MB) </th>
-                                        <th> Select </th>
-                                        <th> Download</th>                                        
-                                    </tr>
+                          <table class="table-striped table exnodeFileList">
+                            <thead>
+                              <tr>
+                                <th> Name </th>
+                                <th> Size (MB) </th>
+                                <th> Select <input type="checkbox" ng-click="selectToggle()" "value="false"/></th>
+                                <th> Download</th>                                        
+                              </tr>
                                 </thead>
                                 <tbody>
                                     <tr ng-repeat="(key,val) in selectedIds">
@@ -30,7 +30,8 @@
                                         <td><button ng-click="downloadOne(val.selfRef)" class="btn btn-info">Download</button></td>
                                     </tr>                                       
                                 </tbody>
-                            </table>                            
+                          </table>
+                          
                             <button ng-click="downloadAll()" class="btn btn-info">Download Selected</button>                            
                         </div>
                         <!-- <pre>
