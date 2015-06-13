@@ -8,6 +8,7 @@ var express = require('express')
   , http = require('http')
   , socketio = require('socket.io')
   , cors = require('cors');
+var compression = require('compression');
 
 // create app, server, sockets
 var app = module.exports = express();
@@ -26,6 +27,18 @@ app.configure(function() {
   app.use(express.urlencoded());
   app.use(express.methodOverride());
 });
+
+app.use(compression({filter: shouldCompress}))
+
+function shouldCompress(req, res) {
+  if (req.headers['x-no-compression']) {
+    // don't compress responses with this request header
+    return false
+  }
+
+  // fallback to standard filter function
+  return compression.filter(req, res)
+};
 
 app.use(express.bodyParser());
 // configure enviroments
