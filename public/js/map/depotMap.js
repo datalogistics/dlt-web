@@ -363,12 +363,13 @@ function backplaneLinks(map, natmap) {
 
   function screen_location(svg, natmap, endpoint) {
     var mapping = natmap[endpoint]
-    if (mapping === undefined) {
-      console.error("link endpoint not in natmap: ", endpoint)
-      return undefined
+    if (mapping) {
+      endpoint = mapping.external
+      port = mapping.port
     }
-    endpoint = mapping.external
-    port = mapping.port
+    else {
+      port = 6714
+    }
 
     var mapNode = svg.selectAll(".depotLocation").filter(function(d) {
       return ((this.getAttribute("name") == endpoint) &&

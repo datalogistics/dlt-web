@@ -1,32 +1,9 @@
 # key:internal:port:external:accesspoint
-# ucla-ig
-10.10.103.1:10.10.13.1:6131:phoebus.salt.net.internet2.edu:164.67.126.39
-10.10.103.2:10.10.13.2:6132:phoebus.salt.net.internet2.edu:164.67.126.38
-10.10.103.5:10.10.13.5:6135:phoebus.salt.net.internet2.edu:
-10.10.103.6:10.10.13.6:6136:phoebus.salt.net.internet2.edu:
-# missouri-ig
-10.10.104.1:10.10.14.1:6141:phoebus.kans.net.internet2.edu:128.206.119.42
-10.10.104.2:10.10.14.2:6142:phoebus.kans.net.internet2.edu:128.206.119.41
-10.10.104.5:10.10.14.5:6145:phoebus.kans.net.internet2.edu:
-10.10.104.6:10.10.14.6:6146:phoebus.kans.net.internet2.edu:
-# gpo-ig
-10.10.100.1:10.10.10.1:6101:phoebus.newy.net.internet2.edu:192.1.242.152
-10.10.100.2:10.10.10.2:6102:phoebus.newy.net.internet2.edu:192.1.242.150
-10.10.100.5:10.10.10.5:6105:phoebus.newy.net.internet2.edu:
-10.10.100.6:10.10.10.6:6106:phoebus.newy.net.internet2.edu:
-# utahddc-ig
-10.10.102.1:10.10.12.1:6121:phoebus.salt.net.internet2.edu:155.99.144.110
-10.10.102.2:10.10.12.2:6122:phoebus.salt.net.internet2.edu:155.99.144.113
-10.10.102.5:10.10.12.5:6125:phoebus.salt.net.internet2.edu:
-10.10.102.6:10.10.12.6:6126:phoebus.salt.net.internet2.edu:
 # illinois-ig
-10.10.105.1:10.10.15.1:6151:phoebus.chic.net.internet2.edu:72.36.65.75
-10.10.105.2:10.10.15.2:6152:phoebus.chic.net.internet2.edu:72.36.65.77
-10.10.105.5:10.10.15.5:6155:phoebus.chic.net.internet2.edu:
-10.10.105.6:10.10.15.6:6156:phoebus.chic.net.internet2.edu:
-# max-ig
-10.10.106.1:10.10.16.1:6161:phoebus.wash.net.internet2.edu:206.196.180.226
-10.10.106.2:10.10.16.2:6162:phoebus.wash.net.internet2.edu:206.196.180.225
+10.10.105.1:10.10.15.1:6151:dresci.incntre.iu.edu:72.36.65.75
+10.10.105.2:10.10.15.2:6152:dresci.incntre.iu.edu:72.36.65.76
+10.10.105.5:10.10.15.5:6155:dresci.incntre.iu.edu:72.36.65.81
+10.10.105.6:10.10.15.6:6156:dresci.incntre.iu.edu:
 # nysernet-ig
 10.10.101.1:10.10.11.1:6111:199.109.66.10:199.109.64.51
 10.10.101.2:10.10.11.2:6112:199.109.66.11:199.109.64.52
