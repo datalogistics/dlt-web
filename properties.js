@@ -16,6 +16,8 @@ var self = {
       'jarfile' : 'lib/dlt-publisher.jar'
     }
   },
+  // Match exnodes using name if true , else use properties.metadata.scene_id
+  exnodeMatchingFromName : true,
   routeMap : { 
     // Aggregate from the following by default 
     'default'  : ['dlt', 'monitor'],

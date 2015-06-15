@@ -95,12 +95,18 @@ function nameToSceneId(name) {
 function getExnodeData(idlist,hdetails) {
   //console.log("ID list " ,idlist , hdetails);
   var defer = q.defer();
-  var str = idlist.join(",");
+  var fromName = cfg.exnodeMatchingFromName;
+  var str;
+  if (fromName) {   
+    str = "("+ idlist.join(")|(") + ")";
+  } else {
+    str = idlist.join(",");
+  }
   var data = "";
   http.get({
     host : hdetails.url,
     port : hdetails.port,
-    path : '/exnodes?properties.metadata.scene_id='+str
+    path : '/exnodes?'+ (fromName? "name=reg=" : "properties.metadata.scene_id=")+str
   }, function(http_res) {
     http_res.on('data', function (chunk) {
       data += chunk;
@@ -127,7 +133,7 @@ function getExnodeData(idlist,hdetails) {
 };
 
 
-//getIfPresent(['LC80440322015096LGN00',2,2,3,4,4,6,7,8,83,2,3]);
+getIfPresent(['LC80440322015096LGN00','LC80440322015096LGN00',2,2,3,4,4,6,7,8,83,2,3]);
 
 module.exports = {
   getExnodeDataIfPresent : getIfPresent,
