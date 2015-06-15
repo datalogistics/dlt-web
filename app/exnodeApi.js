@@ -133,7 +133,7 @@ function getExnodeData(idlist,hdetails) {
 };
 
 
-getIfPresent(['LC80440322015096LGN00','LC80440322015096LGN00',2,2,3,4,4,6,7,8,83,2,3]);
+// getIfPresent(['LC80440322015096LGN00','LC80440322015096LGN00',2,2,3,4,4,6,7,8,83,2,3]);
 
 module.exports = {
   getExnodeDataIfPresent : getIfPresent,
