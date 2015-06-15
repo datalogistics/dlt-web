@@ -361,7 +361,7 @@ module.exports = function(app) {
         "type": "al2s",
         "capacity": 200000,
         "endpoint_a": "199.109.64.51",
-        "endpoint_z": "206.196.180.226"
+        "endpoint_z": "206.196.180.223"
       },
       "nyser-bbn" : {
         "type": "al2s",
