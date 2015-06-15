@@ -98,6 +98,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
   $('body').popover({
     html: true,
     selector : ".imageSet .trigger",
+    trigger : "focus click",
     title: function () {
       return $(this).parent().find('.head').html();
     },

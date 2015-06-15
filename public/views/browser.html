@@ -247,6 +247,7 @@
                                             Loading Exnode Info ... 
                                         </div>
                                     </div>
+                                    <div class="row">Id : {{ val.entityId }}</div>
                                     <div ng-if="val.isExnode">
                                         <div class="row">
                                             <div class="lfloat">
@@ -383,9 +384,10 @@
                         <div>
                             <img src="{{val.browseUrl}}" class="img-responsive cursorPointer"                                 
                                  href="{{val.browseUrl}}"
-                                 ng-click="showImage($event);$event.preventDefault();" />                            
+                                 ng-click="showImage($event);$event.preventDefault();" />
+                            <div class="row">Id : {{ val.entityId }}</div>
                             <div ng-if="val.isExnode">
-                                <div class="row">
+                                <div class="row">                                    
                                     <div class="lfloat">
                                         <button type="button" class="trigger btn btn-default">Choose files</button>
                                         <div class="popover-markup">

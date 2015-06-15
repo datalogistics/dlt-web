@@ -353,3 +353,7 @@ text.id {
 .jstree-default .jstree-leaf .jstree-checkbox {
     display : inline-block ;
 }
+
+.imageSet .row {
+    margin : 0;
+}
