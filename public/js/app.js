@@ -3,7 +3,10 @@
  * public/js/
  * app.js
  */
-
+// The global config json
+var DLT_PROPS = {
+  FreeGeoIpUrl :"http://dlt.incntre.iu.edu:8080/json/"
+};
 angular.module('periApp', ['ngRoute',
 			   'jsTree.directive',
 			   'angular-loading-bar',
@@ -25,59 +28,59 @@ angular.module('periApp', ['ngRoute',
     $rootScope.comm = CommChannel;
   })
   .config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
-      function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
-        cfpLoadingBarProvider.includeSpinner = false;
-        
-        $routeProvider.
-    when('/', {
-      templateUrl: 'views/main.html',
-      controller: 'MainController'
-    }).
-  when('/status', {
-    templateUrl: 'views/depots.html',
-    controller: 'DepotController',
-    resolve: {
-      'unis': function(UnisService) {
-        return UnisService.init()
-      }}
-  }).
-  when('/depots/:id', {
-    templateUrl: 'views/depot_data.html',
-    controller: 'DepotController',
-    resolve: {
-      'unis': function(UnisService) {
-        return UnisService.init()
-      }}
-  }).
-  when('/map/', {
-    templateUrl: 'views/depot_map.html',
-    controller: 'MapController',
-    resolve: {
-      'unis': function(UnisService) {
-        return UnisService.init()
-      }}
-  }).
-  when('/map/:id', {
-    templateUrl: 'views/depot_map.html',
-    controller: 'MapController',
-    resolve: {
-      'unis': function(UnisService) {
-        return UnisService.init()
-      }}
-  }).
-  when('/browser/',{
-    templateUrl: 'views/browser.html',
-    controller: 'ExnodeController'
-  }).
-  when('/downloads/',{
-    templateUrl: 'views/download_map.html',
-    controller: 'DownloadMapController'
-  }).
-  when('/downloads/filter',{
-    templateUrl: 'views/download_map.html',
-    controller: 'DownloadMapController'
-  })
-  .otherwise({redirectTo: '/'});
+           function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
+             cfpLoadingBarProvider.includeSpinner = false;
+             
+             $routeProvider.
+               when('/', {
+                 templateUrl: 'views/main.html',
+                 controller: 'MainController'
+               }).
+               when('/status', {
+                 templateUrl: 'views/depots.html',
+                 controller: 'DepotController',
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               }).
+               when('/depots/:id', {
+                 templateUrl: 'views/depot_data.html',
+                 controller: 'DepotController',
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               }).
+               when('/map/', {
+                 templateUrl: 'views/depot_map.html',
+                 controller: 'MapController',
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               }).
+               when('/map/:id', {
+                 templateUrl: 'views/depot_map.html',
+                 controller: 'MapController',
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               }).
+               when('/browser/',{
+                 templateUrl: 'views/browser.html',
+                 controller: 'ExnodeController'
+               }).
+               when('/downloads/',{
+                 templateUrl: 'views/download_map.html',
+                 controller: 'DownloadMapController'
+               }).
+               when('/downloads/filter',{
+                 templateUrl: 'views/download_map.html',
+                 controller: 'DownloadMapController'
+               })
+               .otherwise({redirectTo: '/'});
 
-  $locationProvider.html5Mode(true);
-    }]);
+             $locationProvider.html5Mode(true);
+           }]);

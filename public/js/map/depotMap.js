@@ -270,7 +270,7 @@ function allServiceData(services, match, natmap, then) {
 //Converts to a dictionary of {ip: {lattitude: x, longitude: y}}
 function ipToLocation(items, then) {
   Object.keys(items).forEach(function(name) {
-    var url = "https://freegeoip.net/json/" + name
+    var url = DLT_PROPS.FreeGeoIpUrl + name
     d3.json(url, function (error, raw) {
       var locations = []
       if (error) {

@@ -78,7 +78,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     item.ttl = Math.round(((item.ttl + (item.ts / 1e6)) - now));
     
     if (!hasLocationInfo(item)) {
-      var url = "http://freegeoip.net/json/" + getServiceName(item);
+      var url = DLT_PROPS.FreeGeoIpUrl + getServiceName(item);
       return $http.get(url).
 	success(function(data, status, headers, config) {
 	  item.location = {
