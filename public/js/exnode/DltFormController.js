@@ -236,6 +236,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     populate_cart_with_key(existing_key);
   } else {
     localStorage.setItem(USGS_KEY_NAME,"");
+    existing_key = null;
     // localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
   }
   function populate_cart_with_key(key) {
@@ -256,6 +257,11 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     $scope.loginFailed = false;
     $scope.hideLogin = false;
   };
+  $scope.deleteOrder = function(orderId) {
+    SocketService.emit('deleteOrderGroup',{token : existing_key,isToken: true,orderId : orderId});
+    populate_cart_with_key(existing_key);
+  };
+  k = $scope;
   $scope.loginAndPopulateCart = function(e) {
     var username = $(e.target).find("input[name=username]").val();
     var password = $(e.target).find("input[name=password]").val();
@@ -269,14 +275,16 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     if(x.token) {
       localStorage.setItem(USGS_KEY_NAME,x.token);
       localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
-    }
-    var map = {};
-    x.data.map(function(x) {
-      map[x.entityId] = x;
-    });
-    $scope.isShoppingCartLoading = false;    
-    $scope.cartRes = map;
+      existing_key = x.token;
+    }    
+    // var map = {};
+    // x.data.map(function(x) {
+    //   map[x.entityId] = x;
+    // });
+    $scope.isShoppingCartLoading = false;
+    $scope.cartRes = x.data;
   });
+  
   $scope.showImage = function(ev){
     $(ev.target).ekkoLightbox();
   };
@@ -284,6 +292,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     if(data.token) {
       localStorage.setItem(USGS_KEY_NAME,data.token);
       localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
+      existing_key = data.token;
     }
     if (data.size == 0) 
       $scope.usgsShoppingNoData = true;
@@ -314,11 +323,11 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
           obj.isExnode = true;
           var arr = obj.exFileArr = obj.exFileArr || [];
           obj.exMap = obj.exMap || {} ;
-          if (!obj.exMap[it.name]){
+          if (!obj.exMap[it.name]) {
             arr.push(it);
             obj.exMap[it.name] = true;  
           }
-          obj._exnodeData = it;
+          obj._exnodeData = it;          
         }      
       };
     }

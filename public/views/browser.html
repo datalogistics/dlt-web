@@ -380,63 +380,70 @@
                     </div>
                 </div>                                
                 <div class="row top10 imageSet">
-                    <div class="col-md-4" ng-repeat="(key,val) in cartRes" ng-if="true || showModel != 'exnodes' || val.isExnode == true">
-                        <div>
-                            <img src="{{val.browseUrl}}" class="img-responsive cursorPointer"                                 
-                                 href="{{val.browseUrl}}"
-                                 ng-click="showImage($event);$event.preventDefault();" />
-                            <div class="row">Id : {{ val.entityId }}</div>
-                            <div ng-if="val.isExnode">
-                                <div class="row">                                    
-                                    <div class="lfloat">
-                                        <button type="button" class="trigger btn btn-default">Choose files</button>
-                                        <div class="popover-markup">
-                                            <div class="head hide">Select the files to download</div> 
-                                            <div class="content hide">
-                                                <div role="form" class="form">
-                                                    <div class="" ng-repeat="k in val.exFileArr">
-                                                        <label>
-                                                            <div class="">
-                                                                <input id type="checkbox" ng-value="k.selfRef" />
-                                                                {{k.name}}
+                    <accordion close-others="oneAtATime">
+                        <accordion-group ng-repeat="(key,idArr) in cartRes" ng-if="true || showModel != 'exnodes' || val.isExnode == true" is-open="status.open">
+                            <accordion-heading>        
+                                <div> {{key}}</div>
+                            </accordion-heading>
+                            <div class="col-md-4" ng-repeat="val in idArr" ng-if="true || showModel != 'exnodes' || val.isExnode == true">
+                                <div>
+                                    <img src="{{val.browseUrl}}" class="img-responsive cursorPointer"                                 
+                                         href="{{val.browseUrl}}"
+                                         ng-click="showImage($event);$event.preventDefault();" />
+                                    <div class="row">Id : {{ val.entityId }}</div>
+                                    <div ng-if="val.isExnode">
+                                        <div class="row">                                    
+                                            <div class="lfloat">
+                                                <button type="button" class="trigger btn btn-default">Choose files</button>
+                                                <div class="popover-markup">
+                                                    <div class="head hide">Select the files to download</div> 
+                                                    <div class="content hide">
+                                                        <div role="form" class="form">
+                                                            <div class="" ng-repeat="k in val.exFileArr">
+                                                                <label>
+                                                                    <div class="">
+                                                                        <input id type="checkbox" ng-value="k.selfRef" />
+                                                                        {{k.name}}
+                                                                    </div>
+                                                                </label>
                                                             </div>
-                                                        </label>
-                                                    </div>
-                                                    <button type="button"  class="usgsDownloadSelected btn btn-default">Download selected</button>
+                                                            <button type="button"  class="usgsDownloadSelected btn btn-default">Download selected</button>
+                                                        </div>
+                                                    </div>                                  
                                                 </div>
-                                            </div>                                  
+                                            </div>
+                                            <div class="lfloat">                                
+                                                <button type="button" class="trigger btn btn-default">Show Details</button>
+                                                <div class="popover-markup">
+                                                    <div class="head hide">Exnode Details</div> 
+                                                    <div class="content hide">
+                                                        <table class="table table-striped">
+                                                            <thead>
+                                                                <tr><th>Name</th><th>Url </th></tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr ng-repeat="k in val.exFileArr"><td>{{k.name}}</td><td>{{k.selfRef}}</td></tr>
+                                                            </tbody>
+                                                        </table>                                                  
+                                                    </div>                                  
+                                                </div>
+                                            </div>
+                                            <div class="clear"></div>
                                         </div>
                                     </div>
-                                    <div class="lfloat">                                
-                                        <button type="button" class="trigger btn btn-default">Show Details</button>
-                                        <div class="popover-markup">
-                                            <div class="head hide">Exnode Details</div> 
-                                            <div class="content hide">
-                                                <table class="table table-striped">
-                                                    <thead>
-                                                        <tr><th>Name</th><th>Url </th></tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr ng-repeat="k in val.exFileArr"><td>{{k.name}}</td><td>{{k.selfRef}}</td></tr>
-                                                    </tbody>
-                                                </table>                                                  
-                                            </div>                                  
-                                        </div>
+                                    <div class="row" ng-if="val.isExnode">
+                                        <button type="button" ng-click="downloadAllUsgsEx(val.exFileArr)" class="btn btn-info">Download All via EODN</button>
                                     </div>
-                                    <div class="clear"></div>
+                                    <div class="row" ng-if="val.isExnode == false">
+                                        Not present in EODN-IDMS
+                                    </div>
+                                    <div class="row">
+                                        <a href="{{val.downloadUrl}}" target="_blank" class="btn btn-info">Download from USGS site</a>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="row" ng-if="val.isExnode">
-                                <button type="button" ng-click="downloadAllUsgsEx(val.exFileArr)" class="btn btn-info">Download All via EODN</button>
-                            </div>
-                            <div class="row" ng-if="val.isExnode == false">
-                                Not present in EODN-IDMS
-                            </div>
-                            <div class="row">
-                                <a href="{{val.downloadUrl}}" target="_blank" class="btn btn-info">Download from USGS site</a>
-                            </div>
-                        </div>
-                    </div>
+                        </accordion-group>
+                    </accordion>                    
                 </div>
             </tab>
         </tabset>                    

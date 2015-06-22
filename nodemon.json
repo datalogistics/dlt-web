@@ -1,4 +1,4 @@
 {
   "verbose": true,
-  "ignore": ["public/*","mochaTest/*","*~"]
+  "ignore": ["public/*","mochaTest/*","*~","node_modules/*"]
 }

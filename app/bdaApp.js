@@ -133,6 +133,9 @@ var bdaRequest = {
   getOrderDetailsJson : function (orderId) {
     return {"message":"","requester":"bda","requestType":3,"orderId":orderId};
   },
+  getDeleteOrderJson: function(orderId) {
+    return {"message":"","requester":"bda","requestType":8,"orderId":orderId};
+  },
   getKeepAliveJson : function() {
     return {"message":"","requester":"bda","requestType":1};
   }
@@ -267,6 +270,23 @@ var bdaSocket = function () {
   this.close = function() {
     this.sock.destroy();
   };
+  this.deleteOrderGroup = function(orderId) {
+    var json = bdaRequest.getDeleteOrderJson(orderId);
+    var prom = q.defer();
+    doLogin().then(function() {
+      return doReq(json);
+    }).then(function(res) {
+      if (res.errorCode == 0) {
+        prom.resolve(res);
+      } else {
+        prom.reject(res);
+      }
+    }).fail(function(res) {
+      prom.reject(res);
+    });
+    
+    return prom.promise;
+  };  
   this.getEnityIds = function (orderId) {
     var json = bdaRequest.getOrderDetailsJson(orderId);
     var prom = q.defer();
@@ -297,9 +317,15 @@ prQ.run();
 
 var bdaApi = {
   Encryption : Encryption,
-  _smap : {},  
+  _smap : {},
+  deleteOrderGroup : function(username,password,isEncrypted,orderId) {
+    var soc = new bdaSocket();
+    return soc.login(username,password,isEncrypted)
+      .then(soc.deleteOrderGroup.bind(this,orderId));
+  },
   _getAllOrders : function (username, password,isEncrypted) {
-    var soc = new bdaSocket();    
+    var soc = new bdaSocket();
+    var orderList;
     return soc.login(username,password,isEncrypted)
       .then(soc.getOrders)
       .then(function(res) {
@@ -307,12 +333,19 @@ var bdaApi = {
       })
       .then(function(orders) {
         var promArr = [];
+        orderList = orders;
         orders.forEach(function(x) {
           promArr.push(soc.getEnityIds(x));
         });
         return q.allSettled(promArr);
       })
       .then(function (valArr) {
+        // Add orderId to all file info
+        valArr.map(function(x,ind) {
+          x.value.filelist.map(function(x) {
+            x.orderId = orderList[ind];
+          });
+        });
         var arr = valArr.filter(function(x) {
           return x.state == 'fulfilled';
         });
@@ -351,6 +384,10 @@ var bdaApi = {
 // bdaApi.getAllOrders("prakraja","prak8673").then(function(x) { console.log(x);}).catch(function(x) {
 //   console.log(x,arguments);
 // });
+// bdaApi.deleteOrderGroup("prakraja","prak8673",false,507585)
+//   .then(function(x) {
+//     console.log(x);
+//   })
 // prQ.run();
 // for (var i = 0; i < 1000 ; i++) {  
 //   var prom = bdaApi.getAllOrders("indianadlt","indiana2014");
@@ -359,7 +396,7 @@ var bdaApi = {
 //   }).catch(function(x) {
 //     console.log("Err ",x);
 //   });
-    
+
 //   // })(i);
 //   // prQ.addToQueue(queFun);
 // }
