@@ -357,3 +357,7 @@ text.id {
 .imageSet .row {
     margin : 0;
 }
+
+.panel-title {
+    cursor: pointer;
+}

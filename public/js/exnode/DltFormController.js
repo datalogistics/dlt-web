@@ -261,7 +261,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     SocketService.emit('deleteOrderGroup',{token : existing_key,isToken: true,orderId : orderId});
     populate_cart_with_key(existing_key);
   };
-  k = $scope;
+  
   $scope.loginAndPopulateCart = function(e) {
     var username = $(e.target).find("input[name=username]").val();
     var password = $(e.target).find("input[name=password]").val();
