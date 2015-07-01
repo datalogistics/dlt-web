@@ -9,57 +9,67 @@ var express = require('express')
   , socketio = require('socket.io')
   , cors = require('cors');
 var compression = require('compression');
-
+var cluster = require('cluster');
+var favicon = require('serve-favicon');
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+var session = require('express-session');
 // create app, server, sockets
 var app = module.exports = express();
 var server = http.createServer(app);
 var io = socketio.listen(server);
+var methodOverride = require('method-override');
+var errorhandler = require('errorhandler');
+var multer = require('multer');
 io.sockets.setMaxListeners(0);
 // app configuration
-app.configure(function() {
-  app.set('port', process.env.PORT || 42424);
-  app.use(express.static(__dirname + '/public'));
-  app.use(express.favicon(__dirname + '/public/images/favicon.ico'));
-  app.use(express.cookieParser());
-  app.use(express.session({secret: 'replaceThisss'}));
-  app.use(express.logger('dev'));
-  app.use(express.json());
-  app.use(express.urlencoded());
-  app.use(express.methodOverride());
-});
+app.set('port', process.env.PORT || 42424);
+app.use(express.static(__dirname + '/public'));
+app.use(favicon(__dirname + '/public/images/favicon.ico'));
+app.use(cookieParser());
+app.use(session({
+  cookie : {maxAge : 60000 },
+  saveUninitialized: false, // don't create session until something stored,
+  resave: false, // Don't save until modified
+  secret: '121212123419&789'
+}));
 
-app.use(compression({filter: shouldCompress}))
+app.use(logger('dev'));
+app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(methodOverride());
+app.use(compression());
+app.use(multer()); // for parsing multipart/form-data
 
-function shouldCompress(req, res) {
-  if (req.headers['x-no-compression']) {
-    // don't compress responses with this request header
-    return false
-  }
-
-  // fallback to standard filter function
-  return compression.filter(req, res)
-};
-
-app.use(express.bodyParser());
 // configure enviroments
-app.configure('development', function(){
-  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-});
-app.configure('production', function(){
-  app.use(express.errorHandler());
-});
+if ('development' == app.get('env')) {  
+  app.use(errorhandler({ dumpExceptions: true, showStack: true }));
+} else if ('production' == app.get('env')) {
+  app.use(errorhandler());
+};
 
 //Enable CORS on all routes
 app.use(cors())
-
 // restful api routes
 require('./app/routes')(app);
 
 // create http server and listen on a port
-server.listen(app.get('port'), function(){
-  console.log('HTTP server on port ' + app.get('port') + ' - running as ' + app.settings.env);
-});
+var numCPUs = require('os').cpus().length;
+if (false && cluster.isMaster) {
+  for (var i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  };
+  cluster.on('exit', function(worker, code, signal) {
+    console.log('worker ' + worker.process.pid + ' died');
+    cluster.fork();
+  });
+} else {  
+  server.listen(app.get('port'), function(){
+    console.log('HTTP server on port ' + app.get('port') + ' - running as ' + app.settings.env);
+  });
 
-// setup socket.io communication
-io.sockets.on('connection', require('./app/sockets'));
-io.sockets.on('connection', require('./app/downloadSockets'));
+  // setup socket.io communication
+  io.sockets.on('connection', require('./app/sockets'));
+  io.sockets.on('connection', require('./app/downloadSockets'));
+}
