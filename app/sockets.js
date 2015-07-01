@@ -3,7 +3,6 @@
  * app/
  * sockets.js
  */
-
 // modules
 var WebSocket = require('ws')
 , freegeoip = require('node-freegeoip')
@@ -21,6 +20,14 @@ var WebSocket = require('ws')
 , usgsapi = require("./usgsapi")
 , bdaApi = require("./bdaApp")
 ,_ = require('underscore');
+var bunyan = require('bunyan');
+var log = bunyan.createLogger({
+  name: "dlt-web-cart",
+  streams : [
+    {
+      path: "./logs/bun.log"
+    }]
+});
 
 WebSocket.super_.defaultMaxListeners = 0;
 
@@ -536,6 +543,14 @@ module.exports = function(client) {
     isEncrypted = true;
     bdaApi.deleteOrderGroup(username, password, isEncrypted, orderId)
       .then(function(r) {
+        // Log the getting orders
+        // cartLog("Hello");
+        var loguname = username;
+        if (isEncrypted) {
+          var encrypt = new bdaApi.Encryption();
+          loguname = encrypt.decrypt(username);
+        }
+        log.info({ username : loguname ,actionType : "deleteOrders" , orderId : orderId }, "Removing all orders for given username and orderId");
         client.emit('cart_delete',{
           "token" : tokenStr,
           "res" : r,
@@ -561,8 +576,17 @@ module.exports = function(client) {
       tokenStr = username + sep + password;
     }
     isEncrypted = true;
-    bdaApi.getAllOrders(username, password, isEncrypted)
+    bdaApi.getAllOrders(username, password, isEncrypted)    
       .then(function(r) {
+        // Log the getting orders
+        // cartLog("Hello");
+        var loguname = username;
+        if (isEncrypted) {
+          var encrypt = new bdaApi.Encryption();
+          loguname = encrypt.decrypt(username);
+        }
+        log.info({ username : loguname , actionType : "getOrders" }, "Got all orders for given username");
+        
         var EntityIdMap = {};
         var items = r.map(function(x) {
           EntityIdMap[x.entityId] = x;

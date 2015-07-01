@@ -40,6 +40,31 @@ function Encryption() {
     }    
   };
 
+  this._decrypt = function(key, source) {
+    if (_.isEmpty(source)) {
+      throw new Error("DecryptError - No Value supplied");
+    } else {
+      var fudgeFactor = this._convertKey(key);
+      var target = "";
+      var factor2 = 0.0;      
+      for (var i = 0; i < source.length; i++) {
+        var c2 = source.charAt(i);        
+        var num2 = _.indexOf(this._scramble2,c2);
+        if (num2 == -1.0) {
+          throw new Error("Source string contains an invalid character");
+        } else {
+          var adj = this._applyFudge(fudgeFactor);
+          var factor1 = factor2 + adj;
+          var num1 = num2 - Math.round(factor1);
+          num1 = this._checkRange(num1);
+          factor2 = factor1 + num2;          
+          target = target + this._scramble1.charAt(num1);
+        }
+      }
+      return target;
+    }
+  };
+  
   this._checkRange = function(rawNum) {
     var num = Math.round(rawNum);    
     var limit = this._scramble1.length;
@@ -103,21 +128,17 @@ function Encryption() {
     } else
       return "";
   };
+  this.decrypt = function(source) {
+    if (source) {
+      var decoded = this._decrypt(this._defaultEncryptionKey,source);
+      return decoded.replace(new RegExp(this._saltValue,"g"),"");
+    } else
+      return "";
+  };
 };
 
 
 var encrypt = new Encryption();
-
-//console.log(encrypt.encrypt("indianadlt"));
-var auth = {"message":"1.5.3",
-            "requester":"bda",
-            "requestType":2,
-            "username":encrypt.encrypt("indianadlt"),
-            "password":encrypt.encrypt("indiana2014"),
-            "clientDetails":{"os":"Windows 8.1 (build 6.3, amd64)","javaVersion":"1.7.0_75"},
-            "version":"1.5.3"};
-
-
 var bdaRequest = {
   getLoginJson : function (username, password,isEncrypted) {
     return {"message":"","requester":"bda",
