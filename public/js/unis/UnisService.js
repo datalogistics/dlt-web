@@ -76,10 +76,10 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   updateServiceEntry = function(item) {
     var now = Math.round(new Date().getTime() / 1e3) // seconds
     item.ttl = Math.round(((item.ttl + (item.ts / 1e6)) - now));
-    
+    var d = $q.defer();
     if (!hasLocationInfo(item)) {
-      var url = DLT_PROPS.FreeGeoIpUrl + getServiceName(item);
-      return $http.get(url).
+      var url = DLT_PROPS.FreeGeoIpUrl + getServiceName(item);      
+      $http.get(url).
 	success(function(data, status, headers, config) {
 	  item.location = {
 	    'latitude': data.latitude,
@@ -90,12 +90,13 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	    'city': data.city
 	  };
 	  getInstitutionName(item);
+          d.resolve();
 	}).
 	error(function(data, status, headers, config) {
 	  console.log("Error: ", status);
+          d.resolve();
 	});
     }
-    var d = $q.defer();
     d.resolve();
     // send a resolve promise anyway
     return d.promise;
@@ -205,6 +206,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     
     // start timer
     var timeout = $timeout(onTimeout, 1000);
+    
     return $q.all(prom);
   };
     
