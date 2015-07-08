@@ -96,8 +96,9 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	  console.log("Error: ", status);
           d.resolve();
 	});
+    } else {
+      d.resolve();
     }
-    d.resolve();
     // send a resolve promise anyway
     return d.promise;
   };
