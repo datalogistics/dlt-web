@@ -416,10 +416,14 @@ module.exports = function(app) {
   app.get('/popup/*', function(req,res) {
     res.render('../views/popup.html');
   });
+  var viewsFolder = "../views";
   app.get('*.html',function(req,res) {    
-    res.render('../views/'+req.url);
+    res.render(path.join(viewsFolder,req.url));
+  });
+  app.get('*.ejs',function(req,res) {
+    res.render(path.join(viewsFolder,req.url));
   });
   app.get('*', function(req, res) {
-    res.render('../views/index.ejs');
+    res.render(path.join(viewsFolder,'index.ejs'));
   });  
 };

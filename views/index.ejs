@@ -40,8 +40,8 @@
 	  <li><a class="header" href="/downloads">Downloads</a></li>
           <li><a class="header" href="/map">Map</a></li>
         </ul>
-        <ul class="nav navbar-nav pull-right">
-            <li><a class="header" href="/status">Login</a></li>
+        <ul class="nav navbar-nav navbar-right">
+            <li><a class="header" ng-click="openLogin()">Login</a></li>
         </ul>
       </div>
 
@@ -93,6 +93,8 @@
   <script src="js/common/jsTree.directive.js"></script>  
   <script src="js/common/directedGraph.js"></script>
   <script src="js/common/directives.js"></script>
+  <script src="js/auth/LoginModal.js"></script>
+  <script src="js/auth/authModule.js"></script>
   <script src="js/unis/SocketService.js"></script>
   <script src="js/unis/UnisService.js"></script>
   <script src="js/unis/UnisModule.js"></script>
@@ -111,7 +113,7 @@
   <script src="js/map/depotMap.js"></script>
   <script src="js/map/DownloadMapController.js"></script>
   <script src="js/map/MapController.js"></script>
-  <script src="js/map/MapModule.js"></script>
+  <script src="js/map/MapModule.js"></script>  
   <script src="js/app.js"></script>
 </body>
 </html>

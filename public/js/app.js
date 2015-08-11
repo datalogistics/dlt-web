@@ -21,14 +21,30 @@ angular.module('periApp', ['ngRoute',
 			   'unis',
 			   'exnode',
 			   'depot',
+                           'auth',
 			   'map'])
-  .run(function($rootScope, UnisService, DepotService, CommChannel) {
+  .run(function($rootScope, UnisService, DepotService, CommChannel,$modal) {
     $rootScope.unis = UnisService;
     $rootScope.depot = DepotService;
     $rootScope.comm = CommChannel;
+    $rootScope.openLogin = function() {
+      var modalInstance = $modal.open({
+        templateUrl: 'loginModal.ejs',
+        controller: 'LoginModalCtrl',
+        // size: size,
+        resolve: {          
+        }
+      });
+
+      modalInstance.result.then(function (selectedItem) {
+        $scope.selected = selectedItem;
+      }, function () {
+        // $log.info('Modal dismissed at: ' + new Date());
+      });
+    }
   })
   .config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
-           function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
+         function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
              cfpLoadingBarProvider.includeSpinner = false;
              
              $routeProvider.
