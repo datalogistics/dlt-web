@@ -15,6 +15,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var ejs = require('ejs');
 // create app, server, sockets
 var app = module.exports = express();
 var server = http.createServer(app);
@@ -29,13 +30,17 @@ app.use(express.static(__dirname + '/public'));
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
 app.use(cookieParser());
 app.use(session({
-  cookie : {maxAge : 60000 },
+  cookie : {maxAge : 60001 },
   saveUninitialized: false, // don't create session until something stored,
   resave: false, // Don't save until modified
-  secret: '121212123419&789'
+  secret: '111121212123419&789'
 }));
 
+app.set('views', './views')
+app.set('view engine', 'ejs');
+app.engine('html', ejs.renderFile);
 app.use(logger('dev'));
+
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(methodOverride());
@@ -55,21 +60,22 @@ app.use(cors())
 require('./app/routes')(app);
 
 // create http server and listen on a port
-var numCPUs = require('os').cpus().length;
-if (false && cluster.isMaster) {
-  for (var i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  };
-  cluster.on('exit', function(worker, code, signal) {
-    console.log('worker ' + worker.process.pid + ' died');
-    cluster.fork();
-  });
-} else {  
-  server.listen(app.get('port'), function(){
-    console.log('HTTP server on port ' + app.get('port') + ' - running as ' + app.settings.env);
-  });
+// var numCPUs = require('os').cpus().length;
+// if (cluster.isMaster) {
+//   for (var i = 0; i < numCPUs; i++) {
+//     cluster.fork();
+//   };
+//   cluster.on('exit', function(worker, code, signal) {
+//     console.log('worker ' + worker.process.pid + ' died');
+//     cluster.fork();
+//   });
+// }
 
-  // setup socket.io communication
-  io.sockets.on('connection', require('./app/sockets'));
-  io.sockets.on('connection', require('./app/downloadSockets'));
-}
+server.listen(app.get('port'), function(){
+  console.log('HTTP server on port ' + app.get('port') + ' - running as ' + app.settings.env);
+});
+
+// setup socket.io communication
+io.sockets.on('connection', require('./app/sockets'));
+io.sockets.on('connection', require('./app/downloadSockets'));
+

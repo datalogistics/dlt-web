@@ -56,11 +56,11 @@ module.exports = function(app) {
   
   function getHostOpt(name) {
     if (!name)
-      return;
+      return null;
     // returns the host name as per url or name
     var prop = cfg.serviceMap;
     var u = url.parse(name);
-    var ret ;        
+    var ret;
     for (var i in prop) {
       var it = prop[i];          
       var uH = u.host || u.href ;
@@ -414,9 +414,12 @@ module.exports = function(app) {
   
   usgsapi.addRoutes('/usgsapi/',app);  
   app.get('/popup/*', function(req,res) {
-    res.sendfile('./public/popup.html');
+    res.render('../views/popup.html');
+  });
+  app.get('*.html',function(req,res) {    
+    res.render('../views/'+req.url);
   });
   app.get('*', function(req, res) {
-    res.sendfile('./public/index.html');
-  });
+    res.render('../views/index.ejs');
+  });  
 };
