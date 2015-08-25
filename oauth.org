@@ -1,0 +1,20 @@
+* OAuth Url and other details 
+
+** Github
+1. First GET https://github.com/login/oauth/authorize
+   Parameters:
+   - client_id : 8e52271d1de6d7d60a1a
+   - redirect_uri : http://dlt.incntre.iu.edu:42424/oauthLogin
+   - scope : user  [Gives user email details and other stuff]
+   - state : Random string [Optional - leaving it out]
+   - https://github.com/login/oauth/authorize?client_id=8e52271d1de6d7d60a1a&redirect_uri=http://dlt.incntre.iu.edu:42424/oauthLogin&scope=user
+
+2. After this url - we are redirected to http://dlt.incntre.iu.edu:42424/oauthLogin?code=ff4c41e8d7634ba7df2c
+   Hence getting the code ff4c41e8d7634ba7df2c
+3. POST https://github.com/login/oauth/access_token with same parameters + the code , Also send header as `Accept : application/json` to get response as json
+   - You will get response something like 
+     {"access_token":"e72e16c7e42f292c6912e7710c838347ae178b4a", "scope":"repo,gist", "token_type":"bearer"}
+4. GET /user/email to get the email
+     
+
+
