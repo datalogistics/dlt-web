@@ -56,6 +56,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
             && typeof item.location.longitude != 'undefined'
             && typeof item.location.latitude != 'undefined'
             && item.location.longitude != 0
+            && item.location.city
             && item.location.latitude != 0);
   };
   
@@ -204,11 +205,11 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       //continue timer
       timeout = $timeout(onTimeout, 1000);
     }
-    
-    // start timer
-    var timeout = $timeout(onTimeout, 1000);
-    
-    return $q.all(prom);
+        
+    return $q.all(prom).then(function() {
+      // start timer
+      var timeout = $timeout(onTimeout, 1000);
+    });
   };
     
   // socket handlers...
