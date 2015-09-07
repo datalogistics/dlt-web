@@ -1,12 +1,67 @@
 <div class="modal-content" modal-transclude="">
-    <div class="modal-header ng-scope">
-        <h3 class="modal-title">Login into EODN</h3>
-    </div>
-    <div class="modal-body ng-scope">
-        
-    </div>
-    <div class="modal-footer ng-scope">
-        <button class="btn btn-primary" type="button" ng-click="ok()">OK</button>
-        <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
-    </div>
+  <div class="modal-header ng-scope">
+    <h3 class="modal-title">
+      <span ng-if="isLogin">Login into EODN</span>
+      <span ng-if="!isLogin">Register into EODN</span>
+      <a href="#" class="close" ng-click="closeDialog()" aria-label="close" title="close">x</a>
+    </h3>        
+  </div>
+  <div class="modal-body ng-scope" ng-if="isLogin">
+    <form class="form-horizontal" role="form" ng-submit="login()">
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="email">Email</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="username" placeholder="Enter email" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="pwd">Password</label>
+        <div class="col-sm-10">          
+          <input type="password" class="form-control" id="pwd" placeholder="Enter password" />
+        </div>
+      </div>
+      <div class="form-group">        
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Login</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-body ng-scope" ng-if="!isLogin">
+    <form class="form-horizontal" role="form" ng-submit="register()">
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="email">Email</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="username" placeholder="Enter email" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="email">Name</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="username" placeholder="Enter name" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="pwd">Enter Password</label>
+        <div class="col-sm-10">          
+          <input type="password" class="form-control" id="pwd" placeholder="Enter password" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="pwd">Confirm Password</label>
+        <div class="col-sm-10">          
+          <input type="password" class="form-control" id="pwd" placeholder="Confirm Password" />
+        </div>
+      </div>
+      <div class="form-group">        
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Register</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer ng-scope">
+    <button class="btn btn-link" type="button" ng-click="showRegister()" ng-if="isLogin">Register ?</button>
+    <button class="btn btn-link" type="button" ng-click="showLogin()" ng-if="!isLogin">Login</button>
+  </div>
 </div>
