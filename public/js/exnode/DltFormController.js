@@ -17,6 +17,8 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
   function toMMFormat(date){
     return $filter('date')(date, "MM/dd/yyyy");
   };
+  var today = new Date();
+  $scope.maxDate = $filter('date')(today, 'yyyy-MM-dd');
   $scope.isUsgsLoading = false;
   $scope.submitUsgsForm = function(){
     console.log(usf);    
