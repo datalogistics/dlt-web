@@ -3,21 +3,26 @@
     <h3 class="modal-title">
       <span ng-if="isLogin">Login into EODN</span>
       <span ng-if="!isLogin">Register into EODN</span>
-      <a href="#" class="close" ng-click="closeDialog()" aria-label="close" title="close">x</a>
+      <a class="close" ng-click="closeDialog()" aria-label="close" title="close">x</a>
     </h3>        
   </div>
+  <div class="modalLoader modal-body loaderContainer" ng-if="formLoading">
+    <div class="loader"></div>
+  </div>
   <div class="modal-body ng-scope" ng-if="isLogin">
-    <form class="form-horizontal" role="form" ng-submit="login()">
+    <form class="form-horizontal" name="loginForm" role="form" ng-submit="login()">
       <div class="form-group">
         <label class="control-label col-sm-2" for="email">Email</label>
         <div class="col-sm-10">
-          <input type="text" class="form-control" id="username" placeholder="Enter email" />
+          <input ng-message="Please enter email"  ng-required="true" name="loginFormEmail"
+                 required="true" type="email" class="form-control" id="username" placeholder="Enter email" />
         </div>
       </div>
       <div class="form-group">
         <label class="control-label col-sm-2" for="pwd">Password</label>
         <div class="col-sm-10">          
-          <input type="password" class="form-control" id="pwd" placeholder="Enter password" />
+          <input title="Please enter password of minimum 8 characters" pattern=".{8,}" name="loginFormPwd"
+                 required="true" ng-model="loginForm.password" type="password" class="form-control" id="pwd" placeholder="Enter password" />
         </div>
       </div>
       <div class="form-group">        
@@ -32,25 +37,29 @@
       <div class="form-group">
         <label class="control-label col-sm-2" for="email">Email</label>
         <div class="col-sm-10">
-          <input type="text" class="form-control" id="username" placeholder="Enter email" />
+          <input name="regFormEmail"
+                 required="true" type="email" class="form-control" placeholder="Enter email" />
         </div>
       </div>
       <div class="form-group">
         <label class="control-label col-sm-2" for="email">Name</label>
         <div class="col-sm-10">
-          <input type="text" class="form-control" id="username" placeholder="Enter name" />
+          <input name="regFormName"
+                 required="true" type="text" class="form-control" placeholder="Enter Name" />
         </div>
       </div>
       <div class="form-group">
         <label class="control-label col-sm-2" for="pwd">Enter Password</label>
         <div class="col-sm-10">          
-          <input type="password" class="form-control" id="pwd" placeholder="Enter password" />
+          <input title="Please enter password of minimum 8 characters" pattern=".{8,}" name="regFormPwd"
+                 required="true" type="password" class="form-control" placeholder="Enter password" />
         </div>
       </div>
       <div class="form-group">
         <label class="control-label col-sm-2" for="pwd">Confirm Password</label>
         <div class="col-sm-10">          
-          <input type="password" class="form-control" id="pwd" placeholder="Confirm Password" />
+          <input title="Please enter password of minimum 8 characters" pattern=".{8,}" name="regConfirmPwd"
+                 required="true" type="password" class="form-control" placeholder="Confirm password" />
         </div>
       </div>
       <div class="form-group">        

@@ -26,6 +26,11 @@ angular.module('periApp', ['ngRoute',
   .run(function($rootScope, UnisService, DepotService, CommChannel,$modal) {
     $rootScope.unis = UnisService;
     $rootScope.depot = DepotService;
+    $rootScope.loggedIn = false;
+    $rootScope.userLogout = function() {
+      $rootScope.loggedIn = false;
+    }
+    $rootScope.userData = {};
     $rootScope.comm = CommChannel;
     $rootScope.openLogin = function() {
       var modalInstance = $modal.open({

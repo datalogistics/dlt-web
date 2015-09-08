@@ -361,3 +361,12 @@ text.id {
 .panel-title {
     cursor: pointer;
 }
+
+.loaderContainer {
+    position : absolute;
+    width : 100%;
+    background : rgba(111,111,111,0.3);
+    height: 100%;
+    top: 0;
+    z-index : 1000;
+}
