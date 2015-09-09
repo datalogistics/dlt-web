@@ -25,8 +25,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	          'ps:tools:blipp:linux:cpu:utilization:user',
 	          'ps:tools:blipp:linux:cpu:utilization:system'];
   
-  var metadata_id = $scope.metadataId || $routeParams.id; //
-  
+  var metadata_id = $scope.metadataId || $routeParams.id;
   // place inital UnisService data into scope for view
   $scope.services = UnisService.services || [];
   $scope.measurements = UnisService.measurements || [];
@@ -34,9 +33,10 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   $scope.nodes = UnisService.nodes || [];
   $scope.ports = UnisService.ports || [];
   // Group services by parameter 
-  var currentKey = "location"; // Can be anyother property
+  var currentKey = "serviceType"; // Can be anyother property
   $scope.$watch('services', function(serv) {    
-    var services = $filter('filter')(serv.slice(0),{serviceType: 'ibp_server'}) || [];    
+    //var services = $filter('filter')(serv.slice(0),{serviceType: 'ibp_server'}) || [];
+    var services = serv.slice(0);
     $scope.groupedServiceMap = services.reduce(function (y,x) {
       var key = x[currentKey];
       // Special casing location - Could technically just try to put this into its toString method

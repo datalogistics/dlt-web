@@ -184,7 +184,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       // save the initial ts
       s.firstSeen = s.ts;
     });
-    
+
     // set timer value
     onTimeout = function() {
       for(var i = services.length-1; i >= 0; i--) {
