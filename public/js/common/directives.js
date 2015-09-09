@@ -59,7 +59,7 @@ angular.module('avDirective', [])
       return (ret/1e12);//.toFixed(2);
     };
 
-    $scope.dcount = {'text': 'Depot Count',
+    $scope.dcount = {'text': 'Service Count',
 		     'datafn': getDepotCount};
     $scope.dnet   = {'text': 'Network Usage',
 		     'datafn': getNetworkUsage};

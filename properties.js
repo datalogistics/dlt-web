@@ -79,7 +79,7 @@ var self = {
     },
     dev : {
       url : "dev.incntre.iu.edu" ,
-      port : "8888",
+      port : "8889",
       key: null,
       cert: null,
       use_ssl: false
@@ -100,7 +100,7 @@ var self = {
     },
     dev_ms : {
       url : "dev.incntre.iu.edu",
-      port : "8888",
+      port : "8889",
       key: "./dlt-client.pem",
       cert: "./dlt-client.pem",
       use_ssl: false
