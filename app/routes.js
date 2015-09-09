@@ -188,6 +188,8 @@ module.exports = function(app) {
       registerGenericHandler(options);
     }
   }
+  app.get('/api/topologies', getGenericHandler({path : '/topologies', name : 'topologies' , handler : registerGenericHandler}));
+  app.get('/api/domains', getGenericHandler({path : '/domains', name : 'domains' , handler : registerGenericHandler}));
   app.get('/api/nodes', getGenericHandler({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
   app.get('/api/services', getGenericHandler({path : '/services', name : 'services' , handler : registerGenericHandler}));
   app.get('/api/exnodes', getGenericHandler({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));
@@ -218,6 +220,8 @@ module.exports = function(app) {
       registerGenericHandler(options);    
     };
   };
+  app.get('/api/topologies/:id', getGenericHandlerWithId({path : '/topologies', name : 'topologies' , handler : registerGenericHandler}));
+  app.get('/api/domains/:id', getGenericHandlerWithId({path : '/domains', name : 'domains' , handler : registerGenericHandler}));
   app.get('/api/nodes/:id', getGenericHandlerWithId({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
   app.get('/api/services/:id', getGenericHandlerWithId({path : '/services', name : 'services' , handler : registerGenericHandler}));
   app.get('/api/exnodes/:id', getGenericHandlerWithId({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));

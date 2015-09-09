@@ -79,8 +79,6 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
   
   var translate = "translate(" + projection(lonLat) + ")"
   var nodes = svg.selectAll(".depotGroup").filter(function (d, i) { return d3.select(this).attr("transform") == translate })
-
-    console.log(nodes);
   
   //Function to add an invisible point to each location
   var invisiblePoint = function(parentGroup) {
@@ -241,8 +239,10 @@ function allServiceData(services, match, natmap, then) {
     var name =  uniqueIds[i]
     var item = uniqueServices[name]
 
-    if (item.serviceType && item.serviceType != match) {
-      continue;
+    if (match != null) {
+	if (item.serviceType && item.serviceType != match) {
+	    continue;
+	}
     }
 
     port = 6714;
