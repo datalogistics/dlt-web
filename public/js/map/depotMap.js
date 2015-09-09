@@ -79,6 +79,8 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
   
   var translate = "translate(" + projection(lonLat) + ")"
   var nodes = svg.selectAll(".depotGroup").filter(function (d, i) { return d3.select(this).attr("transform") == translate })
+
+    console.log(nodes);
   
   //Function to add an invisible point to each location
   var invisiblePoint = function(parentGroup) {
@@ -90,6 +92,7 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       .attr("style", "display:none")
     
     if (depot_id !== undefined) {circ.attr('depot_id', depot_id)}
+    return circ;
   }
   
   if (nodes.empty()) {
@@ -105,8 +108,8 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       .attr('class', "depotNode")
       .attr('name', name + ":" + port)
       .attr('location', lonLat)
-    
-    invisiblePoint(group)
+      
+    return invisiblePoint(group)
   } else {
     nodes.each(function(d,i) {
       var group = d3.select(this)
@@ -127,23 +130,21 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       var super_circ = group.select(".depotNode")
       var existingName = super_circ.attr("name")
       super_circ.attr("name", name + ":" + port + "|" + existingName)
-      invisiblePoint(group)
+      return invisiblePoint(group)
     });
   }
 }
 
-
 //Add nodes to the side of the map, because their lat/lon is not known
 //baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
-function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id) {
+function addOffMapLocation(projection, idx, baseLatLon, name, port, svg, depot_id) {
     pair = [baseLatLon[0]-idx*.3, baseLatLon[1]-idx]  //the idx*.3 straigthens out the line
-    node = addMapLocation(projection, name, pair, svg, depot_id)
+    node = addMapLocation(projection, name, port, pair, svg, depot_id)
     node.append("text")
-       .attr("dx", function(d){return 10})
-       .attr("dy", function(d){return 4})
-       .text(function(d) {return name})
+	.attr("dx", function(d){return 10})
+	.attr("dy", function(d){return 4})
+	.text(function(d) {return name})
 }
-
 
 //Map a collection of places.  The places should be a list of dictionaries {name, location}.
 //Location should be either {latitude, longitude} or []
@@ -160,7 +161,7 @@ function mapPoints(projection, svg, elementId) {
         
         offmap = parseInt(svg.select("layout-data").attr("off-map-count"))
         svg.select("layout-data").attr("off-map-count", offmap+1)
-        addOffMapLocation(projection, offmap, [-72, 40], item.name, svg_points, item.depot_id)
+        addOffMapLocation(projection, offmap, [-72, 40], item.name, item.port, svg_points, item.depot_id)
       } else {
         pair = [item.location.longitude, item.location.latitude]
         node = addMapLocation(projection, item.name, item.port, pair, svg_points, item.depot_id)
@@ -219,7 +220,6 @@ function baseMap(selector, width, height, svg) {
           .attr("width", width)
           .attr("height", height);
   
-    
     console.log("Base map loaded.")
   });
   return {svg: svg, projection: projection}
@@ -377,7 +377,7 @@ function backplaneLinks(map, natmap) {
     })
     
     if (mapNode.empty()) {
-      console.error("link endpoint not in depot map: ", endpoint, port)
+      //console.error("link endpoint not in depot map: ", endpoint, port)
       return undefined;
     }
 
