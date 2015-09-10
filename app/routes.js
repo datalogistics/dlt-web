@@ -17,17 +17,25 @@ var path = require('path')
 , request = require('request')
 , ejs = require('ejs')
 , usgsapi = require('./usgsapi')
+, auth = require('./auth')
+, routeCb = require('./routeCb')
 , q = require('q');
 
 var getHttpOptions = cfg.getHttpOptions;
 var sslOptions = cfg.sslOptions;
 
+function applyRouteCbs(name,json) {  
+  var rcb = routeCb[cfg.routeCb[name]];
+  if (typeof rcb == "function") {
+    return rcb(json);
+  }
+  return q.thenResolve();
+}
 // var slice_info = [];
 // var filePath = '/usr/local/etc/node.info';
 // var slice_uuid = '';
 // var os_name = '';
 // var distro = ''; 
-
 module.exports = function(app) {
   console.log("UNIS Default Instances: " + cfg.routeMap.default);
   //console.log("Measurement Store Host: " + ms_host);
@@ -146,9 +154,11 @@ module.exports = function(app) {
       };
     });
     if (cb) {
-      q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
-        if (obj)
-          cb(obj);
+      q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj) {
+        applyRouteCbs(options.name,obj).then(function() {
+          if (obj)
+            cb(obj);
+        });        
       });
     } else {
       q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
@@ -157,8 +167,12 @@ module.exports = function(app) {
           isErr = isErr && y.state =='rejected';
           return x.concat(y.value || {});
         },[]);
-        if (!isErr) {
-          res.json(json);
+        
+        if (!isErr) {        
+          // Now process this object and apply any CBs if set in cfg
+          applyRouteCbs(options.name,json).then(function() {            
+            res.json(json);
+          });
         } else {
           res.send(404);
         }
@@ -184,8 +198,9 @@ module.exports = function(app) {
         name : name
       },getHttpOptions({
         name : name
-      }));      
-      registerGenericHandler(options);
+      }));
+      opt.handler = opt.handler || registerGenericHandler;
+      opt.handler(options);
     }
   }
   app.get('/api/nodes', getGenericHandler({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
@@ -214,8 +229,8 @@ module.exports = function(app) {
         path: path + '/' + node_id + '?' + paramString
       },getHttpOptions({
         name : name + "_id"
-      }));  
-      registerGenericHandler(options);    
+      }));
+      opt.handler(options);      
     };
   };
   app.get('/api/nodes/:id', getGenericHandlerWithId({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
@@ -412,11 +427,12 @@ module.exports = function(app) {
     });
   });
   
-  usgsapi.addRoutes('/usgsapi/',app);  
+  usgsapi.addRoutes('/usgsapi/',app);
+  auth.addRoutes('/a/',app);
   app.get('/popup/*', function(req,res) {
     res.render('../views/popup.html');
-  });
-  var viewsFolder = "../views";
+  });  
+  var viewsFolder = "../views";  
   app.get('*.html',function(req,res) {    
     res.render(path.join(viewsFolder,req.url));
   });

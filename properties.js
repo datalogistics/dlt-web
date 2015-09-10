@@ -1,9 +1,10 @@
 /* Configuration file - Configure all source info here .. remove all URL related info from other files */
 var fs = require('fs'),
 _ = require('underscore');
-
+// var bunyan = require('bunyan');
 var self = {    
   nat_map_file : './misc/idms_nat_map',
+  freegeoipUrl : "http://dlt.incntre.iu.edu:8080",
   jnlpMap : {
     'download': {
       'template': './misc/dlt-client.jnlp.tmpl',
@@ -16,6 +17,16 @@ var self = {
       'jarfile' : 'lib/dlt-publisher.jar'
     }
   },
+  // shoppingCart_logger : (function() {    
+  //   var log = bunyan.createLogger({
+  //     name: "dlt-web cart",
+  //     streams : [
+  //       {
+  //         path: "./logs/bun.log"
+  //       }]
+  //   });
+  //   return log.info;
+  // })(),
   // Match exnodes using name if true , else use properties.metadata.scene_id
   exnodeMatchingFromName : true,
   routeMap : { 
@@ -37,7 +48,13 @@ var self = {
     'ports': [],
     'ports_id' : []
   },
-  serviceMap : {   
+  // Add a callback to process data for various routes
+  routeCb : {
+    // All functions are present in routeCb.js
+    'services' : "addLocation",
+    'services_id' : "addLocation"
+  },
+  serviceMap : {
     dev : {
       url : "dev.incntre.iu.edu" ,
       port : "8888",
@@ -126,7 +143,14 @@ var self = {
       }
     };
     return httpOptions;
-  }
+  },
+  db : {
+    url : "mongodb://192.168.111.100:27017",
+    name : "peri-auth",
+    collection_name : "userDetails"
+  },
+  GITHUB_CLIENT: "",
+  GITHUB_SECRET: ""
 };
 
 module.exports = self;
