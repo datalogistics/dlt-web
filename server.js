@@ -28,7 +28,7 @@ io.sockets.setMaxListeners(0);
 app.set('port', process.env.PORT || 42424);
 app.use(express.static(__dirname + '/public'));
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
-app.use(cookieParser());
+app.use(cookieParser("iei122ei12!@&#*(!@#ansdajsdnajs213"));
 app.use(session({
   cookie : {maxAge : 60001 },
   saveUninitialized: false, // don't create session until something stored,

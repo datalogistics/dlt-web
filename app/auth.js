@@ -113,35 +113,43 @@ function loginUser(C,obj) {
 //   //   });
 // });
 var dbcollectionPromise = q.ninvoke(MongoClient,"connect",dburl)
-          .then(function(db) {
-            /** Lets do some Database cleanup here **/
-            function exit() {
-              console.log("Shutting down and closing connections to DB");
-              db.close();
-              process.exit();
-            }
-            process.on('exit',exit);
-            process.on('SIGINT',exit);
-            // process.on('uncaughtException',exit);
-
-            return db.Collection(cname);
-          });
+      .then(function(db) {
+        /** Lets do some Database cleanup here **/
+        function exit() {
+          console.log("Shutting down and closing connections to DB");
+          db.close();
+          process.exit();
+        }
+        process.on('exit',exit);
+        process.on('SIGINT',exit);
+        // process.on('uncaughtException',exit);
+        return db.collection(cname);
+      });
 var AUTH_COOKIE_NAME = "userDetails";
 var auth = {
   addRoutes : function(prefix,app) {        
     app.post(prefix + 'login' , function(req,res) {
+      var email = req.body.email;
       var obj = {
-        email : req.body.email,
+        email : email,
         password : req.body.password
       };
       dbcollectionPromise.then(function(C) {
         return loginUser(C,obj);
       }).then(function() {
-        res.cookie(AUTH_COOKIE_NAME,req.body.email, {
-          secure: false,
-          signed: true          
+        res.cookie(AUTH_COOKIE_NAME,email,{
+          // TODO make secure
+          secure : false,
+          signed : false
         });
-      }).catch(function() {
+                   // req.body.email, {
+        //   secure: false,
+        //   signed: true
+        // });
+        res.json({
+          success : true
+        });
+      }).catch(function(err) {
         res.json({
           success : false,
           message : "Login failed" // Any reason if you want to populate in future
@@ -159,14 +167,26 @@ var auth = {
       dbcollectionPromise.then(function(C) {
         return registerLogin(C,obj);
       }).then(function() {
-        
-      }).catch(function() {
-        
+        res.json({
+          success : true
+        });
+      }).catch(function(err) {
+        console.log("Error " ,err);
+        res.json({
+          success : false,
+          error : err
+        })
       });
-      // Do soemthign with it 
     });
     app.post(prefix+'logout',function (req,res) {
-      
+      res.cookie(AUTH_COOKIE_NAME,null, {
+        secure: false,
+        signed: true,
+        maxAge : 0
+      });
+      res.json({
+        success : true
+      })
     });
   }
 };

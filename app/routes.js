@@ -428,7 +428,7 @@ module.exports = function(app) {
   });
   
   usgsapi.addRoutes('/usgsapi/',app);
-  auth.addRoutes('/a/',app);
+  auth.addRoutes('/',app);
   app.get('/popup/*', function(req,res) {
     res.render('../views/popup.html');
   });  
