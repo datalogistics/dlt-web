@@ -20,7 +20,7 @@ var self = {
   exnodeMatchingFromName : true,
   routeMap : { 
     // Aggregate from the following by default 
-    'default'  : ['dlt', 'monitor'],
+    'default'  : ['dev'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate        
     'measurements' : [],
     'exnodes' : ['dev'],
@@ -32,8 +32,8 @@ var self = {
     'measurements_id' : [],
     'metadata': [],
     'metadata_id' : [],
-    'data': ['dlt_ms', 'monitor_ms'],
-    'data_id': ['dlt_ms', 'monitor_ms'],
+    'data': ['dev_ms'],
+    'data_id': ['dev_ms'],
     'ports': [],
     'ports_id' : []
   },
@@ -57,6 +57,13 @@ var self = {
       port : "9000",
       key: null,
       cert: null,
+      use_ssl: false
+    },
+    dev_ms : {
+      url : "dev.incntre.iu.edu",
+      port : "8888",
+      key: "./dlt-client.pem",
+      cert: "./dlt-client.pem",
       use_ssl: false
     },
     dlt_ms : {

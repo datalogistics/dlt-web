@@ -21,7 +21,6 @@ angular.module('periApp', ['ngRoute',
 			   'unis',
 			   'exnode',
 			   'depot',
-                           'auth',
 			   'map'])
   .run(function($rootScope, UnisService, DepotService, CommChannel,$modal) {
     $rootScope.unis = UnisService;
