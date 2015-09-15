@@ -84,11 +84,11 @@ function getUserDetails() {
  */
 function loginUser(C,obj) {
   if (validateLogin(obj)) {
-    return q.ninvoke(C,"findOne",{email : obj.email})
+    return q.ninvoke(C,"findOne",{_id : obj.email})
       .then(function(docs) {
         if (!docs || !docs.password)
           return q.reject(Error("email not present"));
-        return checkPwd(docs.password,obj.password);
+        return q.all([docs,checkPwd(docs.password,obj.password)]);
       });
   } else {
     return q.reject(Error("Invalid input"));
@@ -143,13 +143,14 @@ var auth = {
       };
       dbcollectionPromise.then(function(C) {
         return loginUser(C,obj);
-      }).then(function() {
+      }).then(function(doc) {        
+        req.session.doc = doc;
         res.cookie(AUTH_COOKIE_NAME,email,{
           // TODO make secure
           secure : false,
           signed : false
-        });
-                   // req.body.email, {
+        });        
+        // req.body.email, {
         //   secure: false,
         //   signed: true
         // });
@@ -198,6 +199,7 @@ var auth = {
         signed: true,
         maxAge : 0
       });
+      req.session.destroy();
       res.json({
         success : true
       })
@@ -232,7 +234,7 @@ var githubOAuth = require('github-oauth')({
   loginURI: '/ghLogin',
   callbackURI: '/ghCallback',
   scope: 'user' // optional, default scope is set to user 
-})
+});
 
 // require('http').createServer(function(req, res) {
 //   if (req.url.match(/login/)) return githubOAuth.login(req, res)

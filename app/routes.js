@@ -87,6 +87,7 @@ module.exports = function(app) {
   function registerGenericHandler (options,cb) {
     var method = http;
     var res = options.res, req = options.req;
+    var doc = req.session.doc;
     options.req = options.res = undefined;
     var keyArr = [].concat(options.keyArr)
     , certArr = [].concat(options.certArr)
