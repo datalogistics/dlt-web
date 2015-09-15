@@ -4,11 +4,11 @@
 var url = require('url')
 , cfg = require('../properties')
 , util = require('util')
-, _ = require('underscore')
+, _ = require('underscore');
 var q = require('q');
 var bcrypt = require('bcrypt');
 var forge = require('node-forge');
-
+var conv = require('binstring');
 var MongoClient = require('mongodb').MongoClient
 , assert = require('assert');
 
@@ -69,7 +69,7 @@ function registerLogin(C,obj) {
  Update User details with user keys and ABAC certificates
  **/
 function addKeysToAccount(C,_id,obj) {
-  return q.ninvoke(C,"update",{"_id" : _id},obj);
+  return q.ninvoke(C,"update",{"_id" : _id},{$set : obj});
 };
 
 /**
@@ -175,7 +175,11 @@ var auth = {
       dbcollectionPromise.then(function(C) {
         return registerLogin(C,obj);
       }).then(function() {
-        return authHelper.createUser
+        return authHelper.createUser(conv(email,{out:'hex'}));
+      }).then(function(obj) {
+        return dbcollectionPromise.then(function(C) {
+          return addKeysToAccount(C,email,obj);
+        });
       }).then(function() {
         res.json({
           success : true
@@ -185,7 +189,7 @@ var auth = {
         res.json({
           success : false,
           error : err
-        })
+        });
       });
     });
     app.post(prefix+'logout',function (req,res) {
