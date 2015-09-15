@@ -11,7 +11,8 @@ var forge = require('node-forge');
 
 var MongoClient = require('mongodb').MongoClient
 , assert = require('assert');
- 
+
+var authHelper = require('./authHelper');
 // Connection URL 
 var dburl = cfg.db.url + "/" + cfg.db.name;
 // Use connect method to connect to the Server
@@ -64,6 +65,12 @@ function registerLogin(C,obj) {
   }
 };
 
+/** 
+ Update User details with user keys and ABAC certificates
+ **/
+function addKeysToAccount(C,_id,obj) {
+  return q.ninvoke(C,"update",{"_id" : _id},obj);
+};
 
 /**
  Takes the email of the logged in user and gets details - Is a promise
@@ -158,14 +165,17 @@ var auth = {
     });
     
     app.post(prefix + 'register' , function(req,res) {
+      var email = req.body.email;       
       var obj = {
         name : req.body.name,
-        email :req.body.email,        
-        password :req.body.password,
+        email : email,
+        password : req.body.password,
         cpassword : req.body.cpassword
       };
       dbcollectionPromise.then(function(C) {
         return registerLogin(C,obj);
+      }).then(function() {
+        return authHelper.createUser
       }).then(function() {
         res.json({
           success : true
