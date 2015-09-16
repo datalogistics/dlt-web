@@ -2,7 +2,8 @@
 var fs = require('fs'),
 _ = require('underscore');
 // var bunyan = require('bunyan');
-var self = {    
+var self = {
+  port : process.env.PORT || 42424,
   nat_map_file : './misc/idms_nat_map',
   freegeoipUrl : "http://dlt.incntre.iu.edu:8080",
   jnlpMap : {
@@ -101,51 +102,8 @@ var self = {
     username : "indianadlt",
     password : "indiana2014"
   },
-  // Correct way
-  getOptions : function(cfg) {
-    var rmap = self.routeMap;
-    var smap = self.serviceMap;
-    // Using the name - make it get the http options        
-    cfg = cfg || {};
-    var pr = rmap[cfg.name];
-    var hostList = !_.isEmpty(pr) ? pr : rmap.default;
-    return hostList.map(function(x) {
-      return smap[x];
-    });
-  },
-  getHttpOptions : function (cfg) {
-    var rmap = self.routeMap;
-    var smap = self.serviceMap;
-    // Using the name - make it get the http options        
-    cfg = cfg || {};
-    var pr = rmap[cfg.name];
-    var hostList = !_.isEmpty(pr) ? pr : rmap.default;
-    // The options array to be sent
-    var hostArr = [], portArr = [], keyArr = [], certArr = [], doSSLArr = [];
-    // Create options according to hosts 
-    hostList.map(function(x){
-      hostArr.push(smap[x].url);
-      portArr.push(smap[x].port);
-      keyArr.push(smap[x].key);
-      certArr.push(smap[x].cert);
-      doSSLArr.push(smap[x].use_ssl);
-    });    
-    var httpOptions = {
-      hostArr: hostArr,
-      portArr: portArr,
-      method: 'GET',
-      keyArr : keyArr ,
-      certArr : certArr,
-      doSSLArr : doSSLArr,
-      headers: {
-        'Content-type': 'application/perfsonar+json',
-        'connection': 'keep-alive'
-      }
-    };
-    return httpOptions;
-  },
   db : {
-    url : "mongodb://192.168.111.100:27017",
+    url : "mongodb://localhost:27017",
     name : "peri-auth",
     collection_name : "userDetails"
   },
@@ -153,4 +111,11 @@ var self = {
   GITHUB_SECRET: ""
 };
 
+try {
+  fs.accessSync("config.js",fs.R_OK);
+  var config = require("./config");  
+  self = _.extend(self,config);
+} catch(e) {
+  console.error("No config file exists - Create a config.js and do module.exports with JSON obj to override server properties");
+}
 module.exports = self;

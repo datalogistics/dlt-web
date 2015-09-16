@@ -28,6 +28,9 @@ var log = bunyan.createLogger({
       path: "./logs/bun.log"
     }]
 });
+var resourceHelper = require('./resourceHelper');
+var getOptions = resourceHelper.getOptions;
+var getHttpOptions = resourceHelper.getHttpOptions;
 
 WebSocket.super_.defaultMaxListeners = 0;
 
@@ -195,7 +198,7 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
 }
 
 function _getGenericHandler(resource, emitName,client){
-  var opt = cfg.getHttpOptions({'name': resource});    
+  var opt = getHttpOptions({'name': resource});
   return function(data) {
     var path = resource;
     var emit = emitName;

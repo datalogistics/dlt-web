@@ -20,8 +20,9 @@ var path = require('path')
 , auth = require('./auth')
 , routeCb = require('./routeCb')
 , q = require('q');
-
-var getHttpOptions = cfg.getHttpOptions;
+var resourceHelper = require('./resourceHelper');
+var getOptions = resourceHelper.getOptions;
+var getHttpOptions = resourceHelper.getHttpOptions;
 var sslOptions = cfg.sslOptions;
 
 function applyRouteCbs(name,json) {  

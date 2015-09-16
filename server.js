@@ -22,10 +22,11 @@ var server = http.createServer(app);
 var io = socketio.listen(server);
 var methodOverride = require('method-override');
 var errorhandler = require('errorhandler');
+var cfg = require('./properties');
 var multer = require('multer');
 io.sockets.setMaxListeners(0);
 // app configuration
-app.set('port', process.env.PORT || 42424);
+app.set('port', cfg.port);
 app.use(express.static(__dirname + '/public'));
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
 app.use(cookieParser("iei122ei12!@&#*(!@#ansdajsdnajs213"));
