@@ -32,6 +32,7 @@
     "jasmine": "^2.3.1",
     "karma": "0.12.16",
     "method-override": "^2.3.3",
+    "mkdirp": "^0.5.1",
     "mongodb": "^2.0.42",
     "morgan": "~1.5.1",
     "multer": "^0.1.8",

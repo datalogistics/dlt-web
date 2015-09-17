@@ -6,6 +6,15 @@ var _ = require('underscore');
 // var  "--attribute --issuer periscope_ID.pem --key periscope_private.pem --role read --subject-cert prakash_ID.pem --out Prakash_periscope_read.der"
 // var  creddy --generate --cn "prakash"
 
+var dir = "/opt/cred";
+var mkdirp = require('mkdirp');
+try {
+  fs.accessSync("/opt/cred",fs.R_OK);  
+} catch(e) {
+  mkdirp(dir,function(err) {
+    console.error("Unable to create Cred dir - check access rights to " , dir);
+  });
+}
 
 var spawn = require('child_process').spawn;
 var creddyComm = function(argString) {
@@ -15,7 +24,7 @@ var creddyComm = function(argString) {
 
 function createCred(cn) {
   var prom = q.defer();
-  var s = creddyComm("--generate --out /tmp/cred --cn "+ cn);
+  var s = creddyComm("--generate --out "+dir+" --cn "+ cn);
   var errorStr = "";
   s.stdout.on('data',function(data) {
     errorStr+=data;
@@ -35,7 +44,7 @@ function createCred(cn) {
 
 function assignAttributes(cn,attr) {
   var prom = q.defer();
-  var dir = "/tmp/cred";
+  
   var serverCert = path.join(dir,"periscope_ID.pem");
   var serverKey = path.join(dir,"periscope_private.pem");
   var subjectCert = path.join(dir,cn+"_ID.pem");
@@ -69,8 +78,7 @@ function getAndDeleteAttrFile(fname) {
     });
 }
 
-function getAndDeleteCredFiles(cn) {
-  var dir = "/tmp/cred";
+function getAndDeleteCredFiles(cn) {  
   var privKey = path.join(dir,cn+"_private.pem");
   var pubKey = path.join(dir,cn+"_ID.pem");
   return q.all([q.ninvoke(fs,"readFile",privKey),q.ninvoke(fs,"readFile",pubKey)])

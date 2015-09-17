@@ -11,7 +11,7 @@ var forge = require('node-forge');
 var conv = require('binstring');
 var MongoClient = require('mongodb').MongoClient
 , assert = require('assert');
-
+var request = require('request');
 var authHelper = require('./authHelper');
 // Connection URL 
 var dburl = cfg.db.url + "/" + cfg.db.name;
@@ -143,17 +143,32 @@ var auth = {
       };
       dbcollectionPromise.then(function(C) {
         return loginUser(C,obj);
-      }).then(function(doc) {        
-        req.session.doc = doc;
+      }).then(function(arr) {
+        var doc = arr[0];
+        var isPwdVerified = arr[1];
+        var pubKey = doc.pubKey;        
+        var certs = doc.attributeCert;
+        var unisUrl = 'http://127.0.0.1:8888/login';
+        var prom = q.defer();
+        console.log("Request posted " ,unisUrl);
+        try {
+          request.post(unisUrl,{form : {"userCert" : certs[0],"userPublicKey" : pubKey}})
+            .on('data',function(resp,body) {              
+              prom.resolve(resp);
+            })
+            .on('error',function(err) {
+              prom.reject(err);
+            });
+        } catch(e) {
+          console.log(e);
+        }        
+        return prom.promise;
+      }).then(function(doc) {
         res.cookie(AUTH_COOKIE_NAME,email,{
           // TODO make secure
           secure : false,
           signed : false
         });        
-        // req.body.email, {
-        //   secure: false,
-        //   signed: true
-        // });
         res.json({
           success : true
         });
