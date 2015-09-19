@@ -97,11 +97,12 @@ if (cfg.ENABLE_HTTPS) {
   var crypto = require('crypto');
   //read them into memory
   var secureContext = {
-    'dlt.incntre.iu.edu' : getSecureContext('incntre'),
-    'dlt.crest.iu.edu': getSecureContext('crest'),
     'default' : getSecureContext("")
   };
-  console.log(secureContext);
+  for (var i in (cfg.sslOpt  || {})) {
+    secureContext[i] = getSecureContext(i);
+  }
+  
   server = httpolyglot.createServer({
     SNICallback: function (domain,cb) {
       cb(null,secureContext[domain] || secureContext['default']);

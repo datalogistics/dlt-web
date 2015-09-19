@@ -5,11 +5,20 @@ _ = require('underscore');
 var self = {
   port : process.env.PORT || 42424,
   ENABLE_HTTPS : false,
+  // Defaulting to self-signed certs 
   ssl : {
-    key : "",
-    cert : "",
-    ca : ""
+    key : './cert/server.key',
+    cert : './cert/server.crt',
+    ca :  './cert/ca.crt'
   },
+  sslOpt : {
+    // Example of domain
+    'dlt.incntre.iu.edu' : {
+      key : './cert/server.key',
+      cert : './cert/server.crt' 
+      // ca : "./ssl/dlt-client.csr"
+    }
+  },  
   nat_map_file : './misc/idms_nat_map',
   freegeoipUrl : "http://dlt.incntre.iu.edu:8080",
   jnlpMap : {
