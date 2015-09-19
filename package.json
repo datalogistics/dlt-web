@@ -29,6 +29,7 @@
     "express-session": "^1.11.3",
     "forever": "^0.11.1",
     "github-oauth": "^0.2.2",
+    "httpolyglot": "^0.1.1",
     "jasmine": "^2.3.1",
     "karma": "0.12.16",
     "method-override": "^2.3.3",

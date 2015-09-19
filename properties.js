@@ -4,6 +4,12 @@ _ = require('underscore');
 // var bunyan = require('bunyan');
 var self = {
   port : process.env.PORT || 42424,
+  ENABLE_HTTPS : false,
+  ssl : {
+    key : "",
+    cert : "",
+    ca : ""
+  },
   nat_map_file : './misc/idms_nat_map',
   freegeoipUrl : "http://dlt.incntre.iu.edu:8080",
   jnlpMap : {
@@ -111,11 +117,22 @@ var self = {
   GITHUB_SECRET: ""
 };
 
+var deepObjectExtend = function(target, source) {
+  for (var prop in source) {
+    if (prop in target && typeof(target[prop]) == 'object' && typeof(source[prop]) == 'object')
+      deepObjectExtend(target[prop], source[prop]);
+    else
+      target[prop] = source[prop];
+  } 
+  return target;
+};
+
 try {
   fs.accessSync("config.js",fs.R_OK);
   var config = require("./config");  
-  self = _.extend(self,config);
+  self = deepObjectExtend(self,config);
 } catch(e) {
-  console.error("No config file exists - Create a config.js and do module.exports with JSON obj to override server properties");
+  console.error("No config file exists - Create a config.js and do module.exports with JSON obj to override server properties",e);
 }
+
 module.exports = self;

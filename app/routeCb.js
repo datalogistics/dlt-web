@@ -12,7 +12,14 @@ function updateLocation(obj,res) {
 }
 function getLocation(ap,obj) {  
   var url = cfg.freegeoipUrl + "/json/";
-  var name = obj.accessPoint.split(':')[1].replace('//', '');  
+  var name;
+  try {
+    name = obj.accessPoint.split(':')[1].replace('//', '');
+    
+  } catch(e) {
+    // Ignore 
+    return q.thenResolve();
+  }
   if (locCache[name]) {
     obj.k = 1;
     var res = locCache[name];
@@ -31,15 +38,18 @@ function getLocation(ap,obj) {
 };
 
 function addLocation(obj) {
-  console.log("Adding location");
-  if (_.isArray(obj)) {
-    var arr = [];    
-    for (var i = 0 ; i < obj.length; i++) {
-      arr.push(getLocation(obj[i].accessPoint, obj[i]));
+  try {
+    if (_.isArray(obj)) {
+      var arr = [];    
+      for (var i = 0 ; i < obj.length; i++) {
+        arr.push(getLocation(obj[i].accessPoint, obj[i]));
+      }
+      return q.all(arr);
+    } else if (typeof obj == "object") {    
+      return getLocation(obj.accessPoint,obj);
     }
-    return q.all(arr);
-  } else if (typeof obj == "object") {    
-    return getLocation(obj.accessPoint,obj);
+  } catch(e) {
+    console.error(e);
   }
   return q.thenResolve();
 }
