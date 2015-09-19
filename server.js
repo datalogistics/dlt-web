@@ -72,16 +72,46 @@ require('./app/routes')(app);
 //   });
 // }
 var server;
+var tls = require('tls');
+function getSecureContext (domain) {    
+  if (!cfg.sslOpt[domain])
+    return tls.createSecureContext({
+      key: fs.readFileSync(cfg.ssl.key),
+      cert: fs.readFileSync(cfg.ssl.cert),
+      ca: fs.readFileSync(cfg.ssl.ca)
+    }).context;
 
+  var key = cfg.sslOpt[domain].key,
+      cert = cfg.sslOpt[domain].cert,
+      ca = cfg.sslOpt[domain].ca;
+  
+  return   tls.createSecureContext({
+    key:  fs.readFileSync(key),
+    cert: fs.readFileSync(cert)
+    // ca:  [fs.readFileSync(ca),]
+  }).context; 
+};
+// http://stackoverflow.com/questions/12219639/is-it-possible-to-dynamically-return-an-ssl-certificate-in-nodejs#answer-20285934
 if (cfg.ENABLE_HTTPS) {
   var httpolyglot = require('httpolyglot');
+  var crypto = require('crypto');
+  //read them into memory
+  var secureContext = {
+    'dlt.incntre.iu.edu' : getSecureContext('incntre'),
+    'dlt.crest.iu.edu': getSecureContext('crest'),
+    'default' : getSecureContext("")
+  };
+  console.log(secureContext);
   server = httpolyglot.createServer({
+    SNICallback: function (domain,cb) {
+      cb(null,secureContext[domain] || secureContext['default']);
+    },
     key: fs.readFileSync(cfg.ssl.key),
     cert: fs.readFileSync(cfg.ssl.cert),
     ca: fs.readFileSync(cfg.ssl.ca),
     requestCert: true,
     rejectUnauthorized: false
-  }, function(req,res) {
+  }, function(req,res) {    
     if (!req.socket.encrypted) {
       // Redirect to https
       res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
