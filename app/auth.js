@@ -17,6 +17,7 @@ var authHelper = require('./authHelper');
 var dburl = cfg.db.url + "/" + cfg.db.name;
 // Use connect method to connect to the Server
 var cname = cfg.db.collection_name;
+var tough = require('tough-cookie');
 /**
  Create Hash from password usinng bcrypt
  */
@@ -95,30 +96,6 @@ function loginUser(C,obj) {
   }
 }
 
-// MongoClient.connect(dburl, function(err, db) {
-//   assert.equal(null, err);
-//   console.log("Connected correctly to server");
-//   var C = db.collection(cname);
-  
-
-//   // // C.insert([{id : "asd@ads.com",k:1}],function(err,resul) {
-//   // //   console.log(err,resul);    
-//   // // });
-//   // registerLogin(C,{email : "as1d11@ads.com",password : "1" , name :"dasd", cpassword : "1"})
-//   //   .then(function(res) {
-//   //     console.log("Registered succ " ,res );
-//   //     return loginUser(C,{email : "as1d11@ads.com" , password : "1" })
-//   //   })
-//   //   .then(function() {
-//   //     console.log("Logged In ");
-//   //   })
-//   //   .catch(function(err) {
-//   //     console.log("Login failed because of ", err);
-//   //   })
-//   //   .finally(function() {
-//   //     db.close();
-//   //   });
-// });
 var dbcollectionPromise = q.ninvoke(MongoClient,"connect",dburl)
       .then(function(db) {
         /** Lets do some Database cleanup here **/
@@ -132,7 +109,18 @@ var dbcollectionPromise = q.ninvoke(MongoClient,"connect",dburl)
         // process.on('uncaughtException',exit);
         return db.collection(cname);
       });
+
 var AUTH_COOKIE_NAME = "userDetails";
+function getCookieStore() {
+  return  new tough.CookieJar();//new tough.MemoryCookieStore();
+}
+function storeJarInSession(req,j) {
+  try {    
+    req.session.jar2 = j.toJSON();
+  }catch(e) {
+    console.log(e);
+  }
+}
 var auth = {
   addRoutes : function(prefix,app) {        
     app.post(prefix + 'login' , function(req,res) {
@@ -151,17 +139,24 @@ var auth = {
         var unisUrl = 'http://127.0.0.1:8888/login';
         var prom = q.defer();
         console.log("Request posted " ,unisUrl);
-        try {
-          request.post(unisUrl,{form : {"userCert" : certs[0],"userPublicKey" : pubKey}})
-            .on('data',function(resp,body) {              
+        // var store = getCookieStore();
+        // console.log("Store is ",store);
+        var j = request.jar();
+        try {        
+          request.post({url : unisUrl,jar:j, form : {"userCert" : certs[0],"userPublicKey" : pubKey}})
+            .on('data',function(resp,body) {
               prom.resolve(resp);
+              storeJarInSession(req,j._jar);
+              // request.get({ url :"http://127.0.0.1:8888/nodes", jar: j}).on('data',function(resp,body) {
+              //   console.log(" DAaata from UNIS ",JSON.parse(resp.toString()).length);
+              // });
             })
             .on('error',function(err) {
               prom.reject(err);
             });
         } catch(e) {
           console.log(e);
-        }        
+        }
         return prom.promise;
       }).then(function(doc) {
         res.cookie(AUTH_COOKIE_NAME,email,{

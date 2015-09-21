@@ -20,6 +20,7 @@ var path = require('path')
 , auth = require('./auth')
 , routeCb = require('./routeCb')
 , q = require('q');
+var tough = require('tough-cookie');
 var resourceHelper = require('./resourceHelper');
 var getOptions = resourceHelper.getOptions;
 var getHttpOptions = resourceHelper.getHttpOptions;
@@ -31,6 +32,18 @@ function applyRouteCbs(name,json) {
     return rcb(json);
   }
   return q.thenResolve();
+}
+function getJarFromReq(req) {
+  if (!req.session || !req.session.jar2)
+    return;
+  var storeJson = JSON.parse(JSON.stringify(req.session.jar2));
+  console.log(storeJson);
+  var st = new tough.MemoryCookieStore();
+  tough.CookieJar.deserializeSync(storeJson,st);
+  var jar = request.jar(st); //
+  // new tough.CookieJar(storeJson,new tough.MemoryCookieStore())
+  // var store = ().cloneSync();
+  return jar;
 }
 // var slice_info = [];
 // var filePath = '/usr/local/etc/node.info';
@@ -88,7 +101,6 @@ module.exports = function(app) {
   function registerGenericHandler (options,cb) {
     var method = http;
     var res = options.res, req = options.req;
-    var doc = req.session.doc;
     options.req = options.res = undefined;
     var keyArr = [].concat(options.keyArr)
     , certArr = [].concat(options.certArr)
@@ -105,7 +117,7 @@ module.exports = function(app) {
       , certArr = [opt.cert]
       , doSSLArr = [opt.use_ssl]
       , portArr = [opt.port];        
-    }; 
+    };
     //console.log("**" , hostArr , keyArr , certArr , doSSLArr , portArr );
     // Loop over all options path 
     //console.log("Requesting from ", hostArr, certArr);
@@ -127,31 +139,46 @@ module.exports = function(app) {
         opt.key = fs.readFileSync(keyArr[index]);
       }
       return function() {
-	//console.log(opt);
-        var defer = q.defer();
-        method.get(opt, function(http_res,err) {
-          var data = '';
-          http_res.on('data', function (chunk) {
-            data += chunk;
-          });
-          http_res.on('end',function() {
-            try {
-              var obj = JSON.parse(data);
-              return defer.resolve(obj);
-            } catch (e) {
-              //TODO: Sometimes a stack trace comes in as data...I don't know what is making it or why
-              console.log("Error parsing JSON from socket: ");
-              console.log(e);
-              console.log(data);
-            }
-          });
-          http_res.on('error',function(e) {
-            res.send( 404 );
-            return defer.reject(false);
-          });
-        }).on('error', function(){
+        var j = getJarFromReq(req);
+        var defer = q.defer();        
+        var prot = "http://";
+        if (opt.cert)
+          prot = "https://";          
+        var op = {
+          url : "http://127.0.0.1:8888/nodes",//prot + opt.hostname+":"+opt.port+opt.path,
+          // cert : opt.cert,
+          // key : opt.key,
+          jar : j
+        };
+        request.get(op).on('data',function(data) {
+          data = data.toString();
+          try {
+            var obj = JSON.parse(data);
+            return defer.resolve(obj);
+          } catch (e) {
+            //TODO: Sometimes a stack trace comes in as data...I don't know what is making it or why
+            console.log("Error parsing JSON from socket: ");
+            console.log(e);
+            console.log(data);
+          }
+
+        }).on('error',function() {
           defer.reject(false);
         });
+        // , function(http_res,err) {
+        //   var data = '';
+        //   http_res.on('data', function (chunk) {
+        //     data += chunk;
+        //   });
+        //   http_res.on('end',function() {
+        //   });
+        //   http_res.on('error',function(e) {
+        //     res.send( 404 );
+        //     return defer.reject(false);
+        //   });
+        // }).on('error', function(){
+        //   defer.reject(false);
+        // });
         return defer.promise;
       };
     });
