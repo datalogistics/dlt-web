@@ -45,13 +45,15 @@ var self = {
   // })(),
   // Match exnodes using name if true , else use properties.metadata.scene_id
   exnodeMatchingFromName : true,
-  routeMap : { 
+  // Try to login and maintain cookie for the following UNIS instances
+  authArr : ['local'],
+  routeMap : {
     // Aggregate from the following by default 
     'default'  : ['dlt', 'monitor'],
-    // Empty array is ignored and goes to default , otherwise using this to aggregate        
+    // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : ['dev'],
-    'nodes': [] ,        
+    'nodes': ['local'],
     'nodes_id' : [],
     'services': [] ,
     'services_id' : [],
@@ -71,6 +73,10 @@ var self = {
     'services_id' : "addLocation"
   },
   serviceMap : {
+    local : {
+      url : "localhost",
+      port : "8888"
+    },
     dev : {
       url : "dev.incntre.iu.edu" ,
       port : "8888",

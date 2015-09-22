@@ -33,16 +33,13 @@ function applyRouteCbs(name,json) {
   }
   return q.thenResolve();
 }
-function getJarFromReq(req) {
-  if (!req.session || !req.session.jar2)
-    return;
-  var storeJson = JSON.parse(JSON.stringify(req.session.jar2));
-  console.log(storeJson);
+function getJarFromReq(name,req) {
+  if (!req.session || !req.session.jar || !req.session.jar[name])
+    return null;  
+  var storeJson = JSON.parse(JSON.stringify(req.session.jar[name]));
   var st = new tough.MemoryCookieStore();
   tough.CookieJar.deserializeSync(storeJson,st);
   var jar = request.jar(st); //
-  // new tough.CookieJar(storeJson,new tough.MemoryCookieStore())
-  // var store = ().cloneSync();
   return jar;
 }
 // var slice_info = [];
@@ -50,6 +47,7 @@ function getJarFromReq(req) {
 // var slice_uuid = '';
 // var os_name = '';
 // var distro = ''; 
+
 module.exports = function(app) {
   console.log("UNIS Default Instances: " + cfg.routeMap.default);
   //console.log("Measurement Store Host: " + ms_host);
@@ -106,7 +104,9 @@ module.exports = function(app) {
     , certArr = [].concat(options.certArr)
     , doSSLArr = [].concat(options.doSSLArr)
     , hostArr = [].concat(options.hostArr)
-    , portArr = [].concat(options.portArr);        
+    , portArr = [].concat(options.portArr)
+    , nameArr = [].concat(options.nameArr);
+
     // Select host to be queried 
     var host = req.query.hostname;
     var opt = getHostOpt(host);
@@ -139,13 +139,13 @@ module.exports = function(app) {
         opt.key = fs.readFileSync(keyArr[index]);
       }
       return function() {
-        var j = getJarFromReq(req);
+        var j = getJarFromReq(nameArr[index],req);
         var defer = q.defer();        
         var prot = "http://";
         if (opt.cert)
           prot = "https://";          
         var op = {
-          url : "http://127.0.0.1:8888/nodes",//prot + opt.hostname+":"+opt.port+opt.path,
+          url : prot + opt.hostname+":"+opt.port+opt.path,
           // cert : opt.cert,
           // key : opt.key,
           jar : j

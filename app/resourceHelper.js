@@ -22,8 +22,10 @@ module.exports = {
     var hostList = !_.isEmpty(pr) ? pr : rmap.default;
     // The options array to be sent
     var hostArr = [], portArr = [], keyArr = [], certArr = [], doSSLArr = [];
+    var nameArr = [];
     // Create options according to hosts 
     hostList.map(function(x){
+      nameArr.push(x);      
       hostArr.push(smap[x].url);
       portArr.push(smap[x].port);
       keyArr.push(smap[x].key);
@@ -31,6 +33,7 @@ module.exports = {
       doSSLArr.push(smap[x].use_ssl);
     });    
     var httpOptions = {
+      nameArr: nameArr,
       hostArr: hostArr,
       portArr: portArr,
       method: 'GET',

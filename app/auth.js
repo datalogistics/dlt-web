@@ -79,6 +79,41 @@ function addKeysToAccount(C,_id,obj) {
 function getUserDetails() { 
 }
 
+function loginToUnis(name,arr){
+  var it = cfg.serviceMap[name];
+  var proto = it.use_ssl ? "https://" : "http://";
+  var url =  proto + it.url + ":" + it.port + "/login";  
+  var doc = arr[0];
+  var pubKey = doc.pubKey;        
+  var certs = doc.attributeCert;
+  var unisUrl = url;
+  var prom = q.defer();
+  var j = request.jar();
+  try {
+    request.post({url :url,jar:j, form : {"userCert" : certs[0],"userPublicKey" : pubKey}})
+      .on('data',function(resp,body) {
+        console.log(resp + "");
+        var res = JSON.parse(resp.toString());
+        if(res.loggedIn) {
+          prom.resolve({
+            name : name,
+            jar : j._jar
+          });
+        } else {
+          prom.reject(res);
+        }
+        // request.get({ url :"http://127.0.0.1:8888/nodes", jar: j}).on('data',function(resp,body) {
+        //   console.log(" DAaata from UNIS ",JSON.parse(resp.toString()).length);
+        // });
+      })
+      .on('error',function(err) {
+        prom.reject(err);
+      });
+  } catch(e) {
+    console.log(e);
+  }
+  return prom.promise;
+}
 /**
  Takes username/email and password - Then authenticates user
  Returns Promise - i.e if successful then accept else reject 
@@ -132,32 +167,26 @@ var auth = {
       dbcollectionPromise.then(function(C) {
         return loginUser(C,obj);
       }).then(function(arr) {
-        var doc = arr[0];
         var isPwdVerified = arr[1];
-        var pubKey = doc.pubKey;        
-        var certs = doc.attributeCert;
-        var unisUrl = 'http://127.0.0.1:8888/login';
-        var prom = q.defer();
-        console.log("Request posted " ,unisUrl);
-        // var store = getCookieStore();
-        // console.log("Store is ",store);
-        var j = request.jar();
-        try {        
-          request.post({url : unisUrl,jar:j, form : {"userCert" : certs[0],"userPublicKey" : pubKey}})
-            .on('data',function(resp,body) {
-              prom.resolve(resp);
-              storeJarInSession(req,j._jar);
-              // request.get({ url :"http://127.0.0.1:8888/nodes", jar: j}).on('data',function(resp,body) {
-              //   console.log(" DAaata from UNIS ",JSON.parse(resp.toString()).length);
-              // });
-            })
-            .on('error',function(err) {
-              prom.reject(err);
+        var authArr = cfg.authArr;
+        if (!isPwdVerified)
+          return q.reject(Error("Incorrect password"));
+        return q.allSettled(authArr.map(function(x) { return loginToUnis(x,arr);}))
+          .then(function(res) {
+            req.session.jar = {};
+            res.map(function(x,i) {
+              if (x.state == "fulfilled") {
+                var name = x.value.name ;
+                try {
+                  req.session.jar[name] = x.value.jar.toJSON();
+                } catch(e) {
+                  console.warn("Unable to serialize jar of " , name,e);
+                }
+              } else {
+                console.warn("Login to UNIS  " , name , " failed ");
+              }
             });
-        } catch(e) {
-          console.log(e);
-        }
-        return prom.promise;
+          });
       }).then(function(doc) {
         res.cookie(AUTH_COOKIE_NAME,email,{
           // TODO make secure
