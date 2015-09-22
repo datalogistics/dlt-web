@@ -92,25 +92,25 @@ function loginToUnis(name,arr){
   try {
     request.post({url :url,jar:j, form : {"userCert" : certs[0],"userPublicKey" : pubKey}})
       .on('data',function(resp,body) {
-        console.log(resp + "");
-        var res = JSON.parse(resp.toString());
-        if(res.loggedIn) {
-          prom.resolve({
-            name : name,
-            jar : j._jar
-          });
-        } else {
+        try {
+          var res = JSON.parse(resp.toString());
+          if(res.loggedIn) {
+            prom.resolve({
+              name : name,
+              jar : j._jar
+            });
+          } else {
+            prom.reject(res);
+          }
+        } catch(e) {
           prom.reject(res);
         }
-        // request.get({ url :"http://127.0.0.1:8888/nodes", jar: j}).on('data',function(resp,body) {
-        //   console.log(" DAaata from UNIS ",JSON.parse(resp.toString()).length);
-        // });
       })
-      .on('error',function(err) {
+      .on('error',function(err) {      
         prom.reject(err);
       });
   } catch(e) {
-    console.log(e);
+    prom.reject(e);
   }
   return prom.promise;
 }
