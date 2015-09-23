@@ -142,14 +142,21 @@ module.exports = function(app) {
         var j = getJarFromReq(nameArr[index],req);
         var defer = q.defer();        
         var prot = "http://";
-        if (opt.cert)
+        if (opt.cert) {
           prot = "https://";          
+        }
         var op = {
-          url : prot + opt.hostname+":"+opt.port+opt.path,
-          // cert : opt.cert,
-          // key : opt.key,
+          url : prot + opt.hostname+":"+opt.port+opt.path,          
           jar : j
         };
+        if (opt.cert) {
+          op.agentOptions = {
+            cert : opt.cert,
+            key : opt.key,
+            requestCert : true,
+            rejectUnauthorized : false            
+          };
+        }
         var fdata = "";
         request.get(op).on('data',function(data) {
           data = data.toString();
@@ -159,8 +166,7 @@ module.exports = function(app) {
             var obj = JSON.parse(fdata);
             return defer.resolve(obj);
           } catch (e) {            
-            console.log("Error parsing JSON from socket: ");
-            console.log(e);
+            console.log("Error parsing JSON from socket: ",e);
             return defer.reject(e);
           }
         }).on('error',function() {          

@@ -53,7 +53,7 @@ var self = {
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : ['dev'],
-    'nodes': ['local'],
+    'nodes': [],
     'nodes_id' : [],
     'services': [] ,
     'services_id' : [],
