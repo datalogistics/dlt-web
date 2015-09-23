@@ -150,19 +150,20 @@ module.exports = function(app) {
           // key : opt.key,
           jar : j
         };
+        var fdata = "";
         request.get(op).on('data',function(data) {
           data = data.toString();
+          fdata = fdata + data;          
+        }).on('end',function() {
           try {
-            var obj = JSON.parse(data);
+            var obj = JSON.parse(fdata);
             return defer.resolve(obj);
-          } catch (e) {
-            //TODO: Sometimes a stack trace comes in as data...I don't know what is making it or why
+          } catch (e) {            
             console.log("Error parsing JSON from socket: ");
             console.log(e);
-            console.log(data);
+            return defer.reject(e);
           }
-
-        }).on('error',function() {
+        }).on('error',function() {          
           defer.reject(false);
         });
         // , function(http_res,err) {
