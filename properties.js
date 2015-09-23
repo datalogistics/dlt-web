@@ -46,7 +46,7 @@ var self = {
   // Match exnodes using name if true , else use properties.metadata.scene_id
   exnodeMatchingFromName : true,
   // Try to login and maintain cookie for the following UNIS instances
-  authArr : ['local'],
+  authArr : [],
   routeMap : {
     // Aggregate from the following by default 
     'default'  : ['dlt', 'monitor'],
