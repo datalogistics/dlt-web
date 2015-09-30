@@ -1,309 +1,95 @@
-/**
- * Holds all authorization and authentication related code
- */
-var url = require('url')
-, cfg = require('../properties')
-, util = require('util')
-, _ = require('underscore');
+var cp = require("child_process");
+var fs = require("fs");
 var q = require('q');
+var path = require('path');
+var _ = require('underscore');
+// var  "--attribute --issuer periscope_ID.pem --key periscope_private.pem --role read --subject-cert prakash_ID.pem --out Prakash_periscope_read.der"
+// var  creddy --generate --cn "prakash"
 
-var forge = require('node-forge');
-var conv = require('binstring');
-var MongoClient = require('mongodb').MongoClient
-, assert = require('assert');
-var request = require('request');
-var authHelper = require('./authHelper');
-// Connection URL 
-var dburl = cfg.db.url + "/" + cfg.db.name;
-// Use connect method to connect to the Server
-var cname = cfg.db.collection_name;
-var tough = require('tough-cookie');
-/**
- Create Hash from password usinng bcrypt
- */
-function getHash(pwd) {
-  var bcrypt = require('bcrypt');
-  return q.ninvoke(bcrypt,"genSalt",10)
-    .then(function(salt) {      
-      return q.ninvoke(bcrypt,"hash",pwd,salt);
+
+var spawn = require('child_process').spawn;
+var getVersionCmd = function(host,port) {  
+  var arr = [host,port];
+  return spawn('get_version', arr);
+};
+
+function parseOutput(data) {
+  var lines = data.split(/\n/g);
+  var obj = {};
+  //obj.lines = lines;
+  var regArr= [/^Depot Transfer Stats/i,
+	       /^RID:/i,
+	       /^Depot start time/i,
+	       /^Total resources/i,
+	       /^Depot start time/i,
+               /^Uptime\(d:h:m:s\)/i,
+	      ];
+  var usefulLines = [];
+  lines.forEach(function(x) {
+    regArr.forEach(function(r,ind) {
+      if (r.test(x)) {
+	usefulLines[ind] = x;
+      }
     });
-}
-
-/**
- Check if password matches hash
- */
-function checkPwd(hash,pwd) {
-  var bcrypt = require('bcrypt');
-  return q.ninvoke(bcrypt,"compare",pwd, hash);
-}
-
-var EMAIL_REGEX = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
-function validateReg(obj) {
-  if (!(obj.name)) return false;
-  if (!(EMAIL_REGEX.test(obj.email))) return false;
-  if (!(obj.password && obj.password === obj.cpassword)) return false;
-  return true;
-}
-
-function validateLogin(obj) {  
-  if (!(EMAIL_REGEX.test(obj.email))) return false;
-  if (!(obj.password)) return false;
-  return true;
-}
-
-/**
- Stores user details in DB collection - Takes Collection and Object
- */
-function registerLogin(C,obj) {
-  if (validateReg(obj)) {
-    obj._id = obj.email;
-    delete obj.cpassword;
-    return getHash(obj.password)
-      .then(function(val) {
-        obj.password = val;
-        return q.ninvoke(C,"insert",[obj]);
+  });
+  usefulLines.forEach(function(v,ind) {
+    switch(ind) {
+    case 0:{
+      var arr = v.match(/\(.*?\)/g);
+      arr = arr.map(function(x) {
+	return x.substr(1).slice(0,-1);
       });
-  } else {
-    return q.reject(Error("Invalid Values"));
-  }
-};
-
-/** 
- Update User details with user keys and ABAC certificates
- **/
-function addKeysToAccount(C,_id,obj) {
-  return q.ninvoke(C,"update",{"_id" : _id},{$set : obj});
-};
-
-/**
- Takes the email of the logged in user and gets details - Is a promise
- */
-function getUserDetails() { 
+      obj.depotTransferStats = {
+	read : arr[0],write : arr[1], total : arr[2]
+      };
+    }break;
+    case 1: {
+      var arr = v.match(/\(.*?\)/g);
+      arr = arr.map(function(x) {
+	return x.substr(1).slice(0,-1);
+      });
+      obj.rid = {
+	max : arr[0] , used : arr[1],diff : arr[2] , free : arr[3]
+      };      
+    }break;
+    case 2: {
+      var moment = require('moment');
+      var val = v.match(/:.*/g)[0].substr(2);
+      var date = moment(val,"ddd MMM D hh:mm:ss yyy");
+      obj.depotStart = date;
+    }break;
+    };
+  });
+  obj.usefulLines = usefulLines;
+  return obj;
 }
-
-function loginToUnis(name,arr){
-  var it = cfg.serviceMap[name];
-  var proto = it.use_ssl ? "https://" : "http://";
-  var url =  proto + it.url + ":" + it.port + "/login";  
-  var doc = arr[0];
-  var pubKey = doc.pubKey;        
-  var certs = doc.attributeCert;
-  var unisUrl = url;
+function getVersion(host,prt) {
   var prom = q.defer();
-  var j = request.jar();
-  try {
-    request.post({url :url,jar:j, form : {"userCert" : certs[0],"userPublicKey" : pubKey}})
-      .on('data',function(resp,body) {
-        try {
-          var res = JSON.parse(resp.toString());
-          if(res.loggedIn) {
-            prom.resolve({
-              name : name,
-              jar : j._jar
-            });
-          } else {
-            prom.reject(res);
-          }
-        } catch(e) {
-          prom.reject(res);
-        }
-      })
-      .on('error',function(err) {      
-        prom.reject(err);
-      });
-  } catch(e) {
-    prom.reject(e);
-  }
+  var port = Number(prt);
+  if (Number.isNaN(port))
+    prom.reject(Error("Invalid port"));  
+  var s = getVersionCmd(host,port);
+  var data = "";
+  var errorStr = "";
+  s.stdout.on('data',function(dt) {
+    data += dt;
+  });
+  s.stderr.on('data',function(data) {
+    errorStr+=data;
+  });
+  s.on('close',function(code) {
+    // console.log('
+    if (code == 0)
+      prom.resolve(parseOutput(data));
+    else
+      prom.reject(Error("Unable to generate - Exited with error "+errorStr));
+  });
   return prom.promise;
 }
-/**
- Takes username/email and password - Then authenticates user
- Returns Promise - i.e if successful then accept else reject 
- */
-function loginUser(C,obj) {
-  if (validateLogin(obj)) {
-    return q.ninvoke(C,"findOne",{_id : obj.email})
-      .then(function(docs) {
-        if (!docs || !docs.password)
-          return q.reject(Error("email not present"));
-        return q.all([docs,checkPwd(docs.password,obj.password)]);
-      });
-  } else {
-    return q.reject(Error("Invalid input"));
-  }
-}
-
-var dbcollectionPromise = q.ninvoke(MongoClient,"connect",dburl)
-      .then(function(db) {
-        /** Lets do some Database cleanup here **/
-        function exit() {
-          console.log("Shutting down and closing connections to DB");
-          db.close();
-          process.exit();
-        }
-        process.on('exit',exit);
-        process.on('SIGINT',exit);
-        // process.on('uncaughtException',exit);
-        return db.collection(cname);
-      });
-
-var AUTH_COOKIE_NAME = "userDetails";
-function getCookieStore() {
-  return  new tough.CookieJar();//new tough.MemoryCookieStore();
-}
-function storeJarInSession(req,j) {
-  try {    
-    req.session.jar2 = j.toJSON();
-  }catch(e) {
-    console.log(e);
-  }
-}
-var auth = {
-  addRoutes : function(prefix,app) {        
-    app.post(prefix + 'login' , function(req,res) {
-      var email = req.body.email;
-      var obj = {
-        email : email,
-        password : req.body.password
-      };
-      dbcollectionPromise.then(function(C) {
-        return loginUser(C,obj);
-      }).then(function(arr) {
-        var isPwdVerified = arr[1];
-        var authArr = cfg.authArr;
-        if (!isPwdVerified)
-          return q.reject(Error("Incorrect password"));
-        return q.allSettled(authArr.map(function(x) { return loginToUnis(x,arr);}))
-          .then(function(res) {
-            req.session.jar = {};
-            res.map(function(x,i) {
-              if (x.state == "fulfilled") {
-                var name = x.value.name ;
-                try {
-                  req.session.jar[name] = x.value.jar.toJSON();
-                } catch(e) {
-                  console.warn("Unable to serialize jar of " , name,e);
-                }
-              } else {
-                console.warn("Login to UNIS  " , name , " failed ");
-              }
-            });
-          });
-      }).then(function(doc) {
-        res.cookie(AUTH_COOKIE_NAME,email,{
-          // TODO make secure
-          secure : false,
-          signed : false
-        });        
-        res.json({
-          success : true
-        });
-      }).catch(function(err) {
-        res.json({
-          success : false,
-          message : "Login failed" // Any reason if you want to populate in future
-        });
-      });
-    });
-    
-    app.post(prefix + 'register' , function(req,res) {
-      var email = req.body.email;       
-      var obj = {
-        name : req.body.name,
-        email : email,
-        password : req.body.password,
-        cpassword : req.body.cpassword
-      };
-      dbcollectionPromise.then(function(C) {
-        return registerLogin(C,obj);
-      }).then(function() {
-        return authHelper.createUser(conv(email,{out:'hex'}));
-      }).then(function(obj) {
-        return dbcollectionPromise.then(function(C) {
-          return addKeysToAccount(C,email,obj);
-        });
-      }).then(function() {
-        res.json({
-          success : true
-        });
-      }).catch(function(err) {
-        console.log("Error " ,err);
-        res.json({
-          success : false,
-          error : err
-        });
-      });
-    });
-    app.post(prefix+'logout',function (req,res) {
-      res.cookie(AUTH_COOKIE_NAME,null, {
-        secure: false,
-        signed: true,
-        maxAge : 0
-      });
-      req.session.destroy();
-      res.json({
-        success : true
-      })
-    });
-  }
-};
-module.exports = auth;
 
 
-
-
-
-
-
-
-
-
-
-// var pki = forge.pki;
-
-
-// getHash("dasdasd").then(function(v){
-//   return checkPwd(v,"dasdasd");
-// }).done(function(v) {
-//   console.log(v);
-// });
-
-var githubOAuth = require('github-oauth')({
-  githubClient: cfg['GITHUB_CLIENT'],
-  githubSecret: cfg['GITHUB_SECRET'],
-  baseURL: 'http://localhost:42424',
-  loginURI: '/ghLogin',
-  callbackURI: '/ghCallback',
-  scope: 'user' // optional, default scope is set to user 
+getVersion('128.206.119.19',6714).then(function() {
+  console.log(arguments);
+}).catch(function() {
+  console.log(arguments);
 });
-
-// require('http').createServer(function(req, res) {
-//   if (req.url.match(/login/)) return githubOAuth.login(req, res)
-//   if (req.url.match(/callback/)) return githubOAuth.callback(req, res)
-// }).listen(80)
-
-// githubOAuth.on('error', function(err) {
-//   console.error('there was a login error', err)
-// })
-// var pki = forge.pki;
-// var keygen = require('x509-keygen').x509_keygen;
-
-// function generateUserTokens() {
-//   var prom = q.defer();
-//   keygen({ subject: '/CN=subject', destroy: true }, function(err, results) {
-//     if (err) return q.reject(err.message);
-//     var cert = results.cert;
-//     var key = results.key;
-//     q.resolve({ cert: cert , key : key });
-//   });
-//   return prom.promise;
-// }
-
-// generateUserTokens().done(function(va) {
-//   console.log(va);
-// });
-
-// githubOAuth.on('token', function(token, serverResponse) {
-//   console.log('here is your shiny new github oauth token', token)
-//   serverResponse.end(JSON.stringify(token))
-// })
