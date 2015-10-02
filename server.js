@@ -6,6 +6,7 @@
 // include modules
 var express = require('express')
   , http = require('http')
+  , https = require('https')
   , socketio = require('socket.io')
   , cors = require('cors');
 var compression = require('compression');
@@ -16,19 +17,19 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
 var ejs = require('ejs');
+var cfg = require('./properties');
+var multer = require('multer');
+var fs = require('fs');
 // create app, server, sockets
 var app = module.exports = express();
-var server = http.createServer(app);
-var io = socketio.listen(server);
 var methodOverride = require('method-override');
 var errorhandler = require('errorhandler');
-var multer = require('multer');
-io.sockets.setMaxListeners(0);
+
 // app configuration
-app.set('port', process.env.PORT || 42424);
+app.set('port', cfg.port);
 app.use(express.static(__dirname + '/public'));
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
-app.use(cookieParser());
+app.use(cookieParser("iei122ei12!@&#*(!@#ansdajsdnajs213"));
 app.use(session({
   cookie : {maxAge : 60001 },
   saveUninitialized: false, // don't create session until something stored,
@@ -55,7 +56,7 @@ if ('development' == app.get('env')) {
 };
 
 //Enable CORS on all routes
-app.use(cors())
+app.use(cors());
 // restful api routes
 require('./app/routes')(app);
 
@@ -70,7 +71,61 @@ require('./app/routes')(app);
 //     cluster.fork();
 //   });
 // }
+var server;
+var tls = require('tls');
+function getSecureContext (domain) {    
+  if (!cfg.sslOpt[domain])
+    return tls.createSecureContext({
+      key: fs.readFileSync(cfg.ssl.key),
+      cert: fs.readFileSync(cfg.ssl.cert),
+      ca: fs.readFileSync(cfg.ssl.ca)
+    }).context;
 
+  var key = cfg.sslOpt[domain].key,
+      cert = cfg.sslOpt[domain].cert,
+      ca = cfg.sslOpt[domain].ca;
+  
+  return   tls.createSecureContext({
+    key:  fs.readFileSync(key),
+    cert: fs.readFileSync(cert)
+    // ca:  [fs.readFileSync(ca),]
+  }).context; 
+};
+// http://stackoverflow.com/questions/12219639/is-it-possible-to-dynamically-return-an-ssl-certificate-in-nodejs#answer-20285934
+if (cfg.ENABLE_HTTPS) {
+  var httpolyglot = require('httpolyglot');
+  var crypto = require('crypto');
+  //read them into memory
+  var secureContext = {
+    'default' : getSecureContext("")
+  };
+  for (var i in (cfg.sslOpt  || {})) {
+    secureContext[i] = getSecureContext(i);
+  }
+  
+  server = httpolyglot.createServer({
+    SNICallback: function (domain,cb) {
+      cb(null,secureContext[domain] || secureContext['default']);
+    },
+    key: fs.readFileSync(cfg.ssl.key),
+    cert: fs.readFileSync(cfg.ssl.cert),
+    ca: fs.readFileSync(cfg.ssl.ca),
+    requestCert: true,
+    rejectUnauthorized: false
+  }, function(req,res) {    
+    if (!req.socket.encrypted) {
+      // Redirect to https
+      res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+      res.end();
+    } else {
+      app.apply(app,arguments);
+    }
+  });
+} else {
+  server = http.createServer(app);
+}
+var io = socketio.listen(server);
+io.sockets.setMaxListeners(0);
 server.listen(app.get('port'), function(){
   console.log('HTTP server on port ' + app.get('port') + ' - running as ' + app.settings.env);
 });

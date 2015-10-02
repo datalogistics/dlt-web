@@ -17,11 +17,31 @@ var path = require('path')
 , request = require('request')
 , ejs = require('ejs')
 , usgsapi = require('./usgsapi')
+, auth = require('./auth')
+, routeCb = require('./routeCb')
 , q = require('q');
-
-var getHttpOptions = cfg.getHttpOptions;
+var tough = require('tough-cookie');
+var resourceHelper = require('./resourceHelper');
+var getOptions = resourceHelper.getOptions;
+var getHttpOptions = resourceHelper.getHttpOptions;
 var sslOptions = cfg.sslOptions;
 
+function applyRouteCbs(name,json) {  
+  var rcb = routeCb[cfg.routeCb[name]];
+  if (typeof rcb == "function") {
+    return rcb(json);
+  }
+  return q.thenResolve();
+}
+function getJarFromReq(name,req) {
+  if (!req.session || !req.session.jar || !req.session.jar[name])
+    return null;  
+  var storeJson = JSON.parse(JSON.stringify(req.session.jar[name]));
+  var st = new tough.MemoryCookieStore();
+  tough.CookieJar.deserializeSync(storeJson,st);
+  var jar = request.jar(st); //
+  return jar;
+}
 // var slice_info = [];
 // var filePath = '/usr/local/etc/node.info';
 // var slice_uuid = '';
@@ -84,7 +104,9 @@ module.exports = function(app) {
     , certArr = [].concat(options.certArr)
     , doSSLArr = [].concat(options.doSSLArr)
     , hostArr = [].concat(options.hostArr)
-    , portArr = [].concat(options.portArr);        
+    , portArr = [].concat(options.portArr)
+    , nameArr = [].concat(options.nameArr);
+
     // Select host to be queried 
     var host = req.query.hostname;
     var opt = getHostOpt(host);
@@ -95,7 +117,7 @@ module.exports = function(app) {
       , certArr = [opt.cert]
       , doSSLArr = [opt.use_ssl]
       , portArr = [opt.port];        
-    }; 
+    };
     //console.log("**" , hostArr , keyArr , certArr , doSSLArr , portArr );
     // Loop over all options path 
     //console.log("Requesting from ", hostArr, certArr);
@@ -117,38 +139,62 @@ module.exports = function(app) {
         opt.key = fs.readFileSync(keyArr[index]);
       }
       return function() {
-	//console.log(opt);
-        var defer = q.defer();
-        method.get(opt, function(http_res,err) {
-          var data = '';
-          http_res.on('data', function (chunk) {
-            data += chunk;
-          });
-          http_res.on('end',function() {
-            try {
-              var obj = JSON.parse(data);
-              return defer.resolve(obj);
-            } catch (e) {
-              //TODO: Sometimes a stack trace comes in as data...I don't know what is making it or why
-              console.log("Error parsing JSON from socket: ");
-              console.log(e);
-              console.log(data);
-            }
-          });
-          http_res.on('error',function(e) {
-            res.send( 404 );
-            return defer.reject(false);
-          });
-        }).on('error', function(){
+        var j = getJarFromReq(nameArr[index],req);
+        var defer = q.defer();        
+        var prot = "http://";
+        if (opt.cert) {
+          prot = "https://";          
+        }
+        var op = {
+          url : prot + opt.hostname+":"+opt.port+opt.path,          
+          jar : j
+        };
+        if (opt.cert) {
+          op.agentOptions = {
+            cert : opt.cert,
+            key : opt.key,
+            requestCert : true,
+            rejectUnauthorized : false            
+          };
+        }
+        var fdata = "";
+        request.get(op).on('data',function(data) {
+          data = data.toString();
+          fdata = fdata + data;          
+        }).on('end',function() {
+          try {
+            var obj = JSON.parse(fdata);
+            return defer.resolve(obj);
+          } catch (e) {            
+            console.log("Error parsing JSON from socket: ",e);
+            return defer.reject(e);
+          }
+        }).on('error',function() {          
           defer.reject(false);
         });
+        // , function(http_res,err) {
+        //   var data = '';
+        //   http_res.on('data', function (chunk) {
+        //     data += chunk;
+        //   });
+        //   http_res.on('end',function() {
+        //   });
+        //   http_res.on('error',function(e) {
+        //     res.send( 404 );
+        //     return defer.reject(false);
+        //   });
+        // }).on('error', function(){
+        //   defer.reject(false);
+        // });
         return defer.promise;
       };
     });
     if (cb) {
-      q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
-        if (obj)
-          cb(obj);
+      q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj) {
+        applyRouteCbs(options.name,obj).then(function() {
+          if (obj)
+            cb(obj);
+        });        
       });
     } else {
       q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
@@ -157,8 +203,12 @@ module.exports = function(app) {
           isErr = isErr && y.state =='rejected';
           return x.concat(y.value || {});
         },[]);
-        if (!isErr) {
-          res.json(json);
+        
+        if (!isErr) {        
+          // Now process this object and apply any CBs if set in cfg
+          applyRouteCbs(options.name,json).then(function() {            
+            res.json(json);
+          });
         } else {
           res.send(404);
         }
@@ -184,8 +234,9 @@ module.exports = function(app) {
         name : name
       },getHttpOptions({
         name : name
-      }));      
-      registerGenericHandler(options);
+      }));
+      opt.handler = opt.handler || registerGenericHandler;
+      opt.handler(options);
     }
   }
   app.get('/api/nodes', getGenericHandler({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
@@ -214,8 +265,8 @@ module.exports = function(app) {
         path: path + '/' + node_id + '?' + paramString
       },getHttpOptions({
         name : name + "_id"
-      }));  
-      registerGenericHandler(options);    
+      }));
+      opt.handler(options);      
     };
   };
   app.get('/api/nodes/:id', getGenericHandlerWithId({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
@@ -412,11 +463,12 @@ module.exports = function(app) {
     });
   });
   
-  usgsapi.addRoutes('/usgsapi/',app);  
+  usgsapi.addRoutes('/usgsapi/',app);
+  auth.addRoutes('/',app);
   app.get('/popup/*', function(req,res) {
     res.render('../views/popup.html');
-  });
-  var viewsFolder = "../views";
+  });  
+  var viewsFolder = "../views";  
   app.get('*.html',function(req,res) {    
     res.render(path.join(viewsFolder,req.url));
   });

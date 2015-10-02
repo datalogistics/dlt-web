@@ -1,5 +1,4 @@
-function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService) {
-  
+function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService) {  
   // The usgs Model form
   var usf = $scope.usgsform = {
     startDate : "",

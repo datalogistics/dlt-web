@@ -1,0 +1,80 @@
+<div class="modal-content" modal-transclude="">
+  <div class="modal-header ng-scope">
+    <h3 class="modal-title">
+      <span ng-if="isLogin">Login into EODN</span>
+      <span ng-if="!isLogin">Register into EODN</span>
+      <a class="close" ng-click="closeDialog()" aria-label="close" title="close">x</a>
+    </h3>        
+  </div>
+  <div class="modalLoader modal-body loaderContainer" ng-if="formLoading">
+    <div class="loader"></div>
+  </div>
+  <div class="modal-body ng-scope" ng-if="isLogin">
+    <form class="form-horizontal" name="loginForm" role="form" ng-submit="login()">
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="email">Email</label>
+        <div class="col-sm-10">
+          <input ng-message="Please enter email"  ng-required="true" name="loginFormEmail"
+                 required="true" type="email" class="form-control" id="username" placeholder="Enter email" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="pwd">Password</label>
+        <div class="col-sm-10">          
+          <input title="Please enter password of minimum 8 characters" pattern=".{8,}" name="loginFormPwd"
+                 required="true" ng-model="loginForm.password" type="password" class="form-control" id="pwd" placeholder="Enter password" />
+        </div>
+      </div> 
+      <div class="form-group">        
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Login</button>
+          <span ng-if="isLoginError" class="text-danger">Invalid Username/password</span>
+          <span ng-if="isSystemError" class="text-danger">System Error - Contact admin</span>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-body ng-scope" ng-if="!isLogin">
+    <form class="form-horizontal" role="form" ng-submit="register()">
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="email">Email</label>
+        <div class="col-sm-10">
+          <input name="regFormEmail"
+                 required="true" type="email" class="form-control" placeholder="Enter email" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="email">Name</label>
+        <div class="col-sm-10">
+          <input name="regFormName"
+                 required="true" type="text" class="form-control" placeholder="Enter Name" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="pwd">Enter Password</label>
+        <div class="col-sm-10">          
+          <input title="Please enter password of minimum 8 characters" pattern=".{8,}" name="regFormPwd"
+                 required="true" type="password" class="form-control" placeholder="Enter password" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="pwd">Confirm Password</label>
+        <div class="col-sm-10">          
+          <input title="Please enter password of minimum 8 characters" pattern=".{8,}" name="regFormCPwd"
+                 required="true" type="password" class="form-control" placeholder="Confirm password" />
+        </div>
+      </div>
+      <div class="form-group">        
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Register</button>
+          <span ng-if="isLoginError" class="text-danger">Email already in use</span>
+          <span ng-if="isSystemError" class="text-danger">System Error - Contact admin</span>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer ng-scope">
+    <button class="btn btn-link" type="button" ng-click="showRegister()" ng-if="isLogin">Register ?</button>
+    <button class="btn btn-link" type="button" ng-click="showLogin()" ng-if="!isLogin">Login</button>
+  </div>
+</div>
