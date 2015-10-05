@@ -102,8 +102,7 @@ if (cfg.ENABLE_HTTPS) {
   for (var i in (cfg.sslOpt  || {})) {
     secureContext[i] = getSecureContext(i);
   }
-  
-  server = httpolyglot.createServer({
+  var httpsOptions = {
     SNICallback: function (domain,cb) {
       cb(null,secureContext[domain] || secureContext['default']);
     },
@@ -112,15 +111,28 @@ if (cfg.ENABLE_HTTPS) {
     ca: fs.readFileSync(cfg.ssl.ca),
     requestCert: true,
     rejectUnauthorized: false
-  }, function(req,res) {    
-    if (!req.socket.encrypted) {
-      // Redirect to https
+  };
+  var proto;
+  if (app.get('port') == 80) {
+    app.set('port',443);
+    proto = https;
+    http.createServer(function(req,res) {
       res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
       res.end();
-    } else {
-      app.apply(app,arguments);
-    }
-  });
+    }).listen(80);
+    server = https.createServer(httpsOptions,app);
+  } else {
+    server = httpolyglot.createServer(httpsOptions, function(req,res) {    
+      if (!req.socket.encrypted) {
+	// Redirect to https
+	console.log(req.url,req.headers['host']);
+	res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+	res.end();
+      } else {
+	app.apply(app,arguments);
+      }
+    });  
+  }  
 } else {
   server = http.createServer(app);
 }
