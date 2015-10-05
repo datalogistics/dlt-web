@@ -50,6 +50,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     }
     return name;
   };
+
+  
   
   hasLocationInfo = function(item) {
     return (typeof item.location != 'undefined'
@@ -305,6 +307,23 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     });
     return initServicePromise;
   };
-    
+  service.getVersionByUrl = function(url) {
+    return $http({
+      method : 'get',
+      url : '/api/getVersion',
+      data : { url : url }
+    });
+  };
+  service.getVersionByHost = function(host,port) {
+    return $http({
+      method : 'get',
+      url : '/api/getVersion',
+      data : { host : host,port  :port }
+    });
+  };
   return service;
 }
+
+
+
+
