@@ -10,8 +10,8 @@
         <tr>
           <th>Status</th>
           <th>Access Point</th>
-          <th>Time to Live</th>
           <th>Last Seen</th>
+          <th>Time to Live</th>
           <th>Institution</th>
           <th>Location</th>
           <th>Data Charts</th>
@@ -24,13 +24,16 @@
             <button ng-show="service.status === 'New'" class="btn btn-info disabled">New</button>
             <button ng-show="service.status === undefined || service.status === 'OFF'" class="btn btn-danger disabled">OFF</button>
           </td>
-          <td>{{ service.accessPoint || service.serviceType }}</td>
+          <td><div>{{ service.accessPoint || service.serviceType }}
+		  <div><button ng-click="runGetVersion(service.accessPoint,$event)"
+			       class="btn btn-info">Get current status</button></div>
+	  </div></td>
           <td>{{ service.ttl }}</td>
           <td>{{ service.ts / 1000 | date:'yyyy-MM-dd HH:mm:ss' }}</td>
           <td>{{service.location.institution}}</td>
           <td><button ng-click="showMap(service.id)" class="btn btn-info">{{service.location.city}} {{service.location.state}}</button></td>
           <td ng-repeat="metadata in getServiceMetadata(service)">
-	    <button ng-click="showData(metadata,service.location.institution || service.accessPoint,getButtonName(metadata,service))"
+		      <button ng-click="showData(metadata,service.location.institution || service.accessPoint,getButtonName(metadata,service))"
                     class="btn btn-info">{{getMetadataShortET(metadata,service)}}</button></td>
         </tbody>
       </table>

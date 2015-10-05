@@ -311,14 +311,12 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     return $http({
       method : 'get',
       url : '/api/getVersion',
-      data : { url : url }
+      params: { url : url }
     });
   };
   service.getVersionByHost = function(host,port) {
-    return $http({
-      method : 'get',
-      url : '/api/getVersion',
-      data : { host : host,port  :port }
+    return $http.get('/api/getVersion',{
+      params : { host : host,port  :port }
     });
   };
   return service;

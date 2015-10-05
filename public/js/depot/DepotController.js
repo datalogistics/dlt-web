@@ -241,4 +241,17 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   $scope.showMap = function(service_id) {
     $location.path('/map/' + service_id);
   };
+
+  $scope.runGetVersion = function(url,ev) {
+    var target = ev.target;
+    target.innerHTML = "Updating Status ...";
+    UnisService.getVersionByUrl(url)
+      .then(function(data) {
+	target.innerHTML = "Updated, Update again";
+      })
+      .catch(function() {
+	// Update button Text
+	target.innerHTML = "Failed, Try again";
+      });
+  };
 }
