@@ -3,14 +3,14 @@ var assert = require("assert")
 , request = require('request');
 
 var io = require('socket.io-client');
-var socketURL = 'http://localhost:42424';
+var socketURL = 'https://localhost';
 var options ={
-  transports: ['websocket'],
-  'connect timeout' : 500,
+  // transports: ['websocket'],
+  'connect timeout' : 5000,
   'force new connection': false  
 };
 
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 describe('Sockets', function() {
   var client = io.connect(socketURL, options);
@@ -25,29 +25,34 @@ describe('Sockets', function() {
       done();
     });
   });
+  var arrStr;
+  // it("should get some metadata" , function(done) {
+  //   request({url : socketURL + "/api/metadata",rejectUnhauthorized : false}, function(err,r,resp){
+  //     var arr = JSON.parse(resp) ;
+  //     arrStr = arr.map(function(x) { return x.id;}).join(",");
+      
+  //     arr.forEach(function(x) {	
+  //       client.emit('data_request',{id : x.id});
+  //     });
+  //     done();
+  //   });
+  // });
 
-  it("should get some metadata" , function(done) {
-    request(socketURL + "/api/metadata", function(err,r,resp){
-      var arr = JSON.parse(resp) ;      
-      arr.forEach(function(x) {
-        client.emit('data_request',{id : x.id});
-      });
-      done();
-    });
-  });
-
-  it("should get cart" , function(done) {
-    this.timeout(10000);
-    client.emit('getShoppingCart',{username : "prakraja", password : "prak8673"});
-    client.on('cart_data_res',function(x) {
-      console.log(x);
-      done();
-    });
-  });
+  // it("should get cart" , function(done) {
+  //   this.timeout(10000);
+  //   client.emit('getShoppingCart',{username : "prakraja", password : "prak8673"});
+  //   client.on('cart_data_res',function(x) {
+  //     console.log(x);
+  //     done();
+  //   });
+  // });
    
-  it("should get atleast one measurement" , function (done) {
-    this.timeout(0);        
+  it("should get atleast one measurement for Ids " , function (done) {
+    console.log("Data ids ",arrStr);
+    client.emit("data_request",{"id":"56156c738a41dd2d5b180c23"});
+    this.timeout(0);
     client.on('data_data',function(data) {
+      console.log(data);
       done();
     });
     //client.emit('service_request',{});

@@ -134,12 +134,8 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
                   'key': fs.readFileSync(opt.keyArr[i])};
       ssl_opts = _.extend(ssl_opts, cfg.sslOptions);
     }
-    var pathname;    
-    if (isAggregate) {
-      pathname = "/subscribeAgg/" + path ;
-    } else {
-      pathname = "/subscribe/" + path ;
-    }
+    var pathname = "/subscribe/"+path;
+    
     var urlstr = url.format({'protocol': proto,
                              'slashes' : true,
                              'hostname': opt.hostArr[i],
@@ -159,11 +155,14 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
         onopencb();
     });
     socket.on('message', function(data) {
-      //console.log('UNIS socket (): ', data);
+      var count = 0;
+      for (var LPPP in JSON.parse(data))
+	count++;      
+      console.log('UNIS socket (): ', count , " for Path ",path);
       var smap =  socketMap;
-      smap[path] = smap[path] || {};
       if (!smap[path].clients)
-        return;          
+	return;
+      smap[path] = smap[path] || {};
       data.__source = name;
       //smap[path].clients = smap[path].clients || [];
       //console.log("Emitting to client " , smap[path].clients );
@@ -172,12 +171,22 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
           client.emit(emit, data);
         });
       } else {
-        var dataId1 = (JSON.parse(data)).id;
+        var dataJ = (JSON.parse(data));
         //console.log("Number of connected clients ", smap[path].clients.length,
 	//            smap[path].clients.map(function(x){ return x.id;}));
         smap[path].clients.filter(function(x){
           // Returns true if path doesn't exist
-          return pathIdObj.isRegClient(x.id , path , dataId1);            
+	  var flag = false;
+	  for (var g in dataJ) {
+	    var id = g;
+	    var it = x[g];
+	    console.log(x.id ,path, g);
+	    if (pathIdObj.isRegClient(x.id , path , g)) {
+	      flag = true;
+	      break;
+	    }
+	  }	  
+          return flag;
         }).forEach(function(client) {
           client.emit(emit, data);
         }); 
@@ -210,7 +219,8 @@ function _getGenericHandler(resource, emitName,client){
     var smap = socketMap[path];
     if (data.id) {
       var obj = {
-        id : data.id 
+	query : { id: data.id },
+	resourceType: resource
       };
       if (data.disconnect) {
         // Unregister the channel for the client
@@ -221,8 +231,8 @@ function _getGenericHandler(resource, emitName,client){
         //console.log("Id" ,data.id);
         if(!pathIdObj.isRegClient(client.id, path , data.id)) {
           if (!smap) {
-            socketMap[path] = {'clients': [client]};        
-            createWebSocket(opt,path, resource, emit,true,function(){              
+            socketMap[path] = {'clients': [client]};
+            createWebSocket(opt,path, resource, emit,true,function(){
               smap = socketMap[path];
               smap.sockets.forEach(function (x) {
 		// only attempt if connected
