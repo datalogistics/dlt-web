@@ -331,7 +331,7 @@ text.id {
 .imageSet .row {
     padding : 5px 0;
 }
-.usgsform .popover ,.usgsform .popover .popover-content{
+.tab-content .popover ,.tab-content .popover .popover-content{
     max-width : 700px !important;    
 }
 
