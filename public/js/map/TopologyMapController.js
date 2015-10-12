@@ -3,11 +3,11 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   
   
   //TODO: Hard-coded address is bad...should get through a URL parameter or something... 
-  var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
-  //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_es.net"
+  //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
+  var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_es.net"
 
   $http.get(topoUrl)
-    .then(function(domain) {toGraph($http, map, domain, function() {draw(map);})})
+    .then(function(domain) {toGraph($http, map, domain)})
     .then(function() {draw(map)})
     .then(function() {
       //Cleanup the tooltip object when you navigate away
@@ -38,8 +38,12 @@ function forceMap(selector, width, height, svg) {
                .attr("width", width)
                .attr("height", height)
 
+  var layout = d3.layout.force()
+      .size([width, height])
+      .linkStrength(function(l) {return l.source.internal && l.target.internal ? 1 : .5})
+      .charge(function(n) {return -30*n.weight})
 
-  return {svg:svg, layout: d3.layout.force().size([width, height])} 
+  return {svg:svg, layout: layout}
 }
 
 function toGraph($http, map, domain) {
@@ -48,10 +52,13 @@ function toGraph($http, map, domain) {
 }
 
 //NOTE: Must be run BEFORE add link, since addLink may add more nodes and this does not check for existing names 
-function addNode(map, node) {
-  d3.json(node.href, function(err, val) {
-    var parts =val.urn.match("node=(.*?)(:|$)") 
-    map.layout.nodes().push({id: parts[1]})
+function addNode(map, nodeRef) {
+  console.log(nodeRef)
+  d3.json(nodeRef.href, function(err, node) {
+    var parts = node.urn.match("node=(.*?)(:|$)")
+    node['id'] = parts[1]
+    node['internal'] = true
+    map.layout.nodes().push(node)
   })
 }
 
@@ -79,7 +86,7 @@ function indexOf(nodes, id) {
    for (var i =0 ; i< nodes.length; i++) {
      if (nodes[i].id == id) {return i;}
    }
-   nodes.push({id: id})
+   nodes.push({id: id, internal: false})
    return nodes.length -1;
 }
 
@@ -94,19 +101,17 @@ function addLink($http, map, link) {
 
         Promise.all([source, target])
            .then(function(rslt) {
-                 console.log(rsp.data.selfRef, rslt)
                  var nodes = layout.nodes()
 
                  var source_idx = indexOf(nodes, rslt[0])
                  var target_idx = indexOf(nodes, rslt[1])
 
-                 console.log(source_idx, target_idx)
                  if (source_idx != target_idx) {
                    layout.links().push({
                       source: source_idx, 
-                      target: target_idx, 
-                      source_item: rslt[0], 
-                      target_item: rslt[1]})
+                      target: target_idx,
+                      source_detail: rslt[0], 
+                      target_detail: rslt[1]})
                    return true
                  } 
                  return false
@@ -131,12 +136,14 @@ function draw(map) {
         .attr("y1", function(d) {return d.source.y})
         .attr("x2", function(d) {return d.target.x})
         .attr("y2", function(d) {return d.target.y})
-        .style("stroke", "blue")
+        .style("stroke", function(d) {return d.source.internal && d.target.internal ? "red" : "gray"})
     
-    node.attr("cx", function(d) {return d.x})
+    node.attr("name", function(d) {return d.id})
+        .attr("cx", function(d) {return d.x})
         .attr("cy", function(d) {return d.y})
-        .attr("r", 5) 
-        .style("fill", "pink")
+        .attr("r", function(d) {console.log(d.deviceType); return d.deviceType ? 10 : 5})
+        .attr("fill", function(d) {return d.internal ? "red" : "gray"})
   })
- 
+  tooltip(svg, "circle.node")
+  return map
 }

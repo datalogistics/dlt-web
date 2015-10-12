@@ -48,7 +48,7 @@ function highlightMapLocations(svg, selector, filter, retries) {
 }
 
 //Add the tool tip functionality
-function tooltip(svg) {
+function tooltip(svg, selector) {
   if (d3.select("#map-tool-tip").empty()) {
     tip = d3.tip()
               .attr('class', 'd3-tip')
@@ -62,7 +62,7 @@ function tooltip(svg) {
   }
 
   var timer;
-  svg.selectAll("circle.depotNode").on('mouseover', function(){
+  svg.selectAll(selector).on('mouseover', function(){
       clearTimeout(timer);
       tip.show.apply(this,arguments);
   })
@@ -164,7 +164,7 @@ function mapPoints(projection, svg, elementId) {
         pair = [item.location.longitude, item.location.latitude]
         node = addMapLocation(projection, item.name, item.port, pair, svg_points, item.depot_id)
       }
-      tooltip(svg)
+      tooltip(svg, "circle.depotNode")
     })
   }
 }
@@ -241,9 +241,9 @@ function allServiceData(services, match, natmap, then) {
     var item = uniqueServices[name]
 
     if (match != null) {
-	if (item.serviceType && item.serviceType != match) {
-	    continue;
-	}
+      if (item.serviceType && item.serviceType != match) {
+          continue;
+      }
     }
 
     port = 6714;
