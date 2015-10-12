@@ -1,20 +1,45 @@
 function topologyMapController($scope, $routeParams, $http, UnisService) {
-  var map = forceMap("#topologyMap", 960, 500); //TODO: Add layout options here: circular, force, geo.  Select based on actual URL (like filter on downloads)
-  
-  
-  //TODO: Hard-coded address is bad...should get through a URL parameter or something... 
-  var topoUrl = "http://dev.incntre.iu.edu:8889/domains"
-  var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
+  var topoUrl = "http://dev.incntre.iu.edu:8889/domains" //TODO: generalize...maybe move graph-loading stuff to the server (like 'natmap' or the download tracking data)
+  //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
   //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_es.net"
 
+  var svg = d3.select("#topologyMap").append("svg")
+               .attr("width", 1200)
+               .attr("height", 500)
+
+  var map = forceMap("#topologyMap", 960, 500, svg); //TODO: Add layout options here: circular, force, geo.  Select based on actual URL (like filter on downloads)
+  
   $http.get(topoUrl)
     .then(mergeDomains)
+    .then(function(domain) {return filterUI(svg, 980, 15, domain)})
     .then(function(domain) {toGraph($http, map, domain)})
     .then(function() {draw(map)})
     .then(function() {
       //Cleanup functions here!
       $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
     })
+}
+
+function filterUI(svg, left, size, domains) {
+  var g = svg.append("g").attr("class", "domain-selectors")
+  var boxes = g.selectAll(".toggle-details").data(domains.ids)
+  boxes.enter().append("rect")
+      .attr("class", "toggle-details toggle-details-true")
+      .attr("x", left)
+      .attr("y", function(d, i) {return (i+.5)*(size*1.5)})
+      .attr("width", size)
+      .attr("height", size)
+      .attr("domainId", function(d) {return d})
+      //.on('click', toggleUpdates)
+      
+  var labels = g.selectAll(".detail-labels").data(domains.ids)
+  labels.enter().append("text")
+      .attr("class", "toggle-label")
+      .attr("x", left+size*1.5)
+      .attr("y", function(d, i) {return (i+1)*(size*1.5)})
+      .text(function(d) {return d})
+
+  return domains
 }
 
 //Takes a list of domains and makes it look like a single domain
@@ -25,45 +50,20 @@ function mergeDomains(rsp) {
   if (!Array.isArray(rsp.data)) {
     var full = rsp.data
     full.nodes = full.nodes.map(function(n) {return n.href})
+    full.ids = [full.id]
   } else {
     var full = rsp.data.reduce(function(acc, v, i, a) {
       v.nodes.forEach(function (n) {acc.nodes.add(n.href)})
-      //acc.nodes = acc.nodes.concat(v.nodes)
       acc.links = acc.links.concat(v.links)
       acc.ports = acc.ports.concat(v.ports)
-      acc.id = acc.id + " " + v.id + ","
+      acc.ids.push(v.id)
       return acc
     },
-    {id:"All:", nodes:new Set(), links:[], ports:[]})
-    full.id = full.id.slice(0, full.id.length-2)
+    {id:"All", nodes:new Set(), links:[], ports:[], ids: []})
+    full.nodes = Array.from(full.nodes)
   }
   return full
 }
-
-
-//Setup a spring-force embedding.
-//
-//selector -- used to grab an element of the page and append svg into into it
-//width -- how wide to make the canvas
-//height -- how tall to make the canvas 
-//svg -- svg element to use (overrides selector is present) 
-//returns the root element and a function for layout 
-function forceMap(selector, width, height, svg) {
-  if (svg === undefined) {
-    svg = d3.select(selector).append("svg")
-               .attr("width", width)
-               .attr("height", height)
-  }
-  
-  var layout = d3.layout.force()
-      .size([width, height])
-      .linkDistance(function(l) {return l.source.internal && l.target.internal ? 40 : 20})
-      .linkStrength(function(l) {return l.source.internal && l.target.internal ? 1 : .5})
-      .charge(function(n) {return -100*n.weight})
-
-  return {svg:svg, layout: layout}
-}
-
 function toGraph($http, map, domain) {
   domain.nodes.forEach(function(node) {addNode(map, node)})
   domain.links.forEach(function(link) {addLink($http, map, link)})
@@ -102,6 +102,7 @@ function endpointDetails($http, endpoint) {
   }
 }
 
+//Return the index of an item in a list.  Adds it if not already present
 function indexOf(nodes, id) {
    for (var i =0 ; i< nodes.length; i++) {
      if (nodes[i].id == id) {return i;}
@@ -167,3 +168,32 @@ function draw(map) {
   tooltip(svg, "circle.node")
   return map
 }
+
+//Setup a spring-force embedding.
+//
+//selector -- used to grab an element of the page and append svg into into it
+//width -- how wide to make the canvas
+//height -- how tall to make the canvas 
+//svg -- svg element to use (overrides selector is present) 
+//returns the root element and a function for layout 
+function forceMap(selector, width, height, svg) {
+  if (svg === undefined) {
+    svg = d3.select(selector).append("svg")
+               .attr("width", width)
+               .attr("height", height)
+  }
+
+  var map = svg.append("g")
+               .attr("id", "map")
+               .attr("width", width)
+               .attr("height", height)
+  
+  var layout = d3.layout.force()
+      .size([width, height])
+      .linkDistance(function(l) {return l.source.internal && l.target.internal ? 40 : 20})
+      .linkStrength(function(l) {return l.source.internal && l.target.internal ? 1 : .5})
+      .charge(function(n) {return -100*n.weight})
+
+  return {svg:map, layout: layout}
+}
+
