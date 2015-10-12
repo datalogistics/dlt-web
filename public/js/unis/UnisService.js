@@ -166,17 +166,26 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     if (typeof data != 'object'){
       data = JSON.parse(data);
     };
-    if ("id" in data) {
-      id = data['id'];
-      //console.log('Incoming data for ' + id + ' : ', data);
+    for (var id in data) {
       if (id in dataIdCbMap) {
 	var map = dataIdCbMap[id];
 	for (var i in map) {
           var cb = map[i];
-          cb(data['data']);
+          cb(data[id]);
 	}
       }
-    }
+    };
+    // if ("id" in data) {
+    //   id = data['id'];
+    //   //console.log('Incoming data for ' + id + ' : ', data);
+    //   if (id in dataIdCbMap) {
+    // 	var map = dataIdCbMap[id];
+    // 	for (var i in map) {
+    //       var cb = map[i];
+    //       cb(data['data']);
+    // 	}
+    //   }
+    // }
   });
   
   finish = function() {
