@@ -173,6 +173,7 @@ function mapPoints(projection, svg, elementId) {
 //selector -- used to grab an element of the page and append svg into into it
 //width -- how wide to make the map
 //height -- how tall to make the map
+//svg -- svg element to use (overrides selector is present) 
 //returns the map projection 
 function baseMap(selector, width, height, svg) {
   projection = d3.geo.albersUsa()

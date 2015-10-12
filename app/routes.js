@@ -437,38 +437,38 @@ module.exports = function(app) {
   app.get('/api/natmap',function(req, res) {
     var rmap = {};
     var stream = fs.createReadStream(cfg.nat_map_file)
-      .on ("error", function (error){
-        console.log (error);
-	res.json({});
-      })
-      .on("end", function () {
-	stream.close();
-	res.json(rmap);
-      });
-    
+        .on ("error", function (error){
+          console.log (error);
+          res.json({});
+        })
+        .on("end", function () {
+          stream.close();
+          res.json(rmap);
+        });
+
     var rd = readline.createInterface({
       input: stream,
       output: process.stdout,
       terminal: false
     });
-    
+
     rd.on('line', function(line) {
       if (line[0] != '#') {
-	var ary = line.split(':');
-	if (ary[4]) {
-	  rmap[ary[4]] = {
-	    'data_ip' : ary[0],
-	    'internal': ary[1],
-	    'port'    : ary[2],
-	    'external': ary[3]
-	  };
-	}
+        var ary = line.split(':');
+        if (ary[4]) {
+          rmap[ary[4]] = {
+            'data_ip' : ary[0],
+            'internal': ary[1],
+            'port'    : ary[2],
+            'external': ary[3]
+          };
+        }
       }
     });
   });
   
-  usgsapi.addRoutes('/usgsapi/',app);
   auth.addRoutes('/',app);
+  usgsapi.addRoutes('/usgsapi/',app);  
   app.get('/popup/*', function(req,res) {
     res.render('../views/popup.html');
   });  
