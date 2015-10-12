@@ -3,20 +3,42 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   
   
   //TODO: Hard-coded address is bad...should get through a URL parameter or something... 
-  //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
-  var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_es.net"
+  var topoUrl = "http://dev.incntre.iu.edu:8889/domains"
+  var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
+  //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_es.net"
 
   $http.get(topoUrl)
+    .then(mergeDomains)
     .then(function(domain) {toGraph($http, map, domain)})
     .then(function() {draw(map)})
     .then(function() {
-      //Cleanup the tooltip object when you navigate away
-      $scope.$on("$destroy", function() {
-       d3.selectAll("#map-tool-tip").each(function() {this.remove()})
-      })
+      //Cleanup functions here!
+      $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
     })
 }
 
+//Takes a list of domains and makes it look like a single domain
+//
+//Resulting domain always has nodes, links, ports and id entries (may have others)
+//Nodes will have been converted to JUST the href field (to ensure single representation)
+function mergeDomains(rsp) {
+  if (!Array.isArray(rsp.data)) {
+    var full = rsp.data
+    full.nodes = full.nodes.map(function(n) {return n.href})
+  } else {
+    var full = rsp.data.reduce(function(acc, v, i, a) {
+      v.nodes.forEach(function (n) {acc.nodes.add(n.href)})
+      //acc.nodes = acc.nodes.concat(v.nodes)
+      acc.links = acc.links.concat(v.links)
+      acc.ports = acc.ports.concat(v.ports)
+      acc.id = acc.id + " " + v.id + ","
+      return acc
+    },
+    {id:"All:", nodes:new Set(), links:[], ports:[]})
+    full.id = full.id.slice(0, full.id.length-2)
+  }
+  return full
+}
 
 
 //Setup a spring-force embedding.
@@ -33,28 +55,23 @@ function forceMap(selector, width, height, svg) {
                .attr("height", height)
   }
   
-  var map = svg.append("g")
-               .attr("id", "network")
-               .attr("width", width)
-               .attr("height", height)
-
   var layout = d3.layout.force()
       .size([width, height])
+      .linkDistance(function(l) {return l.source.internal && l.target.internal ? 40 : 20})
       .linkStrength(function(l) {return l.source.internal && l.target.internal ? 1 : .5})
-      .charge(function(n) {return -30*n.weight})
+      .charge(function(n) {return -100*n.weight})
 
   return {svg:svg, layout: layout}
 }
 
 function toGraph($http, map, domain) {
-  domain.data.nodes.forEach(function(node) {addNode(map, node)})
-  domain.data.links.forEach(function(link) {addLink($http, map, link)})
+  domain.nodes.forEach(function(node) {addNode(map, node)})
+  domain.links.forEach(function(link) {addLink($http, map, link)})
 }
 
 //NOTE: Must be run BEFORE add link, since addLink may add more nodes and this does not check for existing names 
 function addNode(map, nodeRef) {
-  console.log(nodeRef)
-  d3.json(nodeRef.href, function(err, node) {
+  d3.json(nodeRef, function(err, node) {
     var parts = node.urn.match("node=(.*?)(:|$)")
     node['id'] = parts[1]
     node['internal'] = true
@@ -75,7 +92,10 @@ function endpointDetails($http, endpoint) {
   else if (endpoint.startsWith("urn")) {
     return new Promise(function(resolve, reject) {
       var parts = endpoint.split(":")
-      resolve(parts[4])
+      var item = parts.filter(function(v) {return v.startsWith("node=")})
+      if (item.length > 0) {item = item[0].slice(5)}
+      else {item = parts[4]} //HACK: Just happens to be where it lands when the urn is one format...probably not robus
+      resolve(item)
     })
   } else {
     throw "Unknown endpoint format: " + endpoint
@@ -128,8 +148,8 @@ function draw(map) {
   var node = svg.selectAll(".node").data(layout.nodes())
   var link = svg.selectAll(".link").data(layout.links())
 
-  link.enter().append("line").attr("class", "link")
   node.enter().append("circle").attr("class", "node")
+  link.enter().append("line").attr("class", "link")
 
   layout.on("tick", function(e) {
     link.attr("x1", function(d) {return d.source.x})
@@ -141,7 +161,7 @@ function draw(map) {
     node.attr("name", function(d) {return d.id})
         .attr("cx", function(d) {return d.x})
         .attr("cy", function(d) {return d.y})
-        .attr("r", function(d) {console.log(d.deviceType); return d.deviceType ? 10 : 5})
+        .attr("r", function(d) {return d.deviceType ? 10 : 5})
         .attr("fill", function(d) {return d.internal ? "red" : "gray"})
   })
   tooltip(svg, "circle.node")
