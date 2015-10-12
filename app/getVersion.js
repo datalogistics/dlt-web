@@ -229,8 +229,8 @@ module.exports = {
      totalTrashExpiredH: '0.00',
      totalTrashExpiredFiles: 0 }
  */
-getVersion('128.206.119.19',6714).then(function() {
-  console.log(arguments);
-}).catch(function() {
-  console.log(arguments);
-});
+// getVersion('128.206.119.19',6714).then(function() {
+//   console.log(arguments);
+// }).catch(function() {
+//   console.log(arguments);
+// });

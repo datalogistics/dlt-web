@@ -242,11 +242,18 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     $location.path('/map/' + service_id);
   };
 
-  $scope.runGetVersion = function(url,ev) {
+  function updateService(ser,data) {
+    ser.ttl = 200;
+    ser.depot['ps:tools:blipp:ibp_server:resource:usage:used'] = data.totalUsed;
+    ser.depot['ps:tools:blipp:ibp_server:resource:usage:free'] = data.totalFree;
+  }
+  $scope.runGetVersion = function(ser,ev) {
+    var url = ser.accessPoint;
     var target = ev.target;
     target.innerHTML = "Updating Status ...";
     UnisService.getVersionByUrl(url)
       .then(function(data) {
+	updateService(ser,data.data);
 	target.innerHTML = "Updated, Update again";
       })
       .catch(function() {
