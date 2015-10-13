@@ -1,4 +1,5 @@
 app/npm-debug.log
+*~
 .DS_Store
 public/libs
 node_modules/
