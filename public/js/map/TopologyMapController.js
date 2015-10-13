@@ -30,7 +30,7 @@ function filterUI(svg, left, size, domains) {
       .attr("width", size)
       .attr("height", size)
       .attr("domainId", function(d) {return d})
-      //.on('click', toggleUpdates)
+      .on('click', toggleVisible)
       
   var labels = g.selectAll(".detail-labels").data(domains.ids)
   labels.enter().append("text")
@@ -40,6 +40,19 @@ function filterUI(svg, left, size, domains) {
       .text(function(d) {return d})
 
   return domains
+}
+
+function toggleVisible() {
+  var e = d3.select(this)
+  var newState = !e.classed("toggle-details-true")
+  if (newState == true) {
+    e.classed("toggle-details-true", true)
+     .classed("toggle-details-false", false)
+  } else {
+    e.classed("toggle-details-true", false)
+     .classed("toggle-details-false", true)
+  }
+  updateUI()
 }
 
 //Takes a list of domains and makes it look like a single domain
