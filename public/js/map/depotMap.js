@@ -55,7 +55,7 @@ function tooltip(svg, selector) {
               .attr('id', "map-tool-tip")
               .html(function() {
                 var x = d3.select(this);
-                return x.attr('name').replace(/\|/g,"</p>")
+                return x.attr('name') ? x.attr('name').replace(/\|/g,"</p>") : "(None)"
               })
 
     svg.call(tip);
