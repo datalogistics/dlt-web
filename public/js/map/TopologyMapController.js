@@ -8,11 +8,12 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
                .attr("height", 500)
 
   var map = forceMap("#topologyMap", 960, 500, svg); //TODO: Add layout options here: circular (pack layout), force, geo.  Select based on actual URL (like filter on downloads)
+  map = geoMap("#topoplogyMap", 960, 500, svg)
 
   $http.get(topoUrl)
     .then(rsp => toGraph($http, rsp.data))
-    .then(graph => buildLayout(map, graph))
-    .then(function() {forceDraw(map)})
+    .then(graph => map.doLayout(map, graph))
+    .then(function() {map.doDraw(map)})
     .then(function() {
       //Cleanup functions here!
       $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
@@ -24,7 +25,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 function loadDomain($http, rsp) {
     var root = rsp.id
     var allNodes = Promise.all(rsp.nodes.map(n => $http.get(n.href)))
-                          .then(nodes => nodes.map(n => ensureNode({}, parseNodeURN(n.data.urn), {internal: true, parent: root, domains: new Set([root])})))
+                          .then(nodes => nodes.map(n => ensureNode({}, parseNodeURN(n.data.urn), {location: n.data.location, internal: true, parent: root, domains: new Set([root])})))
                           .then(nodes => nodes.reduce((dict, n) => {dict[n.id] = n; return dict;}, {}))
                           .then(nodes => {ensureNode(nodes, root, {internal: false, level: "domain", domains: new Set([root]), children: Array.from(Object.keys(nodes))}); return nodes;})
                           .catch(e => {throw e})
@@ -125,7 +126,7 @@ function ensureNodes(nodes, link, defaults) {
 }
 
 
-function buildLayout(map, graph) {
+function forceLayout(map, graph) {
   var nodes = Array.from(Object.keys(graph.nodes))
   var links = graph.links.map(l => {return {source: nodes.indexOf(l.source), target: nodes.indexOf(l.sink)}})
                          .filter(l => l.source != l.target)
@@ -145,7 +146,6 @@ function forceDraw(map) {
   var colors = d3.scale.category10()
   var networkDomains = Array.from(layout.nodes().reduce((acc, n) => {n.details.domains.forEach(d => acc.add(d)); return acc}, new Set()))
   colors.domain(networkDomains)
-  console.log(networkDomains)
   var legend = svg.append("g")
                   .attr("class", "legend")
                   .attr("transform", "translate(15,10)")
@@ -224,6 +224,19 @@ function forceMap(selector, width, height, svg) {
       .linkStrength(function(l) {return l.source.internal && l.target.internal ? 1 : .5})
       .charge(function(n) {return -100*n.weight})
 
-  return {svg:map, layout: layout}
+  return {svg:map, layout: layout, doLayout: forceLayout, doDraw:forceDraw}
 }
 
+function geoMap(selector, width, height, svg) {
+  var map = baseMap(selector, width, height, svg)
+  map.doDraw = function() {}
+  map.doLayout = function(map, graph) {
+    var nodes = Array.from(Object.keys(graph.nodes))
+    nodes = nodes.map(e => graph.nodes[e])
+    nodes.forEach(e => e['location'] = e.location ? e.location : [])
+    nodes.forEach(e => e['name'] = e.id)
+    nodes.forEach(e => e['port'] = "")
+    mapPoints(map.projection, map.svg, "nodes")(nodes)
+  }
+  return map
+}
