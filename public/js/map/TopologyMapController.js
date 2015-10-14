@@ -1,13 +1,13 @@
 function topologyMapController($scope, $routeParams, $http, UnisService) {
   var topoUrl = "http://dev.incntre.iu.edu:8889/domains" //TODO: generalize...maybe move graph-loading stuff to the server (like 'natmap' or the download tracking data)
-  var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
-  var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_es.net"
+  //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
+  //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_es.net"
 
   var svg = d3.select("#topologyMap").append("svg")
                .attr("width", 1200)
                .attr("height", 500)
 
-  var map = forceMap("#topologyMap", 960, 500, svg); //TODO: Add layout options here: circular, force, geo.  Select based on actual URL (like filter on downloads)
+  var map = forceMap("#topologyMap", 960, 500, svg); //TODO: Add layout options here: circular (pack layout), force, geo.  Select based on actual URL (like filter on downloads)
 
   $http.get(topoUrl)
     .then(rsp => toGraph($http, rsp.data))
@@ -56,12 +56,17 @@ function toGraph($http, rsp) {
   if (!Array.isArray(rsp)) {return loadDomain($http, rsp)}
   else {
     var domains = rsp.map(d => loadDomain($http, d))
-    return Promise.all(domains).then(mergeDomains).then(d => map(toGraph(d))).then(mergeDomains)
+    return Promise.all(domains).then(mergeDomains)
   }
 }
 
 function mergeDomains(domains) {
-  return domains;
+  return domains.reduce((full, domain) => {
+                                Object.keys(domain.nodes).forEach(key => {if (!full.nodes[key]) {full.nodes[key] = domain.nodes[key]}})
+                              full.links = full.links.concat(domain.links)
+                              full.root.push(domain.root)
+                              return full;}, 
+                              {nodes: {}, links: [], root: []})
 }
 
 function parseNodeURN(urn) {
@@ -115,7 +120,6 @@ function ensureNodes(nodes, link, parent, level) {
 
 
 function buildLayout(map, graph) {
-  debugger
   var nodes = Array.from(Object.keys(graph.nodes))
   var links = graph.links.map(l => {return {source: nodes.indexOf(l.source), target: nodes.indexOf(l.sink)}})
                          .filter(l => l.source != l.target)
