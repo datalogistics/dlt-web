@@ -69,7 +69,9 @@ var cmdOutput_ParseArr = [
 var sscanf = require('scanf').sscanf;
 function parseOutput2(data) {
   var lines = data.split(/\n/g);
-  var obj = {};
+  var obj = {
+    rawData : lines.join("\r\n")
+  };
   lines.forEach(function(x) {
     var arr;
     var k = cmdOutput_ParseArr;

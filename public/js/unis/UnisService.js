@@ -316,11 +316,18 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     });
     return initServicePromise;
   };
-  service.getVersionByUrl = function(url) {
+  var getVersionUrlMap = {};
+  service.getVersionByUrl = function(url,fromCache) {
+    if (fromCache && url in getVersionUrlMap) {
+      return $q.when(getVersionUrlMap[url]);
+    } 
     return $http({
       method : 'get',
       url : '/api/getVersion',
       params: { url : url }
+    }).then(function(data) {
+      getVersionUrlMap[url] = data;
+      return data;
     });
   };
   service.getVersionByHost = function(host,port) {
@@ -330,6 +337,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   };
   return service;
 }
+
 
 
 

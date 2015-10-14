@@ -7,7 +7,7 @@ function getRate(x,y,oldx,oldy) {
   var timeD = x/1e6 - oldx/1e6;
   if (oldx >= x || timeD == 0) {
     console.log("No Change");
-    return;
+    return [];
   }  
   // Now use this old value to calculate rate 
   var yVal = (y - oldy) / timeD;
@@ -19,7 +19,7 @@ function getRate(x,y,oldx,oldy) {
   return newArr;
 }
 
-function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService,$modal,$window,$filter) {
+function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService,$modal,$window,$q) {
   var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
 	          'ps:tools:blipp:ibp_server:resource:usage:free',
 	          'ps:tools:blipp:linux:cpu:utilization:user',
@@ -33,9 +33,12 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   $scope.metadata = UnisService.metadata || [];
   $scope.nodes = UnisService.nodes || [];
   $scope.ports = UnisService.ports || [];
-  // Group services by parameter 
+  /**
+   Group services by parameter - Keep watching services and group them by location
+   */
   var currentKey = "location"; // Can be anyother property
-  $scope.$watch('services', function(serv) {    
+  $scope.$watch('services', function(serv) {
+    // TODO No need to use filter - just add the query to the URL in services
     var services = $filter('filter')(serv.slice(0),{serviceType: 'ibp_server'}) || [];    
     $scope.groupedServiceMap = services.reduce(function (y,x) {
       var key = x[currentKey];
@@ -55,18 +58,13 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   
   if (metadata_id != null) {
     $scope.eventType = [];
-
+    /** Seems to be used only for graph **/
     UnisService.getMetadataId(metadata_id, function(metadata) {
       var eventType = metadata.eventType;
       var arrayData = [];
       arrayData.max = 0;
-
-      for (i=0; i< metadata.length; i++) {
-        if (eventType === undefined) {
-          eventType = metadata[i].eventType;
-        }
-      }
-
+      
+      // Select last eventType of metadata
       var chartconfig = getETSChartConfig(eventType);
       d3.select(chartconfig.selector).attr("style", "");
       
@@ -88,7 +86,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	  $scope.eventType = eventType;
         } else {
           arr = data[metadata_id];
-          // Get the max in this array          
+          // Get the max in this array
           arrayData.forEach(function(x) {
             if (x[1] > max) {
               max = x[1];
@@ -261,4 +259,39 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	target.innerHTML = "Failed, Try again";
       });
   };
+
+  $scope.showGetVersionRes = function(ser,ev) {
+    var url = ser.accessPoint;
+    var modScope ;
+    var prom = $q.defer();
+    var modalInstance = $modal.open({
+      templateUrl: "getVersionModal.html",
+      controller: function($scope) {	  
+        $scope.cancel = function() {
+          modalInstance.dismiss();
+        };
+	modScope = $scope;
+	prom.resolve($scope);
+	$scope.isLoading = true;
+      }
+    });
+    UnisService.getVersionByUrl(url,true).then(function(data) {
+      prom.promise.then(function(modScope){ 
+	modScope.isLoading = false;
+	modScope.getVersionRaw = data.data.rawData;
+      });
+    });
+    var tmpl = $("#getVersionModal.html");
+  };
 }
+
+
+
+
+
+
+
+
+
+
+
