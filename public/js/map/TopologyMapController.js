@@ -12,7 +12,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   $http.get(topoUrl)
     .then(rsp => toGraph($http, rsp.data))
     .then(graph => buildLayout(map, graph))
-    .then(function() {draw(map)})
+    .then(function() {forceDraw(map)})
     .then(function() {
       //Cleanup functions here!
       $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
@@ -24,24 +24,22 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 function loadDomain($http, rsp) {
     var root = rsp.id
     var allNodes = Promise.all(rsp.nodes.map(n => $http.get(n.href)))
-                          .then(nodes => nodes.map(n => ensureNode({}, parseNodeURN(n.data.urn), {internal: true, parent: root})))
+                          .then(nodes => nodes.map(n => ensureNode({}, parseNodeURN(n.data.urn), {internal: true, parent: root, domains: new Set([root])})))
                           .then(nodes => nodes.reduce((dict, n) => {dict[n.id] = n; return dict;}, {}))
-                          .then(nodes => {ensureNode(nodes, root, {internal: false, level: "domain", children: Array.from(Object.keys(nodes))}); return nodes;})
+                          .then(nodes => {ensureNode(nodes, root, {internal: false, level: "domain", domains: new Set([root]), children: Array.from(Object.keys(nodes))}); return nodes;})
                           .catch(e => {throw e})
 
     var allLinks = Promise.all(rsp.links.map(e => $http.get(e.href)))
                           .then(links => Promise.all(links.map(l=> loadEndpoints($http, l.data))))
                           .then(links => links.map(l=>{return {id: l.id, source: l.source, sink: l.sink}}))
-                          .then(links => {return {links: links, nodes: links.reduce((nodes, link) => {ensureNodes(nodes, link, root, "domain_entry"); return nodes}, {})}})
                           .catch(e => {throw e})
                                                
    return Promise.all([allNodes, allLinks])
                  .then(items => {
                    //Merge!
                    var nodes = items[0]
-                   var links = items[1].links
-                   var linkNodes = items[1].nodes
-                   Object.keys(linkNodes).forEach(key => {if (!nodes[key]) {nodes[key] = linkNodes[key]}})
+                   var links = items[1]
+                   links.forEach(link => ensureNodes(nodes, link, {parent: root, internal: false, level: "domain_entry", domains: new Set([root])}))
                    return {nodes: nodes, links: links, root: root}})
                  .catch(e => {throw e})
 }
@@ -62,11 +60,18 @@ function toGraph($http, rsp) {
 
 function mergeDomains(domains) {
   return domains.reduce((full, domain) => {
-                                Object.keys(domain.nodes).forEach(key => {if (!full.nodes[key]) {full.nodes[key] = domain.nodes[key]}})
-                              full.links = full.links.concat(domain.links)
-                              full.root.push(domain.root)
-                              return full;}, 
-                              {nodes: {}, links: [], root: []})
+                           Object.keys(domain.nodes).forEach(
+                                function(key) {
+                                  var item = domain.nodes[key]
+                                  if (!full.nodes[key]) {full.nodes[key] = item}
+                                  else {
+                                    item.domains.forEach(d => full.nodes[key].domains.add(d))
+                                  }
+                                })
+                           full.links = full.links.concat(domain.links)
+                           full.root.push(domain.root)
+                           return full;}, 
+                           {nodes: {}, links: [], root: []})
 }
 
 function parseNodeURN(urn) {
@@ -100,12 +105,13 @@ function loadEndpoints($http, link) {
     return Promise.all([source, target]).then(function(rslt) {return {id: link.id, source: rslt[0], sink: rslt[1]}})
 }
 
-function ensureNode(nodes, node, options) {
-   var defaults = {} 
-   defaults.parent   = (options.parent   === undefined) ? null           : options.parent
-   defaults.level    = (options.level    === undefined) ? "domain_entry" : options.level
-   defaults.children = (options.children === undefined) ? []             : options.children
-   defaults.internal = (options.internal === undefined) ? false          : options.internal
+//Ensures a node with the given id exists in the node list.  
+//Uses the 3rd "defaults" paramter to build a new one if it does not
+function ensureNode(nodes, node, defaults) {
+   defaults.parent   = (defaults.parent   === undefined) ? null           : defaults.parent
+   defaults.level    = (defaults.level    === undefined) ? "domain_entry" : defaults.level
+   defaults.children = (defaults.children === undefined) ? []             : defaults.children
+   defaults.internal = (defaults.internal === undefined) ? false          : defaults.internal
    defaults.id = node
    
    if (!nodes[node]) {nodes[node] = defaults}
@@ -113,9 +119,9 @@ function ensureNode(nodes, node, options) {
 }
 
 //Ensure that a node is in the nodes list.  Add it with the given parent if it is not.
-function ensureNodes(nodes, link, parent, level) {
-  ensureNode(nodes, link.source, {parent: parent, level: level, internal: false})
-  ensureNode(nodes, link.sink,   {parent: parent, level: level, internal: false})
+function ensureNodes(nodes, link, defaults) {
+  ensureNode(nodes, link.source, defaults)
+  ensureNode(nodes, link.sink, defaults)
 }
 
 
@@ -130,10 +136,32 @@ function buildLayout(map, graph) {
   return map
 }
 
-function draw(map) {
+//TODO: Need a different draw function for each layout...
+function forceDraw(map) {
   var svg = map.svg
   var layout = map.layout
   layout.start()
+  
+  var colors = d3.scale.category10()
+  var networkDomains = Array.from(layout.nodes().reduce((acc, n) => {n.details.domains.forEach(d => acc.add(d)); return acc}, new Set()))
+  colors.domain(networkDomains)
+  console.log(networkDomains)
+  var legend = svg.append("g")
+                  .attr("class", "legend")
+                  .attr("transform", "translate(15,10)")
+  legend = legend.selectAll(".circle").data(networkDomains)
+  legend.enter().append("circle")
+        .attr("class", "legend-item")
+        .attr("r", 8)
+        .attr("cx", 0)
+        .attr("cy", (d,i) => i*25)
+        .attr("fill", d => colors(d))
+  legend.enter().append("text")
+        .attr("class", "legend-label")
+        .attr("x", 10)
+        .attr("y", (d,i) => i*25+5)
+        .text(d => d)
+
 
   var node = svg.selectAll(".node").data(layout.nodes())
   var link = svg.selectAll(".link").data(layout.links())
@@ -145,21 +173,27 @@ function draw(map) {
     node.attr("name", function(d) {return d.id})
         .attr("cx", function(d) {return d.x})
         .attr("cy", function(d) {return d.y})
-        .attr("r", function(d) {return d.deviceType ? 10 : 5})
-        .attr("fill", function(d) {return d.details.internal ? "red" : "gray"})
+        .attr("r", function(d) {return d.details.internal ? 10 : 5})
         .attr("level", function(d) {return d.details.level})
         .attr("visibility", "hidden")
+        .call(layout.drag)
+        .attr("fill", function(d) {
+            if(d.details.domains.size > 1) {return "gray"}
+            if(d.details.domains.size == 0) {return "red"}
+            var domain =d.details.domains.values().next().value //Just one entry, gets it out
+            var base = colors(domain)
+            if (d.details.internal) {base = d3.rgb(base).brighter();}
+            return base
+        })
+          //function(d) {return d.details.internal ? "red" : "gray"})
 
     link.attr("x1", function(d) {return d.source.x})
         .attr("y1", function(d) {return d.source.y})
         .attr("x2", function(d) {return d.target.x})
         .attr("y2", function(d) {return d.target.y})
-        .style("stroke", function(d) {
-          return d.source.details.internal && d.target.details.internal ? "red" : "gray"}
-        )
+        .style("stroke", "gray")
 
      svg.selectAll('[level="domain_entry"]').attr("visibility", "visible")
-     svg.selectAll('[level~="domain_entry"]').attr("visibility", "visible")
   })
   tooltip(svg, "circle.node")
   return map
