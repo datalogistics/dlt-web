@@ -139,9 +139,9 @@ function addOffMapLocation(projection, idx, baseLatLon, name, port, svg, depot_i
     pair = [baseLatLon[0]-idx*.3, baseLatLon[1]-idx]  //the idx*.3 straigthens out the line
     node = addMapLocation(projection, name, port, pair, svg, depot_id)
     node.append("text")
-	.attr("dx", function(d){return 10})
-	.attr("dy", function(d){return 4})
-	.text(function(d) {return name})
+        .attr("dx", function(d){return 10})
+        .attr("dy", function(d){return 4})
+        .text(function(d) {return name})
 }
 
 //Map a collection of places.  The places should be a list of dictionaries {name, location}.
