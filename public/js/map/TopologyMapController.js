@@ -1,14 +1,18 @@
 function topologyMapController($scope, $routeParams, $http, UnisService) {
-  var topoUrl = "http://dev.incntre.iu.edu:8889/domains" //TODO: generalize...maybe move graph-loading stuff to the server (like 'natmap' or the download tracking data)
+  //TODO: Maybe move graph-loading stuff to the server (like download tracking data) so the UNIS instance isn't hard-coded
+  var topoUrl = "http://dev.incntre.iu.edu:8889/domains/" 
+  if ($routeParams.domain) {topoUrl = topoUrl + $routeParams.domain}
+    
+    
   //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
   //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_es.net"
-
   var svg = d3.select("#topologyMap").append("svg")
                .attr("width", 1200)
                .attr("height", 500)
 
-  var map = forceMap("#topologyMap", 960, 500, svg); //TODO: Add layout options here: circular (pack layout), force, geo.  Select based on actual URL (like filter on downloads)
-  map = geoMap("#topoplogyMap", 960, 500, svg)
+  var map = forceMap("#topologyMap", 1200, 500, svg); 
+  if ($routeParams.geo) {map = geoMap("#topoplogyMap", 960, 500, svg)}
+  else if ($routeParams.circle) {}//TODO: Circular (pack) layout
 
   $http.get(topoUrl)
     .then(rsp => toGraph($http, rsp.data))
