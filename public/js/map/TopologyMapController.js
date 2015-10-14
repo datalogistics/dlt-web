@@ -8,9 +8,9 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
                .attr("height", 500)
 
   var map = forceMap("#topologyMap", 960, 500, svg); //TODO: Add layout options here: circular, force, geo.  Select based on actual URL (like filter on downloads)
-  
+
   $http.get(topoUrl)
-    .then(rsp => toGraph($http, rsp))
+    .then(rsp => toGraph($http, rsp.data))
     .then(graph => buildLayout(map, graph))
     .then(function() {draw(map)})
     .then(function() {
@@ -21,58 +21,47 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
 }
 
+function loadDomain($http, rsp) {
+    var root = rsp.id
+    var allNodes = Promise.all(rsp.nodes.map(n => $http.get(n.href)))
+                          .then(nodes => nodes.map(n => ensureNode({}, parseNodeURN(n.data.urn), {internal: true, parent: root})))
+                          .then(nodes => nodes.reduce((dict, n) => {dict[n.id] = n; return dict;}, {}))
+                          .then(nodes => {ensureNode(nodes, root, {internal: false, level: "domain", children: Array.from(Object.keys(nodes))}); return nodes;})
+                          .catch(e => {throw e})
+
+    var allLinks = Promise.all(rsp.links.map(e => $http.get(e.href)))
+                          .then(links => Promise.all(links.map(l=> loadEndpoints($http, l.data))))
+                          .then(links => links.map(l=>{return {id: l.id, source: l.source, sink: l.sink}}))
+                          .then(links => {return {links: links, nodes: links.reduce((nodes, link) => {ensureNodes(nodes, link, root, "domain_entry"); return nodes}, {})}})
+                          .catch(e => {throw e})
+                                               
+   return Promise.all([allNodes, allLinks])
+                 .then(items => {
+                   //Merge!
+                   var nodes = items[0]
+                   var links = items[1].links
+                   var linkNodes = items[1].nodes
+                   Object.keys(linkNodes).forEach(key => {if (!nodes[key]) {nodes[key] = linkNodes[key]}})
+                   return {nodes: nodes, links: links, root: root}})
+                 .catch(e => {throw e})
+}
+
+
 //Graph is {root: id, nodes: {}, links: ...} 
 //
 //Nodes is a heirarchy made from dictionaries {id: x, parent: y, children: []}.  Each node is stored under its id
 //Links is a list of dictionaries {source: x, target: y}
 //root, parent, source, target and the contents of the children list are all id's in the node hierarchy
 function toGraph($http, rsp) {
-  rsp = rsp.data
-  if (!Array.isArray(rsp)) {
-    var full = {nodes: {}, edges: []}
-    var root = rsp.id
-
-    var allNodes = Promise.all(rsp.nodes.map(n => $http.get(n.href)))
-    var allLinks = Promise.all(rsp.links.map(e => $http.get(e.href)))
-
-    var details = allNodes.then(nodes => nodes.map(n => {return {id: parseNodeURN(n.data.urn), internal: true, parent: root, children: []}}))
-                           .then(function(nodes) {
-                                  var dict = {}
-                                  nodes.forEach(n => {dict[n.id] = n})
-                                  dict[root] = {id: root, parent: null, children: Array.from(Object.keys(dict))}
-                                  return dict})
-                           .then(nodes => {return allLinks.then(function(links) {
-                                                     var linkDetails = links.map(l => getLinkDetails($http, l.data))
-                                                     return Promise.all(linkDetails)
-                                                                   .then(links => {return links.map(l=>{return {id: l.id, source: l.source, sink: l.sink}})})
-                                                                   .then(links => {
-                                                                            links.forEach(link => ensureNodes(nodes, link, root))
-                                                                            return {nodes: nodes, links: links, root: root}})})})
-   return details
-  } else {
-    var full = rsp.reduce(function(acc, v, i, a) {
-      v.nodes.forEach(function (n) {addDomain(acc.nodes, n.href, 'href', v.id)})
-      acc.links = acc.links.concat(v.links)
-      acc.ports = acc.ports.concat(v.ports)
-      acc.ids.push(v.id)
-      return acc
-    },
-    {id:"All", nodes:[], links:[], ports:[], ids: []})
-    full.nodes = Array.from(full.nodes)
+  if (!Array.isArray(rsp)) {return loadDomain($http, rsp)}
+  else {
+    var domains = rsp.map(d => loadDomain($http, d))
+    return Promise.all(domains).then(mergeDomains).then(d => map(toGraph(d))).then(mergeDomains)
   }
-  return full
 }
 
-function addDomain(list, target, key, domain) {
-  for(var i=0; i<list.length; i++) {
-    if (list[i][key]==target) {
-      list[i].domains.add(domain); return;
-    }
-  }
-  var entry = {}
-  entry[key] = target
-  entry['domains'] = new Set([domain])
-  list.push(entry)
+function mergeDomains(domains) {
+  return domains;
 }
 
 function parseNodeURN(urn) {
@@ -100,26 +89,39 @@ function getEndpointDetails($http, endpoint) {
   }
 }
 
-function getLinkDetails($http, link) {
+function loadEndpoints($http, link) {
     var source = getEndpointDetails($http, link.endpoints.source.href)
     var target = getEndpointDetails($http, link.endpoints.sink.href)
     return Promise.all([source, target]).then(function(rslt) {return {id: link.id, source: rslt[0], sink: rslt[1]}})
 }
 
+function ensureNode(nodes, node, options) {
+   var defaults = {} 
+   defaults.parent   = (options.parent   === undefined) ? null           : options.parent
+   defaults.level    = (options.level    === undefined) ? "domain_entry" : options.level
+   defaults.children = (options.children === undefined) ? []             : options.children
+   defaults.internal = (options.internal === undefined) ? false          : options.internal
+   defaults.id = node
+   
+   if (!nodes[node]) {nodes[node] = defaults}
+   return nodes[node]
+}
+
 //Ensure that a node is in the nodes list.  Add it with the given parent if it is not.
-function ensureNodes(nodes, link, parent) {
-   if (!nodes[link.source]) {nodes[link.source] = {id: link.source, internal: false, parent: parent, children:[]}}
-   if (!nodes[link.sink]) {nodes[link.sink] = {id: link.sink, internal: false, parent: parent, children:[]}}
+function ensureNodes(nodes, link, parent, level) {
+  ensureNode(nodes, link.source, {parent: parent, level: level, internal: false})
+  ensureNode(nodes, link.sink,   {parent: parent, level: level, internal: false})
 }
 
 
 function buildLayout(map, graph) {
+  debugger
   var nodes = Array.from(Object.keys(graph.nodes))
   var links = graph.links.map(l => {return {source: nodes.indexOf(l.source), target: nodes.indexOf(l.sink)}})
                          .filter(l => l.source != l.target)
   
   //TODO: map.layout = map.makeLayout(nodes, links) to handle geo and force  
-  map.layout.nodes(nodes.map(e => {return {id: e, internal: graph.nodes[e].internal}}))
+  map.layout.nodes(nodes.map(e => {return {id: e, details: graph.nodes[e]}}))
   map.layout.links(links)
   return map
 }
@@ -136,19 +138,24 @@ function draw(map) {
   link.enter().append("line").attr("class", "link")
 
   layout.on("tick", function(e) {
+    node.attr("name", function(d) {return d.id})
+        .attr("cx", function(d) {return d.x})
+        .attr("cy", function(d) {return d.y})
+        .attr("r", function(d) {return d.deviceType ? 10 : 5})
+        .attr("fill", function(d) {return d.details.internal ? "red" : "gray"})
+        .attr("level", function(d) {return d.details.level})
+        .attr("visibility", "hidden")
+
     link.attr("x1", function(d) {return d.source.x})
         .attr("y1", function(d) {return d.source.y})
         .attr("x2", function(d) {return d.target.x})
         .attr("y2", function(d) {return d.target.y})
         .style("stroke", function(d) {
-          return d.source.internal && d.target.internal ? "red" : "gray"}
+          return d.source.details.internal && d.target.details.internal ? "red" : "gray"}
         )
-    
-    node.attr("name", function(d) {return d.id})
-        .attr("cx", function(d) {return d.x})
-        .attr("cy", function(d) {return d.y})
-        .attr("r", function(d) {return d.deviceType ? 10 : 5})
-        .attr("fill", function(d) {return d.internal ? "red" : "gray"})
+
+     svg.selectAll('[level="domain_entry"]').attr("visibility", "visible")
+     svg.selectAll('[level~="domain_entry"]').attr("visibility", "visible")
   })
   tooltip(svg, "circle.node")
   return map
