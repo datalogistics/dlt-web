@@ -1,3 +1,5 @@
+var rc = 0;
+
 function downloadMapController($scope, $location, $http, UnisService, SocketService) {
   var allIds = $location.search().sessionIds
   var limitSessionIds = []
@@ -136,6 +138,8 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
   SocketService.on("peri_download_clear", function(data){
     console.log("Download cleared", data)
+    var allDownloads = svg.select("#downloads")
+    allDownloads.select("#"+groupId(data['sessionId'])).remove()
     //TODO: Modify the entry to indicate it was 'cleared' on the server
   })
 
@@ -294,8 +298,8 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
 
     var count = allDownloads.selectAll(".download-target").size()
     var left = mapWidth + 30
-    var top = 100 + count*(1.5*height)
-
+    rc = (rc+1)%12
+    var top = 100 + rc*(1.5*height)
 
     var g = allDownloads.append("g")
                  .attr("class", "download-entry")
