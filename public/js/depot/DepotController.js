@@ -240,10 +240,17 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     $location.path('/map/' + service_id);
   };
 
-  function updateService(ser,data) {
-    ser.ttl = 200;
-    ser.depot['ps:tools:blipp:ibp_server:resource:usage:used'] = data.totalUsed;
-    ser.depot['ps:tools:blipp:ibp_server:resource:usage:free'] = data.totalFree;
+  function updateService(ser,dat) {
+    if (dat &&  !dat.error) {
+      var data = dat.data || {};
+      if (ser.ttl && ser.ttl < 200)
+	ser.ttl = 200;
+      ser.depot['ps:tools:blipp:ibp_server:resource:usage:used'] = data.totalUsed;
+      ser.depot['ps:tools:blipp:ibp_server:resource:usage:free'] = data.totalFree;
+    } else {
+      // Kill the depot - Can't find data
+      ser.ttl = ser.depot['ps:tools:blipp:ibp_server:resource:usage:free']  = ser.depot['ps:tools:blipp:ibp_server:resource:usage:used'] = 0;
+    }
   }
   $scope.runGetVersion = function(ser,ev) {
     var url = ser.accessPoint;
@@ -251,7 +258,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     target.innerHTML = "Updating Status ...";
     UnisService.getVersionByUrl(url)
       .then(function(data) {
-	updateService(ser,data.data);
+	updateService(ser,data);
 	target.innerHTML = "Updated, Update again";
       })
       .catch(function() {
