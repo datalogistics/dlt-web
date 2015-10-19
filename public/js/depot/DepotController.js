@@ -189,7 +189,12 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
         ss = (ss/divValue).toFixed(2) + " "+ label;
       }
       else {
-        try{ ss = ((s.depot[md.eventType] || ss)/1e9).toFixed(0);} catch(e){};
+        try{ ss = (s.depot[md.eventType]/1e9).toFixed(0);
+	     if (Number.isNaN(ss) || ss == "NaN")
+	       ss = "N/A";
+	   } catch(e){
+	  ss = "N/A";
+	};
       }
       return arr.pop() + " (" + ss + ")";
     }
