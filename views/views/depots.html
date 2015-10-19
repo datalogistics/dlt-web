@@ -24,12 +24,12 @@
             <button ng-show="service.status === 'New'" class="btn btn-info disabled">New</button>
             <button ng-show="service.status === undefined || service.status === 'OFF'" class="btn btn-danger disabled">OFF</button>
           </td>
-          <td><div>{{ service.accessPoint || service.serviceType }}
-		  <div><button ng-click="runGetVersion(service,$event)"
-			       class="btn btn-info">Get current status</button>
-			  <button ng-click="showGetVersionRes(service,$event)"
-				  class="btn btn-info">Show Get Version Data</button>
-		  </div>
+          <td><div>
+		  <button ng-click="runGetVersion(service,$event)"
+			  class="btn glyphicon glyphicon-refresh"></button>
+		  <button ng-click="showGetVersionRes(service,$event)"
+			  class="btn glyphicon">Status</button>
+		  <span>{{ service.accessPoint || service.serviceType }}</span>
 	  </div></td>
           <td>{{ service.ttl }}</td>
           <td>{{ service.ts / 1000 | date:'yyyy-MM-dd HH:mm:ss' }}</td>

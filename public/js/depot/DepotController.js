@@ -255,15 +255,17 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   $scope.runGetVersion = function(ser,ev) {
     var url = ser.accessPoint;
     var target = ev.target;
-    target.innerHTML = "Updating Status ...";
+    $(target).removeClass("alert-warning alert-success alert-danger");
+    $(target).addClass("alert-warning");
     UnisService.getVersionByUrl(url)
       .then(function(data) {
 	updateService(ser,data);
-	target.innerHTML = "Updated, Update again";
+	$(target).removeClass("alert-warning alert-success alert-danger");
+	$(target).addClass("alert-success");
       })
-      .catch(function() {
-	// Update button Text
-	target.innerHTML = "Failed, Try again";
+      .catch(function() {	
+	$(target).removeClass("alert-warning alert-success alert-danger");
+	$(target).addClass("alert-danger");
       });
   };
 
