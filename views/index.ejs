@@ -21,7 +21,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 </head>
 <body ng-app="periApp">
-
   <!-- Header and Nav Bar -->
   <nav class="navbar navbar-fixed-top lead" role="navigation">
     <div class="container-fluid">
@@ -37,9 +36,17 @@
         <ul class="nav navbar-nav">
           <li><a class="header" href="/status">Services</a></li>
           <li><a class="header" href="/map">Map</a></li>
+          <li><a class="header" href="/topology">Topology</a></li>
         </ul>
-        <ul class="nav navbar-nav navbar-right">
-            <li><a class="header" ng-click="openLogin()">Login</a></li>
+        <ul class="nav navbar-nav navbar-right">          
+          <li ng-if="!loggedIn"><a class="header" ng-click="openLogin()">Login</a></li>
+          <li ng-if="loggedIn" class="dropdown">
+            <a class="dropdown-toggle header" data-toggle="dropdown" href="#">
+              {{userData.email}} <span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a ng-click="userLogout()">Logout</a></li>
+            </ul>
+          </li>          
         </ul>
       </div>
 
@@ -66,8 +73,9 @@
   <script src="libs/jquery/dist/jquery.min.js"></script>
   <script src="libs/angular/angular.min.js"></script>
   <script src="libs/angular-sanitize/angular-sanitize.min.js"></script>
-  <script src="libs/angular-route/angular-route.min.js"></script>
+  <script src="libs/angular-cookies/angular-cookies.min.js"></script>
   <script src="libs/angular-loading-bar/src/loading-bar.js"></script>
+  <script src="libs/angular-route/angular-route.min.js"></script>
   <script src="libs/angular-animate/angular-animate.min.js"></script>
   <script src="libs/angular-ui-utils/ui-utils.js"></script>
   <script src="libs/angular-bootstrap/ui-bootstrap-tpls.js"></script>
@@ -91,8 +99,8 @@
   <script src="js/common/jsTree.directive.js"></script>  
   <script src="js/common/directedGraph.js"></script>
   <script src="js/common/directives.js"></script>
-  <!-- <script src="js/auth/LoginModal.js"></script> 
-  <script src="js/auth/authModule.js"></script> -->
+  <script src="js/auth/LoginModal.js"></script>
+  <script src="js/auth/authModule.js"></script>
   <script src="js/unis/SocketService.js"></script>
   <script src="js/unis/UnisService.js"></script>
   <script src="js/unis/UnisModule.js"></script>
@@ -108,6 +116,7 @@
   <script src="js/exnode/DltFormController.js"></script>
   <script src="js/exnode/ExnodeController.js"></script>
   <script src="js/exnode/ExnodeModule.js"></script>
+  <script src="js/map/TopologyMapController.js"></script>
   <script src="js/map/depotMap.js"></script>
   <script src="js/map/DownloadMapController.js"></script>
   <script src="js/map/MapController.js"></script>

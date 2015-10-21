@@ -138,7 +138,7 @@
                             <div>Start date </div>
                             <p class="input-group">
                                 <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="usgsform.startDate" is-open="opened" 
-                                       max-date="'2015-06-22'" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
+                                       max-date="maxDate" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
                                 <span class="input-group-btn">
                                     <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
                                 </span>
@@ -148,7 +148,7 @@
                             <div> End date</div>
                             <p class="input-group">
                                 <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="usgsform.endDate" is-open="opened2" 
-                                       max-date="'2015-06-22'" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
+                                       max-date="maxDate" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
                                 <span class="input-group-btn">
                                     <button type="button" class="btn btn-default" ng-click="open2($event)"><i class="glyphicon glyphicon-calendar"></i></button>
                                 </span>
@@ -385,7 +385,7 @@
                             <accordion-heading>        
                                 <div> 
                                     <div class="pull-left" style="padding: 6px 12px;"> Order ID : {{key}} </div>
-                                    <button class="pull-right btn btn-default" ng-click="deleteOrder({{key}})" type="button"> Delete Order </button>
+                                    <button class="pull-right btn btn-default" ng-click="deleteOrder(key)" type="button"> Delete Order </button>
                                     <div class="clear"></div>
                                 </div>
                             </accordion-heading>

@@ -12,8 +12,8 @@ var path = require('path')
 , request = require('request')
 , ejs = require('ejs')
 , q = require('q');
-
-var getOptions = cfg.getOptions;
+var resourceHelper = require('./resourceHelper');
+var getOptions = resourceHelper.getOptions;
 var sslOptions = cfg.sslOptions;
 
 var opt = getOptions({

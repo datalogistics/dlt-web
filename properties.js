@@ -1,9 +1,26 @@
 /* Configuration file - Configure all source info here .. remove all URL related info from other files */
 var fs = require('fs'),
 _ = require('underscore');
-
-var self = {    
+// var bunyan = require('bunyan');
+var self = {
+  port : process.env.PORT || 42424,
+  ENABLE_HTTPS : false,
+  // Defaulting to self-signed certs 
+  ssl : {
+    key : './cert/server.key',
+    cert : './cert/server.crt',
+    ca :  './cert/ca.crt'
+  },
+  sslOpt : {
+    // Example of domain
+    'dlt.incntre.iu.edu' : {
+      key : './cert/server.key',
+      cert : './cert/server.crt' 
+      // ca : "./ssl/dlt-client.csr"
+    }
+  },  
   nat_map_file : './misc/idms_nat_map',
+  freegeoipUrl : "http://dlt.incntre.iu.edu:8080",
   jnlpMap : {
     'download': {
       'template': './misc/dlt-client.jnlp.tmpl',
@@ -16,15 +33,27 @@ var self = {
       'jarfile' : 'lib/dlt-publisher.jar'
     }
   },
+  // shoppingCart_logger : (function() {    
+  //   var log = bunyan.createLogger({
+  //     name: "dlt-web cart",
+  //     streams : [
+  //       {
+  //         path: "./logs/bun.log"
+  //       }]
+  //   });
+  //   return log.info;
+  // })(),
   // Match exnodes using name if true , else use properties.metadata.scene_id
   exnodeMatchingFromName : true,
-  routeMap : { 
+  // Try to login and maintain cookie for the following UNIS instances
+  authArr : [],
+  routeMap : {
     // Aggregate from the following by default 
-    'default'  : ['dev'],
-    // Empty array is ignored and goes to default , otherwise using this to aggregate        
+    'default'  : ['dlt', 'monitor'],
+    // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : ['dev'],
-    'nodes': [] ,        
+    'nodes': [],
     'nodes_id' : [],
     'services': [] ,
     'services_id' : [],
@@ -32,12 +61,22 @@ var self = {
     'measurements_id' : [],
     'metadata': [],
     'metadata_id' : [],
-    'data': ['dev_ms'],
-    'data_id': ['dev_ms'],
+    'data': ['dlt_ms','monitor_ms'],
+    'data_id': ['dlt_ms','monitor_ms'],
     'ports': [],
     'ports_id' : []
   },
-  serviceMap : {   
+  // Add a callback to process data for various routes
+  routeCb : {
+    // All functions are present in routeCb.js
+    'services' : "addLocation",
+    'services_id' : "addLocation"
+  },
+  serviceMap : {
+    local : {
+      url : "localhost",
+      port : "8888"
+    },
     dev : {
       url : "dev.incntre.iu.edu" ,
       port : "8889",
@@ -91,49 +130,31 @@ var self = {
     username : "indianadlt",
     password : "indiana2014"
   },
-  // Correct way
-  getOptions : function(cfg) {
-    var rmap = self.routeMap;
-    var smap = self.serviceMap;
-    // Using the name - make it get the http options        
-    cfg = cfg || {};
-    var pr = rmap[cfg.name];
-    var hostList = !_.isEmpty(pr) ? pr : rmap.default;
-    return hostList.map(function(x) {
-      return smap[x];
-    });
+  db : {
+    url : "mongodb://localhost:27017",
+    name : "peri-auth",
+    collection_name : "userDetails"
   },
-  getHttpOptions : function (cfg) {
-    var rmap = self.routeMap;
-    var smap = self.serviceMap;
-    // Using the name - make it get the http options        
-    cfg = cfg || {};
-    var pr = rmap[cfg.name];
-    var hostList = !_.isEmpty(pr) ? pr : rmap.default;
-    // The options array to be sent
-    var hostArr = [], portArr = [], keyArr = [], certArr = [], doSSLArr = [];
-    // Create options according to hosts 
-    hostList.map(function(x){
-      hostArr.push(smap[x].url);
-      portArr.push(smap[x].port);
-      keyArr.push(smap[x].key);
-      certArr.push(smap[x].cert);
-      doSSLArr.push(smap[x].use_ssl);
-    });    
-    var httpOptions = {
-      hostArr: hostArr,
-      portArr: portArr,
-      method: 'GET',
-      keyArr : keyArr ,
-      certArr : certArr,
-      doSSLArr : doSSLArr,
-      headers: {
-        'Content-type': 'application/perfsonar+json',
-        'connection': 'keep-alive'
-      }
-    };
-    return httpOptions;
-  }
+  GITHUB_CLIENT: "",
+  GITHUB_SECRET: ""
 };
+
+var deepObjectExtend = function(target, source) {
+  for (var prop in source) {
+    if (prop in target && typeof(target[prop]) == 'object' && typeof(source[prop]) == 'object')
+      deepObjectExtend(target[prop], source[prop]);
+    else
+      target[prop] = source[prop];
+  } 
+  return target;
+};
+
+try {
+  fs.accessSync("config.js",fs.R_OK);
+  var config = require("./config");  
+  self = deepObjectExtend(self,config);
+} catch(e) {
+  console.error("No config file exists - Create a config.js and do module.exports with JSON obj to override server properties",e);
+}
 
 module.exports = self;

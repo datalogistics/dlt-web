@@ -93,3 +93,16 @@ Then run test cases as
 
 [API localhost:42424/api](http://localhost:42424/api)
 
+## Auth Stuff
+
+- User Should be able to register and login whether there are UNIS instances in cfg.authArr or not
+- If there is a UNIS instance in authArr
+    - ENABLE_AUTH should also be enabled in UNIS
+    - If both conditions are satisfied it should successfully be able to login to Unis which can be observed by looking at the result /login in UNIS logs or  if not able to login then there would be a warning in dlt-web logs as well.
+
+- Once logged in each user gets a session cookie from each UNIS instance, this cookie is sent by dlt-web for each request in routes
+- Now user will get records for which ever records he has attribute certificates
+    - Example when ENABLE_AUTH is enabled then user will not get any records with field 'secToken : ['<randomGroup>']'
+    - All users get a periscope.read permission once logged in, Hence when we create a certificate in `/opt/cred` (`ABAC_AUTH_DIR` in settings) which maps periscope.read to unis.<randomGroup> , then all records with the secToken are also now displayed when we hit `/api/<AnyCollection>`
+
+- So to test we need to first ensure ENABLE_AUTH is set to true in UNIS and have records with a specific secToken. Then create a certificate rule for appropriate attribute and then first try before login and then after login - If it is visible or not.

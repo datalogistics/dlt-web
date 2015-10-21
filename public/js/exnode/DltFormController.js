@@ -1,5 +1,4 @@
-function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService) {
-  
+function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService) {  
   // The usgs Model form
   var usf = $scope.usgsform = {
     startDate : "",
@@ -17,6 +16,8 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
   function toMMFormat(date){
     return $filter('date')(date, "MM/dd/yyyy");
   };
+  var today = new Date();
+  $scope.maxDate = $filter('date')(today, 'yyyy-MM-dd');
   $scope.isUsgsLoading = false;
   $scope.submitUsgsForm = function(){
     console.log(usf);    
@@ -313,24 +314,36 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
       localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
     }
     var map = data.data ;
-    var res = $scope.cartRes;
-    for ( var i in map) {
-      var exArr = map[i];
-      for (var j = 0; j < exArr.length ; j++){        
-        var it = exArr[j];
-        var obj = res[i];
-        if (obj) {
-          obj.isExnode = true;
-          var arr = obj.exFileArr = obj.exFileArr || [];
-          obj.exMap = obj.exMap || {} ;
-          if (!obj.exMap[it.name]) {
-            arr.push(it);
-            obj.exMap[it.name] = true;  
-          }
-          obj._exnodeData = it;          
-        }      
-      };
+    var res2 = $scope.cartRes;
+    for (var k in res2) {
+      var res = res2[k];
+      res.forEach(function(x) {
+	if (map[x.entityId]) {
+	  x.isExnode = true;
+	  x.exFileArr = x.exFileArr || [];	  
+	  x.exFileArr.push.apply(x.exFileArr,map[x.entityId]);
+	  obj.exMap = obj.exMap || {} ;
+	}
+      });
     }
+    return;
+    // for ( var i in map) {
+    //   var exArr = map[i];
+    //   for (var j = 0; j < exArr.length ; j++){        
+    //     var it = exArr[j];
+    //     var obj = res[i];
+    //     if (obj) {
+    //       obj.isExnode = true;
+    //       var arr = obj.exFileArr = obj.exFileArr || [];
+    //       obj.exMap = obj.exMap || {} ;
+    //       if (!obj.exMap[it.name]) {
+    //         arr.push(it);
+    //         obj.exMap[it.name] = true;  
+    //       }
+    //       obj._exnodeData = it;          
+    //     }      
+    //   };
+    // }
   });
   SocketService.on('cart_error',function(err) {
     $scope.isShoppingCartLoading = false;

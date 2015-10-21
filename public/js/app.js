@@ -5,26 +5,46 @@
  */
 // The global config json
 var DLT_PROPS = {
-  FreeGeoIpUrl :"http://dlt.incntre.iu.edu:8080/json/"
+  // FreeGeoIpUrl :"http://dlt.incntre.iu.edu:8080/json/"
+  FreeGeoIpUrl :"https://www.freegeoip.net/json/"
 };
-angular.module('periApp', ['ngRoute',
+angular.module('periApp', 
+        ['ngRoute',
+        'ngCookies',
 			   'jsTree.directive',
 			   'angular-loading-bar',
 			   'ngAnimate',
 			   'schemaForm',
-			   'ui.utils', 
-                           'ui.bootstrap',
-                           'ui.bootstrap-slider',
-                           'nvd3ChartDirectives',
-			   'pubsub',
+         'ui.utils', 
+         'ui.bootstrap',
+         'ui.bootstrap-slider',
+         'nvd3ChartDirectives',
+         'pubsub',
 			   'main',
 			   'unis',
 			   'exnode',
-			   'depot',
+			   'depot',                           
+         'auth',
 			   'map'])
-  .run(function($rootScope, UnisService, DepotService, CommChannel,$modal) {
+  .run(function($rootScope, UnisService, DepotService, CommChannel,$modal,$cookies,$http) {
     $rootScope.unis = UnisService;
     $rootScope.depot = DepotService;
+    $rootScope.loggedIn = false;
+
+    var ud = $cookies.userDetails;
+    if (ud) {
+      $rootScope.loggedIn = true;
+      $rootScope.userData = {
+        email : ud
+      };
+    }
+    $rootScope.userLogout = function() {
+      $http.post("/logout")
+        .then(function() {
+          $rootScope.loggedIn = false;
+          $rootScope.userData = {};
+        });
+    }
     $rootScope.comm = CommChannel;
     $rootScope.openLogin = function() {
       var modalInstance = $modal.open({
@@ -62,6 +82,14 @@ angular.module('periApp', ['ngRoute',
                when('/depots/:id', {
                  templateUrl: 'views/depot_data.html',
                  controller: 'DepotController',
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               }).
+               when('/topology/', {
+                 templateUrl: 'views/topology_map.html',
+                 controller: 'TopologyMapController',
                  resolve: {
                    'unis': function(UnisService) {
                      return UnisService.init()

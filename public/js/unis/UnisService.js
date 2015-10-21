@@ -56,6 +56,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
             && typeof item.location.longitude != 'undefined'
             && typeof item.location.latitude != 'undefined'
             && item.location.longitude != 0
+            && item.location.city
             && item.location.latitude != 0);
   };
   
@@ -163,17 +164,26 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     if (typeof data != 'object'){
       data = JSON.parse(data);
     };
-    if ("id" in data) {
-      id = data['id'];
-      //console.log('Incoming data for ' + id + ' : ', data);
+    for (var id in data) {
       if (id in dataIdCbMap) {
 	var map = dataIdCbMap[id];
 	for (var i in map) {
           var cb = map[i];
-          cb(data['data']);
+          cb(data[id]);
 	}
       }
-    }
+    };
+    // if ("id" in data) {
+    //   id = data['id'];
+    //   //console.log('Incoming data for ' + id + ' : ', data);
+    //   if (id in dataIdCbMap) {
+    // 	var map = dataIdCbMap[id];
+    // 	for (var i in map) {
+    //       var cb = map[i];
+    //       cb(data['data']);
+    // 	}
+    //   }
+    // }
   });
   
   finish = function() {
@@ -204,11 +214,11 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       //continue timer
       timeout = $timeout(onTimeout, 1000);
     }
-    
-    // start timer
-    var timeout = $timeout(onTimeout, 1000);
-    
-    return $q.all(prom);
+        
+    return $q.all(prom).then(function() {
+      // start timer
+      var timeout = $timeout(onTimeout, 1000);
+    });
   };
     
   // socket handlers...

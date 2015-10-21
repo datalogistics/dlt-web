@@ -28,6 +28,9 @@ var log = bunyan.createLogger({
       path: "./logs/bun.log"
     }]
 });
+var resourceHelper = require('./resourceHelper');
+var getOptions = resourceHelper.getOptions;
+var getHttpOptions = resourceHelper.getHttpOptions;
 
 WebSocket.super_.defaultMaxListeners = 0;
 
@@ -131,11 +134,8 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
                   'key': fs.readFileSync(opt.keyArr[i])};
       ssl_opts = _.extend(ssl_opts, cfg.sslOptions);
     }
-    if (isAggregate) {
-      var pathname = "/subscribeAgg/" + path ;
-    } else {
-      var pathname = "/subscribe/" + path ;
-    }
+    var pathname = "/subscribe/"+path;
+    
     var urlstr = url.format({'protocol': proto,
                              'slashes' : true,
                              'hostname': opt.hostArr[i],
@@ -155,11 +155,14 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
         onopencb();
     });
     socket.on('message', function(data) {
-      //console.log('UNIS socket (): ', data);
+      var count = 0;
+      for (var LPPP in JSON.parse(data))
+	count++;      
+      console.log('UNIS socket (): ', count , " for Path ",path);
       var smap =  socketMap;
-      smap[path] = smap[path] || {};
       if (!smap[path].clients)
-        return;          
+	return;
+      smap[path] = smap[path] || {};
       data.__source = name;
       //smap[path].clients = smap[path].clients || [];
       //console.log("Emitting to client " , smap[path].clients );
@@ -168,12 +171,22 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
           client.emit(emit, data);
         });
       } else {
-        var dataId1 = (JSON.parse(data)).id;
+        var dataJ = (JSON.parse(data));
         //console.log("Number of connected clients ", smap[path].clients.length,
 	//            smap[path].clients.map(function(x){ return x.id;}));
         smap[path].clients.filter(function(x){
           // Returns true if path doesn't exist
-          return pathIdObj.isRegClient(x.id , path , dataId1);            
+	  var flag = false;
+	  for (var g in dataJ) {
+	    var id = g;
+	    var it = x[g];
+	    console.log(x.id ,path, g);
+	    if (pathIdObj.isRegClient(x.id , path , g)) {
+	      flag = true;
+	      break;
+	    }
+	  }	  
+          return flag;
         }).forEach(function(client) {
           client.emit(emit, data);
         }); 
@@ -195,7 +208,7 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
 }
 
 function _getGenericHandler(resource, emitName,client){
-  var opt = cfg.getHttpOptions({'name': resource});    
+  var opt = getHttpOptions({'name': resource});
   return function(data) {
     var path = resource;
     var emit = emitName;
@@ -206,7 +219,8 @@ function _getGenericHandler(resource, emitName,client){
     var smap = socketMap[path];
     if (data.id) {
       var obj = {
-        id : data.id 
+	query : { id: data.id },
+	resourceType: resource
       };
       if (data.disconnect) {
         // Unregister the channel for the client
@@ -217,8 +231,8 @@ function _getGenericHandler(resource, emitName,client){
         //console.log("Id" ,data.id);
         if(!pathIdObj.isRegClient(client.id, path , data.id)) {
           if (!smap) {
-            socketMap[path] = {'clients': [client]};        
-            createWebSocket(opt,path, resource, emit,true,function(){              
+            socketMap[path] = {'clients': [client]};
+            createWebSocket(opt,path, resource, emit,true,function(){
               smap = socketMap[path];
               smap.sockets.forEach(function (x) {
 		// only attempt if connected
@@ -327,17 +341,17 @@ module.exports = function(client) {
   console.log('Client connected:', client.conn.remoteAddress);
 
 
-  client.on('node_request', getGenericHandler('node','node_data'));
-  client.on('service_request', getGenericHandler('service','service_data'));
-  client.on('measurement_request',  getGenericHandler('measurement','measurement_data'));
+  client.on('node_request', getGenericHandler('nodes','node_data'));
+  client.on('service_request', getGenericHandler('services','service_data'));
+  client.on('measurement_request',  getGenericHandler('measurements','measurement_data'));
   client.on('metadata_request',  getGenericHandler('metadata','metadata_data'));
-  client.on('port_request', getGenericHandler('port','port_data'));
-  client.on('link_request', getGenericHandler('link','link_data'));
-  client.on('path_request', getGenericHandler('path','path_data'));
-  client.on('network_request', getGenericHandler('network','network_data'));
-  client.on('domain_request', getGenericHandler('domain','domain_data'));
-  client.on('topology_request', getGenericHandler('topology','topology_data'));
-  client.on('event_request', getGenericHandler('event','event_data'));
+  client.on('port_request', getGenericHandler('ports','port_data'));
+  client.on('link_request', getGenericHandler('links','link_data'));
+  client.on('path_request', getGenericHandler('paths','path_data'));
+  client.on('network_request', getGenericHandler('networks','network_data'));
+  client.on('domain_request', getGenericHandler('domains','domain_data'));
+  client.on('topology_request', getGenericHandler('topologies','topology_data'));
+  client.on('event_request', getGenericHandler('events','event_data'));
   client.on('data_request', getGenericHandler('data','data_data'));
 
   client.on('usgs_lat_search',function(data){
