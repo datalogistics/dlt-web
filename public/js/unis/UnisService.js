@@ -29,7 +29,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     return ret;
   };
 
-  getUniqueByField = function(ary, f) {
+  var getUniqueByField = function(ary, f) {
     var curr = [];
     var ret = [];
     for(var i = 0; i < ary.length; i++) {
@@ -292,6 +292,29 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   });
   
   // We start here when the service is instantiated
+  function makeMap(arr,key,isUnescape) {
+    var get = function (model, path, def) {
+      path = path || '';
+      model = model || {};
+      def = typeof def === 'undefined' ? '' : def;
+      var parts = path.split('.');
+      if (parts.length > 1 && typeof model[parts[0]] === 'object') {
+	return get(model[parts[0]], parts.splice(1).join('.'), def);
+      } else {
+	return model[parts[0]] || def;
+      }
+    };
+    var map = {};
+    (arr||[]).forEach(function(x) {
+      var val = get(x,key);
+      if (isUnescape)
+	val = unescape(val);
+      if (!map[val])
+	map[val] = [];
+      map[val].push(x);
+    });
+    return map;
+  }
   var initServicePromise;
   service.init = function() {
     initServicePromise = initServicePromise || $q.all([
@@ -302,11 +325,19 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       $http.get('/api/services', { cache: true})
     ]).then(function(res) {
       service.nodes = getUniqueById(res[0].data);
-      service.ports = getUniqueById(res[1].data);
+      service.ports = getUniqueById(res[1].data);            
       service.measurements = getUniqueById(res[2].data);
       service.metadata = getUniqueById(res[3].data);
       service.services = getUniqueByField(res[4].data, 'accessPoint');
 
+      service.nodeSelfRefMap = makeMap(service.nodes,"selfRef");
+      service.portsSelfRefMap = makeMap(service.ports,"selfRef");
+      service.portsIpMap = makeMap(service.ports,"properties.ipv4.address");
+      //service.nodesPrefHrefMap = makeMap(service.nodes,"ports.pref.href");
+      service.servicesRunonMap = makeMap(service.services,"runningOn.href",true);
+      service.measServMap = makeMap(service.measurements,"service",true);
+      service.metaMap = makeMap(service.metadata,"parameters.measurement.href",true);
+      
       SocketService.emit('service_request', {});
       SocketService.emit('node_request', {});
       SocketService.emit('port_request', {});
