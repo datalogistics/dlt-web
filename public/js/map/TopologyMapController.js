@@ -10,9 +10,10 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
                .attr("width", 1200)
                .attr("height", 500)
 
-  var map = forceMap("#topologyMap", 1200, 500, svg); 
+  var map = null
   if ($routeParams.geo) {map = geoMap("#topoplogyMap", 960, 500, svg)}
   else if ($routeParams.circle) {}//TODO: Circular (pack) layout
+  else {map = forceMap("#topologyMap", 1200, 500, svg);}
 
   $http.get(topoUrl)
     .then(rsp => toGraph($http, rsp.data))

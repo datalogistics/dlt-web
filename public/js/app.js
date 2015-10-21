@@ -87,6 +87,14 @@ angular.module('periApp',
                      return UnisService.init()
                    }}
                }).
+               when('/probe/', {
+                 templateUrl: 'views/probe_map.html',
+                 controller: 'ProbeMapController',
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               }).
                when('/topology/', {
                  templateUrl: 'views/topology_map.html',
                  controller: 'TopologyMapController',

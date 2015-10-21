@@ -239,6 +239,7 @@ module.exports = function(app) {
       opt.handler(options);
     }
   }
+  app.get('/api/probes', getGenericHandler({path : '/probes', name : 'probes' , handler : registerGenericHandler}));
   app.get('/api/topologies', getGenericHandler({path : '/topologies', name : 'topologies' , handler : registerGenericHandler}));
   app.get('/api/domains', getGenericHandler({path : '/domains', name : 'domains' , handler : registerGenericHandler}));
   app.get('/api/nodes', getGenericHandler({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
