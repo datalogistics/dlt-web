@@ -10,5 +10,8 @@ angular.module('unis', [])
   }])
   .factory('UnisService', ['$q', '$http', '$timeout', 'SocketService', 'CommChannel', function($q, $http, $timeout, SocketService, CommChannel) {
     return new unisService($q, $http, $timeout, SocketService, CommChannel);
+  }])
+  .factory('BlippService', ['$http', 'UnisService', 'CommChannel', function($http, UnisService, CommChannel) {
+    return new blippService($http, UnisService, CommChannel);
   }]);
   

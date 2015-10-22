@@ -19,11 +19,13 @@ function getRate(x,y,oldx,oldy) {
   return newArr;
 }
 
-function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService,$modal,$window,$q) {
+function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService, BlippService, $modal,$window,$q) {
   var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
 	          'ps:tools:blipp:ibp_server:resource:usage:free',
 	          'ps:tools:blipp:linux:cpu:utilization:user',
-	          'ps:tools:blipp:linux:cpu:utilization:system'];
+	          'ps:tools:blipp:linux:cpu:utilization:system',
+		  'ps:tools:blipp:linux:net:ping:rtt',
+		  'ps:tools:blipp:linux:net:ping:ttl'];
   
   var metadata_id = $scope.metadataId || $routeParams.id;
   // place inital UnisService data into scope for view
@@ -164,44 +166,46 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 
   $scope.getMetadataShortET = function(md, s) {
     var arr = md.eventType.split(':');
-    if (MY_ETS.indexOf(md.eventType) >= 0) {
-      var ss = 0 ;
-      if (/network:/.test(md.eventType)) {        
-        try{ ss = ((s.depot[md.eventType] || ss)/1).toFixed(0);} catch(e){};
-        var divValue,label; 
-        if (ss > 1e3 && ss < 1e6) {
-          // Make it kb
-          label = "K";
-          divValue = 1e3 ;
-        } else if(ss >= 1e6 && ss < 1e9) {
-          label = "M";
-          divValue = 1e6;
-        } else if (ss >= 1e9) {
-          label = "G";
-          divValue = 1e9;
-        } else {
-          divValue= 1;
-          label = "B";
-        }
-        ss = (ss/divValue).toFixed(2) + " "+ label;
+    var ss = 0 ;
+    if (/network:/.test(md.eventType)) {        
+      try{ ss = ((s.sref[md.eventType] || ss)/1).toFixed(0);} catch(e){};
+      var divValue,label; 
+      if (ss > 1e3 && ss < 1e6) {
+        // Make it kb
+        label = "K";
+        divValue = 1e3 ;
+      } else if(ss >= 1e6 && ss < 1e9) {
+        label = "M";
+        divValue = 1e6;
+      } else if (ss >= 1e9) {
+        label = "G";
+        divValue = 1e9;
+      } else {
+        divValue= 1;
+        label = "B";
       }
-      else {
-        try{ ss = (s.depot[md.eventType]/1e9).toFixed(0);
-	     if (Number.isNaN(ss) || ss == "NaN")
-	       ss = "N/A";
-	   } catch(e){
-	  ss = "N/A";
-	};
-      }
-      return arr.pop() + " (" + ss + ")";
+      ss = (ss/divValue).toFixed(2) + " "+ label;
     }
-    return arr.pop();
+    else {
+      try{ ss = (s.sref[md.eventType]/1e9).toFixed(0);
+	   if (Number.isNaN(ss) || ss == "NaN")
+	     ss = "N/A";
+	 } catch(e){
+	   ss = "N/A";
+	 };
+    }
+    return arr.pop() + " (" + ss + ")";
   };
   
   $scope.getServiceMetadata = function(service) {
     if (service.serviceType == "ibp_server") {
       return DepotService.depots[service.id].metadata;
     }
+    if (service.serviceType == "ps:tools:blipp") {
+      //console.log("Trying to get metadata for: ", service);
+      return BlippService.blipps[service.id].metadata;
+    }
+    return [];
   };
   
   $scope.showData = function(metadata , name , buttonName) {
@@ -221,7 +225,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
       var modal = $modal.open({
         templateUrl: '/views/depot_data.html',
         controller: 'DepotController',
-        scope : $scope ,
+        scope : $scope,
         size : 'lg',
         resolve: {
 	  'unis': function(UnisService) {
