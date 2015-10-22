@@ -16,8 +16,8 @@
           <th>Location</th>
           <th>Data Charts</th>
         </tr>
-        <input type="text" class="form-control" ng-model="q.accessPoint" placeholder="Filter by service access point..." />
-        <tbody ng-repeat="service in services | orderBy:'[location.state, location.city]' | unique:'accessPoint'">
+        <input type="text" class="form-control" ng-model="q.description" placeholder="Filter by service description..." />
+        <tbody ng-repeat="service in services | orderBy:'[location.state, location.city]'">
           <td>
             <button ng-show="service.status === 'ON'" class="btn btn-success disabled">ON</button>
             <button ng-show="service.status === 'Unknown'" class="btn btn-warning disabled">Unknown</button>
@@ -29,7 +29,7 @@
 			  class="btn glyphicon glyphicon-refresh"></button>
 		  <button ng-click="showGetVersionRes(service,$event)"
 			  class="btn glyphicon">Status</button>
-		  <span>{{ service.accessPoint || service.serviceType }}</span>
+		  <span>{{ service.accessPoint || service.description }}</span>
 	  </div></td>
           <td>{{ service.ttl }}</td>
           <td>{{ service.ts / 1000 | date:'yyyy-MM-dd HH:mm:ss' }}</td>

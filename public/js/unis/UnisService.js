@@ -328,7 +328,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       service.ports = getUniqueById(res[1].data);            
       service.measurements = getUniqueById(res[2].data);
       service.metadata = getUniqueById(res[3].data);
-      service.services = getUniqueByField(res[4].data, 'accessPoint');
+      service.services = getUniqueById(res[4].data);
 
       service.nodeSelfRefMap = makeMap(service.nodes,"selfRef");
       service.portsSelfRefMap = makeMap(service.ports,"selfRef");
