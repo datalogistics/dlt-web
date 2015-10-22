@@ -7,7 +7,7 @@ function getRate(x,y,oldx,oldy) {
   var timeD = x/1e6 - oldx/1e6;
   if (oldx >= x || timeD == 0) {
     console.log("No Change");
-    return;
+    return [];
   }  
   // Now use this old value to calculate rate 
   var yVal = (y - oldy) / timeD;
@@ -19,7 +19,7 @@ function getRate(x,y,oldx,oldy) {
   return newArr;
 }
 
-function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService,$modal,$window,$filter) {
+function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService,$modal,$window,$q) {
   var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
 	          'ps:tools:blipp:ibp_server:resource:usage:free',
 	          'ps:tools:blipp:linux:cpu:utilization:user',
@@ -55,18 +55,13 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   
   if (metadata_id != null) {
     $scope.eventType = [];
-
+    /** Seems to be used only for graph **/
     UnisService.getMetadataId(metadata_id, function(metadata) {
       var eventType = metadata.eventType;
       var arrayData = [];
       arrayData.max = 0;
-
-      for (i=0; i< metadata.length; i++) {
-        if (eventType === undefined) {
-          eventType = metadata[i].eventType;
-        }
-      }
-
+      
+      // Select last eventType of metadata
       var chartconfig = getETSChartConfig(eventType);
       d3.select(chartconfig.selector).attr("style", "");
       
@@ -88,7 +83,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	  $scope.eventType = eventType;
         } else {
           arr = data[metadata_id];
-          // Get the max in this array          
+          // Get the max in this array
           arrayData.forEach(function(x) {
             if (x[1] > max) {
               max = x[1];
@@ -191,7 +186,12 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
         ss = (ss/divValue).toFixed(2) + " "+ label;
       }
       else {
-        try{ ss = ((s.depot[md.eventType] || ss)/1e9).toFixed(0);} catch(e){};
+        try{ ss = (s.depot[md.eventType]/1e9).toFixed(0);
+	     if (Number.isNaN(ss) || ss == "NaN")
+	       ss = "N/A";
+	   } catch(e){
+	  ss = "N/A";
+	};
       }
       return arr.pop() + " (" + ss + ")";
     }
@@ -241,4 +241,68 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   $scope.showMap = function(service_id) {
     $location.path('/map/' + service_id);
   };
+
+  function updateService(ser,dat) {
+    if (dat &&  !dat.error) {
+      var data = dat.data || {};
+      if (ser.ttl && ser.ttl < 200)
+	ser.ttl = 200;
+      ser.depot['ps:tools:blipp:ibp_server:resource:usage:used'] = data.totalUsed;
+      ser.depot['ps:tools:blipp:ibp_server:resource:usage:free'] = data.totalFree;
+    } else {
+      // Kill the depot - Can't find data
+      ser.ttl = ser.depot['ps:tools:blipp:ibp_server:resource:usage:free']  = ser.depot['ps:tools:blipp:ibp_server:resource:usage:used'] = 0;
+    }
+  }
+  $scope.runGetVersion = function(ser,ev) {
+    var url = ser.accessPoint;
+    var target = ev.target;
+    $(target).removeClass("alert-warning alert-success alert-danger");
+    $(target).addClass("alert-warning");
+    UnisService.getVersionByUrl(url)
+      .then(function(data) {
+	updateService(ser,data);
+	$(target).removeClass("alert-warning alert-success alert-danger");
+	$(target).addClass("alert-success");
+      })
+      .catch(function() {	
+	$(target).removeClass("alert-warning alert-success alert-danger");
+	$(target).addClass("alert-danger");
+      });
+  };
+
+  $scope.showGetVersionRes = function(ser,ev) {
+    var url = ser.accessPoint;
+    var modScope ;
+    var prom = $q.defer();
+    var modalInstance = $modal.open({
+      templateUrl: "getVersionModal.html",
+      controller: function($scope) {	  
+        $scope.cancel = function() {
+          modalInstance.dismiss();
+        };
+	modScope = $scope;
+	prom.resolve($scope);
+	$scope.isLoading = true;
+      }
+    });
+    UnisService.getVersionByUrl(url,true).then(function(data) {
+      prom.promise.then(function(modScope){ 
+	modScope.isLoading = false;
+	modScope.getVersionRaw = data.data.rawData;
+      });
+    });
+    var tmpl = $("#getVersionModal.html");
+  };
 }
+
+
+
+
+
+
+
+
+
+
+

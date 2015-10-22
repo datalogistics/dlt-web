@@ -17,6 +17,7 @@ var path = require('path')
 , request = require('request')
 , ejs = require('ejs')
 , usgsapi = require('./usgsapi')
+, getVersion = require('./getVersion').getVersion
 , auth = require('./auth')
 , routeCb = require('./routeCb')
 , q = require('q');
@@ -71,6 +72,7 @@ module.exports = function(app) {
     routes.push('http://' + hostname + pathname + '/ports');
     routes.push('http://' + hostname + pathname + '/exnodes');
     routes.push('http://' + hostname + pathname + '/fileTree');
+    routes.push('http://' + hostname + pathname + '/getVersion');
     res.json(routes);
   });
   
@@ -280,7 +282,26 @@ module.exports = function(app) {
   app.get('/api/metadata/:id', getGenericHandlerWithId({path : '/metadata', name : 'metadata' , handler : registerGenericHandler}));
   app.get('/api/data/:id', getGenericHandlerWithId({path : '/data', name : 'data' , handler : registerGenericHandler}));
   app.get('/api/ports/:id', getGenericHandlerWithId({path : '/ports', name : 'ports' , handler : registerGenericHandler}));
-  
+  app.get('/api/getVersion',function(req,res) {
+    var host , port ;
+    if (req.query.host && req.query.port) {
+      host = req.query.host;
+      port = req.query.port;
+    } else if (req.query.url) {
+      var ibpurl = req.query.url;
+      var urlData = url.parse(ibpurl);
+      host = urlData.hostname;
+      port = urlData.port;
+    }
+    getVersion(host,port).then(function(data) {
+      res.json(data);
+    }).catch(function(x) {
+      res.json({
+	error : true,
+	data : x
+      });      
+    });	     
+  });
   app.get('/api/fileTree',function(req, res) {
     var id = req.query.id;
     delete req.query.id ;

@@ -11,23 +11,10 @@ var WebSocket = require('ws')
 , http = require('http')
 , https = require('https')
 , url = require('url')
-, xmlparse = require('xml2js').parseString
-, request = require('request')
 , querystring = require('querystring')
 , cfg = require('../properties')
 , q = require('q')
-, exnodeApi = require('./exnodeApi')
-, usgsapi = require("./usgsapi")
-, bdaApi = require("./bdaApp")
 ,_ = require('underscore');
-var bunyan = require('bunyan');
-var log = bunyan.createLogger({
-  name: "dlt-web-cart",
-  streams : [
-    {
-      path: "./logs/bun.log"
-    }]
-});
 var resourceHelper = require('./resourceHelper');
 var getOptions = resourceHelper.getOptions;
 var getHttpOptions = resourceHelper.getHttpOptions;
@@ -158,7 +145,7 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
       var count = 0;
       for (var LPPP in JSON.parse(data))
 	count++;      
-      console.log('UNIS socket (): ', count , " for Path ",path);
+      // console.log('UNIS socket (): ', count , " for Path ",path);
       var smap =  socketMap;
       if (!smap[path].clients)
 	return;
@@ -180,7 +167,7 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
 	  for (var g in dataJ) {
 	    var id = g;
 	    var it = x[g];
-	    console.log(x.id ,path, g);
+	    // console.log(x.id ,path, g);
 	    if (pathIdObj.isRegClient(x.id , path , g)) {
 	      flag = true;
 	      break;
@@ -207,7 +194,7 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
   }
 }
 
-function _getGenericHandler(resource, emitName,client){
+function _getGenericHandler(resource, emitName,client) {
   var opt = getHttpOptions({'name': resource});
   return function(data) {
     var path = resource;
@@ -297,18 +284,8 @@ function _getGenericHandler(resource, emitName,client){
   };
 };
 
-// export function for listening to the socket
-module.exports = function(client) {
-  var getGenericHandler = function() {
-    var args = [];
-    for (var i= 0;i<arguments.length;i++)
-      args.push(arguments[i]);
-    args.push(client);
-    return _getGenericHandler.apply(this,args);
-  };
-  
-  // clean up sockets as necessary when a client disconnects
-  client.on('disconnect', function(data) {
+var onDisconnect = function(client) {
+  return function(data) {
     console.log('Client disconnected:', client.conn.remoteAddress);
     if (resourceMap[client.id]) {
       resourceMap[client.id].forEach(function(type) {
@@ -317,7 +294,7 @@ module.exports = function(client) {
         if (clients) {
           for (var i = clients.length - 1; i >= 0; i--) {
             if (client.id == clients[i].id) {
-              clients.splice(i, 1);
+	      clients.splice(i, 1);
             }
           }
           pathIdObj.unregclients(client.id,type);
@@ -326,7 +303,7 @@ module.exports = function(client) {
           if (clients.length == 0) {
             console.log("Last client disconnected, closing sockets for: " + type);
             smap.sockets.forEach(function(s) {
-              s.close();
+	      s.close();
             });
             delete socketMap[type];
           }
@@ -335,12 +312,23 @@ module.exports = function(client) {
       });
       delete resourceMap[client.id];
     }
-  });
+  };
+};
+var exnodeClient = require('./exnodeSockets');
+var cartClient = require('./cartSocket');
+// export function for listening to the socket
+module.exports = function(client) {
+  var getGenericHandler = function() {
+    var args = [];
+    args.push.apply(args,arguments);
+    args.push(client);
+    return _getGenericHandler.apply(this,args);
+  };  
+  // clean up sockets as necessary when a client disconnects
+  client.on('disconnect',onDisconnect(client));
 
   // establish client socket
   console.log('Client connected:', client.conn.remoteAddress);
-
-
   client.on('node_request', getGenericHandler('nodes','node_data'));
   client.on('service_request', getGenericHandler('services','service_data'));
   client.on('measurement_request',  getGenericHandler('measurements','measurement_data'));
@@ -352,180 +340,13 @@ module.exports = function(client) {
   client.on('domain_request', getGenericHandler('domains','domain_data'));
   client.on('topology_request', getGenericHandler('topologies','topology_data'));
   client.on('event_request', getGenericHandler('events','event_data'));
-  client.on('data_request', getGenericHandler('data','data_data'));
-
-  client.on('usgs_lat_search',function(data){
-    var params = data;
-    var paramString = querystring.stringify(params);
-    // Make a request to the USGS get_metadata url which returns the data in xml form
-    var url = cfg.usgs_lat_searchurl + "?"+paramString;
-    console.log(url);
-    request(url,function(err,r,resp){
-      xmlparse(resp, function(err , result){
-        console.dir(result);      
-        var data = result || {};
-        data = data.searchResponse || [];      
-        var r = (data.metaData || []).map(function(x) {
-          for (var i in x) {
-            if(_.isArray(x[i]) && x[i].length == 1){
-              x[i] = x[i][0];
-            }
-          };
-          x.name = x.sceneID;
-          return x;
-        });
-        if (data.length == 0){
-          try{
-            r.error = result.html.body ;
-          } catch(e){
-            r.error ="No results found";
-          }
-        };
-        /*********** Emitting some data here **********/
-        client.emit('usgs_lat_res',r);
-
-        // // Use the data to query mongo where name maps to id
-        // // Super hacky and super slow -- temporary way
-        // r.map(function(x){
-        // });        
-      });
-    });
-  });
-
-  client.on('usgs_row_search', function(data){
-    var params = data;
-    var paramString = querystring.stringify(params);
-    // Make a request to the USGS get_metadata url which returns the data in xml form
-    var url = cfg.usgs_row_searchurl + "?"+paramString;
-    console.log(url);
-    request(url,function(err,r,resp){
-      if (err) {
-        client.emit('usgs_row_res',{error : err});
-        return;
-      }
-      xmlparse(resp, function(err , result){
-        var data = result || {};
-        data = data.searchResponse || [];      
-        var r = (data.metaData || []).map(function(x) {
-          for (var i in x) {
-            if(_.isArray(x[i]) && x[i].length == 1){
-              x[i] = x[i][0];
-            }
-          };
-          x.name = x.sceneID;
-          return x;
-        });
-        if (data.length == 0){
-          try{
-            r.error = result.html.body ;
-          } catch(e){
-            r.error ="No results found";
-          }
-        };
-        /*********** Emitting some data here **********/
-        client.emit('usgs_row_res',r);
-
-        // // Use the data to query mongo where name maps to id
-        // // Super hacky and super slow -- temporary way
-        // r.map(function(x){
-          
-        // });        
-      });
-      // Now use this response to 
-    });        
-  });
-
-  var nameToSceneId = exnodeApi.nameToSceneId;
-  function getExnodeData(sceneArr,precb , fullcb) {
-    exnodeApi.getExnodeDataIfPresent(sceneArr,precb,fullcb);   
-  };
+  client.on('data_request', getGenericHandler('data','data_data'));  
+  client.on('usgs_lat_search',exnodeClient.onUSGSLatSearch(client));  
+  client.on('usgs_row_search',exnodeClient.onUSGSRowSearch(client));
   
-  client.on('exnode_request',function(data){
-    var arr = data.sceneId;
-    if (!_.isArray(arr))
-      arr = [data.sceneId];
-    getExnodeData(arr, function(data){
-      client.emit('exnode_nodata', { data : data});
-    },function(obj){
-      var retMap  = {};
-      obj.map(function(x) {
-        var arr = retMap[nameToSceneId(x.name)] = retMap[nameToSceneId(x.name)] || [];
-        arr.push(x);
-      });
-      client.emit('exnode_data', {data : retMap});
-    });
-  });
-
-
-  function getAllChildExFilesDriver(arr , emitId , cb) {
-    if (!arr || !arr.length) {
-      // Done
-      cb();
-      return ;
-    } else if(arr) {
-      if (arr.length > 5) {
-        // console.log(arr);
-        var tmp = arr.splice(0,4);
-        getAllChildExFilesDriver(tmp, emitId , function(narr){
-          arr.push.apply(arr,narr);
-          getAllChildExFilesDriver(arr,emitId,cb);
-        });        
-      } else {
-        var promise = getAllChildExnodeFiles(arr, emitId);
-        // console.log(promise);
-        // Just execute cb
-        if (promise && promise.then)
-          promise.then(function(arr){
-            getAllChildExFilesDriver(arr,emitId,cb);
-          });
-      }      
-    }
-  }
-
-  function getAllChildExnodeFiles(id , emitId) {
-    var defer = q.defer();    
-    if (id == null) {
-      // This can never occur in an array since the parent can never be a part of a child
-      id = 'null=';
-    } else if (_.isArray(id)){   
-      id = id.join(",");
-    };    
-    
-    http.get({
-      host : cfg.serviceMap.dev.url,
-      port : cfg.serviceMap.dev.port,
-      path : '/exnodes?fields=id,parent,selfRef,mode,name&parent='+ id
-    }, function(http_res) {
-      var data = '';
-      http_res.on('data', function (chunk) {
-        data += chunk;
-      });
-      http_res.on('end',function() {
-        var obj = JSON.parse(data);
-        // console.log( obj );
-        var recArr = [];
-        var fileArr = [];
-        for (var i=0 ; i < obj.length ; i++) {
-          var it = obj[i];
-          if (it.mode == 'file') {
-            // console.log("emitting " , it); 
-            fileArr.push(it);
-          } else {
-            recArr.push(it.id);            //console.log("Proceeding with Id ",it.id);
-          }
-        };
-        // console.log("FIles " , fileArr);
-        client.emit('exnode_childFiles',{ arr : fileArr , emitId : emitId});
-        defer.resolve(recArr);
-        //getAllChildExnodeFiles(recArr, emitId);
-      });
-      http_res.on('error',function(e) {
-        console.log("Error for Id ",id);
-        defer.resolve([]);
-      });
-    });
-    return defer.promise;   
-  };
+  client.on('exnode_request',exnodeClient.onExnodeRequest(client));  
+  var getAllChildExFilesDriver = exnodeClient.getAllChildExFilesDriver(client);
+  var getAllChildExnodeFiles = exnodeClient.getAllChildExnodeFiles(client);
 
   client.on('exnode_getAllChildren', function(d) {
     // Do nothing for the time being 
@@ -536,170 +357,39 @@ module.exports = function(client) {
     });
     // getAllChildExnodeFiles(d.id , d.id);
   });
-  client.on('deleteOrderGroup',function(d) {
-    var usgsKey = d.key;
-    var username, password;
-    var orderId = d.orderId;
-    var isEncrypted = false;
-    var tokenStr;
-    var sep = "@@";
-    if (d.isToken) {
-      var pair = d.token.split(sep);
-      username = pair[0];
-      password = pair[1];
-      tokenStr = d.token;
-    } else {
-      var encrypt = new bdaApi.Encryption();
-      username = encrypt.encrypt(d.username);
-      password = encrypt.encrypt(d.password);
-      tokenStr = username + sep + password;
-    }
-    isEncrypted = true;
-    bdaApi.deleteOrderGroup(username, password, isEncrypted, orderId)
-      .then(function(r) {
-        // Log the getting orders
-        // cartLog("Hello");
-        var loguname = username;
-        if (isEncrypted) {
-          var encrypt = new bdaApi.Encryption();
-          loguname = encrypt.decrypt(username);
-        }
-        log.info({ username : loguname ,actionType : "deleteOrders" , orderId : orderId }, "Removing all orders for given username and orderId");
-        client.emit('cart_delete',{
-          "token" : tokenStr,
-          "res" : r,
-          "orderId" : orderId
-        });
-      });
-  });
-  client.on('getShoppingCart', function(d) {
-    var usgsKey = d.key;
-    var username, password;
-    var isEncrypted = false;
-    var tokenStr;
-    var sep = "@@";
-    if (d.isToken) {
-      var pair = d.token.split(sep);
-      username = pair[0];
-      password = pair[1];
-      tokenStr = d.token;
-    } else {
-      var encrypt = new bdaApi.Encryption();
-      username = encrypt.encrypt(d.username);
-      password = encrypt.encrypt(d.password);
-      tokenStr = username + sep + password;
-    }
-    isEncrypted = true;
-    bdaApi.getAllOrders(username, password, isEncrypted)    
-      .then(function(r) {
-        // Log the getting orders
-        // cartLog("Hello");
-        var loguname = username;
-        if (isEncrypted) {
-          var encrypt = new bdaApi.Encryption();
-          loguname = encrypt.decrypt(username);
-        }
-        log.info({ username : loguname , actionType : "getOrders" }, "Got all orders for given username");
-        
-        var EntityIdMap = {};
-        var items = r.map(function(x) {
-          EntityIdMap[x.entityId] = x;
-          return x.entityId;
-        });
-        // var items = r.data.orderItemBasket || [];
-        // items.push.apply(items,r.data.bulkDownloadItemBasket);
-        client.emit("cart_nodata", {
-          data: [],
-          size: items.length,
-          token: tokenStr
-        });
-        // The API can use any credentials - Hard coding
-        var uname = cfg.usgs_api_credentials.username,
-            pwd = cfg.usgs_api_credentials.password;
-        return usgsapi.login(uname, pwd)
-          .then(function(r) {
-            var usgsKey = r.data;
-            usgsapi.getMetaData(usgsKey, "LANDSAT_8", items)
-              .then(function(res) {
-                // Lets group results by orderId
-                var orderIdToDataMap = {};
-                res.data.forEach(function(x) {
-                  var orderId = EntityIdMap[x.entityId].orderId;
-                  if (!orderIdToDataMap[orderId])
-                    orderIdToDataMap[orderId] = [];
-                  var arr = orderIdToDataMap[orderId];
-                  arr.push(x);
-                });                
-                client.emit('cart_data_res', {
-                  data: orderIdToDataMap,//res.data,
-                  token: tokenStr
-                });
-                exnodeApi.getExnodeDataIfPresent(items, function(arr) {
-                  client.emit("cart_nodata", {
-                    data: arr,
-                    size: items.length,
-                    token: tokenStr
-                  });
-                  // console.log("Not present " , arr);
-                }, function(obj) {
-                  var retMap = {};
-                  obj.map(function(x) {
-                    var arr = retMap[nameToSceneId(x.name)] = retMap[nameToSceneId(x.name)] || [];
-                    arr.push(x);
-                  });
-                  client.emit("cart_data", {
-                    data: retMap,
-                    size: items.length,
-                    token: tokenStr
-                  });
-                  // console.log("Present " , arr);
-                });
-              });
-          });
-      })
-      .catch(function(x) {
-        if (x instanceof Error)
-          client.emit("cart_error", {
-            error: x
-          });
-        else
-          client.emit("cart_error", {
-            errorMsg: true,
-            error: x
-          });
-      });
-  });  
   
-  var _nodeLocationMap = {};
-  function getAllIpLocationMap(array , cb){
-    array = array || [];
-    var locMap = {};
-    var i =0;
-    function done(){
-      i++;
-      if(i >= array.length - 1){
-        cb(locMap);
-        // Kil it
-        i = -111111;
-      }
-    }
-    array.forEach(function(val) {
-      if(_nodeLocationMap[val]){
-        locMap[val] = _nodeLocationMap[val];
-        done();
-      } else
-        freegeoip.getLocation(val, function(err, obj) {
-	  if(err){
-	    done();
-	    return ;
-	  }
-	  locMap[val] = _nodeLocationMap[val] = [obj.longitude , obj.latitude];
-	  done();
-        });
-    });  
-  }
-}
+  client.on('deleteOrderGroup',cartClient.onDeleteOrder(client));
+  client.on('getShoppingCart', cartClient.getShoppingCart(client));    
+};
 
+// var _nodeLocationMap = {};
+// function getAllIpLocationMap(array , cb) {
+//   array = array || [];
+//   var locMap = {};
+//   var i =0;
+//   function done(){
+//     i++;
+//     if(i >= array.length - 1){
+//       cb(locMap);
+//       // Kil it
+//       i = -111111;
+//     }
+//   }
+//   array.forEach(function(val) {
+//     if(_nodeLocationMap[val]){
+//       locMap[val] = _nodeLocationMap[val];
+//       done();
+//     } else
+//       freegeoip.getLocation(val, function(err, obj) {
+// 	  if(err){
+// 	    done();
+// 	    return ;
+// 	  }
+// 	  locMap[val] = _nodeLocationMap[val] = [obj.longitude , obj.latitude];
+// 	  done();
+//       });
+//   });  
+// }
 // exnodeApi.getExnodeDataIfPresent(['LC80100262015146LGN00'],function(arr) {
 //   console.log(arr);
 // },function(arr) {

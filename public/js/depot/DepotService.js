@@ -99,28 +99,30 @@ function depotService($http, UnisService, CommChannel) {
 	  }
 	}
       }
-      // this search looks for matching ports, mapped to nodes->services->meas
-      UnisService.ports.forEach(function(p) {
-	if (p.properties && p.properties.ipv4 && p.properties.ipv4.address == ip) {
-	  UnisService.nodes.forEach(function(n) {
-	    if (n.ports) {
-	      n.ports.forEach(function(pref) {
-		if (unescape(pref.href) == unescape(p.selfRef)) {
-		  servs.forEach(function(s) {
-		    if (s.runningOn && unescape(s.runningOn.href) == unescape(n.selfRef)) {
-		      meas.forEach(function(m) {
-			if (unescape(m.service) == unescape(s.selfRef)) {
-			  metas.forEach(function(md) {
-			    if (unescape(md.parameters.measurement.href) == unescape(m.selfRef)) {
-			      addIfNew(md, metadatas);
-			    }})
-			}})
-		    }})
-		}})
-	    }})
-	}});
-    }
-    
+      //this search looks for matching ports, mapped to nodes->services->meas
+      var pmap = UnisService.portsIpMap;
+      //var nmap = UnisService.nodesPrefHrefMap;
+      var smap = UnisService.servicesRunonMap;
+      var measmap = UnisService.measServMap;
+      var metamap = UnisService.metaMap;
+      // creating a map for each query in UnisService - Leaving out just nodes - Will come back later when things seem fine
+      (pmap[ip] || []).forEach(function(p) {
+	UnisService.nodes.forEach(function(n) {
+      	    if (n.ports) {
+      	      n.ports.forEach(function(pref) {
+      		if (unescape(pref.href) == unescape(p.selfRef)) {
+      		  (smap[unescape(n.selfRef)]||[]).forEach(function(s) {
+		    (measmap[unescape(s.selfRef)]||[]).forEach(function(m) {
+      		      if (true && unescape(m.service) == unescape(s.selfRef)) {
+      			(metamap[unescape(m.selfRef)]||[]).forEach(function(md) {
+      			  addIfNew(md, metadatas);
+      			});
+      		      }});
+      		    });
+      		}});
+      	    }});
+      });       
+    }    
     var ret = [];
     for (var key in metadatas) {
       ret.push(metadatas[key])
@@ -130,27 +132,50 @@ function depotService($http, UnisService, CommChannel) {
   
   function getServiceByMeta(md) {
     var ret = [];
-    UnisService.nodes.forEach(function(n) {
-      if (n.ports && (n.selfRef == md.subject.href)) {
-	UnisService.ports.forEach(function(p) {
-	  n.ports.forEach(function(pref) {
-	    if (unescape(pref.href) == unescape(p.selfRef)) {
-	      var s = UnisService.services;
-	      for (var i=0; i<s.length; i++) {
-		if (s[i].listeners) {
-		  s[i].listeners.forEach(function(l) {
-		    var ip = l.tcp.split('/')[0];
-		    if (p.address && p.address.address == ip) {
-		      ret.push(s[i]);
-		    }
-		  })
-		}
-	      }
-	    }
-	  })
-	})
-      }
-    })
+    var pmap = UnisService.portsSelfRefMap;
+    var nmap = UnisService.nodeSelfRefMap;
+    var smap = UnisService.servicesRunonMap;
+    var measmap = UnisService.measServMap;
+    var metamap = UnisService.metaMap;
+    (nmap[md.subject.href] || []).forEach(function(n) {
+      if (n.ports && $.isArray(n.ports))
+      n.ports.forEach(function(pref) {
+    	(pmap[pref.href]||[]).forEach(function(p) {
+    	  var s = UnisService.services;
+    	  for (var i=0; i<s.length; i++) {
+    	    if (s[i].listeners) {
+    	      s[i].listeners.forEach(function(l) {
+    		var ip = l.tcp.split('/')[0];
+    		if (p.address && p.address.address == ip) {
+    		  ret.push(s[i]);
+    		}
+    	      });
+    	    }
+    	  }
+    	});
+      });
+    });
+    // UnisService.nodes.forEach(function(n) {
+    //   if (n.ports && (n.selfRef == md.subject.href)) {
+    // 	UnisService.ports.forEach(function(p) {
+    // 	  n.ports.forEach(function(pref) {
+    // 	    if (unescape(pref.href) == unescape(p.selfRef)) {
+    // 	      var s = UnisService.services;
+    // 	      for (var i=0; i<s.length; i++) {
+    // 		if (s[i].listeners) {
+    // 		  s[i].listeners.forEach(function(l) {
+    // 		    var ip = l.tcp.split('/')[0];
+    // 		    if (p.address && p.address.address == ip) {
+    // 		      ret.push(s[i]);
+    // 		    }
+    // 		  })
+    // 		}
+    // 	      }
+    // 	    }
+    // 	  })
+    // 	})
+    //   }
+    // })
     return getUniqueById(ret);
   };
 
@@ -219,7 +244,7 @@ function depotService($http, UnisService, CommChannel) {
 	    }
 	  }
 	}
-      })
+      });
     }
   };
   

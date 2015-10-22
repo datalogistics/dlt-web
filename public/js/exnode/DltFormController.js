@@ -322,7 +322,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
 	  x.isExnode = true;
 	  x.exFileArr = x.exFileArr || [];	  
 	  x.exFileArr.push.apply(x.exFileArr,map[x.entityId]);
-	  obj.exMap = obj.exMap || {} ;
+	  x.exMap = x.exMap || {} ;
 	}
       });
     }
