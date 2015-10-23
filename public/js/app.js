@@ -108,11 +108,19 @@ angular.module('periApp', ['ngRoute',
                }).
                when('/downloads/',{
                  templateUrl: 'views/download_map.html',
-                 controller: 'DownloadMapController'
+                 controller: 'DownloadMapController',
+		 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
                }).
                when('/downloads/filter',{
                  templateUrl: 'views/download_map.html',
-                 controller: 'DownloadMapController'
+                 controller: 'DownloadMapController',
+		 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
                })
                .otherwise({redirectTo: '/'});
 
