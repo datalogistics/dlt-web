@@ -67,7 +67,6 @@ module.exports = function(client) {
     var conn = data.connections
     var emitData = {sessionId: id, filename: name, size: size, connections: conn};
     
-
     //TODO: Add some session-status tracking information here -- Open, finished, disconnected, timedout???
     data.exists = true;
     data.updates = []
@@ -123,8 +122,8 @@ function rememberListener(client) {
 }
 
 //Cleanup stored information -----
-var timeout        = 5 * (6 * 1e4);    // clear client socket after 5 minutes of inactivity
-var check_interval = 1 * (6 * 1e4);    // check all registered clients every minute
+var timeout        = .5 * (6 * 1e4);    // clear client socket after 5 minutes of inactivity
+var check_interval = .1 * (6 * 1e4);    // check all registered clients every minute
 
 setInterval(function(){
   var time = Date.now()

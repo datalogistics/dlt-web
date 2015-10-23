@@ -19,7 +19,7 @@ function formatRate(ret) {
 angular.module('avDirective', [])
   .controller('avController', function($scope, $rootScope, $filter, UnisService, DepotService) {
     getDepotCount = function() {
-      var count = $filter('filter')(UnisService.services, { serviceType: 'ibp_server' }).length;
+      var count = UnisService.services.length;
       // If count is 0 , its still loading 
       if (count > 0)
         return "<div class='avtext'>"+ count + "</div>";        

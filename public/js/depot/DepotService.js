@@ -4,68 +4,6 @@
  * DepotService.js
  */
 
-var ETS = {
-  'used': "ps:tools:blipp:ibp_server:resource:usage:used",
-  'free': "ps:tools:blipp:ibp_server:resource:usage:free",
-  'user': "ps:tools:blipp:linux:cpu:utilization:user",
-  'sys' : "ps:tools:blipp:linux:cpu:utilization:system",
-  'in'  : "ps:tools:blipp:linux:network:utilization:bytes:in",
-  'out' : "ps:tools:blipp:linux:network:utilization:bytes:out"
-};
-
-var MY_ETS = [ETS.used, ETS.free, ETS.in, ETS.out];
-
-var format_GB = function(){
-  return function(d){
-    return (d/1e9).toFixed(2); // GB
-  }
-}
-var format_rate = function(){
-  return function(d){
-    return (d/1).toFixed(3);
-  }
-}
-var format_percent = function() {
-  return function(d) {return (d*100).toFixed(2)}
-}
-var format_timestamp = function(){
-  return function(d){
-    var ts = d/1e3;
-    return d3.time.format('%X')(new Date(ts));
-  }
-}
-
-var ETS_CHART_CONFIG = {}
-ETS_CHART_CONFIG['used'] = {selector: "#CHART-Time-GB",
-			      xformat: format_timestamp, yformat: format_GB};
-ETS_CHART_CONFIG['free'] = {selector: "#CHART-Time-GB",
-			      xformat: format_timestamp, yformat: format_GB};
-ETS_CHART_CONFIG['user'] = {selector: "#CHART-Time-Percent",
-			      xformat: format_timestamp, yformat: format_percent};
-ETS_CHART_CONFIG['system']  = {selector: "#CHART-Time-Percent",
-			      xformat: format_timestamp, yformat: format_percent};
-ETS_CHART_CONFIG['in']   = {selector: "#CHART-Time-Rate",
-			      xformat: format_timestamp, yformat: format_rate};
-ETS_CHART_CONFIG['out']  = {selector: "#CHART-Time-Rate",
-			      xformat: format_timestamp, yformat: format_rate};
-ETS_CHART_CONFIG[ETS.used] = {selector: "#CHART-Time-GB",
-			      xformat: format_timestamp, yformat: format_GB};
-ETS_CHART_CONFIG[ETS.free] = {selector: "#CHART-Time-GB",
-			      xformat: format_timestamp, yformat: format_GB};
-ETS_CHART_CONFIG[ETS.user] = {selector: "#CHART-Time-Percent",
-			      xformat: format_timestamp, yformat: format_percent};
-ETS_CHART_CONFIG[ETS.sys]  = {selector: "#CHART-Time-Percent",
-			      xformat: format_timestamp, yformat: format_percent};
-ETS_CHART_CONFIG[ETS.in]   = {selector: "#CHART-Time-Rate",
-			      xformat: format_timestamp, yformat: format_rate};
-ETS_CHART_CONFIG[ETS.out]  = {selector: "#CHART-Time-Rate",
-			      xformat: format_timestamp, yformat: format_rate};
-
-function getETSChartConfig(key){  
-  var arr = key.split(":");
-  return ETS_CHART_CONFIG[arr[arr.length-1]];
-};
-
 function depotService($http, UnisService, CommChannel) {
   var service = {};
   
@@ -99,28 +37,30 @@ function depotService($http, UnisService, CommChannel) {
 	  }
 	}
       }
-      // this search looks for matching ports, mapped to nodes->services->meas
-      UnisService.ports.forEach(function(p) {
-	if (p.properties && p.properties.ipv4 && p.properties.ipv4.address == ip) {
-	  UnisService.nodes.forEach(function(n) {
-	    if (n.ports) {
-	      n.ports.forEach(function(pref) {
-		if (unescape(pref.href) == unescape(p.selfRef)) {
-		  servs.forEach(function(s) {
-		    if (s.runningOn && unescape(s.runningOn.href) == unescape(n.selfRef)) {
-		      meas.forEach(function(m) {
-			if (unescape(m.service) == unescape(s.selfRef)) {
-			  metas.forEach(function(md) {
-			    if (unescape(md.parameters.measurement.href) == unescape(m.selfRef)) {
-			      addIfNew(md, metadatas);
-			    }})
-			}})
-		    }})
-		}})
-	    }})
-	}});
-    }
-    
+      //this search looks for matching ports, mapped to nodes->services->meas
+      var pmap = UnisService.portsIpMap;
+      //var nmap = UnisService.nodesPrefHrefMap;
+      var smap = UnisService.servicesRunonMap;
+      var measmap = UnisService.measServMap;
+      var metamap = UnisService.metaMap;
+      // creating a map for each query in UnisService - Leaving out just nodes - Will come back later when things seem fine
+      (pmap[ip] || []).forEach(function(p) {
+	UnisService.nodes.forEach(function(n) {
+      	    if (n.ports) {
+      	      n.ports.forEach(function(pref) {
+      		if (unescape(pref.href) == unescape(p.selfRef)) {
+      		  (smap[unescape(n.selfRef)]||[]).forEach(function(s) {
+		    (measmap[unescape(s.selfRef)]||[]).forEach(function(m) {
+      		      if (true && unescape(m.service) == unescape(s.selfRef)) {
+      			(metamap[unescape(m.selfRef)]||[]).forEach(function(md) {
+      			  addIfNew(md, metadatas);
+      			});
+      		      }});
+      		    });
+      		}});
+      	    }});
+      });       
+    }    
     var ret = [];
     for (var key in metadatas) {
       ret.push(metadatas[key])
@@ -130,27 +70,50 @@ function depotService($http, UnisService, CommChannel) {
   
   function getServiceByMeta(md) {
     var ret = [];
-    UnisService.nodes.forEach(function(n) {
-      if (n.ports && (n.selfRef == md.subject.href)) {
-	UnisService.ports.forEach(function(p) {
-	  n.ports.forEach(function(pref) {
-	    if (unescape(pref.href) == unescape(p.selfRef)) {
-	      var s = UnisService.services;
-	      for (var i=0; i<s.length; i++) {
-		if (s[i].listeners) {
-		  s[i].listeners.forEach(function(l) {
-		    var ip = l.tcp.split('/')[0];
-		    if (p.address && p.address.address == ip) {
-		      ret.push(s[i]);
-		    }
-		  })
-		}
-	      }
-	    }
-	  })
-	})
-      }
-    })
+    var pmap = UnisService.portsSelfRefMap;
+    var nmap = UnisService.nodeSelfRefMap;
+    var smap = UnisService.servicesRunonMap;
+    var measmap = UnisService.measServMap;
+    var metamap = UnisService.metaMap;
+    (nmap[md.subject.href] || []).forEach(function(n) {
+      if (n.ports && $.isArray(n.ports))
+      n.ports.forEach(function(pref) {
+    	(pmap[pref.href]||[]).forEach(function(p) {
+    	  var s = UnisService.services;
+    	  for (var i=0; i<s.length; i++) {
+    	    if (s[i].listeners) {
+    	      s[i].listeners.forEach(function(l) {
+    		var ip = l.tcp.split('/')[0];
+    		if (p.address && p.address.address == ip) {
+    		  ret.push(s[i]);
+    		}
+    	      });
+    	    }
+    	  }
+    	});
+      });
+    });
+    // UnisService.nodes.forEach(function(n) {
+    //   if (n.ports && (n.selfRef == md.subject.href)) {
+    // 	UnisService.ports.forEach(function(p) {
+    // 	  n.ports.forEach(function(pref) {
+    // 	    if (unescape(pref.href) == unescape(p.selfRef)) {
+    // 	      var s = UnisService.services;
+    // 	      for (var i=0; i<s.length; i++) {
+    // 		if (s[i].listeners) {
+    // 		  s[i].listeners.forEach(function(l) {
+    // 		    var ip = l.tcp.split('/')[0];
+    // 		    if (p.address && p.address.address == ip) {
+    // 		      ret.push(s[i]);
+    // 		    }
+    // 		  })
+    // 		}
+    // 	      }
+    // 	    }
+    // 	  })
+    // 	})
+    //   }
+    // })
     return getUniqueById(ret);
   };
 
@@ -219,7 +182,7 @@ function depotService($http, UnisService, CommChannel) {
 	    }
 	  }
 	}
-      })
+      });
     }
   };
   
@@ -232,7 +195,7 @@ function depotService($http, UnisService, CommChannel) {
     getValues(depot);
     service.depots[s.id] = depot;
     // save a reference to the depot object in the service entry
-    s.depot = depot;
+    s.sref = depot;
   };
   
   // depot tracking service waits until UNIS has data

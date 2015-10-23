@@ -9,24 +9,24 @@ var DLT_PROPS = {
   FreeGeoIpUrl :"https://www.freegeoip.net/json/"
 };
 angular.module('periApp', 
-        ['ngRoute',
-        'ngCookies',
-			   'jsTree.directive',
-			   'angular-loading-bar',
-			   'ngAnimate',
-			   'schemaForm',
-         'ui.utils', 
-         'ui.bootstrap',
-         'ui.bootstrap-slider',
-         'nvd3ChartDirectives',
-         'pubsub',
-			   'main',
-			   'unis',
-			   'exnode',
-			   'depot',                           
-         'auth',
-			   'map'])
-  .run(function($rootScope, UnisService, DepotService, CommChannel,$modal,$cookies,$http) {
+               ['ngRoute',
+		'ngCookies',
+		'jsTree.directive',
+		'angular-loading-bar',
+		'ngAnimate',
+		'schemaForm',
+		'ui.utils', 
+		'ui.bootstrap',
+		'ui.bootstrap-slider',
+		'nvd3ChartDirectives',
+		'pubsub',
+		'main',
+		'unis',
+		'exnode',
+		'depot',
+		'auth',
+		'map'])
+  .run(function($rootScope,UnisService,DepotService,BlippService,CommChannel,$modal,$cookies,$http) {
     $rootScope.unis = UnisService;
     $rootScope.depot = DepotService;
     $rootScope.loggedIn = false;
