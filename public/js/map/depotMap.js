@@ -92,7 +92,8 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
     if (depot_id !== undefined) {circ.attr('depot_id', depot_id)}
     return circ;
   }
-  
+  var name = name + (port ? ":" + port : "")
+
   if (nodes.empty()) {
     var group = svg.append("g")
       .attr("transform", translate)
@@ -104,7 +105,7 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       .attr('stroke',"#76231F")
       .attr('stroke-width', '1.25')
       .attr('class', "depotNode")
-      .attr('name', name + ":" + port)
+      .attr('name', name)
       .attr('location', lonLat)
       
     return invisiblePoint(group)
@@ -127,7 +128,7 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       
       var super_circ = group.select(".depotNode")
       var existingName = super_circ.attr("name")
-      super_circ.attr("name", name + ":" + port + "|" + existingName)
+      super_circ.attr("name", name + "|" + existingName)
       return invisiblePoint(group)
     });
   }
