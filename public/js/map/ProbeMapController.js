@@ -95,7 +95,7 @@ function showPaths(map, pathData, nodeMap) {
     }).map(function(e) {
       var pairs = []
       for (var i=0; i< e.locations.length-1; i++) {
-        pairs.push({source: e.locations[0], sink: e.locations[1]})
+        pairs.push({source: e.locations[i], sink: e.locations[i+1]})
       }
       return pairs.map(p => {return {locations: p, healthiness: e.healthiness, status: e.status}})
     }).reduce((acc, e) => acc.concat(e), [])
