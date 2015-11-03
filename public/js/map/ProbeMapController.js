@@ -79,8 +79,7 @@ function showLinks(map, linkData, portMap) {
 
 var healthScale = d3.scale.ordinal().domain(["GOOD", "UNKNOWN", "BAD"]).range(["#98df8a", "#ffbb78", "#d62728"])
 function hopScale (d) {
-  if (d.type && d.type.toUpperCase() == "LINK") {return "black"}
-  else if (d.status.toUpperCase() == "OFF") {return "gray"}
+  if (d.type && d.type.toUpperCase() == "LINK") {return "gray"}
   else if (healthScale.domain().indexOf(d.healthiness.toUpperCase()) < 0) {return healthScale("UNKNOWN")}
   else {return healthScale(d.healthiness.toUpperCase())}
 }
@@ -99,6 +98,7 @@ function showPaths(map, pathData, nodeMap) {
       }
       return pairs.map(p => {return {locations: p, healthiness: e.healthiness, status: e.status}})
     }).reduce((acc, e) => acc.concat(e), [])
+    .filter(e => e.healthiness.toUpperCase() != "OFF")
 
   var pathKey = function(loc){return loc.source[0]+"_"+loc.source[1]+"_"+loc.sink[0]+"_"+loc.sink[1]}
   var pairs = new Map() 
@@ -113,7 +113,7 @@ function showPaths(map, pathData, nodeMap) {
   var overlay = map.svg.insert("g", "#overlay").attr("name", "hops")
   var hops = overlay.selectAll(".link").data(locations)
   hops.enter().append("path")
-      .attr("d", d => link_arc(d.locations.source, d.locations.sink, d.count))
+      .attr("d", d => link_arc(d.locations.source, d.locations.sink, d.count, d.healthiness))
       .attr("stroke-width", 2)
       .attr("fill", "none")
       .attr("count", d => d.count)
@@ -131,7 +131,6 @@ function linkHopLegend(map) {
   var entries = [{status: "ON", healthiness: "good", label: "Good"},
                  {status: "ON", healthiness: "unknown", label: "Unknown/Other"},
                  {status: "ON", healthiness: "bad", label: "bad"},
-                 {status: "OFF", label: "Hop off"},
                  {type: "link", label: "Link"}]
 
   entries.forEach((e,i) => legendEntry(legend, e, e.label, 0, 10+10*i))
@@ -155,7 +154,7 @@ function linkHopLegend(map) {
 
   }
 }
-function link_arc(source, target, i) {
+function link_arc(source, target, i, health) {
   var dx = (target[0] - source[0])+(15*i)
       dy = (target[1] - source[1])+(15*i)
       dr = Math.sqrt(dx * dx + dy * dy);
