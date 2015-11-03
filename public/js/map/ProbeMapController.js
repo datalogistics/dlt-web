@@ -155,10 +155,12 @@ function linkHopLegend(map) {
   }
 }
 function link_arc(source, target, i, health) {
-  var dx = (target[0] - source[0])+(15*i)
-      dy = (target[1] - source[1])+(15*i)
+  health = health.toUpperCase()
+  var rotation = (health == "GOOD" ? 0 : (health == "BAD" ? -45 : 45))
+  var dx = (target[0] - source[0])+(15*i),
+      dy = (target[1] - source[1])+(15*i),
       dr = Math.sqrt(dx * dx + dy * dy);
-  return "M" + source[0] + "," + source[1] + "A" + dr + "," + dr + " 0 0,1 " + target[0] + "," + target[1];
+  return "M" + source[0] + "," + source[1] + "A" + dr + "," + 1.5*dr + " " + rotation + " 0 1 " + target[0] + "," + target[1];
 }
 
 function geoMap(selector, width, height, svg) {
