@@ -24,7 +24,7 @@ function depotNewWinGraphController($scope, $routeParams, $location, $filter, $r
       var chartconfig = getETSChartConfig(eventType);
       d3.select(chartconfig.selector).attr("style", "")
       
-      UnisService.getDataId(metadata_id, null, function(data) {
+      UnisService.getDataId(metadata_id, 60, function(data) {
         if (typeof data =='string') {
 	  data = JSON.parse(data);          
 	}
@@ -37,6 +37,7 @@ function depotNewWinGraphController($scope, $routeParams, $location, $filter, $r
         var arr = [];
         if ($.isArray(data)) {
           arr = data.reverse();
+          arrayData.splice(0, arr.length);
           $scope.xAxisTickFormat_Date_Format = chartconfig.xformat;
           $scope.yAxisFormatFunction = chartconfig.yformat;
 	  $scope.eventType = eventType;
@@ -44,7 +45,7 @@ function depotNewWinGraphController($scope, $routeParams, $location, $filter, $r
           arr = data[metadata_id];
           // Splice the existing array by that many entries so that the graph actually moves instead of compressing
           // There might be a much better way to do this, e.g time difference based - this causes ugly shakes
-          arrayData.splice(0,arr.length);
+          arrayData.splice(0, arr.length);
           // Get the max in this array          
           arrayData.forEach(function(x) {
             if (x[1] > max) {
