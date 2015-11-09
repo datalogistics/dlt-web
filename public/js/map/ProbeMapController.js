@@ -98,7 +98,7 @@ function showPaths(map, pathData, nodeMap) {
       }
       return pairs.map(p => {return {locations: p, healthiness: e.healthiness, status: e.status}})
     }).reduce((acc, e) => acc.concat(e), [])
-    .filter(e => e.healthiness.toUpperCase() != "OFF")
+    .filter(e => e.status.toUpperCase() != "OFF")
 
   var pathKey = function(loc){return loc.source[0]+"_"+loc.source[1]+"_"+loc.sink[0]+"_"+loc.sink[1]}
   var pairs = new Map() 
