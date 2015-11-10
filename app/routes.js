@@ -245,6 +245,8 @@ module.exports = function(app) {
   app.get('/api/topologies', getGenericHandler({path : '/topologies', name : 'topologies' , handler : registerGenericHandler}));
   app.get('/api/domains', getGenericHandler({path : '/domains', name : 'domains' , handler : registerGenericHandler}));
   app.get('/api/nodes', getGenericHandler({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
+  app.get('/api/links', getGenericHandler({path : '/links', name : 'links' , handler : registerGenericHandler}));
+  app.get('/api/paths', getGenericHandler({path : '/paths', name : 'paths' , handler : registerGenericHandler}));
   app.get('/api/services', getGenericHandler({path : '/services', name : 'services' , handler : registerGenericHandler}));
   app.get('/api/exnodes', getGenericHandler({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));
   app.get('/api/measurements', getGenericHandler({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));

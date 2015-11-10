@@ -1,56 +1,47 @@
-function probeMapController($scope, $routeParams, $http, UnisService) {
-  //TODO: Maybe move graph-loading stuff to the server (like download tracking data) so the UNIS instance isn't hard-coded
-  var topoUrl = "http://dev.incntre.iu.edu:8889/domains/" 
-  if ($routeParams.domain) {topoUrl = topoUrl + $routeParams.domain}
-    
-    
-  //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
-  //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_es.net"
+function probeMapController($scope, $routeParams, $http, UnisService, CommChannel) {
   var svg = d3.select("#probeMap").append("svg")
                .attr("width", 1200)
                .attr("height", 500)
 
   var map = geoMap("#probeMap", 960, 500, svg)
-  loadNetwork($http, map)
-    .then(function() {linkHopLegend(map)})
-    .then(function() {
-      //Cleanup functions here!
-      $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
-    })
-    .catch(e => {throw e})
+  linkHopLegend(map)
+  var network = loadNetwork(UnisService, map)
 
+  CommChannel.onNewData("path_data", function(data) {
+    console.log("path data response...")
+    console.log(UnisService.paths)
+
+    showPaths(map, UnisService.paths, network)
+  })
+  
+  //Cleanup functions here!
+  $scope.$on("$destroy", function() {
+    d3.selectAll("#map-tool-tip").each(function() {this.remove()})  //Cleanup the tooltip object when you navigate away
+  })
 }
 
-function loadNetwork($http, map) {
-  var nodesURL = "http://dev.incntre.iu.edu:8889/nodes"
-  var linksURL = "http://dev.incntre.iu.edu:8889/links"
-  var pathsURL = "http://dev.incntre.iu.edu:8889/paths"
+function loadNetwork(UnisService, map) {
+  var nodes = UnisService.nodes 
+  var links = UnisService.links 
+  var paths = UnisService.paths 
 
-  var allNodes = $http.get(nodesURL).then(rslt => rslt.data)
-  var allLinks = $http.get(linksURL).then(rslt => rslt.data)
-  var allPaths = $http.get(pathsURL).then(rslt => rslt.data)
+  var portMap = nodes.reduce((acc, e) => {
+    if (e.port) {e.port.forEach(p => acc.set(p.href, e))}
+    if (e.ports) {e.ports.forEach(p => acc.set(p.href, e))}
+    return acc
+  }, new Map())
 
-  var loadNetwork = Promise.all([allNodes, allLinks, allPaths])
-                        .then(function(rslt) {
-                          var nodes = rslt[0]
-                          var links = rslt[1]
-                          var paths = rslt[2]
+  var nodeMap = nodes.reduce((acc, e) => {acc.set(e.selfRef, e); return acc}, new Map())
+  
+  //Setup map parts
+  map.svg.insert("g", "#overlay").attr("id", "hops")
+  map.svg.insert("g", "#overlay").attr("id", "links")
 
-                          var portMap = nodes.reduce((acc, e) => {
-                            if (e.port) {e.port.forEach(p => acc.set(p.href, e))}
-                            if (e.ports) {e.ports.forEach(p => acc.set(p.href, e))}
-                            return acc
-                          }, new Map())
-
-                          var nodeMap = nodes.reduce((acc, e) => {acc.set(e.selfRef, e); return acc}, new Map())
-
-                          showNodes(map, nodes)
-                          showLinks(map, links, portMap)
-                          showPaths(map, paths, nodeMap)
-                        })
-                        .catch(e => {throw e})
+  showNodes(map, nodes)
+  showLinks(map, links, portMap)
+  showPaths(map, paths, nodeMap)
                       
-  return loadNetwork 
+  return nodeMap
 }
 
 function showNodes(map, nodes) {
@@ -65,7 +56,7 @@ function showLinks(map, linkData, portMap) {
           .map(e => {return {source: [e.source.longitude, e.source.latitude], sink: [e.sink.longitude, e.sink.latitude]}})
           .map(e => {return {source: map.projection(e.source), sink: map.projection(e.sink)}})
 
-  var overlay = map.svg.insert("g", "#overlay").attr("name", "links")
+  var overlay = map.svg.select("#links")
   var links = overlay.selectAll(".link").data(locations)
   links.enter().append("line")
        .attr("class", "link")
@@ -110,15 +101,17 @@ function showPaths(map, pathData, nodeMap) {
     return e
   })
 
-  var overlay = map.svg.insert("g", "#overlay").attr("name", "hops")
-  var hops = overlay.selectAll(".link").data(locations)
+  var overlay = map.svg.select("#hops")
+  var hops = overlay.selectAll(".hop").data(locations)
+  
+  hops.exit().remove()
   hops.enter().append("path")
-      .attr("d", d => link_arc(d.locations.source, d.locations.sink, d.count, d.healthiness))
+  hops.attr("d", d => link_arc(d.locations.source, d.locations.sink, d.count, d.healthiness))
+      .attr("class", "hop")
       .attr("stroke-width", 2)
       .attr("fill", "none")
       .attr("count", d => d.count)
       .attr("stroke", hopScale)
-
 }
 
 
@@ -130,7 +123,7 @@ function linkHopLegend(map) {
 
   var entries = [{status: "ON", healthiness: "good", label: "Good"},
                  {status: "ON", healthiness: "unknown", label: "Unknown/Other"},
-                 {status: "ON", healthiness: "bad", label: "bad"},
+                 {status: "ON", healthiness: "bad", label: "Bad"},
                  {type: "link", label: "Link"}]
 
   entries.forEach((e,i) => legendEntry(legend, e, e.label, 0, 10+10*i))

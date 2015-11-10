@@ -16,6 +16,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   service.measurements = [];
   service.metadata     = [];
   service.services     = [];
+  service.paths        = [];
 
   getUniqueById = function(ary) {
     var curr = [];
@@ -291,6 +292,27 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     CommChannel.newData('new_port', data);
   });
   
+  SocketService.on('path_data', function(data) {
+    if (typeof data =='string') {data = JSON.parse(data);}
+
+    service.paths = service.paths.filter(path => !samePath(data, path))
+    service.paths.push(data)
+
+    //Compare paths to a reference path.  Paths are the same if they have
+    //  the same source, destination and hops in the same order
+    function samePath(ref, alt) {
+        return ref.src == alt.src 
+                 && ref.dst == alt.dst
+                 && ref.hops.length == alt.hops.length
+                 && zip(ref.hops, alt.hops).map(pair => pair[0].ref == pair[1].ref).reduce((a,b) => a || b, true)
+    }
+    function zip(left, right) {return left.map(function(e, i) {return [left[i], right[i]]})}
+
+
+    CommChannel.newData('path_data', data);
+  });
+
+  
   // We start here when the service is instantiated
   function makeMap(arr,key,isUnescape) {
     var get = function (model, path, def) {
@@ -322,13 +344,17 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       $http.get('/api/ports', { cache: true}),
       $http.get('/api/measurements', { cache: true}),
       $http.get('/api/metadata', { cache: true}),
-      $http.get('/api/services', { cache: true})
+      $http.get('/api/services', { cache: true}),
+      $http.get('/api/links', { cache: true}),
+      $http.get('/api/paths', { cache: true})
     ]).then(function(res) {
       service.nodes = getUniqueById(res[0].data);
       service.ports = getUniqueById(res[1].data);            
       service.measurements = getUniqueById(res[2].data);
       service.metadata = getUniqueById(res[3].data);
       service.services = getUniqueById(res[4].data);
+      service.links = getUniqueById(res[5].data);
+      service.paths = getUniqueById(res[6].data);
 
       service.nodeSelfRefMap = makeMap(service.nodes,"selfRef");
       service.portsSelfRefMap = makeMap(service.ports,"selfRef");
@@ -343,6 +369,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       SocketService.emit('port_request', {});
       SocketService.emit('measurement_request', {});
       SocketService.emit('metadata_request', {});
+      SocketService.emit('path_request', {});
       return finish();
     });
     return initServicePromise;
