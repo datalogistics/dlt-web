@@ -35,9 +35,9 @@
           <td>{{ service.ts / 1000 | date:'yyyy-MM-dd HH:mm:ss' }}</td>
           <td>{{service.location.institution}}</td>
           <td><button ng-click="showMap(service.id)" class="btn btn-info">{{service.location.city}} {{service.location.state}}</button></td>
-          <td ng-repeat="metadata in getServiceMetadata(service)">
-		  <button ng-click="showData(metadata,service.location.institution || service.accessPoint,getButtonName(metadata,service))"
-                    class="btn btn-info">{{getMetadataShortET(metadata,service)}}</button></td>
+          <td><span  ng-repeat="metadata in getServiceMetadata(service)"><!--
+	     --><button ng-click="showData(metadata,service.location.institution || service.accessPoint,getButtonName(metadata,service))"
+                    class="btn btn-info">{{getMetadataShortET(metadata,service)}}</button>&nbsp</span></td>
         </tbody>
       </table>
     </accordion-group>

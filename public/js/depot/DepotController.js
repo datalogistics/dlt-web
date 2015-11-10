@@ -194,6 +194,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
 	   ss = "N/A";
 	 };
     }
+    return arr.pop()
     return arr.pop() + " (" + ss + ")";
   };
   

@@ -27,11 +27,16 @@ function getLocation(ap,obj) {
     return q.thenResolve();
   } else {
     var prom = q.defer();
+    console.log(url+name);
     request(url + name, function (err, r, resp) {
-      var res = JSON.parse(resp);
-      locCache[name] = res;
-      updateLocation(obj,res);
-      prom.resolve();
+      try {
+	var res = JSON.parse(resp);
+	locCache[name] = res;
+	updateLocation(obj,res);
+	prom.resolve();
+      } catch(e) {
+	prom.resolve();
+      }
     });
     return prom.promise;
   }
