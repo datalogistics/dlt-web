@@ -295,19 +295,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   SocketService.on('path_data', function(data) {
     if (typeof data =='string') {data = JSON.parse(data);}
 
-    service.paths = service.paths.filter(path => !samePath(data, path))
+    service.paths = service.paths.filter(path => (path.id != data.id))
     service.paths.push(data)
-
-    //Compare paths to a reference path.  Paths are the same if they have
-    //  the same source, destination and hops in the same order
-    function samePath(ref, alt) {
-        return ref.src == alt.src 
-                 && ref.dst == alt.dst
-                 && ref.hops.length == alt.hops.length
-                 && zip(ref.hops, alt.hops).map(pair => pair[0].ref == pair[1].ref).reduce((a,b) => a || b, true)
-    }
-    function zip(left, right) {return left.map(function(e, i) {return [left[i], right[i]]})}
-
 
     CommChannel.newData('path_data', data);
   });
