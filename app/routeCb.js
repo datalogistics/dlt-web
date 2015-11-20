@@ -2,79 +2,71 @@ var _ = require('underscore');
 var q = require('q');
 var cfg = require('../properties');
 var request = require('request');
-var locCache = {};
-var errorCache = {}; // The ignore list
+var promCache = {};
 var zipcodes = require('zipcodes');
-
 function updateLocation(obj,res) {
-  var loc = obj.location = obj.location || {};
-  loc.latitude = loc.latitude || res.latitude;
-  loc.longitude = loc.longitude || res.longitude;
-  loc.city = loc.city || res.city;
-  loc.state = loc.state || res.region_code;
-}
-function updateZLocation(obj,res) {
   var loc = obj.location = obj.location || {};
   loc.latitude = loc.latitude || res.latitude;
   loc.longitude = loc.longitude || res.longitude;
   loc.city = loc.city || res.city;
   loc.state = loc.state || res.state;
 }
-
-function getLocation(ap,obj) {  
-  var url = cfg.freegeoipUrl + "/json/";
-  if (obj.location && obj.location.city && obj.location.state && obj.location.latitude && obj.location.longitude && obj.location.zipcode) {
-    // Do nothing - already has everything
-    return q.thenResolve();
-  } else if (obj.location && obj.location.zipcode) {
-    // Use the zipcode to resolve
-    var loc = zipcodes.lookup(obj.location.zipcode);
-    if (loc.city) {      
-      updateZLocation(obj,loc);
-      return q.thenResolve();
-    }
-  } else {
-    var name;
-    try {
-      name = obj.accessPoint.split(':')[1].replace('//', '');    
-    } catch(e) {
-      // Ignore 
-      return q.thenResolve();
-    }
-    if (errorCache[name]) {
-      // Ignore
-      return q.thenResolve();
-    } else if (locCache[name]) {      
-      return locCache.then(function(res) {
-	if (!res.error)
-	  updateLocation(obj,res);
-	return true;
-      });
-    } else {
-      var prom = q.defer();
-      request(url + name, function (err, r, resp) {
-	try {
-	  var res = JSON.parse(resp);
-	  prom.resolve(res);
-	}catch(e) {
-	  console.log("Unable to resovle location ",name);
-	  errorCache[name] = true;
-	  prom.resolve({error:true});
-	}
-      });
-      locCache[name] = prom.promise;
-      return locCache[name].then(function(res) {
-	console.log(res);
-	if (!res.error)
-	  updateLocation(obj,res);
-	return true;
-      });
-    }
+function getLocation(ap,obj) {
+  // Just don't get location if it exists 
+  if (obj && obj.location) {
+    var lc = obj.location;
+    if (lc.city && lc.state && lc.latitude && lc.longitude)
+      return q.resolve();
   }
-  return q.thenResolve();
+  
+  var url = cfg.freegeoipUrl + "/json/";
+  var name;
+  try {
+    name = obj.accessPoint.split(':')[1].replace('//', '');
+  } catch(e) {
+    // Ignore
+    return q.thenResolve();
+  }
+  if (name && promCache[name]) {
+    return promCache[name].then(function(res) {
+      if (!res.error)
+	updateLocation(obj,res);
+    });
+  }
+  // Try to getfrom Zipcode first
+  if (obj && obj.location && Number(obj.location.zipcode)) {    
+    var loc = zipcodes.lookup(Number(obj.location.zipcode));
+    if (loc) {
+      promCache[name] = q.resolve(loc);
+      updateLocation(obj,loc);
+      return q.resolve(loc);
+    } else {
+      console.log("Unknown zip Location is " , loc , " for Zipcode " , obj.location.zipcode);
+    }
+  }  
+  // Get it from IP service
+  var prom = q.defer();
+  name = unescape((name||"").trim());
+  request(url + name, function (err, r, resp) {
+    try{ 
+      if (err)
+	prom.resolve({error:true});
+      else {
+	var res = JSON.parse(resp);
+	res.state = res.region_code; // Normalize state
+	updateLocation(obj,res);
+	prom.resolve(res);
+      }
+    } catch(e) {
+      console.log(e,resp);
+      prom.resolve({error:true});
+    }
+  });
+  promCache[name] = prom.promise;
+  return prom.promise;
+
 };
 
-var LAST_TIME;
 function addLocation(obj) {
   try {
     if (_.isArray(obj)) {
@@ -88,10 +80,6 @@ function addLocation(obj) {
     }
   } catch(e) {
     console.error(e);
-  }
-  var time = new Date().getTime();
-  if (time - LAST_TIME > 600) {
-    errorCache = [];
   }
   return q.thenResolve();
 }
