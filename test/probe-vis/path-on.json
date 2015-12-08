@@ -1,0 +1,19 @@
+{
+  "directed": true,
+  "$schema": "http://unis.crest.iu.edu/schema/20151104/path#",
+  "dst": "http://dev.crest.iu.edu:8889/nodes/domain_indiana.edu_node_dresci",
+  "hops":[
+    {
+      "href": "http://dev.incntre.iu.edu:8889/nodes/domain_es.net_node_lbl-mr2",
+      "rel": "full"
+    },
+    {
+      "href": "http://dev.incntre.iu.edu:8889/nodes/domain_es.net_node_anl-mr2",
+      "rel": "full"
+    }
+  ],
+  "src": "http://dev.crest.iu.edu:8889/nodes/domain_utah.edu_node_slc-slice-perf.chpc.utah.edu",
+  "healthiness": "unknown",
+  "status": "on",
+  "performance": "unknown"
+}
