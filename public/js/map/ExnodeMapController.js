@@ -27,24 +27,28 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
   function displayExnode(map, nodeId, exnode) {
     var extents = exnode.extents
     
-    spokeExtents(map, extents)
+    spokeExtents(map, exnode.size, extents)
   }
 
-  function spokeExtents(svg, extents) {
+  function spokeExtents(svg, rootSize, extents) {
     var located = extents.map(function(e) {return {id: e.id, offset: e.offset, size: e.size, depot: parseLocation(e.mapping.read)}})
                          .map(function(e) {e["xy"] = mapLocation(map, e.depot); return e})
-    console.log(located)
+    console.log(rootSize,located.map(e => e.size/rootSize))
+
+    var arc = d3.svg.arc()
+         .innerRadius("1")
+         .outerRadius("15")
+         .startAngle(d => ((d.offset/rootSize)*2*Math.PI))
+         .endAngle(d => ((d.offset+d.size)/rootSize)*2*Math.PI)
 
     var root = map.svg.insert("g", "#overlay").attr("id", "spokes")
+    var fill = d3.scale.category20b()
     root.selectAll("extent").data(located)
       .enter()
-        .append("circle")
-        .attr("r", 10)
-        .attr("fill", "blue")
-        .attr("cx", d => d.xy[0])
-        .attr("cy", d => d.xy[1])
-
-
+        .append("path")
+        .attr("d", arc)
+        .attr("fill", (d,i) => fill(i))
+        .attr("transform", d => "translate(" + d.xy[0] + "," + d.xy[1] + ")")
   }
 
   function parseLocation(mapping) {return mapping.split("/")[2]}

@@ -151,14 +151,15 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       invisiblePoint(group)
     });
   }
+  return group
 }
 
 
 //Add nodes to the side of the map, because their lat/lon is not known
 //baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
-function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id) {
+function addOffMapLocation(projection, idx, baseLatLon, name, port, svg, depot_id) {
     pair = [baseLatLon[0]-idx*.3, baseLatLon[1]-idx]  //the idx*.3 straigthens out the line
-    node = addMapLocation(projection, name, pair, svg, depot_id)
+    node = addMapLocation(projection, name, port, pair, svg, depot_id)
     node.append("text")
        .attr("dx", function(d){return 10})
        .attr("dy", function(d){return 4})
@@ -181,7 +182,7 @@ function mapPoints(projection, svg, elementId) {
         
         offmap = parseInt(svg.select("layout-data").attr("off-map-count"))
         svg.select("layout-data").attr("off-map-count", offmap+1)
-        addOffMapLocation(projection, offmap, [-72, 40], item.name, svg_points, item.depot_id)
+        addOffMapLocation(projection, offmap, [-72, 40], item.name, item.port, svg_points, item.depot_id)
       } else {
         pair = [item.location.longitude, item.location.latitude]
         node = addMapLocation(projection, item.name, item.port, pair, svg_points, item.depot_id)
