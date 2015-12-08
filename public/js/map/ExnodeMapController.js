@@ -1,7 +1,7 @@
 function exnodeMapController($scope, $location, $http, UnisService, SocketService) {
   var svg = d3.select("#exnodeMap").append("svg")
                .attr("width", 1200)
-               .attr("height", 500)
+               .attr("height", 900)
 
   var map = baseMap("#exnodeMap", 960, 500, svg);
   var nodeId = $location.path().split("/")[2]
@@ -28,12 +28,12 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     var extents = exnode.extents
     
     spokeExtents(map, exnode.size, extents)
+    gridmap(map, exnode.size, extents)
   }
 
   function spokeExtents(svg, rootSize, extents) {
     var located = extents.map(function(e) {return {id: e.id, offset: e.offset, size: e.size, depot: parseLocation(e.mapping.read)}})
                          .map(function(e) {e["xy"] = mapLocation(map, e.depot); return e})
-    console.log(rootSize,located.map(e => e.size/rootSize))
 
     var arc = d3.svg.arc()
          .innerRadius("1")
@@ -46,9 +46,35 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     root.selectAll("extent").data(located)
       .enter()
         .append("path")
+        .attr("id", d => d.id)
         .attr("d", arc)
         .attr("fill", (d,i) => fill(i))
         .attr("transform", d => "translate(" + d.xy[0] + "," + d.xy[1] + ")")
+  }
+
+  function gridmap(map, rootSize, extents) {
+    //TODO: Convert to a 2D space, not the 1D strip here...
+    
+    var width = 900
+    var height = 100
+   
+    var root = map.svg.append("g").attr("id", "#gridmap").attr("transform","translate(100,500)")
+
+    root.append("rect")
+        .attr("id", "grid-background")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("fill", "#DDD")
+
+    var fill = d3.scale.category20b()
+    root.selectAll("extent").data(extents)
+      .enter().append("rect")
+        .attr("id", d => d.id)
+        .attr("height", height)
+        .attr("width", d => (d.size/rootSize)*width)
+        .attr("x", d => (d.offset/rootSize)*width)
+        .attr("y", 0)
+        .attr("fill", (d,i) => fill(i))
   }
 
   function parseLocation(mapping) {return mapping.split("/")[2]}
