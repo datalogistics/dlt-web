@@ -86,7 +86,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     //  .domain((0, Math.max(cells.map(e => e.length))))
     //  .range(colorbrewer.Reds[numColors]);
     
-    root.selectAll("extent").data(cells)
+    root.selectAll(".extent").data(cells)
       .enter().append("rect")
         .attr("class", "grid extent")
         .attr("exnodes", d => d.exnodes)
@@ -97,13 +97,37 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("height", (height/grid_height)-1)
         .attr("fill", (d,i) => fill(d.depots[0]))
 
-    root.selectAll("labels").data(cells)
-      .enter().append("text")
-        .attr("x", (d,i) => 1+(i%grid_width)*(width/grid_width))
-        .attr("y", (d,i) => ((height/grid_height)*.8)+Math.floor(i/grid_width)*(height/grid_height))
-        //.attr("fill", "#BBB")
-        .text(d => d.length > 9 ? "+" : d.exnodes.length)
+
+
+    var duplicates = cells.map(e => e.depots.length)
+    var fill_qty = d3.scale.linear()
+                     .domain([0, duplicates.reduce((acc, e) => Math.max(e, acc))])
+                     .range(["#FFF", "#000"])
+
+    root.selectAll(".copies").data(duplicates)
+      .enter().append("path")
+        .attr("d", (d, i) => lowerTriangle((i%grid_width)*(width/grid_width), 
+                                           Math.floor(i/grid_width)*(height/grid_height), 
+                                           width/grid_width, 
+                                           height/grid_height))
+        .attr("fill", fill_qty)
   }
+
+  function upperTriangle(x, y, width, height) {
+    return "M" + x + " " + y + " "
+           + "h" + width + " "
+           + "l " + -width + " " + height + " "
+           + "v " + height
+  }
+
+  function lowerTriangle(x, y, width, height) {
+    return "M" + (x+width) + " " + (y+height) + " "
+           + "h" + -width + " "
+           + "l " + width + " " + -height + " "
+           + "v " + -height
+  }
+
+
 
   function parseLocation(mapping) {return mapping.split("/")[2]}
   function range(low, high) {return Array.apply(null, Array((high-low))).map((_,i) => low+i)}
