@@ -24,28 +24,30 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
 
 
   function displayExnode(map, nodeId, exnode) {
-    var extents = exnode.extents
-    
-    spokeExtents(map, exnode.size, extents)
-    gridmap(map, exnode.size, extents)
+    if (exnode && exnode.extents) {
+      var extents = exnode.extents.map(function(e) {return {id: e.id, offset: e.offset, size: e.size, depot: parseLocation(e.mapping.read)}})
+                                  .map(function(e) {e["xy"] = mapLocation(map, e.depot); return e})
+
+      var fill = d3.scale.category20b()
+      spokeExtents(map, exnode.size, extents, fill)
+      gridmap(map, exnode.size, extents, fill)
+    } else {
+      map.svg.append("text")
+          .attr("fill", "red")
+          .attr("transform", "translate(300,10)")
+          .text("Error: Exnode not found or no extents found in exnode")
+    }
   }
 
-  function spokeExtents(svg, rootSize, extents) {
-    var located = extents.map(function(e) {return {id: e.id, offset: e.offset, size: e.size, depot: parseLocation(e.mapping.read)}})
-                         .map(function(e) {e["xy"] = mapLocation(map, e.depot); return e})
-
+  function spokeExtents(svg, rootSize, extents, fill) {
     var arc = d3.svg.arc()
          .innerRadius("1")
          .outerRadius("15")
          .startAngle(d => ((d.offset/rootSize)*2*Math.PI))
-         .endAngle(d => Math.max(1, Math.round((d.offset+d.size)/rootSize)*2*Math.PI))
-
-
-    console.log(uniques(located.map(e => e.depot)))
+         .endAngle(d => Math.max(.5, Math.round((d.offset+d.size)/rootSize)*2*Math.PI))
 
     var root = map.svg.insert("g", "#overlay").attr("id", "spokes")
-    var fill = d3.scale.category20b()
-    root.selectAll("extent").data(located)
+    root.selectAll("extent").data(extents)
       .enter()
         .append("path")
         .attr("id", d => d.id)
@@ -54,7 +56,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("transform", d => "translate(" + d.xy[0] + "," + d.xy[1] + ")")
   }
 
-  function gridmap(map, rootSize, extents) {
+  function gridmap(map, rootSize, extents, fill) {
     var width = 900
     var height = 200
 
@@ -66,43 +68,41 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("height", height)
         .attr("fill", "#DDD")
 
-    var cells = range(0, 1000).map(e => [])
+    var cells = range(0, 1000).map(function(e) {return {depots:[], exnodes:[]}})
 
     extents.forEach(function(e) {
       var lowCell = Math.floor((e.offset/rootSize)*cells.length)
       var highCell = Math.max(Math.ceil(((e.offset+e.size)/rootSize)*cells.length), cells.length-1)
-      range(lowCell, highCell).forEach(cell => {cells[cell].push(e.id)})
+      range(lowCell, highCell).forEach(function(cell) {
+        cells[cell].exnodes.push(e.id)
+        cells[cell].depots.push(e.depot)
+      })
     })
-
-    console.log(cells)
-    console.log(cells.map(e => e.length))
-    console.log("Max overlap", cells.reduce((acc, e) => Math.max(acc, e.length)))
 
     var grid_width = 100
     var grid_height= Math.ceil(cells.length/grid_width)
 
-    var fill = d3.scale.category20()
     //var fill = d3.scale.quantize()
     //  .domain((0, Math.max(cells.map(e => e.length))))
     //  .range(colorbrewer.Reds[numColors]);
-
+    
     root.selectAll("extent").data(cells)
       .enter().append("rect")
         .attr("class", "grid extent")
-        .attr("data", d => d)
+        .attr("exnodes", d => d.exnodes)
+        .attr("depots", d => d.depots)
         .attr("x", (d,i) => (i%grid_width)*(width/grid_width))
         .attr("y", (d,i) => Math.floor(i/grid_width)*(height/grid_height))
         .attr("width", (width/grid_width)-1)
         .attr("height", (height/grid_height)-1)
-        .attr("fill", (d,i) => fill(d[0]))
+        .attr("fill", (d,i) => fill(d.depots[0]))
 
     root.selectAll("labels").data(cells)
       .enter().append("text")
         .attr("x", (d,i) => 1+(i%grid_width)*(width/grid_width))
         .attr("y", (d,i) => ((height/grid_height)*.8)+Math.floor(i/grid_width)*(height/grid_height))
         //.attr("fill", "#BBB")
-        .text(d => d.length > 9 ? "+" : d.length)
-
+        .text(d => d.length > 9 ? "+" : d.exnodes.length)
   }
 
   function parseLocation(mapping) {return mapping.split("/")[2]}
