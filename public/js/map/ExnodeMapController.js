@@ -15,9 +15,8 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       return natmap
     })
     .then(function(natmap) {backplaneLinks(map, natmap)})
-    .then(() => $http.get('/api/exnodes/')) //TODO: Extend the api to accept a node ID, remove next line
-    .then((res) => res.data.filter(n=>n.id==nodeId)[0])
-    .then(exnode => displayExnode(map, nodeId, exnode)) 
+    .then(() => $http.get('/api/exnodes/?id=' + nodeId))
+    .then(res => displayExnode(map, nodeId, res.data[0])) 
   
   $scope.$on("$destroy", function() {
     d3.selectAll("#map-tool-tip").each(function() {this.remove()})  //Cleans up the tooltip object when you navigate away

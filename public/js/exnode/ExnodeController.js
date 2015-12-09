@@ -207,6 +207,14 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     console.log("Downloading this file ",id);
     client_action([id], 'download');
   };
+
+  $scope.showExnodeMap = function(id) {
+    var parts = id.split("/")
+    id = parts[parts.length-1]
+    console.log("Showing exnode map for ", id)
+    $location.path("/exnode/"+id)
+  }
+
   $scope.downloadAll = function(){
     var arr = [];
     $(".exnodeFileList input:checked").each(function(){

@@ -19,7 +19,8 @@
                                 <th> Name </th>
                                 <th> Size (MB) </th>
                                 <th> Select <input type="checkbox" ng-click="selectToggle()" "value="false"/></th>
-                                <th> Download</th>                                        
+                                <th> Download</th>
+                                <th> Exnode Map</th>
                               </tr>
                                 </thead>
                                 <tbody>
@@ -28,6 +29,7 @@
                                         <td>{{(val.size/(1024*1024)).toFixed(1)}}</td> 
                                         <td><input type="checkbox" value="{{val.selfRef}}"/></td>
                                         <td><button ng-click="downloadOne(val.selfRef)" class="btn btn-info">Download</button></td>
+                                        <td><button ng-click="showExnodeMap(val.selfRef)" class="btn btn-info">Map</button></td>
                                     </tr>                                       
                                 </tbody>
                           </table>
