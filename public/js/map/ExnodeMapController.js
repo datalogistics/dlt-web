@@ -39,7 +39,10 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
          .innerRadius("1")
          .outerRadius("15")
          .startAngle(d => ((d.offset/rootSize)*2*Math.PI))
-         .endAngle(d => ((d.offset+d.size)/rootSize)*2*Math.PI)
+         .endAngle(d => Math.max(1, Math.round((d.offset+d.size)/rootSize)*2*Math.PI))
+
+
+    console.log(uniques(located.map(e => e.depot)))
 
     var root = map.svg.insert("g", "#overlay").attr("id", "spokes")
     var fill = d3.scale.category20b()
@@ -48,17 +51,15 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .append("path")
         .attr("id", d => d.id)
         .attr("d", arc)
-        .attr("fill", (d,i) => fill(i))
+        .attr("fill", (d,i) => fill(d.depot))
         .attr("transform", d => "translate(" + d.xy[0] + "," + d.xy[1] + ")")
   }
 
   function gridmap(map, rootSize, extents) {
-    //TODO: Convert to a 2D space, not the 1D strip here...
-    
     var width = 900
-    var height = 100
-   
-    var root = map.svg.append("g").attr("id", "#gridmap").attr("transform","translate(100,500)")
+    var height = 200
+
+    var root = map.svg.append("g").attr("id", "#gridmap").attr("transform","translate(100,550)")
 
     root.append("rect")
         .attr("id", "grid-background")
@@ -66,18 +67,52 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("height", height)
         .attr("fill", "#DDD")
 
-    var fill = d3.scale.category20b()
-    root.selectAll("extent").data(extents)
+    var cells = range(0, 1000).map(e => [])
+
+    extents.forEach(function(e) {
+      var lowCell = Math.floor((e.offset/rootSize)*cells.length)
+      var highCell = Math.max(Math.ceil(((e.offset+e.size)/rootSize)*cells.length), cells.length-1)
+      range(lowCell, highCell).forEach(cell => {cells[cell].push(e.id)})
+    })
+
+    console.log(cells)
+    console.log(cells.map(e => e.length))
+    console.log("Max overlap", cells.reduce((acc, e) => Math.max(acc, e.length)))
+
+    var grid_width = 100
+    var grid_height= Math.ceil(cells.length/grid_width)
+
+    var fill = d3.scale.category20()
+    //var fill = d3.scale.quantize()
+    //  .domain((0, Math.max(cells.map(e => e.length))))
+    //  .range(colorbrewer.Reds[numColors]);
+
+    root.selectAll("extent").data(cells)
       .enter().append("rect")
-        .attr("id", d => d.id)
-        .attr("height", height)
-        .attr("width", d => (d.size/rootSize)*width)
-        .attr("x", d => (d.offset/rootSize)*width)
-        .attr("y", 0)
-        .attr("fill", (d,i) => fill(i))
+        .attr("class", "grid extent")
+        .attr("data", d => d)
+        .attr("x", (d,i) => (i%grid_width)*(width/grid_width))
+        .attr("y", (d,i) => Math.floor(i/grid_width)*(height/grid_height))
+        .attr("width", (width/grid_width)-1)
+        .attr("height", (height/grid_height)-1)
+        .attr("fill", (d,i) => fill(d[0]))
+
+    root.selectAll("labels").data(cells)
+      .enter().append("text")
+        .attr("x", (d,i) => 1+(i%grid_width)*(width/grid_width))
+        .attr("y", (d,i) => ((height/grid_height)*.8)+Math.floor(i/grid_width)*(height/grid_height))
+        //.attr("fill", "#BBB")
+        .text(d => d.length > 9 ? "+" : d.length)
+
   }
 
   function parseLocation(mapping) {return mapping.split("/")[2]}
+  function range(low, high) {return Array.apply(null, Array((high-low))).map((_,i) => low+i)}
+  function uniques(array) {
+    var unique = new Set()
+    array.forEach(e => unique.add(e))
+    return unique
+  }
 } 
 
 

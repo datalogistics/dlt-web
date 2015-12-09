@@ -134,7 +134,7 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       var count = group.select(".count")
       if (count.empty()) {
         group.append("text")
-          .text(function (d) {return 2})
+          .text("2")
           .attr("class", "count")
           .attr("baseline-shift", "-4.5px")
           .attr("text-anchor", "middle")
