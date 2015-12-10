@@ -61,46 +61,42 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     var width = 900
     var height = 200
 
-    var root = map.svg.append("g").attr("id", "#gridmap").attr("transform","translate(100,550)")
+    var root = map.svg.append("g").attr("id", "gridmap").attr("transform","translate(100,550)")
 
     root.append("rect")
         .attr("id", "grid-background")
         .attr("width", width)
         .attr("height", height)
-        .attr("fill", "#DDD")
-
-    var cells = range(0, 1000).map(function(e) {return {depots:[], exnodes:[]}})
+        .attr("fill", "#FFF")
+    
+        
+    var grid_width = 100
+    var grid_height= 10 
+    var cells = range(0, grid_width*grid_height).map(function(e) {return {depots:new Set(), exnodes:[]}})
 
     extents.forEach(function(e) {
       var lowCell = Math.floor((e.offset/rootSize)*cells.length)
-      var highCell = Math.max(Math.ceil(((e.offset+e.size)/rootSize)*cells.length), cells.length-1)
+      var highCell = Math.min(Math.ceil(((e.offset+e.size)/rootSize)*cells.length), cells.length-1)
       range(lowCell, highCell).forEach(function(cell) {
         cells[cell].exnodes.push(e.id)
-        cells[cell].depots.push(e.depot)
+        cells[cell].depots.add(e.depot)
       })
     })
 
-    var grid_width = 100
-    var grid_height= Math.ceil(cells.length/grid_width)
-    
-    var duplicates = cells.map(e => e.depots.length)
-    var qty_gamma = d3.scale.linear()
-                     .domain([0, duplicates.reduce((acc, e) => Math.max(e, acc))])
-                     .range([.5, 1])
+    cells.forEach(e => {e.depots = Array.from(e.depots); e.depots.sort()}) //Ensure unique depot ids and cannonical order
 
-    root.selectAll(".extent").data(cells)
+    var sections = root.selectAll(".section").data(cells)
+      
       .enter().append("rect")
-        .attr("class", "grid extent")
+        .attr("class", "section")
         .attr("exnodes", d => d.exnodes)
         .attr("depots", d => d.depots)
         .attr("x", (d,i) => (i%grid_width)*(width/grid_width))
         .attr("y", (d,i) => Math.floor(i/grid_width)*(height/grid_height))
         .attr("width", (width/grid_width)-1)
         .attr("height", (height/grid_height)-1)
-        .attr("fill", (d,i) => {
-          var base = fill(d.depots[0])
-          return d3.rgb(base).darker(qty_gamma(d.depots.length))
-        })
+        .attr("fill", (d,i) => fill(d.depots[0]))
+
   }
 
   function parseLocation(mapping) {return mapping.split("/")[2]}
