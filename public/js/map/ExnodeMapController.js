@@ -42,23 +42,53 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
 
   function spokeExtents(svg, rootSize, extents, fill) {
     //TODO: Different spoke lengths for different depots in one location and layer? 
+  
+    var unique_depot_by_location = extents.reduce(function(acc, e) {
+      var prior = acc[e.xy] || new Set()
+      prior.add(e.depot)
+      acc[e.xy] = prior
+      return acc
+    }, {})
+
+
+    var max_colocated = 0;
+    Object.keys(unique_depot_by_location).forEach(function(k) {
+      var depots = Array.from(unique_depot_by_location[k])
+      depots.sort()
+      unique_depot_by_location[k] = depots
+      max_colocated = Math.max(max_colocated, depots.length)
+    })
+
+    extents = extents.map(e => {e.order = (unique_depot_by_location[e.xy].indexOf(e.depot)); return e;})
+    extents.sort((a,b) => b.order - a.order)
+
+    var radius = d3.scale.linear()
+                   .domain(range(0, max_colocated))
+                   .range(range(0, max_colocated).map(i => 12+i*4))
+
     var arc = d3.svg.arc()
          .innerRadius("1")
-         .outerRadius("15")
+         .outerRadius(d => radius(d.order))
          .startAngle(d => ((d.offset/rootSize)*2*Math.PI))
-         .endAngle(d => Math.max(.5, Math.round((d.offset+d.size)/rootSize)*2*Math.PI))
+         .endAngle(d => {
+           var angle = Math.round((d.offset+d.size)/rootSize)*2*Math.PI 
+           angle = Math.max(.5, angle)
+           return angle
+         })
 
     var root = map.svg.insert("g", "#overlay").attr("id", "spokes")
     root.selectAll("extent").data(extents)
       .enter()
         .append("path")
         .attr("id", d => d.id)
+        .attr("order", d => unique_depot_by_location[d.xy].indexOf(d.depot))
         .attr("d", arc)
         .attr("fill", (d,i) => fill(d.depot))
         .attr("transform", d => "translate(" + d.xy[0] + "," + d.xy[1] + ")")
   }
 
   function gridmap(map, rootSize, extents, fill) {
+    //TODO: Do a "regularization" pass where if an item is in cell[n] and cell[n+1], then its order number is the same in both or 0 in the 2nd if case its the only thing in that cell
     var width = 900
     var height = 250 
 
