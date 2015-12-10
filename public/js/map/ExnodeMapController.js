@@ -59,16 +59,16 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       max_colocated = Math.max(max_colocated, depots.length)
     })
 
-    extents = extents.map(e => {e.order = (unique_depot_by_location[e.xy].indexOf(e.depot)); return e;})
-    extents.sort((a,b) => b.order - a.order)
-
     var radius = d3.scale.linear()
                    .domain(range(0, max_colocated+1))
                    .range(range(0, max_colocated+1).map(i => 12+i*4))
 
+    extents = extents.map(e => {e.order = (unique_depot_by_location[e.xy].indexOf(e.depot)); e.radius = radius(e.order); return e;})
+    extents.sort((a,b) => b.order - a.order)
+
     var arc = d3.svg.arc()
          .innerRadius("1")
-         .outerRadius(d => radius(d.order))
+         .outerRadius(d => d.radius)
          .startAngle(d => ((d.offset/rootSize)*2*Math.PI))
          .endAngle(d => {
            var angle = Math.round((d.offset+d.size)/rootSize)*2*Math.PI 
@@ -127,6 +127,18 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       acc = acc.concat(flat)
       return acc
     }, [])
+    
+    
+    //TODO: HACK -- duplicated from spokes...for mouseover experiments
+    var arc = d3.svg.arc()
+         .innerRadius("1")
+         .outerRadius(d => d.radius)
+         .startAngle(d => ((d.offset/rootSize)*2*Math.PI))
+         .endAngle(d => {
+           var angle = Math.round((d.offset+d.size)/rootSize)*2*Math.PI 
+           angle = Math.max(.5, angle)
+           return angle
+         })
 
     var sections = root.selectAll(".section").data(flattened.filter(d => d.order == 0))
       .enter().append("rect")
@@ -141,15 +153,17 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
           var exnodes = d3.select(this).attr("exnodes").split(",")
           exnodes.forEach(function(ex) {
             var spoke = d3.select("#s" + ex)
-            spoke.attr("restore", spoke.attr("transform"))
-            spoke.attr("transform", spoke.attr("transform") + "scale(1.7)")
+            spoke.attr("restore", spoke.attr("d"))
+            var base = clone(spoke.data()[0])
+            base.radius = base.radius + 5
+            spoke.attr("d", arc(base))
           })
         })
         .on("mouseout", function() {
           var exnodes = d3.select(this).attr("exnodes").split(",")
           exnodes.forEach(function(ex) {
             var spoke = d3.select("#s" + ex)
-            if (spoke.attr("restore")) {spoke.attr("transform", spoke.attr("restore"))}
+            spoke.attr("d", spoke.attr("restore"))
           })
         })
     
@@ -167,10 +181,13 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
 
   function parseLocation(mapping) {return mapping.split("/")[2]}
   function range(low, high) {return Array.apply(null, Array((high-low))).map((_,i) => low+i)}
-  function uniques(array) {
-    var unique = new Set()
-    array.forEach(e => unique.add(e))
-    return unique
+  function clone(obj) {
+    if (null == obj || "object" != typeof obj) return obj;
+    var copy = obj.constructor();
+    for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+    }
+    return copy;
   }
 } 
 
