@@ -63,8 +63,8 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     extents.sort((a,b) => b.order - a.order)
 
     var radius = d3.scale.linear()
-                   .domain(range(0, max_colocated))
-                   .range(range(0, max_colocated).map(i => 12+i*4))
+                   .domain(range(0, max_colocated+1))
+                   .range(range(0, max_colocated+1).map(i => 12+i*4))
 
     var arc = d3.svg.arc()
          .innerRadius("1")
@@ -112,7 +112,6 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     var cells = range(0, grid_width*grid_height).map(function(e) {return {depots:new Set(), exnodes:[]}})
 
     extents.forEach(function(e) {
-      //var lowCell = Math.min(Math.floor((e.offset/rootSize)*cells.length), cells.length)
       var lowCell = Math.min(Math.ceil((e.offset/rootSize)*cells.length), cells.length)
       var highCell = Math.min(Math.ceil(((e.offset+e.size)/rootSize)*cells.length), cells.length)
       range(lowCell, highCell).forEach(function(cell) {
