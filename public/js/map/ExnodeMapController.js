@@ -28,7 +28,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       var extents = exnode.extents.map(function(e) {return {id: e.id, offset: e.offset, size: e.size, depot: parseLocation(e.mapping.read)}})
                                   .map(function(e) {e["xy"] = mapLocation(map, e.depot); return e})
 
-      var fill = d3.scale.category20b()
+      var fill = d3.scale.category10()
       spokeExtents(map, exnode.size, extents, fill)
       gridmap(map, exnode.size, extents, fill)
     } else {
@@ -40,6 +40,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
   }
 
   function spokeExtents(svg, rootSize, extents, fill) {
+    //TODO: Different spoke lengths for different depots in one location and layer? 
     var arc = d3.svg.arc()
          .innerRadius("1")
          .outerRadius("15")
@@ -81,11 +82,12 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
 
     var grid_width = 100
     var grid_height= Math.ceil(cells.length/grid_width)
-
-    //var fill = d3.scale.quantize()
-    //  .domain((0, Math.max(cells.map(e => e.length))))
-    //  .range(colorbrewer.Reds[numColors]);
     
+    var duplicates = cells.map(e => e.depots.length)
+    var qty_gamma = d3.scale.linear()
+                     .domain([0, duplicates.reduce((acc, e) => Math.max(e, acc))])
+                     .range([.5, 1])
+
     root.selectAll(".extent").data(cells)
       .enter().append("rect")
         .attr("class", "grid extent")
@@ -95,39 +97,11 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("y", (d,i) => Math.floor(i/grid_width)*(height/grid_height))
         .attr("width", (width/grid_width)-1)
         .attr("height", (height/grid_height)-1)
-        .attr("fill", (d,i) => fill(d.depots[0]))
-
-
-
-    var duplicates = cells.map(e => e.depots.length)
-    var fill_qty = d3.scale.linear()
-                     .domain([0, duplicates.reduce((acc, e) => Math.max(e, acc))])
-                     .range(["#FFF", "#000"])
-
-    root.selectAll(".copies").data(duplicates)
-      .enter().append("path")
-        .attr("d", (d, i) => lowerTriangle((i%grid_width)*(width/grid_width), 
-                                           Math.floor(i/grid_width)*(height/grid_height), 
-                                           width/grid_width, 
-                                           height/grid_height))
-        .attr("fill", fill_qty)
+        .attr("fill", (d,i) => {
+          var base = fill(d.depots[0])
+          return d3.rgb(base).darker(qty_gamma(d.depots.length))
+        })
   }
-
-  function upperTriangle(x, y, width, height) {
-    return "M" + x + " " + y + " "
-           + "h" + width + " "
-           + "l " + -width + " " + height + " "
-           + "v " + height
-  }
-
-  function lowerTriangle(x, y, width, height) {
-    return "M" + (x+width) + " " + (y+height) + " "
-           + "h" + -width + " "
-           + "l " + width + " " + -height + " "
-           + "v " + -height
-  }
-
-
 
   function parseLocation(mapping) {return mapping.split("/")[2]}
   function range(low, high) {return Array.apply(null, Array((high-low))).map((_,i) => low+i)}
