@@ -59,21 +59,20 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       max_colocated = Math.max(max_colocated, depots.length)
     })
 
+
+    extents = extents.map(e => {e.order = (unique_depot_by_location[e.xy].indexOf(e.depot)); return e;})
+    extents.sort((a,b) => b.order - a.order)
+    
     var radius = d3.scale.linear()
                    .domain(range(0, max_colocated+1))
                    .range(range(0, max_colocated+1).map(i => 12+i*4))
 
-    extents = extents.map(e => {e.order = (unique_depot_by_location[e.xy].indexOf(e.depot)); e.radius = radius(e.order); return e;})
-    extents.sort((a,b) => b.order - a.order)
-
     var arc = d3.svg.arc()
          .innerRadius("1")
-         .outerRadius(d => d.radius)
-         .startAngle(d => ((d.offset/rootSize)*2*Math.PI))
+         .outerRadius(d => radius(d.order))
+         .startAngle(d => ((d.offset/rootSize)*(2*Math.PI)))
          .endAngle(d => {
-           var angle = Math.round((d.offset+d.size)/rootSize)*2*Math.PI 
-           angle = Math.max(.5, angle)
-           return angle
+           return Math.max(.05, ((d.offset+d.size)/rootSize))*(2*Math.PI)
          })
 
     var root = map.svg.insert("g", "#overlay").attr("id", "spokes")
@@ -128,18 +127,6 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       return acc
     }, [])
     
-    
-    //TODO: HACK -- duplicated from spokes...for mouseover experiments
-    var arc = d3.svg.arc()
-         .innerRadius("1")
-         .outerRadius(d => d.radius)
-         .startAngle(d => ((d.offset/rootSize)*2*Math.PI))
-         .endAngle(d => {
-           var angle = Math.round((d.offset+d.size)/rootSize)*2*Math.PI 
-           angle = Math.max(.5, angle)
-           return angle
-         })
-
     var sections = root.selectAll(".section").data(flattened.filter(d => d.order == 0))
       .enter().append("rect")
         .attr("class", "section")
@@ -153,17 +140,15 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
           var exnodes = d3.select(this).attr("exnodes").split(",")
           exnodes.forEach(function(ex) {
             var spoke = d3.select("#s" + ex)
-            spoke.attr("restore", spoke.attr("d"))
-            var base = clone(spoke.data()[0])
-            base.radius = base.radius + 5
-            spoke.attr("d", arc(base))
+            spoke.attr("restore", spoke.attr("transform"))
+            spoke.attr("transform", spoke.attr("transform") + "scale(2.2)")
           })
         })
         .on("mouseout", function() {
           var exnodes = d3.select(this).attr("exnodes").split(",")
           exnodes.forEach(function(ex) {
             var spoke = d3.select("#s" + ex)
-            spoke.attr("d", spoke.attr("restore"))
+            spoke.attr("transform", spoke.attr("restore"))
           })
         })
     
