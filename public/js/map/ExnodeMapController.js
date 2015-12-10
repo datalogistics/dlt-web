@@ -80,7 +80,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     root.selectAll("extent").data(extents)
       .enter()
         .append("path")
-        .attr("id", d => d.id)
+        .attr("id", d => "s" +d.id)
         .attr("order", d => unique_depot_by_location[d.xy].indexOf(d.depot))
         .attr("d", arc)
         .attr("fill", (d,i) => fill(d.depot))
@@ -123,27 +123,37 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     cells.forEach(e => {e.depots = Array.from(e.depots); e.depots.sort()}) //Ensure unique depot ids and cannonical order
 
     var flattened = cells.reduce(function(acc, cell, cell_idx) {
-      var flat = cell.depots.map((d,i) => {return {depot: d, cell_idx: cell_idx, order: i}})
+      var flat = cell.depots.map((d,i) => {return {depot: d, cell_idx: cell_idx, order: i, overlaps: cell.exnodes}})
       acc = acc.concat(flat)
       return acc
     }, [])
 
-
     var sections = root.selectAll(".section").data(flattened.filter(d => d.order == 0))
       .enter().append("rect")
         .attr("class", "section")
+        .attr("exnodes", d => d.overlaps)
         .attr("x", d => (d.cell_idx%grid_width)*(width/grid_width))
         .attr("y", d => Math.floor(d.cell_idx/grid_width)*(height/grid_height))
         .attr("width", (width/grid_width)-cell_width_pad)
         .attr("height", (height/grid_height)-cell_height_pad)
         .attr("fill", (d,i) => fill(d.depot))
+        .on("mouseover", function() {
+          var exnodes = d3.select(this).attr("exnodes").split(",")
+          exnodes.forEach(function(ex) {
+            var spoke = d3.select("#s" + ex)
+            spoke.attr("restore", spoke.attr("transform"))
+            spoke.attr("transform", spoke.attr("transform") + "scale(1.7)")
+          })
+        })
+        .on("mouseout", function() {
+          var exnodes = d3.select(this).attr("exnodes").split(",")
+          exnodes.forEach(function(ex) {
+            var spoke = d3.select("#s" + ex)
+            if (spoke.attr("restore")) {spoke.attr("transform", spoke.attr("restore"))}
+          })
+        })
     
         
-    var stack = function(d) {
-      if (d.order == 0) {return (height/grid_height)-2}
-      if (d.order > 5) {return 0}
-      return ((height/grid_height)/7)*d.order
-    }
 
     var sections = root.selectAll(".subsection").data(flattened.filter(d => d.order < 5 && d.order > 0))
       .enter().append("rect")
