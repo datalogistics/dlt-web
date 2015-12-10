@@ -13,7 +13,7 @@ function mapLocation(map, entry) {
   if (node == null) {
     console.error("Could not find map location: " + name)
     mapPoints(map.projection, map.svg)([{location: [], name: name, port: "", depot_id: "GENERATED_ID" + Math.random()}])
-    return mapLocation(name)
+    return mapLocation(map, name)
   }
   var parent = d3.select(node.parentNode)
   return d3.transform(parent.attr("transform")).translate
