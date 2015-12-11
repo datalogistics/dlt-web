@@ -24,11 +24,18 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
 
 
   function displayExnode(map, nodeId, exnode) {
-    if (exnode && exnode.extents) {
-      var extents = exnode.extents.map(function(e) {return {id: e.id, offset: e.offset, size: e.size, depot: parseLocation(e.mapping.read)}})
-                                  .map(function(e) {e["xy"] = mapLocation(map, e.depot); return e})
-                                  .sort((a,b) => a.depot.localeCompare(b.depot)) 
 
+    if (exnode) {
+      var extents = []
+      
+      if (exnode.extents) {
+        extents = exnode.extents.map(function(e) {return {id: e.id, offset: e.offset, size: e.size, depot: parseLocation(e.mapping.read)}})
+                                    .map(function(e) {e["xy"] = mapLocation(map, e.depot); return e})
+                                    .sort((a,b) => a.depot.localeCompare(b.depot)) 
+      } else {
+        extents = [{id: exnode.id, offset: exnode.offset, size: exnode.size, depot: parseLocation(e.mapping.read)}]
+      }
+      
       var fill = d3.scale.category10()
       spokeExtents(map, exnode.size, extents, fill)
       gridmap(map, exnode.size, extents, fill)
@@ -36,7 +43,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       map.svg.append("text")
           .attr("fill", "red")
           .attr("transform", "translate(300,10)")
-          .text("Error: Exnode not found or no extents found in exnode")
+          .text("Error: Exnode not found or is empty")
     }
   }
 
