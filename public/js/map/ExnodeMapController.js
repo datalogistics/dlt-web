@@ -38,7 +38,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       
       var fill = d3.scale.category10()
       spokeExtents(map, exnode.size, extents, fill)
-      gridmap(map, exnode.size, extents, fill)
+      gridmap(map, exnode, extents, fill)
     } else {
       map.svg.append("text")
           .attr("fill", "red")
@@ -46,6 +46,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
           .text("Error: Exnode not found or is empty")
     }
   }
+
 
   function spokeExtents(svg, rootSize, extents, fill) {
     //TODO: Different spoke lengths for different depots in one location and layer? 
@@ -93,10 +94,12 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("transform", d => "translate(" + d.xy[0] + "," + d.xy[1] + ")")
   }
 
-  function gridmap(map, rootSize, extents, fill) {
+  function gridmap(map, exnode, extents, fill) {
     //TODO: Do a "regularization" pass where if an item is in cell[n] and cell[n+1], then its order number is the same in both or 0 in the 2nd if case its the only thing in that cell
     var width = 900
     var height = 250 
+    var x_position = 100
+    var y_position = 550
 
     var grid_width = 100 //Number of cells horizontally
     var grid_height= 5   //Number of rows
@@ -106,7 +109,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     var overlay_height = 5    //Height of duplicate indicator bands
     
 
-    var root = map.svg.append("g").attr("id", "gridmap").attr("transform","translate(100,550)")
+    var root = map.svg.append("g").attr("id", "gridmap").attr("transform","translate(" + x_position + ", " + y_position + ")")
 
     root.append("rect")
         .attr("id", "grid-background")
@@ -118,8 +121,8 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     var cells = range(0, grid_width*grid_height).map(function(e) {return {depots:new Set(), exnodes:[]}})
 
     extents.forEach(function(e) {
-      var lowCell = Math.min(Math.ceil((e.offset/rootSize)*cells.length), cells.length)
-      var highCell = Math.min(Math.ceil(((e.offset+e.size)/rootSize)*cells.length), cells.length)
+      var lowCell = Math.min(Math.ceil((e.offset/exnode.size)*cells.length), cells.length)
+      var highCell = Math.min(Math.ceil(((e.offset+e.size)/exnode.size)*cells.length), cells.length)
       range(lowCell, highCell).forEach(function(cell) {
         cells[cell].exnodes.push(e.id)
         cells[cell].depots.add(e.depot)
@@ -158,8 +161,6 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
             spoke.attr("transform", spoke.attr("restore"))
           })
         })
-    
-        
 
     var sections = root.selectAll(".subsection").data(flattened.filter(d => d.order < 5 && d.order > 0))
       .enter().append("rect")
@@ -169,6 +170,75 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("width", (width/grid_width)-cell_width_pad)
         .attr("height", overlay_height)
         .attr("fill", (d,i) => fill(d.depot))
+
+    exnodeStats(map, exnode, cells, width + x_position + 20, y_position+30)
+    legend(map, fill, width + x_position + 20, y_position+150)
+  }
+
+  function exnodeStats(map, exnode, cells, x_position, y_position) {
+    var max = cells.reduce((acc, cell) => Math.max(acc, cell.depots.length), 0)
+    var min = cells.reduce((acc, cell) => Math.min(acc, cell.depots.length), 1000000)
+    var sum = cells.reduce((acc, cell) => acc + cell.depots.length, 0)
+    var avg = sum/cells.length
+    var uniques = cells.reduce((acc, cell) => {cell.depots.forEach(e => acc.add(e)); return acc;}, new Set())
+    uniques = Array.from(uniques)
+    
+    var data = [["Exnode ID", exnode.id], 
+                ["Max duplication", max],
+                ["Min duplication", min],
+                ["Avg duplication", avg],
+                ["Unique Depots", uniques.length]]
+
+    var root = map.svg.append("g")
+        .attr("id", "stats")
+          .attr("transform", "translate(" + x_position + ", " + y_position + ")")
+
+    root.selectAll("text").data(data)
+       .enter().append("text")
+          .attr("x", 0)
+          .attr("y", (d,i) => i*15)
+          .text((d) => d[0] + ": " + d[1])
+   
+    root.append("text")
+       .attr("id", "stats_label")
+       .attr("class", "section_header")
+       .attr("x", 0)
+       .attr("y", -15)
+       .style("font-size", "125%")
+       .text("Summary")
+  }
+
+  function legend(map, fill, x_position, y_position) {
+    var data = fill.domain()
+    var size = 10
+    var spacing = 15
+    var text_offset=10
+
+    var root = map.svg.append("g")
+          .attr("id", "grid_legend")
+          .attr("transform", "translate(" + x_position + ", " + y_position + ")")
+
+    root.selectAll("rect").data(data)
+       .enter().append("rect")
+          .attr("x", 0)
+          .attr("y", (d,i) => i*spacing)
+          .attr("height", size) 
+          .attr("width" , size) 
+          .attr("fill", fill)
+
+    root.selectAll("text").data(data)
+      .enter().append("text")
+         .attr("x", spacing)
+         .attr("y", (d,i) => i*spacing+text_offset)
+         .text(d => d)
+    
+   root.append("text")
+       .attr("id", "legend_label")
+       .attr("x", 0)
+       .attr("y", -10)
+       .style("font-size", "125%")
+       .text("Depots")
+
   }
 
   function parseLocation(mapping) {return mapping.split("/")[2]}
