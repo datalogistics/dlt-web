@@ -172,7 +172,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("fill", (d,i) => fill(d.depot))
 
     exnodeStats(map, exnode, cells, width + x_position + 20, y_position+30)
-    legend(map, fill, width + x_position + 20, y_position+150)
+    legend(map, exnode, extents, fill, width + x_position + 20, y_position+125)
   }
 
   function exnodeStats(map, exnode, cells, x_position, y_position) {
@@ -184,9 +184,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     uniques = Array.from(uniques)
     
     var data = [["Exnode ID", exnode.id], 
-                ["Max duplication", max],
-                ["Min duplication", min],
-                ["Avg duplication", avg],
+                ["Min,Avg,Max duplication", [min, avg, max]],
                 ["Unique Depots", uniques.length]]
 
     var root = map.svg.append("g")
@@ -205,14 +203,21 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
        .attr("x", 0)
        .attr("y", -15)
        .style("font-size", "125%")
-       .text("Summary")
+       .text(exnode.name)
   }
 
-  function legend(map, fill, x_position, y_position) {
+  function legend(map, exnode, extents, fill, x_position, y_position) {
     var data = fill.domain()
     var size = 10
     var spacing = 15
     var text_offset=10
+
+    var percents = extents.reduce(function(acc, e) {
+      var total = acc[e.depot] || 0
+      total = total + e.size
+      acc[e.depot] = total
+      return acc
+    }, {})
 
     var root = map.svg.append("g")
           .attr("id", "grid_legend")
@@ -230,15 +235,15 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       .enter().append("text")
          .attr("x", spacing)
          .attr("y", (d,i) => i*spacing+text_offset)
-         .text(d => d)
+         .style("white-space", "pre")
+         .text(d => d + "  (" + (percents[d]/exnode.size*100).toFixed(1) + "%)")
     
    root.append("text")
        .attr("id", "legend_label")
        .attr("x", 0)
        .attr("y", -10)
        .style("font-size", "125%")
-       .text("Depots")
-
+       .text("Depot (% of file)")
   }
 
   function parseLocation(mapping) {return mapping.split("/")[2]}
