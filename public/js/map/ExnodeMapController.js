@@ -163,7 +163,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("height", overlay_height)
         .attr("fill", (d,i) => fill(d.depot))
 
-    var axisMarks = range(0, 11).map(n => n*10) 
+    var axisMarks = range(0, 11).map(n => (n*10)/100)
     var xaxis = root.append("g").attr("id", "x_axis").attr("transform", "translate(0," + (height+2) + ")")
     xaxis.selectAll("line").data(axisMarks)
       .enter().append("line")
@@ -174,12 +174,21 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("stroke-width", 3)
         .attr("stroke", "gray")
     
-    xaxis.selectAll("text").data(axisMarks)
+    xaxis.selectAll(".pct").data(axisMarks)
       .enter().append("text")
+        .attr("class", "pct")
         .attr("x", (d,i) => (width/(axisMarks.length-1)) * i)
         .attr("y", 25)
         .attr("text-anchor", "middle")
-        .text(d => d.toFixed(0) + "%")
+        .text(d => d.toFixed(0)*100 + "%")
+   
+    xaxis.selectAll(".abs").data(axisMarks)
+      .enter().append("text")
+        .attr("class", "abs")
+        .attr("x", (d,i) => (width/(axisMarks.length-1)) * i)
+        .attr("y", 35)
+        .attr("text-anchor", "middle")
+        .text(d => formatSize(exnode.size*d))
   }
 
 
@@ -191,8 +200,9 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     var uniques = cells.reduce((acc, cell) => {cell.depots.forEach(e => acc.add(e)); return acc;}, new Set())
     uniques = Array.from(uniques)
     
-    var data = [["File Size", exnode.size],
-                ["Exnode ID", exnode.id], 
+    var data = [["File Size", formatSize(exnode.size)],
+                ["Root Exnode", exnode.id], 
+                ["Child Extents", exnode.extents.length || 1],
                 ["Min,Avg,Max duplication", [min, avg, max]],
                 ["Unique Depots", uniques.length]]
 
@@ -229,7 +239,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     }, {})
 
     var root = map.svg.append("g")
-          .attr("id", "grid_legend")
+          .attr("id", "legend")
           .attr("transform", "translate(" + x_position + ", " + y_position + ")")
 
     root.selectAll("rect").data(data)
@@ -265,6 +275,25 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     }
     return copy;
   }
+
+  function formatSize(size) {
+    var magnitude = Math.floor(Math.log(size)/Math.log(1024))
+    var suffix = " bytes"
+
+    if (magnitude == 1) {
+      suffix = " KB"
+      size = size/1024
+    } else if (magnitude == 2) {
+      suffix = " MB"
+      size = size/Math.pow(1024,2)
+    } else if (magnitude > 2) {
+      suffix = " GB"
+      size = size/Math.pow(1024,3)
+    }
+    return size.toFixed(1) + suffix
+  }
+
+
 } 
 
 
