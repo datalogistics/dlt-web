@@ -24,7 +24,6 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
 
 
   function displayExnode(map, nodeId, exnode) {
-
     if (exnode) {
       var extents = []
       
@@ -36,9 +35,24 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         extents = [{id: exnode.id, offset: exnode.offset, size: exnode.size, depot: parseLocation(e.mapping.read)}]
       }
       
+      var cells = range(0, 500).map(function(e) {return {depots:new Set(), exnodes:[]}})
+
+      extents.forEach(function(e) {
+        var lowCell = Math.min(Math.ceil((e.offset/exnode.size)*cells.length), cells.length)
+        var highCell = Math.min(Math.ceil(((e.offset+e.size)/exnode.size)*cells.length), cells.length)
+        range(lowCell, highCell).forEach(function(cell) {
+          cells[cell].exnodes.push(e.id)
+          cells[cell].depots.add(e.depot)
+        })
+      })
+
+      cells.forEach(e => {e.depots = Array.from(e.depots); e.depots.sort()}) //Ensure unique depot ids and cannonical order
+      
       var fill = d3.scale.category10()
       spokeExtents(map, exnode.size, extents, fill)
-      gridmap(map, exnode, extents, fill)
+      gridmap(map, exnode, cells, fill, 100, 550)
+      exnodeStats(map, exnode, cells, 970, 100)
+      legend(map, exnode, extents, fill, 970, 200)
     } else {
       map.svg.append("text")
           .attr("fill", "red")
@@ -94,20 +108,11 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("transform", d => "translate(" + d.xy[0] + "," + d.xy[1] + ")")
   }
 
-  function gridmap(map, exnode, extents, fill) {
+  function gridmap(map, exnode, cells, fill, x_position, y_position) {
     //TODO: Do a "regularization" pass where if an item is in cell[n] and cell[n+1], then its order number is the same in both or 0 in the 2nd if case its the only thing in that cell
-    var width = 900
-    var height = 250 
-    var x_position = 100
-    var y_position = 550
-
-    var grid_width = 100 //Number of cells horizontally
-    var grid_height= 5   //Number of rows
-
-    var cell_width_pad = .5    //Distance between adjacent cells
-    var cell_height_pad = 10  //Distance between rows
+    var width = cells.length*2 
+    var height = 50 
     var overlay_height = 5    //Height of duplicate indicator bands
-    
 
     var root = map.svg.append("g").attr("id", "gridmap").attr("transform","translate(" + x_position + ", " + y_position + ")")
 
@@ -116,35 +121,22 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("width", width)
         .attr("height", height)
         .attr("fill", "#FFF")
-    
-        
-    var cells = range(0, grid_width*grid_height).map(function(e) {return {depots:new Set(), exnodes:[]}})
-
-    extents.forEach(function(e) {
-      var lowCell = Math.min(Math.ceil((e.offset/exnode.size)*cells.length), cells.length)
-      var highCell = Math.min(Math.ceil(((e.offset+e.size)/exnode.size)*cells.length), cells.length)
-      range(lowCell, highCell).forEach(function(cell) {
-        cells[cell].exnodes.push(e.id)
-        cells[cell].depots.add(e.depot)
-      })
-    })
-
-    cells.forEach(e => {e.depots = Array.from(e.depots); e.depots.sort()}) //Ensure unique depot ids and cannonical order
 
     var flattened = cells.reduce(function(acc, cell, cell_idx) {
       var flat = cell.depots.map((d,i) => {return {depot: d, cell_idx: cell_idx, order: i, overlaps: cell.exnodes}})
       acc = acc.concat(flat)
       return acc
     }, [])
-    
-    var sections = root.selectAll(".section").data(flattened.filter(d => d.order == 0))
+   
+    var segments = root.append("g").attr("id", "sections")
+    segments.selectAll(".section").data(flattened.filter(d => d.order == 0))
       .enter().append("rect")
         .attr("class", "section")
         .attr("exnodes", d => d.overlaps)
-        .attr("x", d => (d.cell_idx%grid_width)*(width/grid_width))
-        .attr("y", d => Math.floor(d.cell_idx/grid_width)*(height/grid_height))
-        .attr("width", (width/grid_width)-cell_width_pad)
-        .attr("height", (height/grid_height)-cell_height_pad)
+        .attr("x", (d,i) => (width/cells.length)*d.cell_idx)
+        .attr("y", 0)
+        .attr("width", (width/cells.length))
+        .attr("height", height)
         .attr("fill", (d,i) => fill(d.depot))
         .on("mouseover", function() {
           var exnodes = d3.select(this).attr("exnodes").split(",")
@@ -162,18 +154,34 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
           })
         })
 
-    var sections = root.selectAll(".subsection").data(flattened.filter(d => d.order < 5 && d.order > 0))
+    segments.selectAll(".subsection").data(flattened.filter(d => d.order < 5 && d.order > 0))
       .enter().append("rect")
         .attr("class", "section")
-        .attr("x", d => (d.cell_idx%grid_width)*(width/grid_width))
-        .attr("y", d => Math.floor(d.cell_idx/grid_width)*(height/grid_height)+(d.order-1)*overlay_height)
-        .attr("width", (width/grid_width)-cell_width_pad)
+        .attr("x", (d,i) => (width/cells.length)*d.cell_idx)
+        .attr("y", d => (d.order-1)*overlay_height)
+        .attr("width", (width/cells.length))
         .attr("height", overlay_height)
         .attr("fill", (d,i) => fill(d.depot))
 
-    exnodeStats(map, exnode, cells, width + x_position + 20, y_position+30)
-    legend(map, exnode, extents, fill, width + x_position + 20, y_position+125)
+    var axisMarks = range(0, 11).map(n => n*10) 
+    var xaxis = root.append("g").attr("id", "x_axis").attr("transform", "translate(0," + (height+2) + ")")
+    xaxis.selectAll("line").data(axisMarks)
+      .enter().append("line")
+        .attr("x1", (d,i) => (width/(axisMarks.length-1)) * i)
+        .attr("x2", (d,i) => (width/(axisMarks.length-1)) * i)
+        .attr("y1", 0)
+        .attr("y2", 15)
+        .attr("stroke-width", 3)
+        .attr("stroke", "gray")
+    
+    xaxis.selectAll("text").data(axisMarks)
+      .enter().append("text")
+        .attr("x", (d,i) => (width/(axisMarks.length-1)) * i)
+        .attr("y", 25)
+        .attr("text-anchor", "middle")
+        .text(d => d.toFixed(0) + "%")
   }
+
 
   function exnodeStats(map, exnode, cells, x_position, y_position) {
     var max = cells.reduce((acc, cell) => Math.max(acc, cell.depots.length), 0)
@@ -183,7 +191,8 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     var uniques = cells.reduce((acc, cell) => {cell.depots.forEach(e => acc.add(e)); return acc;}, new Set())
     uniques = Array.from(uniques)
     
-    var data = [["Exnode ID", exnode.id], 
+    var data = [["File Size", exnode.size],
+                ["Exnode ID", exnode.id], 
                 ["Min,Avg,Max duplication", [min, avg, max]],
                 ["Unique Depots", uniques.length]]
 
