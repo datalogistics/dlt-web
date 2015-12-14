@@ -52,7 +52,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       spokeExtents(map, exnode.size, extents, fill)
       gridmap(map, exnode, cells, fill, 100, 550)
       exnodeStats(map, exnode, cells, 970, 100)
-      legend(map, exnode, extents, fill, 970, 200)
+      legend(map, exnode, extents, fill, 970, 230)
     } else {
       map.svg.append("text")
           .attr("fill", "red")
@@ -180,7 +180,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("x", (d,i) => (width/(axisMarks.length-1)) * i)
         .attr("y", 25)
         .attr("text-anchor", "middle")
-        .text(d => d.toFixed(0)*100 + "%")
+        .text(d => (d*100).toFixed() + "%")
    
     xaxis.selectAll(".abs").data(axisMarks)
       .enter().append("text")
