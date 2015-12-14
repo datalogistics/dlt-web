@@ -200,6 +200,12 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("y", 35)
         .attr("text-anchor", "middle")
         .text(d => formatSize(exnode.size*d))
+
+    xaxis.append("text")
+       .attr("x", 0)
+       .attr("y", 55)
+       .text("Average extent size: " + formatSize(mode(exnode.extents.map(e => e.size))))
+
   }
 
 
@@ -211,10 +217,10 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     var uniques = cells.reduce((acc, cell) => {cell.depots.forEach(e => acc.add(e)); return acc;}, new Set())
     uniques = Array.from(uniques)
     
-    var data = [["File Size", formatSize(exnode.size)],
-                ["Root Exnode", exnode.id], 
+    var data = [["Root Exnode", exnode.id], 
+                ["File Size", formatSize(exnode.size)],
+                ["Avg Extent Size (mode)", formatSize(mode(exnode.extents.map(e => e.size)))],
                 ["Child Extents", exnode.extents.length || 1],
-                ["Mode Extent", formatSize(mode(exnode.extents.map(e => e.size)))],
                 ["Min,Avg,Max duplication", [min, avg, max]],
                 ["Unique Depots", uniques.length]]
 
@@ -284,7 +290,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
   }
 
   function improveSalience(left, middle) {
-    //Returns a new version of middle that is ordered to match right if possible as long as it doesn't break something in the left/middle
+    //Returns a new version of middle that is ordered to match left 
     var l = left.depots
     var m = middle.depots.map(e=>e)
 
