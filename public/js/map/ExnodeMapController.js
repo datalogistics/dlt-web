@@ -48,7 +48,11 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
 
       cells.forEach(e => {e.depots = Array.from(e.depots); e.depots.sort()}) //Ensure unique depot ids and cannonical order
       
-      var fill = d3.scale.category10()
+      var colors = d3.scale.category20().range()
+      colors = range(0, colors.length).map(i => colors[(i*2+(i>=10?1:0))%colors.length])
+      console.log(colors)
+      var fill = d3.scale.ordinal().range(colors)
+      
       spokeExtents(map, exnode.size, extents, fill)
       gridmap(map, exnode, cells, fill, 100, 550)
       exnodeStats(map, exnode, cells, 970, 100)
@@ -63,8 +67,6 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
 
 
   function spokeExtents(svg, rootSize, extents, fill) {
-    //TODO: Different spoke lengths for different depots in one location and layer? 
-  
     var unique_depot_by_location = extents.reduce(function(acc, e) {
       var prior = acc[e.xy] || new Set()
       prior.add(e.depot)
@@ -87,10 +89,10 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     
     var radius = d3.scale.linear()
                    .domain(range(0, max_colocated+1))
-                   .range(range(0, max_colocated+1).map(i => 12+i*4))
+                   .range(range(0, max_colocated+1).map(i => 14+i*5))
 
     var arc = d3.svg.arc()
-         .innerRadius("1")
+         .innerRadius(d => radius(d.order-1))
          .outerRadius(d => radius(d.order))
          .startAngle(d => ((d.offset/rootSize)*(2*Math.PI)))
          .endAngle(d => {
@@ -127,7 +129,9 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       acc = acc.concat(flat)
       return acc
     }, [])
-   
+
+
+    //TODO: Change spoke higlight to stack at outer radius...hard to see some higlights with the open design
     var segments = root.append("g").attr("id", "sections")
     segments.selectAll(".section").data(flattened.filter(d => d.order == 0))
       .enter().append("rect")
@@ -267,15 +271,6 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
 
   function parseLocation(mapping) {return mapping.split("/")[2]}
   function range(low, high) {return Array.apply(null, Array((high-low))).map((_,i) => low+i)}
-  function clone(obj) {
-    if (null == obj || "object" != typeof obj) return obj;
-    var copy = obj.constructor();
-    for (var attr in obj) {
-        if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
-    }
-    return copy;
-  }
-
   function formatSize(size) {
     var magnitude = Math.floor(Math.log(size)/Math.log(1024))
     var suffix = " bytes"
