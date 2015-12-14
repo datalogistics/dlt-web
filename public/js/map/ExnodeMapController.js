@@ -206,6 +206,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     var data = [["File Size", formatSize(exnode.size)],
                 ["Root Exnode", exnode.id], 
                 ["Child Extents", exnode.extents.length || 1],
+                ["Mode Extent", formatSize(mode(exnode.extents.map(e => e.size)))],
                 ["Min,Avg,Max duplication", [min, avg, max]],
                 ["Unique Depots", uniques.length]]
 
@@ -308,6 +309,21 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     }
     return size.toFixed(1) + suffix
   }
+  
+  function mode(arr) {
+    var numMapping = {};
+    var greatestFreq = 0;
+    var mode;
+    arr.forEach(function findMode(number) {
+        numMapping[number] = (numMapping[number] || 0) + 1;
+
+        if (greatestFreq < numMapping[number]) {
+            greatestFreq = numMapping[number];
+            mode = number;
+        }
+    });
+    return +mode;
+}
 
 
 } 
