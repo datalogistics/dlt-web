@@ -50,7 +50,6 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       
       var colors = d3.scale.category20().range()
       colors = range(0, colors.length).map(i => colors[(i*2+(i>=10?1:0))%colors.length])
-      console.log(colors)
       var fill = d3.scale.ordinal().range(colors)
       
       spokeExtents(map, exnode.size, extents, fill)
@@ -111,7 +110,6 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
   }
 
   function gridmap(map, exnode, cells, fill, x_position, y_position) {
-    //TODO: Do a "regularization" pass where if an item is in cell[n] and cell[n+1], then its order number is the same in both or 0 in the 2nd if case its the only thing in that cell
     var width = cells.length*2 
     var height = 50 
     var overlay_height = 5    //Height of duplicate indicator bands
@@ -124,14 +122,15 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("height", height)
         .attr("fill", "#FFF")
 
+    cells = cells.map((e, i) => improveSalience(cells[Math.max(0, i-1)], e))
+
     var flattened = cells.reduce(function(acc, cell, cell_idx) {
       var flat = cell.depots.map((d,i) => {return {depot: d, cell_idx: cell_idx, order: i, overlaps: cell.exnodes}})
       acc = acc.concat(flat)
       return acc
     }, [])
 
-
-    //TODO: Change spoke higlight to stack at outer radius...hard to see some higlights with the open design
+    //TODO: Change spoke highlight to stack at outer radius...hard to see some higlights with the open design
     var segments = root.append("g").attr("id", "sections")
     segments.selectAll(".section").data(flattened.filter(d => d.order == 0))
       .enter().append("rect")
@@ -268,6 +267,28 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
        .style("font-size", "125%")
        .text("Depot (% of file)")
   }
+
+  function swap(array, idx1, idx2) {
+    console.log("Swap")
+      var temp = array[idx1]
+      array[idx1] = array[idx2]
+      array[idx2] = temp
+  }
+
+  function improveSalience(left, middle) {
+    //Returns a new version of middle that is ordered to match right if possible as long as it doesn't break something in the left/middle
+    var l = left.depots
+    var m = middle.depots.map(e=>e)
+
+    for (var i=0; i<m.length; i++) {
+      var idx = l.indexOf(m[i])
+      if (idx > 0 && idx != i) {swap(m, idx, i)}
+    }
+    middle.depots = m
+    return middle 
+  }
+
+
 
   function parseLocation(mapping) {return mapping.split("/")[2]}
   function range(low, high) {return Array.apply(null, Array((high-low))).map((_,i) => low+i)}
