@@ -1,3 +1,24 @@
+//Find where a location is on the map (pixel coordinates)
+//Adds items to the map if not found then returns the new location
+function mapLocation(map, entry) {
+  var name = undefined
+  if (entry.host) {
+    name = entry.host
+  } else {
+    name = entry.split(":")[0]
+  }
+
+  var selector = ".depotLocation[name='" + name + "']"
+  var node = map.svg.selectAll(selector).node()
+  if (node == null) {
+    console.error("Could not find map location: " + name)
+    mapPoints(map.projection, map.svg)([{location: [], name: name, port: "", depot_id: "GENERATED_ID" + Math.random()}])
+    return mapLocation(map, name)
+  }
+  var parent = d3.select(node.parentNode)
+  return d3.transform(parent.attr("transform")).translate
+}
+
 // Add a highlight halo to a specified map item(s).
 // 
 // svg -- Root svg element to find things in
@@ -113,7 +134,7 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       var count = group.select(".count")
       if (count.empty()) {
         group.append("text")
-          .text(function (d) {return 2})
+          .text("2")
           .attr("class", "count")
           .attr("baseline-shift", "-4.5px")
           .attr("text-anchor", "middle")
@@ -130,14 +151,15 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       invisiblePoint(group)
     });
   }
+  return group
 }
 
 
 //Add nodes to the side of the map, because their lat/lon is not known
 //baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
-function addOffMapLocation(projection, idx, baseLatLon, name, svg, depot_id) {
+function addOffMapLocation(projection, idx, baseLatLon, name, port, svg, depot_id) {
     pair = [baseLatLon[0]-idx*.3, baseLatLon[1]-idx]  //the idx*.3 straigthens out the line
-    node = addMapLocation(projection, name, pair, svg, depot_id)
+    node = addMapLocation(projection, name, port, pair, svg, depot_id)
     node.append("text")
        .attr("dx", function(d){return 10})
        .attr("dy", function(d){return 4})
@@ -160,7 +182,7 @@ function mapPoints(projection, svg, elementId) {
         
         offmap = parseInt(svg.select("layout-data").attr("off-map-count"))
         svg.select("layout-data").attr("off-map-count", offmap+1)
-        addOffMapLocation(projection, offmap, [-72, 40], item.name, svg_points, item.depot_id)
+        addOffMapLocation(projection, offmap, [-72, 40], item.name, item.port, svg_points, item.depot_id)
       } else {
         pair = [item.location.longitude, item.location.latitude]
         node = addMapLocation(projection, item.name, item.port, pair, svg_points, item.depot_id)

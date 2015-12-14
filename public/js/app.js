@@ -109,7 +109,7 @@ angular.module('periApp', ['ngRoute',
                when('/downloads/',{
                  templateUrl: 'views/download_map.html',
                  controller: 'DownloadMapController',
-		 resolve: {
+                 resolve: {
                    'unis': function(UnisService) {
                      return UnisService.init()
                    }}
@@ -117,7 +117,15 @@ angular.module('periApp', ['ngRoute',
                when('/downloads/filter',{
                  templateUrl: 'views/download_map.html',
                  controller: 'DownloadMapController',
-		 resolve: {
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               })
+               .when('/exnode/:id', {
+                 templateUrl: 'views/exnode_map.html',
+                 controller: 'ExnodeMapController',
+                 resolve: {
                    'unis': function(UnisService) {
                      return UnisService.init()
                    }}
