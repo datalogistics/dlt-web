@@ -87,12 +87,20 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     extents.sort((a,b) => b.order - a.order)
     
     var radius = d3.scale.linear()
-                   .domain(range(0, max_colocated+1))
-                   .range(range(0, max_colocated+1).map(i => 14+i*5))
+                           .domain(range(0, max_colocated+1))
+                           .range(range(0, max_colocated+1).map(i => 14+i*5))
 
     var arc = d3.svg.arc()
          .innerRadius(d => radius(d.order-1))
          .outerRadius(d => radius(d.order))
+         .startAngle(d => ((d.offset/rootSize)*(2*Math.PI)))
+         .endAngle(d => {
+           return Math.max(.05, ((d.offset+d.size)/rootSize))*(2*Math.PI)
+         })
+
+    var arc_highlight = d3.svg.arc()
+         .innerRadius(d => radius(0))
+         .outerRadius(d => radius(d.order+max_colocated+1))
          .startAngle(d => ((d.offset/rootSize)*(2*Math.PI)))
          .endAngle(d => {
            return Math.max(.05, ((d.offset+d.size)/rootSize))*(2*Math.PI)
@@ -105,6 +113,8 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("id", d => "s" +d.id)
         .attr("order", d => unique_depot_by_location[d.xy].indexOf(d.depot))
         .attr("d", arc)
+        .attr("rest_d", arc)
+        .attr("high_d", arc_highlight)
         .attr("fill", (d,i) => fill(d.depot))
         .attr("transform", d => "translate(" + d.xy[0] + "," + d.xy[1] + ")")
   }
@@ -130,7 +140,6 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       return acc
     }, [])
 
-    //TODO: Change spoke highlight to stack at outer radius...hard to see some higlights with the open design
     var segments = root.append("g").attr("id", "sections")
     segments.selectAll(".section").data(flattened.filter(d => d.order == 0))
       .enter().append("rect")
@@ -145,15 +154,14 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
           var exnodes = d3.select(this).attr("exnodes").split(",")
           exnodes.forEach(function(ex) {
             var spoke = d3.select("#s" + ex)
-            spoke.attr("restore", spoke.attr("transform"))
-            spoke.attr("transform", spoke.attr("transform") + "scale(2.2)")
+            spoke.attr("d", spoke.attr("high_d"))
           })
         })
         .on("mouseout", function() {
           var exnodes = d3.select(this).attr("exnodes").split(",")
           exnodes.forEach(function(ex) {
             var spoke = d3.select("#s" + ex)
-            spoke.attr("transform", spoke.attr("restore"))
+            spoke.attr("d", spoke.attr("rest_d"))
           })
         })
 
@@ -270,7 +278,6 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
   }
 
   function swap(array, idx1, idx2) {
-    console.log("Swap")
       var temp = array[idx1]
       array[idx1] = array[idx2]
       array[idx2] = temp
