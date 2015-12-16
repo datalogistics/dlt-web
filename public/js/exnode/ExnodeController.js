@@ -17,7 +17,7 @@ function getSchemaProperties(obj) {
  * public/js/exnode/
  * ExnodeController.js
  */
-function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,SocketService, $route) {
+function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,SocketService) {
   // Dangerous code
   // SocketService.emit('exnode_getAllChildren', {id : null});
   // SocketService.on('exnode_childFiles' , function(d){
