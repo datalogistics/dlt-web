@@ -28,7 +28,6 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   //
   //
 
-  console.log("Path on return: ", $rootScope.exnodeBrowserPath)
   $scope.fieldArr = [];      
   $scope.addField = function(){
     var x = {
@@ -142,10 +141,6 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
 
   function selectNodeGen(prefix) {
     return function(a,b){
-      //Store path for later restore
-      $scope.exnodeBrowserPath = b.node.parents.map(e=>e).reverse()
-      $scope.exnodeBrowserPath.push(b.node.id)
-
       var info = b.node.original;
       var selectedIds = $scope[prefix + 'selectedIds'] = $scope[prefix + 'selectedIds'] || {} ;
       if (!info.isFile) {
@@ -247,28 +242,6 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     dom.hide();
     dom.submit();
   };
-
-
-  $scope.restorePath = function() {
-    console.log("Restoring", $rootScope.exnodeBrowserPath)
-    if ($rootScope.exnodeBrowserPath) {
-      var tree = jQuery.jstree.reference(this)
-      var path = $rootScope.exnodeBrowserPath
-      tree.after_open = $scope.clearState
-      var loadNext = function(i) {
-        if (i <= path.length) {
-          tree.open_node(path[i])
-          tree.open_node(path[i], () => loadNext(i+1))
-        }
-      }
-      loadNext(1)
-    }
-  }
-
-  function savePath() {
-    $rootScope.exnodeBrowserPath = $scope.exnodeBrowserPath
-    console.log("Path on exit: ", $rootScope.exnodeBrowserPath)
-  }
 
   $scope.showExnodeMap = function(id) {
     savePath()

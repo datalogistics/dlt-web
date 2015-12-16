@@ -8,7 +8,7 @@
                         <!-- <js-tree tree-events="select_node:nodeSelected" tree-data="json" tree-src="/views/filetree.json"  tree-plugins="checkbox"></js-tree> -->
                         <js-tree tree-events="loaded:restorePath;after_open:clearState;check_node:nodeSelected;uncheck_node:nodeUnselected;uncheck_all:uncheckAll;check_all:checkAll"   
                                  tree-checkbox="{ tie_selection : false , three_state: false}"
-                                 tree-plugins="checkbox"
+                                 tree-plugins="checkbox,state"
                                  tree-ajax="/api/fileTree"></js-tree>
                     </div>
                     <div class="col-md-7 file-viewer">
