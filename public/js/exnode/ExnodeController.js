@@ -244,7 +244,6 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   };
 
   $scope.showExnodeMap = function(id) {
-    savePath()
     var parts = id.split("/")
     id = parts[parts.length-1]
     console.log("Showing exnode map for ", id)
