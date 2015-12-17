@@ -131,18 +131,26 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   
   SocketService.on('exnode_childFiles', childFileHandler);
 
-  $scope.clearState = function(a,b){
+  $scope.invalidateLoaded = function(a,b){
     var info = b.node.original;
+    var jstr = jQuery.jstree.reference(this);
+    jstr.save_state()
     if (!info.isFile) {
-      var jstr = jQuery.jstree.reference(this);
       jstr.get_node(info.id).state.loaded = false;
     }
+  }
+
+  $scope.saveState = function(a,b) {
+    var jstr = jQuery.jstree.reference(this);
+    jstr.save_state()
   }
 
   function selectNodeGen(prefix) {
     return function(a,b){
       var info = b.node.original;
       var selectedIds = $scope[prefix + 'selectedIds'] = $scope[prefix + 'selectedIds'] || {} ;
+      var jstr = jQuery.jstree.reference(this);
+      jstr.save_state()
       if (!info.isFile) {
         // Do nothing
         return;
@@ -166,6 +174,8 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   
   function unselectNodeGen(prefix){
     return function(a,b){
+      var jstr = jQuery.jstree.reference(this);
+      jstr.save_state()
       var info = b.node.original;
       if(!info.isFile) {
         // Do Nothing
@@ -244,6 +254,7 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   };
 
   $scope.showExnodeMap = function(id) {
+
     var parts = id.split("/")
     id = parts[parts.length-1]
     console.log("Showing exnode map for ", id)
