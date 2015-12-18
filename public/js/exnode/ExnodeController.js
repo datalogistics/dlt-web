@@ -17,7 +17,7 @@ function getSchemaProperties(obj) {
  * public/js/exnode/
  * ExnodeController.js
  */
-function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,SocketService) {
+function exnodeController($scope, $routeParams, $location, ExnodeService,$log,SocketService) {
   // Dangerous code
   // SocketService.emit('exnode_getAllChildren', {id : null});
   // SocketService.on('exnode_childFiles' , function(d){
@@ -25,9 +25,6 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   // });
   // The Exnode file browser 
   //
-  //
-  //
-
   $scope.fieldArr = [];      
   $scope.addField = function(){
     var x = {
@@ -140,9 +137,10 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     }
   }
 
-  $scope.saveState = function(a,b) {
+  $scope.saveTreeState = function(a,b) {
     var jstr = jQuery.jstree.reference(this);
     jstr.save_state()
+
   }
 
   function selectNodeGen(prefix) {

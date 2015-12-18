@@ -6,7 +6,7 @@
                 <div class="row top5">
                     <div class="col-md-5 tree-browser">
                         <!-- <js-tree tree-events="select_node:nodeSelected" tree-data="json" tree-src="/views/filetree.json"  tree-plugins="checkbox"></js-tree> -->
-                        <js-tree tree-events="after_open:invalidateLoad;after_close:saveState;check_node:nodeSelected;uncheck_node:nodeUnselected;uncheck_all:uncheckAll;check_all:checkAll"   
+                        <js-tree tree-events="after_open:invalidateLoad;after_close:saveTreeState;check_node:nodeSelected;uncheck_node:nodeUnselected;uncheck_all:uncheckAll;check_all:checkAll"   
                                  tree-ajax="/api/fileTree"
                                  tree-plugins="checkbox,state"
                                  tree-checkbox="{ tie_selection : false , three_state: false}"
@@ -47,6 +47,7 @@
                     </div>
                 </div>
             </tab>
+
             <tab heading="Exnode Search"  ng-controller="DltFormController">
                 <form class="form-horizontal top5" id="searchForm" ng-submit="searchExnodes()">
                     <div class="form-group"  ng-repeat="field in fieldArr">
@@ -126,6 +127,7 @@
                     </div>
                 </div>               
             </tab>     
+
             <tab heading="Landsat Search"  ng-controller="DltFormController">
                 <form class="form-horizontal top5 usgsform" ng-submit="submitUsgsForm()">
                     <div class="row">
@@ -344,6 +346,7 @@
                  </div> -->  
                 </form>
             </tab>
+
             <tab heading="USGS Shopping Cart" ng-controller="ShoppingCartController">
                 <div class="row">                            
                     <div ng-if="isShoppingCartLoading" style=" padding: 10px; margin: 10px 0;background-color: rgba(200,200,200,0.3);">
