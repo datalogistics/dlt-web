@@ -1,17 +1,19 @@
 function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService, $rootScope) {  
-  // The usgs Model form
-  
-  var now = new Date().valueOf()
-  var stateTimeOut = 1440000  //about a day
   var usf = $scope.usgsform = loadForm()
   
+ 
+  
   function loadForm() {
+    var stateTimeOut = 1440000  //about a day
+    var now = new Date().valueOf()
     if (!$rootScope.landsatSearchState) {initForm();}
+    if ((now - $rootScope.landsatSearchState.timestamp) > stateTimeOut) {initForm();}
     return $rootScope.landsatSearchState
   }
 
   function initForm() {
     $rootScope.landsatSearchState = {
+      timestamp: new Date().valueOf(),
       startDate : "",
       endDate : "",
       sensorName : "" ,
@@ -27,6 +29,9 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
 
 
 
+  $scope.$on("$destroy", function() {
+    $rootScope.landsatSearchState.timestamp = new Date().valueOf()
+  })
 
   function toMMFormat(date){
     return $filter('date')(date, "MM/dd/yyyy");
