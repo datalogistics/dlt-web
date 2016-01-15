@@ -90,7 +90,7 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       .attr("style", "display:none")
     
     if (depot_id !== undefined) {circ.attr('depot_id', depot_id)}
-    return circ;
+    return group;
   }
   var name = name + (port ? ":" + port : "")
 
@@ -153,7 +153,8 @@ function mapPoints(projection, svg, elementId) {
     var svg_points = svg.select("#overlay")
 
     points.forEach(function(item) {
-      if (item.location.length == 0
+      if (item.location === undefined
+         || item.location.length == 0
          || item.location.latitude == undefined
          || item.location.longitude == undefined
          || (item.location.latitude == 0 && item.location.longitude == 0)) {

@@ -29,14 +29,20 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
 function loadDomain($http, rsp) {
     var root = rsp.id
-    var allNodes = Promise.all(rsp.nodes.map(n => $http.get(n.href)))
-                          .then(nodes => nodes.map(n => ensureNode({}, parseNodeURN(n.data.urn), {location: n.data.location, internal: true, parent: root, domains: new Set([root])})))
+    console.log(root, rsp.links)
+    var allNodes = rsp.nodes === undefined
+                    ? Promise.resolve([])
+                    : Promise.all(rsp.nodes.map(n => $http.get(n.href)))
+                          .then(nodes => nodes.map(n => n.data[0])) 
+                          .then(nodes => nodes.map(n => ensureNode({}, parseNodeURN(n.urn), {location: n.location, internal: true, parent: root, domains: new Set([root])})))
                           .then(nodes => nodes.reduce((dict, n) => {dict[n.id] = n; return dict;}, {}))
                           .then(nodes => {ensureNode(nodes, root, {internal: false, level: "domain", domains: new Set([root]), children: Array.from(Object.keys(nodes))}); return nodes;})
                           .catch(e => {throw e})
 
-    var allLinks = Promise.all(rsp.links.map(e => $http.get(e.href)))
-                          .then(links => Promise.all(links.map(l=> loadEndpoints($http, l.data))))
+    var allLinks = rsp.links == undefined 
+                   ? Promise.resolve([])
+                   : Promise.all(rsp.links.map(e => $http.get(e.href)))
+                          .then(links => Promise.all(links.map(l=> loadEndpoints($http, l.data[0]))))
                           .then(links => links.map(l=>{return {id: l.id, source: l.source, sink: l.sink}}))
                           .catch(e => {throw e})
                                                
@@ -94,7 +100,7 @@ function getEndpointDetails($http, endpoint) {
   if (endpoint.startsWith("http")) {
     return $http.get(endpoint)
              .then(function(rsp) {
-                 var parts = rsp.data.urn.match("node=(.*?)(:|$)") 
+                 var parts = rsp.data[0].urn.match("node=(.*?)(:|$)") 
                  return parts[1];
              })
      }
