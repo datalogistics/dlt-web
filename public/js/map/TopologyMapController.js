@@ -12,13 +12,12 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
   var map = null
   if ($routeParams.geo) {map = geoMap("#topoplogyMap", 960, 500, svg)}
-  else if ($routeParams.circle) {}//TODO: Circular (pack) layout
+  else if ($routeParams.circle) {map = circleMap("#topologyMap", 960, 500, svg)}//TODO: Circular (pack) layout
   else {map = forceMap("#topologyMap", 1200, 500, svg);}
 
   $http.get(topoUrl)
     .then(rsp => toGraph($http, rsp.data))
-    .then(graph => map.doLayout(map, graph))
-    .then(function() {map.doDraw(map)})
+    .then(function(graph) {map.doDraw(map, graph)})
     .then(function() {
       //Cleanup functions here!
       $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
@@ -29,7 +28,6 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
 function loadDomain($http, rsp) {
     var root = rsp.id
-    console.log(root, rsp.links)
     var allNodes = rsp.nodes === undefined
                     ? Promise.resolve([])
                     : Promise.all(rsp.nodes.map(n => $http.get(n.href)))
@@ -137,21 +135,46 @@ function ensureNodes(nodes, link, defaults) {
 }
 
 
-function forceLayout(map, graph) {
+// ---------------- Spring force embedded -----
+
+//Setup a spring-force embedding.
+//
+//selector -- used to grab an element of the page and append svg into into it
+//width -- how wide to make the canvas
+//height -- how tall to make the canvas 
+//svg -- svg element to use (overrides selector is present) 
+//returns the root element and a function for layout 
+function forceMap(selector, width, height, svg) {
+  if (svg === undefined) {
+    svg = d3.select(selector).append("svg")
+               .attr("width", width)
+               .attr("height", height)
+  }
+
+  var map = svg.append("g")
+               .attr("id", "map")
+               .attr("width", width)
+               .attr("height", height)
+  
+  var layout = d3.layout.force()
+      .size([width, height])
+      .linkDistance(function(l) {return l.source.internal && l.target.internal ? 40 : 20})
+      .linkStrength(function(l) {return l.source.internal && l.target.internal ? 1 : .5})
+      .charge(function(n) {return -100*n.weight})
+
+  return {svg:map, layout: layout, doDraw:forceDraw}
+}
+
+function forceDraw(map, graph) {
+  var svg = map.svg
+  var layout = map.layout
+  
   var nodes = Array.from(Object.keys(graph.nodes))
   var links = graph.links.map(l => {return {source: nodes.indexOf(l.source), target: nodes.indexOf(l.sink)}})
                          .filter(l => l.source != l.target)
   
-  //TODO: map.layout = map.makeLayout(nodes, links) to handle geo and force  
-  map.layout.nodes(nodes.map(e => {return {id: e, details: graph.nodes[e]}}))
-  map.layout.links(links)
-  return map
-}
-
-//TODO: Need a different draw function for each layout...
-function forceDraw(map) {
-  var svg = map.svg
-  var layout = map.layout
+  layout.nodes(nodes.map(e => {return {id: e, details: graph.nodes[e]}}))
+  layout.links(links)
   layout.start()
   
   var colors = d3.scale.category10()
@@ -210,14 +233,44 @@ function forceDraw(map) {
   return map
 }
 
-//Setup a spring-force embedding.
-//
-//selector -- used to grab an element of the page and append svg into into it
-//width -- how wide to make the canvas
-//height -- how tall to make the canvas 
-//svg -- svg element to use (overrides selector is present) 
-//returns the root element and a function for layout 
-function forceMap(selector, width, height, svg) {
+// ---- Circular embedding ----
+function circleDraw(map, graph) {
+  var svg = map.svg
+  var width = map.width
+  var height = map.height
+
+  var nodes = Array.from(Object.keys(graph.nodes)).map(e => {return {id: e}})
+  var angularSpacing = (Math.PI*2)/nodes.length
+  var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + (width/2))
+  var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + (height/2))
+  nodes = nodes.map((e,i) => {e["x"] = layoutX(80, i); return e})
+               .map((e,i) => {e["y"] = layoutY(80, i); return e})
+
+  var layout = {}
+  nodes.forEach(e => layout[e.id] = e)
+
+  var node = svg.selectAll(".node").data(nodes)
+  node.enter().append("circle")
+    .attr("class", "node")
+    .attr("cx", d => d.x)
+    .attr("cy", d => d.y)
+    .attr("id", d => d.id)
+    .attr("r", 5)
+
+    console.log(graph.links)
+  var link = svg.selectAll(".link").data(graph.links)
+  link.enter().append("line")
+     .attr("class", "link")
+     .attr("x1", d => layout[d.source].x)
+     .attr("y1", d => layout[d.source].y) 
+     .attr("x2", d => layout[d.sink].x)
+     .attr("y2", d => layout[d.sink].y) 
+     .attr("stroke", "gray")
+
+
+}
+
+function circleMap(selector, width, height, svg) {
   if (svg === undefined) {
     svg = d3.select(selector).append("svg")
                .attr("width", width)
@@ -229,14 +282,9 @@ function forceMap(selector, width, height, svg) {
                .attr("width", width)
                .attr("height", height)
   
-  var layout = d3.layout.force()
-      .size([width, height])
-      .linkDistance(function(l) {return l.source.internal && l.target.internal ? 40 : 20})
-      .linkStrength(function(l) {return l.source.internal && l.target.internal ? 1 : .5})
-      .charge(function(n) {return -100*n.weight})
-
-  return {svg:map, layout: layout, doLayout: forceLayout, doDraw:forceDraw}
+  return {svg:map, width: width, height: height, doDraw: circleDraw}
 }
+
 
 function geoMap(selector, width, height, svg) {
   var map = baseMap(selector, width, height, svg)
