@@ -15,113 +15,130 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   else if ($routeParams.circle) {map = circleMap("#topologyMap", 960, 500, svg)}//TODO: Circular (pack) layout
   else {map = forceMap("#topologyMap", 1200, 500, svg);}
 
-  $http.get(topoUrl)
-    .then(rsp => toGraph($http, rsp.data))
-    .then(function(graph) {map.doDraw(map, graph)})
-    .then(function() {
-      //Cleanup functions here!
-      $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
-    })
-    .catch(e => {throw e})
+  var baseGraph = domainsGraph(UnisService)
+  var graph = expandGraph(baseGraph, [])
 
+  map.doDraw(map, graph)
+  
+  //Cleanup functions here!
+  $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
 }
 
-function loadDomain($http, rsp) {
-    var root = rsp.id
-    var allNodes = rsp.nodes === undefined
-                    ? Promise.resolve([])
-                    : Promise.all(rsp.nodes.map(n => $http.get(n.href)))
-                          .then(nodes => nodes.map(n => n.data[0])) 
-                          .then(nodes => nodes.map(n => ensureNode({}, parseNodeURN(n.urn), {location: n.location, internal: true, parent: root, domains: new Set([root])})))
-                          .then(nodes => nodes.reduce((dict, n) => {dict[n.id] = n; return dict;}, {}))
-                          .then(nodes => {ensureNode(nodes, root, {internal: false, level: "domain", domains: new Set([root]), children: Array.from(Object.keys(nodes))}); return nodes;})
-                          .catch(e => {throw e})
+function expandGraph(graph, paths) {
+  //Just the selected nodes
 
-    var allLinks = rsp.links == undefined 
-                   ? Promise.resolve([])
-                   : Promise.all(rsp.links.map(e => $http.get(e.href)))
-                          .then(links => Promise.all(links.map(l=> loadEndpoints($http, l.data[0]))))
-                          .then(links => links.map(l=>{return {id: l.id, source: l.source, sink: l.sink}}))
-                          .catch(e => {throw e})
-                                               
-   return Promise.all([allNodes, allLinks])
-                 .then(items => {
-                   //Merge!
-                   var nodes = items[0]
-                   var links = items[1]
-                   links.forEach(link => ensureNodes(nodes, link, {parent: root, internal: false, level: "domain_entry", domains: new Set([root])}))
-                   return {nodes: nodes, links: links, root: root}})
-                 .catch(e => {throw e})
+  paths = paths.map(p => p.trim()).filter(p => p.length > 0)
+  var expansion = paths.length == 0
+                   ? [graph.root]
+                   : paths.map(path => expandPath(graph.root, path.split(":")))
+                       .reduce((acc, partial) => acc.concat(partial), [])
+
+
+  //Rebuild links to fit just selected nodes
+  var links = graph.links
+                 .map(link => {return {source: findEndpoint(expansion, link.source),
+                                       sink: findEndpoint(expansion, link.sink)}})
+                 .filter(link => link.source != link.sink)
+
+  return {nodes: expansion, links: links}
 }
 
-
-//Graph is {root: id, nodes: {}, links: ...} 
-//
-//Nodes is a heirarchy made from dictionaries {id: x, parent: y, children: []}.  Each node is stored under its id
-//Links is a list of dictionaries {source: x, target: y}
-//root, parent, source, target and the contents of the children list are all id's in the node hierarchy
-function toGraph($http, rsp) {
-  if (!Array.isArray(rsp)) {return loadDomain($http, rsp)}
-  else {
-    var domains = rsp.map(d => loadDomain($http, d))
-    return Promise.all(domains).then(mergeDomains)
+function findEndpoint(expansion, target) {
+  var matchLen = function(a,b) {
+    for(i=0; i<a.length && i<b.length; i++) {
+      if (a[i] != b[i]) {return i-1}
+    }
+    return Math.min(a.length, b.length)
   }
+
+  var bestMatch = expansion.reduce(
+    function (acc, node, i) {
+      var match = matchLen(target, node.path)
+      if (match >= acc.matchLen) {return {matchLen: match, idx: i}}
+      return acc
+    },
+    {matchLen: 0, idx: -1})
+
+  return bestMatch.idx
 }
 
-function mergeDomains(domains) {
-  return domains.reduce((full, domain) => {
-                           Object.keys(domain.nodes).forEach(
-                                function(key) {
-                                  var item = domain.nodes[key]
-                                  if (!full.nodes[key]) {full.nodes[key] = item}
-                                  else {
-                                    item.domains.forEach(d => full.nodes[key].domains.add(d))
-                                  }
-                                })
-                           full.links = full.links.concat(domain.links)
-                           full.root.push(domain.root)
-                           return full;}, 
-                           {nodes: {}, links: [], root: []})
+function expandPath(root, path) {
+   if (path.length == 0) {return [root]}
+   var target = (path[0] != "*")
+                 ? root.children.filter(child => child.id == path[0])
+                 : root.children
+  
+   //copy path and remove first item
+   path = path.map(e=>e)
+   path.shift() 
+
+   return target.map(child => expandPath(child, path))
+                .reduce((acc, item) => {return acc.concat(item)}, [])
 }
 
-function parseNodeURN(urn) {
-    var parts = urn.split(":")
-    var item = parts.filter(function(v) {return v.startsWith("node=")})
-    if (item.length > 0) {item = item[0].slice(5)}
-    else {item = parts[4]} //HACK: Just happens to be where it lands when the urn is one format...probably not robus
-    return item
+// Graph is pair of nodes and links
+// Nodes is a tree
+// links is a list of pairs of paths in the tree
+function domainsGraph(UnisService) {
+  var ports = UnisService.ports 
+                .map(port => {var values = URNtoDictionary(port.urn)
+                              values["selfRef"] = port.selfRef
+                              values["id"] = values.port
+                              return values})
+
+  var nodes = UnisService.nodes
+                  .map(n => {return {id: n.id, location: n.location, selfRef: n.selfRef, children: n.ports ? n.ports.map(p => p.href) : []}})
+                  .map(n => {n.children = ports.filter(p => n.children.indexOf(p.selfRef) >= 0); return n})
+
+  var domains = UnisService.domains
+                  .map(d => {return {id: d.id, children: d.nodes.map(n => n.href)}})
+                  .map(d => {d.children = nodes.filter(n => d.children.indexOf(n.selfRef) >= 0); return d})
+
+  var usedNodes = domains.reduce((acc, domain) => acc.concat(domain.children), [])
+  domains.push({id: "other", children: nodes.filter(n => usedNodes.indexOf(n) < 0)})
+  var root = {id: "root", children: domains}
+  addPaths(root, "")
+
+  var pathMapping = portToPath(domains).reduce((acc, pair) => {acc[pair.ref] = pair.path; return acc}, {})
+  var links = UnisService.links
+                  .map(l => {return {source: pathMapping[l.endpoints.source.href], 
+                                     sink: pathMapping[l.endpoints.sink.href]}})
+                  .filter(l => l.source && l.sink) //TODO: Remove this and actually resolve URN-based links...
+
+  var graph = {root: root, links: links}
+  return graph
 }
 
-
-//Given a link endpoint entry, tries to get the details
-function getEndpointDetails($http, endpoint) {
-  if (endpoint.startsWith("http")) {
-    return $http.get(endpoint)
-             .then(function(rsp) {
-                 var parts = rsp.data[0].urn.match("node=(.*?)(:|$)") 
-                 return parts[1];
-             })
-     }
-  else if (endpoint.startsWith("urn")) {
-    return new Promise(function(resolve, reject) {resolve(parseNodeURN(endpoint))})
-  } else {
-    throw "Unknown endpoint format: " + endpoint
-  }
+function URNtoDictionary(urn) {
+  return urn.split(":").map(p => p.split("="))
+            .filter(p => p.length > 1) 
+            .reduce((dict, pair) => {dict[pair[0]] = pair[1]; return dict}, {})
 }
 
-function loadEndpoints($http, link) {
-    var source = getEndpointDetails($http, link.endpoints.source.href)
-    var target = getEndpointDetails($http, link.endpoints.sink.href)
-    return Promise.all([source, target]).then(function(rslt) {return {id: link.id, source: rslt[0], sink: rslt[1]}})
+function addPaths(root, prefix) {
+  var separator = ":"
+  root["path"] = prefix
+  if (root.children) {root.children.forEach(child => addPaths(child, prefix + separator + root.id))}
+}
+
+function portToPath(root) {
+  return root.reduce(function(acc, entry) {
+    if (entry.children) {
+      acc = acc.concat(portToPath(entry.children))
+    } else {
+      acc.push({ref: entry.selfRef, path: entry.path})
+    }
+    return acc
+  },
+  [])
 }
 
 //Ensures a node with the given id exists in the node list.  
 //Uses the 3rd "defaults" paramter to build a new one if it does not
 function ensureNode(nodes, node, defaults) {
    defaults.parent   = (defaults.parent   === undefined) ? null           : defaults.parent
-   defaults.level    = (defaults.level    === undefined) ? "domain_entry" : defaults.level
    defaults.children = (defaults.children === undefined) ? []             : defaults.children
-   defaults.internal = (defaults.internal === undefined) ? false          : defaults.internal
+   defaults.homeDomain = (defaults.homeDomain === undefined) ? undefined  : defaults.homeDomain
    defaults.id = node
    
    if (!nodes[node]) {nodes[node] = defaults}
@@ -158,8 +175,8 @@ function forceMap(selector, width, height, svg) {
   
   var layout = d3.layout.force()
       .size([width, height])
-      .linkDistance(function(l) {return l.source.internal && l.target.internal ? 40 : 20})
-      .linkStrength(function(l) {return l.source.internal && l.target.internal ? 1 : .5})
+      .linkDistance(function(l) {return l.source.homeDomain && l.target.homeDomain ? 40 : 20})
+      .linkStrength(function(l) {return l.source.homeDomain && l.target.homeDomain ? 1 : .5})
       .charge(function(n) {return -100*n.weight})
 
   return {svg:map, layout: layout, doDraw:forceDraw}
@@ -207,19 +224,18 @@ function forceDraw(map, graph) {
     node.attr("name", function(d) {return d.id})
         .attr("cx", function(d) {return d.x})
         .attr("cy", function(d) {return d.y})
-        .attr("r", function(d) {return d.details.internal ? 10 : 5})
+        .attr("r", function(d) {return d.details.homeDomain ? 10 : 5})
         .attr("level", function(d) {return d.details.level})
         .attr("visibility", "hidden")
         .call(layout.drag)
         .attr("fill", function(d) {
-            if(d.details.domains.size > 1) {return "gray"}
+            if(d.details.domains.size > 1 && d.details.homeDomain === undefined) {return "gray"}
             if(d.details.domains.size == 0) {return "red"}
             var domain =d.details.domains.values().next().value //Just one entry, gets it out
             var base = colors(domain)
-            if (d.details.internal) {base = d3.rgb(base).brighter();}
+            if (d.details.homeDomain) {base = d3.rgb(base).brighter();}
             return base
         })
-          //function(d) {return d.details.internal ? "red" : "gray"})
 
     link.attr("x1", function(d) {return d.source.x})
         .attr("y1", function(d) {return d.source.y})
@@ -233,7 +249,7 @@ function forceDraw(map, graph) {
   return map
 }
 
-// ---- Circular embedding ----
+// ------------------------- Circular embedding -------------------------
 function circleDraw(map, graph) {
   var svg = map.svg
   var width = map.width
@@ -257,7 +273,6 @@ function circleDraw(map, graph) {
     .attr("id", d => d.id)
     .attr("r", 5)
 
-    console.log(graph.links)
   var link = svg.selectAll(".link").data(graph.links)
   link.enter().append("line")
      .attr("class", "link")
@@ -285,17 +300,3 @@ function circleMap(selector, width, height, svg) {
   return {svg:map, width: width, height: height, doDraw: circleDraw}
 }
 
-
-function geoMap(selector, width, height, svg) {
-  var map = baseMap(selector, width, height, svg)
-  map.doDraw = function() {}
-  map.doLayout = function(map, graph) {
-    var nodes = Array.from(Object.keys(graph.nodes))
-    nodes = nodes.map(e => graph.nodes[e])
-    nodes.forEach(e => e['location'] = e.location ? e.location : [])
-    nodes.forEach(e => e['name'] = e.id)
-    nodes.forEach(e => e['port'] = "")
-    mapPoints(map.projection, map.svg, "nodes")(nodes)
-  }
-  return map
-}
