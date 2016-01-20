@@ -16,7 +16,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   else {map = forceMap("#topologyMap", 1200, 500, svg);}
 
   var baseGraph = domainsGraph(UnisService)
-  var graph = expandGraph(baseGraph, [])
+  var graph = expandGraph(baseGraph, ["*:*"])
 
   map.doDraw(map, graph)
   
@@ -133,25 +133,6 @@ function portToPath(root) {
   [])
 }
 
-//Ensures a node with the given id exists in the node list.  
-//Uses the 3rd "defaults" paramter to build a new one if it does not
-function ensureNode(nodes, node, defaults) {
-   defaults.parent   = (defaults.parent   === undefined) ? null           : defaults.parent
-   defaults.children = (defaults.children === undefined) ? []             : defaults.children
-   defaults.homeDomain = (defaults.homeDomain === undefined) ? undefined  : defaults.homeDomain
-   defaults.id = node
-   
-   if (!nodes[node]) {nodes[node] = defaults}
-   return nodes[node]
-}
-
-//Ensure that a node is in the nodes list.  Add it with the given parent if it is not.
-function ensureNodes(nodes, link, defaults) {
-  ensureNode(nodes, link.source, defaults)
-  ensureNode(nodes, link.sink, defaults)
-}
-
-
 // ---------------- Spring force embedded -----
 
 //Setup a spring-force embedding.
@@ -185,18 +166,20 @@ function forceMap(selector, width, height, svg) {
 function forceDraw(map, graph) {
   var svg = map.svg
   var layout = map.layout
-  
-  var nodes = Array.from(Object.keys(graph.nodes))
-  var links = graph.links.map(l => {return {source: nodes.indexOf(l.source), target: nodes.indexOf(l.sink)}})
-                         .filter(l => l.source != l.target)
-  
-  layout.nodes(nodes.map(e => {return {id: e, details: graph.nodes[e]}}))
+
+  var nodes = graph.nodes.map(n => clone(n)).map(n => {n["domain"] = n.path.split(":")[2]; return n})
+  var links = graph.links
+               .filter(l => l.source != l.sink)
+               .map(l => {return {source: l.source, target: l.sink}})
+
+  layout.nodes(nodes.map(e => {return {id: e.id, details: e}}))
   layout.links(links)
   layout.start()
   
-  var colors = d3.scale.category10()
-  var networkDomains = Array.from(layout.nodes().reduce((acc, n) => {n.details.domains.forEach(d => acc.add(d)); return acc}, new Set()))
-  colors.domain(networkDomains)
+  var networkDomains = nodes.map(n => n.domain)
+                            .reduce((acc, d) => {acc.add(d); return acc}, new Set())
+  var colors = d3.scale.category10().domain(networkDomains)
+
   var legend = svg.append("g")
                   .attr("class", "legend")
                   .attr("transform", "translate(15,10)")
@@ -221,29 +204,19 @@ function forceDraw(map, graph) {
   link.enter().append("line").attr("class", "link")
 
   layout.on("tick", function(e) {
-    node.attr("name", function(d) {return d.id})
+    node.attr("name", function(d) {
+      return d.id})
         .attr("cx", function(d) {return d.x})
         .attr("cy", function(d) {return d.y})
-        .attr("r", function(d) {return d.details.homeDomain ? 10 : 5})
-        .attr("level", function(d) {return d.details.level})
-        .attr("visibility", "hidden")
+        .attr("r", function(d) {return 5})
+        .attr("fill", d => colors(d.domain))
         .call(layout.drag)
-        .attr("fill", function(d) {
-            if(d.details.domains.size > 1 && d.details.homeDomain === undefined) {return "gray"}
-            if(d.details.domains.size == 0) {return "red"}
-            var domain =d.details.domains.values().next().value //Just one entry, gets it out
-            var base = colors(domain)
-            if (d.details.homeDomain) {base = d3.rgb(base).brighter();}
-            return base
-        })
 
     link.attr("x1", function(d) {return d.source.x})
         .attr("y1", function(d) {return d.source.y})
         .attr("x2", function(d) {return d.target.x})
         .attr("y2", function(d) {return d.target.y})
         .style("stroke", "gray")
-
-     svg.selectAll('[level="domain_entry"]').attr("visibility", "visible")
   })
   tooltip(svg, "circle.node")
   return map
@@ -259,8 +232,8 @@ function circleDraw(map, graph) {
   var angularSpacing = (Math.PI*2)/nodes.length
   var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + (width/2))
   var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + (height/2))
-  nodes = nodes.map((e,i) => {e["x"] = layoutX(80, i); return e})
-               .map((e,i) => {e["y"] = layoutY(80, i); return e})
+  nodes = nodes.map((e,i) => {e["x"] = layoutX(150, i); return e})
+               .map((e,i) => {e["y"] = layoutY(150, i); return e})
 
   var layout = {}
   nodes.forEach(e => layout[e.id] = e)
@@ -299,4 +272,14 @@ function circleMap(selector, width, height, svg) {
   
   return {svg:map, width: width, height: height, doDraw: circleDraw}
 }
+
+function clone(obj) {
+    if (null == obj || "object" != typeof obj) return obj;
+    var copy = obj.constructor();
+    for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+    }
+    return copy;
+}
+
 
