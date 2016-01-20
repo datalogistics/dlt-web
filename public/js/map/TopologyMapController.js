@@ -2,6 +2,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   //TODO: Maybe move graph-loading stuff to the server (like download tracking data) so the UNIS instance isn't hard-coded
   var topoUrl = "http://dev.incntre.iu.edu:8889/domains/" 
   if ($routeParams.domain) {topoUrl = topoUrl + $routeParams.domain}
+  var expand = $routeParams.expand ? [].concat($routeParams.expand) : ["*:*"] //Pass multiple epxansions like ?expand=*&expand=*:*
     
     
   //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
@@ -16,7 +17,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   else {map = forceMap("#topologyMap", 1200, 500, svg);}
 
   var baseGraph = domainsGraph(UnisService)
-  var graph = expandGraph(baseGraph, ["*:*"])
+  var graph = expandGraph(baseGraph, expand)
 
   map.doDraw(map, graph)
   
@@ -93,33 +94,79 @@ function domainsGraph(UnisService) {
   var domains = UnisService.domains
                   .map(d => {return {id: d.id, children: d.nodes.map(n => n.href)}})
                   .map(d => {d.children = nodes.filter(n => d.children.indexOf(n.selfRef) >= 0); return d})
+                  .map(d => {d.id = d.id.startsWith("domain_") ? d.id.substring("domain_".length) : d.id; return d})
 
   var usedNodes = domains.reduce((acc, domain) => acc.concat(domain.children), [])
   domains.push({id: "other", children: nodes.filter(n => usedNodes.indexOf(n) < 0)})
   var root = {id: "root", children: domains}
+  
+  UnisService.links //Ensure URN nodes...
+         .reduce((acc, link) => {
+            if (link.endpoints.source.href.startsWith("urn")) {acc.push(link.endpoints.source.href)}
+            if (link.endpoints.sink.href.startsWith("urn")) {acc.push(link.endpoints.sink.href)}
+            return acc
+         }, [])
+         .map(endpoint => ensureURNNode(endpoint, root))
   addPaths(root, "")
 
   var pathMapping = portToPath(domains).reduce((acc, pair) => {acc[pair.ref] = pair.path; return acc}, {})
   var links = UnisService.links
-                  .map(l => {return {source: pathMapping[l.endpoints.source.href], 
+                 .map(l => {return {source: pathMapping[l.endpoints.source.href], 
                                      sink: pathMapping[l.endpoints.sink.href]}})
-                  .filter(l => l.source && l.sink) //TODO: Remove this and actually resolve URN-based links...
+                 .filter(l => l.source && l.sink) 
 
   var graph = {root: root, links: links}
   return graph
 }
 
 function URNtoDictionary(urn) {
-  return urn.split(":").map(p => p.split("="))
-            .filter(p => p.length > 1) 
-            .reduce((dict, pair) => {dict[pair[0]] = pair[1]; return dict}, {})
+  var parts = urn.split(":")
+  if (urn.indexOf("=") > 0) {
+    return parts.map(p => p.split("="))
+              .filter(p => p.length > 1) 
+              .reduce((dict, pair) => {dict[pair[0]] = pair[1]; return dict}, {})
+  } else if (parts.length >= 5) {
+    var result = {}
+    result["domain"] = parts[3]
+    result["node"] = parts[4]
+    result["port"] = parts[5]
+    return result
+  } else {
+    throw "Could not create plausible URN dictionary for: " + urn
+  }
 }
 
 function addPaths(root, prefix) {
   var separator = ":"
-  root["path"] = prefix
+  root["path"] = prefix + separator + root.id
   if (root.children) {root.children.forEach(child => addPaths(child, prefix + separator + root.id))}
 }
+
+function ensureURNNode(urn, root) {
+  var parts = URNtoDictionary(urn)
+  if (!parts.domain || !parts.node || !parts.port) {
+    console.log("Could not ensure endpoint", urn); return;
+  }
+  
+  var domain = root.children.filter(domain => domain.id == parts.domain)
+  if (domain.length == 0) {
+    domain = {id: parts.domain, children: [], synthetic: true}
+    root.children.push(domain)
+  } else {domain = domain[0]}
+
+  var node = domain.children.filter(node => node.id == parts.node)
+  if (node.length == 0) {
+    var node = {id: parts.node, children: [], synthetic: true}
+    domain.children.push(node)
+  } else {node = node[0]}
+
+  var port = node.children.filter(port => port.id == parts.port)
+  if (port.length == 0) {
+    var port = {id: parts.port, selfRef: urn, synthetic: true}
+    node.children.push(port) 
+  }
+}
+
 
 function portToPath(root) {
   return root.reduce(function(acc, entry) {
@@ -156,8 +203,8 @@ function forceMap(selector, width, height, svg) {
   
   var layout = d3.layout.force()
       .size([width, height])
-      .linkDistance(function(l) {return l.source.homeDomain && l.target.homeDomain ? 40 : 20})
-      .linkStrength(function(l) {return l.source.homeDomain && l.target.homeDomain ? 1 : .5})
+      .linkDistance(function(l) {return 15})
+      .linkStrength(function(l) {return .75})
       .charge(function(n) {return -100*n.weight})
 
   return {svg:map, layout: layout, doDraw:forceDraw}
@@ -178,6 +225,8 @@ function forceDraw(map, graph) {
   
   var networkDomains = nodes.map(n => n.domain)
                             .reduce((acc, d) => {acc.add(d); return acc}, new Set())
+  networkDomains = Array.from(networkDomains)
+
   var colors = d3.scale.category10().domain(networkDomains)
 
   var legend = svg.append("g")
@@ -209,7 +258,7 @@ function forceDraw(map, graph) {
         .attr("cx", function(d) {return d.x})
         .attr("cy", function(d) {return d.y})
         .attr("r", function(d) {return 5})
-        .attr("fill", d => colors(d.domain))
+        .attr("fill", d => colors(d.details.domain))
         .call(layout.drag)
 
     link.attr("x1", function(d) {return d.source.x})
