@@ -27,20 +27,13 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
 function subsetGraph(graph, paths) {
   //Just the selected nodes
-
-  paths = paths.map(p => p.trim()).filter(p => p.length > 0)
-  var expansion = paths.length == 0
-                   ? [graph.root]
-                   : paths.map(path => expandPath(graph.root, path.split(":")))
-                       .reduce((acc, partial) => acc.concat(partial), [])
-
-
+                        
+  var expansion = expandPaths(graph.root, paths) 
   //Rebuild links to fit just selected nodes
   var links = graph.links
                  .map(link => {return {source: findEndpoint(expansion, link.source),
                                        sink: findEndpoint(expansion, link.sink)}})
                  .filter(link => link.source != link.sink)
-
   return {nodes: expansion, links: links}
 }
 
@@ -60,7 +53,15 @@ function findEndpoint(expansion, target) {
     },
     {matchLen: 0, idx: -1})
 
-  return bestMatch.idx
+  return target.substring(0, bestMatch.matchLen)
+}
+
+function expandPaths(root, paths) {
+  paths = paths.map(p => p.trim()).filter(p => p.length > 0)
+  return paths.length == 0
+           ? [root]
+           : paths.map(path => expandPath(root, path.split(":")))
+               .reduce((acc, partial) => acc.concat(partial), [])
 }
 
 function expandPath(root, path) {
@@ -75,6 +76,22 @@ function expandPath(root, path) {
 
    return target.map(child => expandPath(child, path))
                 .reduce((acc, item) => {return acc.concat(item)}, [])
+}
+
+function pathToIndex(path, nodes) {
+  return nodes.map(e => e.path).indexOf(path)
+}
+
+// Gather up just the leaf nodes of a tree
+function leaves(root) {
+  if (root.children) {
+    return root.children
+              .map(child => flatten(child))
+              .reduce((acc, node) => {acc.push(node); return acc}, [])
+
+  } else {
+    return [root]
+  }
 }
 
 function clone(obj) {
@@ -128,7 +145,7 @@ function forceDraw(map, graph) {
   var nodes = graph.nodes.map(n => clone(n)).map(n => {n["domain"] = n.path.split(":")[2]; return n})
   var links = graph.links
                .filter(l => l.source != l.sink)
-               .map(l => {return {source: l.source, target: l.sink}})
+               .map(l => {return {source: pathToIndex(l.source, nodes), target: pathToIndex(l.sink, nodes)}})
 
   layout.nodes(nodes.map(e => {return {id: e.id, details: e}}))
   layout.links(links)
@@ -188,7 +205,7 @@ function circleDraw(map, graph) {
   var width = map.width
   var height = map.height
 
-  var nodes = Array.from(Object.keys(graph.nodes)).map(e => {return {id: e}})
+  var nodes = graph.nodes.map(e => {return {id: e.id, details: e}})
   var angularSpacing = (Math.PI*2)/nodes.length
   var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + (width/2))
   var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + (height/2))
@@ -196,7 +213,7 @@ function circleDraw(map, graph) {
                .map((e,i) => {e["y"] = layoutY(150, i); return e})
 
   var layout = {}
-  nodes.forEach(e => layout[e.id] = e)
+  nodes.forEach(e => layout[e.details.path] = e)
 
   var node = svg.selectAll(".node").data(nodes)
   node.enter().append("circle")
@@ -205,8 +222,11 @@ function circleDraw(map, graph) {
     .attr("cy", d => d.y)
     .attr("id", d => d.id)
     .attr("r", 5)
+  
+    
+  var links = graph.links.filter(l => l.source != l.sink)
 
-  var link = svg.selectAll(".link").data(graph.links)
+  var link = svg.selectAll(".link").data(links)
   link.enter().append("line")
      .attr("class", "link")
      .attr("x1", d => layout[d.source].x)
