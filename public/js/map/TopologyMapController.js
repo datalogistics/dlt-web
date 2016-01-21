@@ -34,7 +34,36 @@ function subsetGraph(graph, paths) {
                  .map(link => {return {source: findEndpoint(expansion, link.source),
                                        sink: findEndpoint(expansion, link.sink)}})
                  .filter(link => link.source != link.sink)
-  return {nodes: expansion, links: links}
+
+  var subTree = toTree(expansion) 
+
+  return {nodes: subTree, links: links}
+}
+
+//Uses path data to rebuild a tree based on a list of nodes
+function toTree(root, nodes) {
+  function ensurePath(tree, path) {
+    path.map(
+      function (tree, id) {
+        var point = tree.children.filter(child => child.id == id)
+        if (point.length == 0) {
+          point = {id: point, children: []}
+          tree.children.push(point)
+        }
+      })}
+
+  function findParent(tree, path) {
+    return path.reduce((parent, id) => parent.children.filter(child => child.id == point), tree)
+  }
+
+  return nodes.reduce(
+            function (tree, node) {
+              var path = node.path.split(":")
+              ensurePath(tree, path.slice(0, path.length-1))
+              var parent = findParent(tree, path.slice(0, path.length-1))
+              parent.children.push(node)
+              return tree
+            }, {id: "root", children: []})
 }
 
 function findEndpoint(expansion, target) {
