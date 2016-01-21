@@ -2,7 +2,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   //TODO: Maybe move graph-loading stuff to the server (like download tracking data) so the UNIS instance isn't hard-coded
   var topoUrl = "http://dev.incntre.iu.edu:8889/domains/" 
   if ($routeParams.domain) {topoUrl = topoUrl + $routeParams.domain}
-  var expand = $routeParams.expand ? [].concat($routeParams.expand) : ["*:*"] //Pass multiple epxansions like ?expand=*&expand=*:*
+  var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["*:*"] //Pass multiple paths like ?path=*&path=*:*
     
     
   //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
@@ -12,12 +12,12 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
                .attr("height", 500)
 
   var map = null
-  if ($routeParams.geo) {map = geoMap("#topoplogyMap", 960, 500, svg)}
-  else if ($routeParams.circle) {map = circleMap("#topologyMap", 960, 500, svg)}//TODO: Circular (pack) layout
-  else {map = forceMap("#topologyMap", 1200, 500, svg);}
+  if ($routeParams.layout == "circle") {map = circleLayout(svg, 960, 500)}
+  else if ($routeParams.layout == "tree") {map = treeLayout(svg, 960, 500)}
+  else {map = forceLayout(svg, 1200, 500);}
 
   var baseGraph = domainsGraph(UnisService)
-  var graph = expandGraph(baseGraph, expand)
+  var graph = subsetGraph(baseGraph, paths)
 
   map.doDraw(map, graph)
   
@@ -25,7 +25,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
 }
 
-function expandGraph(graph, paths) {
+function subsetGraph(graph, paths) {
   //Just the selected nodes
 
   paths = paths.map(p => p.trim()).filter(p => p.length > 0)
@@ -77,6 +77,170 @@ function expandPath(root, path) {
                 .reduce((acc, item) => {return acc.concat(item)}, [])
 }
 
+function clone(obj) {
+    if (null == obj || "object" != typeof obj) return obj;
+    var copy = obj.constructor();
+    for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+    }
+    return copy;
+}
+
+//Ensures that an SVG group context exists
+function basicSetup(width, height, svg) {
+  if (svg === undefined) {
+    svg = d3.select("html").append("svg")
+               .attr("width", width)
+               .attr("height", height)
+  }
+
+  var group = svg.append("g")
+               .attr("id", "map")
+               .attr("width", width)
+               .attr("height", height)
+  
+  return group 
+}
+
+// ---------------- Spring force embedded -----
+
+//Setup a spring-force embedding.
+//
+//width -- how wide to make the canvas
+//height -- how tall to make the canvas 
+//svg -- svg element to use (overrides selector is present) 
+//returns the root element and a function for layout 
+function forceLayout(svg, width, height) {
+  var group = basicSetup(width, height, svg)
+  var layout = d3.layout.force()
+      .size([width, height])
+      .linkDistance(function(l) {return 15})
+      .linkStrength(function(l) {return .75})
+      .charge(function(n) {return -100*n.weight})
+
+  return {group: group, layout: layout, doDraw:forceDraw}
+}
+
+function forceDraw(map, graph) {
+  var svg = map.group
+  var layout = map.layout
+
+  var nodes = graph.nodes.map(n => clone(n)).map(n => {n["domain"] = n.path.split(":")[2]; return n})
+  var links = graph.links
+               .filter(l => l.source != l.sink)
+               .map(l => {return {source: l.source, target: l.sink}})
+
+  layout.nodes(nodes.map(e => {return {id: e.id, details: e}}))
+  layout.links(links)
+  layout.start()
+  
+  var networkDomains = nodes.map(n => n.domain)
+                            .reduce((acc, d) => {acc.add(d); return acc}, new Set())
+  networkDomains = Array.from(networkDomains)
+
+  var colors = d3.scale.category10().domain(networkDomains)
+
+  var legend = svg.append("g")
+                  .attr("class", "legend")
+                  .attr("transform", "translate(15,10)")
+  legend = legend.selectAll(".circle").data(networkDomains)
+  legend.enter().append("circle")
+        .attr("class", "legend-item")
+        .attr("r", 8)
+        .attr("cx", 0)
+        .attr("cy", (d,i) => i*25)
+        .attr("fill", d => colors(d))
+  legend.enter().append("text")
+        .attr("class", "legend-label")
+        .attr("x", 10)
+        .attr("y", (d,i) => i*25+5)
+        .text(d => d)
+
+
+  var node = svg.selectAll(".node").data(layout.nodes())
+  var link = svg.selectAll(".link").data(layout.links())
+
+  node.enter().append("circle").attr("class", "node")
+  link.enter().append("line").attr("class", "link")
+
+  layout.on("tick", function(e) {
+    node.attr("name", function(d) {
+      return d.id})
+        .attr("cx", function(d) {return d.x})
+        .attr("cy", function(d) {return d.y})
+        .attr("r", function(d) {return 5})
+        .attr("fill", d => colors(d.details.domain))
+        .call(layout.drag)
+
+    link.attr("x1", function(d) {return d.source.x})
+        .attr("y1", function(d) {return d.source.y})
+        .attr("x2", function(d) {return d.target.x})
+        .attr("y2", function(d) {return d.target.y})
+        .style("stroke", "gray")
+  })
+  tooltip(svg, "circle.node")
+  return map
+}
+
+// ------------------------- Circular embedding -------------------------
+function circleDraw(map, graph) {
+  var svg = map.group
+  var width = map.width
+  var height = map.height
+
+  var nodes = Array.from(Object.keys(graph.nodes)).map(e => {return {id: e}})
+  var angularSpacing = (Math.PI*2)/nodes.length
+  var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + (width/2))
+  var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + (height/2))
+  nodes = nodes.map((e,i) => {e["x"] = layoutX(150, i); return e})
+               .map((e,i) => {e["y"] = layoutY(150, i); return e})
+
+  var layout = {}
+  nodes.forEach(e => layout[e.id] = e)
+
+  var node = svg.selectAll(".node").data(nodes)
+  node.enter().append("circle")
+    .attr("class", "node")
+    .attr("cx", d => d.x)
+    .attr("cy", d => d.y)
+    .attr("id", d => d.id)
+    .attr("r", 5)
+
+  var link = svg.selectAll(".link").data(graph.links)
+  link.enter().append("line")
+     .attr("class", "link")
+     .attr("x1", d => layout[d.source].x)
+     .attr("y1", d => layout[d.source].y) 
+     .attr("x2", d => layout[d.sink].x)
+     .attr("y2", d => layout[d.sink].y) 
+     .attr("stroke", "gray")
+}
+
+function circleLayout(svg, width, height) {
+  var group = basicSetup(width, height, svg)
+  return {group:group, width: width, height: height, doDraw: circleDraw}
+}
+
+// ------------------------- Tree embedding -------------------------
+function treeDraw(map, graph) {
+  var svg = map.group
+  var width = map.width
+  var height = map.height
+
+  var layout = d3.layout.tree()
+
+}
+
+
+function treeLayout(svg, width, height) {
+  var group = basicSetup(width, height, svg)
+  return {group: group, width: width, height: height, doDraw: treeDraw}
+}
+
+
+
+
+// --------------- Utilities to load domain data from UNIS ---------------
 // Graph is pair of nodes and links
 // Nodes is a tree
 // links is a list of pairs of paths in the tree
@@ -179,156 +343,4 @@ function portToPath(root) {
   },
   [])
 }
-
-// ---------------- Spring force embedded -----
-
-//Setup a spring-force embedding.
-//
-//selector -- used to grab an element of the page and append svg into into it
-//width -- how wide to make the canvas
-//height -- how tall to make the canvas 
-//svg -- svg element to use (overrides selector is present) 
-//returns the root element and a function for layout 
-function forceMap(selector, width, height, svg) {
-  if (svg === undefined) {
-    svg = d3.select(selector).append("svg")
-               .attr("width", width)
-               .attr("height", height)
-  }
-
-  var map = svg.append("g")
-               .attr("id", "map")
-               .attr("width", width)
-               .attr("height", height)
-  
-  var layout = d3.layout.force()
-      .size([width, height])
-      .linkDistance(function(l) {return 15})
-      .linkStrength(function(l) {return .75})
-      .charge(function(n) {return -100*n.weight})
-
-  return {svg:map, layout: layout, doDraw:forceDraw}
-}
-
-function forceDraw(map, graph) {
-  var svg = map.svg
-  var layout = map.layout
-
-  var nodes = graph.nodes.map(n => clone(n)).map(n => {n["domain"] = n.path.split(":")[2]; return n})
-  var links = graph.links
-               .filter(l => l.source != l.sink)
-               .map(l => {return {source: l.source, target: l.sink}})
-
-  layout.nodes(nodes.map(e => {return {id: e.id, details: e}}))
-  layout.links(links)
-  layout.start()
-  
-  var networkDomains = nodes.map(n => n.domain)
-                            .reduce((acc, d) => {acc.add(d); return acc}, new Set())
-  networkDomains = Array.from(networkDomains)
-
-  var colors = d3.scale.category10().domain(networkDomains)
-
-  var legend = svg.append("g")
-                  .attr("class", "legend")
-                  .attr("transform", "translate(15,10)")
-  legend = legend.selectAll(".circle").data(networkDomains)
-  legend.enter().append("circle")
-        .attr("class", "legend-item")
-        .attr("r", 8)
-        .attr("cx", 0)
-        .attr("cy", (d,i) => i*25)
-        .attr("fill", d => colors(d))
-  legend.enter().append("text")
-        .attr("class", "legend-label")
-        .attr("x", 10)
-        .attr("y", (d,i) => i*25+5)
-        .text(d => d)
-
-
-  var node = svg.selectAll(".node").data(layout.nodes())
-  var link = svg.selectAll(".link").data(layout.links())
-
-  node.enter().append("circle").attr("class", "node")
-  link.enter().append("line").attr("class", "link")
-
-  layout.on("tick", function(e) {
-    node.attr("name", function(d) {
-      return d.id})
-        .attr("cx", function(d) {return d.x})
-        .attr("cy", function(d) {return d.y})
-        .attr("r", function(d) {return 5})
-        .attr("fill", d => colors(d.details.domain))
-        .call(layout.drag)
-
-    link.attr("x1", function(d) {return d.source.x})
-        .attr("y1", function(d) {return d.source.y})
-        .attr("x2", function(d) {return d.target.x})
-        .attr("y2", function(d) {return d.target.y})
-        .style("stroke", "gray")
-  })
-  tooltip(svg, "circle.node")
-  return map
-}
-
-// ------------------------- Circular embedding -------------------------
-function circleDraw(map, graph) {
-  var svg = map.svg
-  var width = map.width
-  var height = map.height
-
-  var nodes = Array.from(Object.keys(graph.nodes)).map(e => {return {id: e}})
-  var angularSpacing = (Math.PI*2)/nodes.length
-  var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + (width/2))
-  var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + (height/2))
-  nodes = nodes.map((e,i) => {e["x"] = layoutX(150, i); return e})
-               .map((e,i) => {e["y"] = layoutY(150, i); return e})
-
-  var layout = {}
-  nodes.forEach(e => layout[e.id] = e)
-
-  var node = svg.selectAll(".node").data(nodes)
-  node.enter().append("circle")
-    .attr("class", "node")
-    .attr("cx", d => d.x)
-    .attr("cy", d => d.y)
-    .attr("id", d => d.id)
-    .attr("r", 5)
-
-  var link = svg.selectAll(".link").data(graph.links)
-  link.enter().append("line")
-     .attr("class", "link")
-     .attr("x1", d => layout[d.source].x)
-     .attr("y1", d => layout[d.source].y) 
-     .attr("x2", d => layout[d.sink].x)
-     .attr("y2", d => layout[d.sink].y) 
-     .attr("stroke", "gray")
-
-
-}
-
-function circleMap(selector, width, height, svg) {
-  if (svg === undefined) {
-    svg = d3.select(selector).append("svg")
-               .attr("width", width)
-               .attr("height", height)
-  }
-
-  var map = svg.append("g")
-               .attr("id", "map")
-               .attr("width", width)
-               .attr("height", height)
-  
-  return {svg:map, width: width, height: height, doDraw: circleDraw}
-}
-
-function clone(obj) {
-    if (null == obj || "object" != typeof obj) return obj;
-    var copy = obj.constructor();
-    for (var attr in obj) {
-        if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
-    }
-    return copy;
-}
-
 
