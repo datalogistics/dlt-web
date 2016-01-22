@@ -288,7 +288,8 @@ function treeDraw(map, graph) {
   var nodes = layout.nodes(graph.tree),
       treelinks = layout.links(nodes);
 
-  var treelink = svg.selectAll(".tree-link").data(treelinks)
+  var treelink = svg.append("g").attr("id", "tree-links")
+      .selectAll(".tree-link").data(treelinks)
       .enter().append("path")
         .attr("class", "tree-link")
         .attr("stroke-width", ".5") 
@@ -297,8 +298,8 @@ function treeDraw(map, graph) {
         .attr("fill-opacity", "0")
         .attr("d", diagonal);
 
-  var node = svg.selectAll(".node")
-      .data(nodes)
+  var node = svg.append("g").attr("id", "nodes")
+      .selectAll(".node").data(nodes)
         .enter().append("g")
         .attr("class", "node")
         .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
@@ -306,11 +307,20 @@ function treeDraw(map, graph) {
   node.append("circle")
       .attr("r", 4.5);
 
-  node.append("text")
-      .attr("dy", ".31em")
-      .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-      .attr("transform", function(d) { return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)"; })
-      .text(function(d) { return d.name; });
+  var graphLinks = graph.links
+               .filter(l => l.source != l.sink)
+               .map(l => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
+               .map(l => {return {source: polarToCartesian(l.source.y, l.source.x),
+                                  target: polarToCartesian(l.target.y, l.target.x)}})
+
+   var graphlink = svg.append("g").attr("id", "graph-links")
+         .selectAll(".graph-link").data(graphLinks)
+         .enter().append("path")
+           .attr("d", d => arc(d.source, d.target))
+           .attr("class", "graph-link")
+           .attr("fill-opacity", "0")
+           .attr("stroke-width", ".5")
+           .attr("stroke", "blue")
 }
 
 
@@ -319,8 +329,23 @@ function treeLayout(svg, width, height) {
   return {group: group, width: width, height: height, doDraw: treeDraw}
 }
 
+function polarToCartesian(radius, angleInDegrees) {
+  var angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
 
-
+  return {
+    x: (radius * Math.cos(angleInRadians)),
+    y: (radius * Math.sin(angleInRadians))
+  };
+}
+//Return a path between (source.x, source.y) and (target.x, target.y)
+//Based on http://stackoverflow.com/questions/17156283/d3-js-drawing-arcs-between-two-points-on-map-from-file
+function arc(source, target) {
+  var dx = target.x - source.x,
+      dy = target.y - source.y,
+      dr = Math.sqrt(dx * dx + dy * dy);
+  return "M" + source.x + "," + source.y + "A" + dr + "," + dr +
+        " 0 1,1 " + target.x + "," + target.y;
+}
 
 // --------------- Utilities to load domain data from UNIS ---------------
 // Graph is pair of nodes and links
