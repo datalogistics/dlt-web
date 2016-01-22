@@ -286,20 +286,22 @@ function treeDraw(map, graph) {
     .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; });
   
   var nodes = layout.nodes(graph.tree),
-      links = layout.links(nodes);
+      treelinks = layout.links(nodes);
 
-  var link = svg.selectAll(".link")
-      .data(links)
+  var treelink = svg.selectAll(".tree-link").data(treelinks)
       .enter().append("path")
-      .attr("class", "link")
-      .style("stroke-width", "1") //TODO: REDO Sytling/class structure so this is an attr
-      .attr("d", diagonal);
+        .attr("class", "tree-link")
+        .attr("stroke-width", ".5") 
+        .attr("stroke", "gray")
+        .attr("fill", "white")
+        .attr("fill-opacity", "0")
+        .attr("d", diagonal);
 
   var node = svg.selectAll(".node")
       .data(nodes)
-      .enter().append("g")
-      .attr("class", "node")
-      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+        .enter().append("g")
+        .attr("class", "node")
+        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
 
   node.append("circle")
       .attr("r", 4.5);
