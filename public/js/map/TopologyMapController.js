@@ -28,42 +28,16 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 function subsetGraph(graph, paths) {
   //Just the selected nodes
                         
-  var expansion = expandPaths(graph.root, paths) 
+  var subTree = trimTree(graph.root, paths) 
+  var leaves = gatherLeaves(subTree)
+
   //Rebuild links to fit just selected nodes
   var links = graph.links
-                 .map(link => {return {source: findEndpoint(expansion, link.source),
-                                       sink: findEndpoint(expansion, link.sink)}})
+                 .map(link => {return {source: findEndpoint(leaves, link.source),
+                                       sink: findEndpoint(leaves, link.sink)}})
                  .filter(link => link.source != link.sink)
 
-  var subTree = toTree(expansion) 
-
-  return {nodes: subTree, links: links}
-}
-
-//Uses path data to rebuild a tree based on a list of nodes
-function toTree(root, nodes) {
-  function ensurePath(tree, path) {
-    path.map(
-      function (tree, id) {
-        var point = tree.children.filter(child => child.id == id)
-        if (point.length == 0) {
-          point = {id: point, children: []}
-          tree.children.push(point)
-        }
-      })}
-
-  function findParent(tree, path) {
-    return path.reduce((parent, id) => parent.children.filter(child => child.id == point), tree)
-  }
-
-  return nodes.reduce(
-            function (tree, node) {
-              var path = node.path.split(":")
-              ensurePath(tree, path.slice(0, path.length-1))
-              var parent = findParent(tree, path.slice(0, path.length-1))
-              parent.children.push(node)
-              return tree
-            }, {id: "root", children: []})
+  return {tree: subTree, links: links}
 }
 
 function findEndpoint(expansion, target) {
@@ -85,26 +59,49 @@ function findEndpoint(expansion, target) {
   return target.substring(0, bestMatch.matchLen)
 }
 
-function expandPaths(root, paths) {
+//root -- root of tree
+//paths -- paths as arrays of strings
+function trimTree(root, paths) {
+  var filterTree = function(tree) {
+    var children = tree.children
+    if (children) {
+      children = tree.children.filter(c => c.__keep__).map(filterTree)
+    }
+    tree.children = (children && children.length > 0) ? children : undefined
+    return tree
+  }
+
+
+
   paths = paths.map(p => p.trim()).filter(p => p.length > 0)
-  return paths.length == 0
-           ? [root]
-           : paths.map(path => expandPath(root, path.split(":")))
-               .reduce((acc, partial) => acc.concat(partial), [])
+  var tagged;
+  if (paths.length == 0) {
+    root = clone(root)
+    root[children] = undefined
+    tagged = root
+  } else {
+    tagged = paths.reduce(
+              function(acc, path) {
+                return tagPath(root, path.split(":"))
+              }, root)
+  }
+
+  return filterTree(tagged)
 }
 
-function expandPath(root, path) {
-   if (path.length == 0) {return [root]}
-   var target = (path[0] != "*")
-                 ? root.children.filter(child => child.id == path[0])
-                 : root.children
-  
-   //copy path and remove first item
-   path = path.map(e=>e)
-   path.shift() 
+//root -- root of tree
+//path -- path as array of nodes
+function tagPath(root, path) {
+   var target = path[0]
+   if (path.length == 0) {return root}
+   if (target != "*" && target != root.id) {return root}
 
-   return target.map(child => expandPath(child, path))
-                .reduce((acc, item) => {return acc.concat(item)}, [])
+   root = clone(root)
+   root["__keep__"] = true
+
+   var rest = path.slice(1, path.length)
+   if (root.children) {root.children = root.children.map(child => tagPath(child, rest))}
+   return root
 }
 
 function pathToIndex(path, nodes) {
@@ -112,11 +109,11 @@ function pathToIndex(path, nodes) {
 }
 
 // Gather up just the leaf nodes of a tree
-function leaves(root) {
+function gatherLeaves(root) {
   if (root.children) {
     return root.children
-              .map(child => flatten(child))
-              .reduce((acc, node) => {acc.push(node); return acc}, [])
+              .map(child => gatherLeaves(child))
+              .reduce((acc, node) => {return acc.concat(node)}, [])
 
   } else {
     return [root]
@@ -171,7 +168,7 @@ function forceDraw(map, graph) {
   var svg = map.group
   var layout = map.layout
 
-  var nodes = graph.nodes.map(n => clone(n)).map(n => {n["domain"] = n.path.split(":")[2]; return n})
+  var nodes = gatherLeaves(graph.tree).map(n => clone(n)).map(n => {n["domain"] = n.path.split(":")[2]; return n})
   var links = graph.links
                .filter(l => l.source != l.sink)
                .map(l => {return {source: pathToIndex(l.source, nodes), target: pathToIndex(l.sink, nodes)}})
@@ -234,7 +231,7 @@ function circleDraw(map, graph) {
   var width = map.width
   var height = map.height
 
-  var nodes = graph.nodes.map(e => {return {id: e.id, details: e}})
+  var nodes = gatherLeaves(graph.tree).map(e => {return {id: e.id, details: e}})
   var angularSpacing = (Math.PI*2)/nodes.length
   var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + (width/2))
   var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + (height/2))
