@@ -1,17 +1,14 @@
 function topologyMapController($scope, $routeParams, $http, UnisService) {
   //TODO: Maybe move graph-loading stuff to the server (like download tracking data) so the UNIS instance isn't hard-coded
-  var topoUrl = "http://dev.incntre.iu.edu:8889/domains/" 
-  if ($routeParams.domain) {topoUrl = topoUrl + $routeParams.domain}
   var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["*:*"] //Pass multiple paths like ?path=*&path=*:*
     
     
-  //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_al2s.net.internet2.edu"
-  //var topoUrl = "http://dev.incntre.iu.edu:8889/domains/domain_es.net"
   var svg = d3.select("#topologyMap").append("svg")
                .attr("width", 1200)
                .attr("height", 500)
 
   var map = null
+  $routeParams.layout = $routeParams.layout.toLowerCase()
   if ($routeParams.layout == "circle") {map = circleLayout(svg, 960, 500)}
   else if ($routeParams.layout == "circtree") {map = treeLayout(svg, 960, 500)}
   else {map = forceLayout(svg, 1200, 500);}
@@ -82,7 +79,7 @@ function trimTree(root, paths) {
   } else {
     tagged = paths.reduce(
               function(acc, path) {
-                return tagPath(root, path.split(":"))
+                return tagPath(acc, path.split(":"))
               }, root)
   }
 
@@ -217,18 +214,17 @@ function forceDraw(map, graph) {
   link.enter().append("line").attr("class", "link")
 
   layout.on("tick", function(e) {
-    node.attr("name", function(d) {
-      return d.id})
-        .attr("cx", function(d) {return d.x})
-        .attr("cy", function(d) {return d.y})
-        .attr("r", function(d) {return 5})
+    node.attr("name", d => d.id)
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y)
         .attr("fill", d => colors.fn(d.details.domain))
+        .attr("r", 5)
         .call(layout.drag)
 
-    link.attr("x1", function(d) {return d.source.x})
-        .attr("y1", function(d) {return d.source.y})
-        .attr("x2", function(d) {return d.target.x})
-        .attr("y2", function(d) {return d.target.y})
+    link.attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y)
         .style("stroke", "gray")
   })
   tooltip(svg, "circle.node")
@@ -259,7 +255,7 @@ function circleDraw(map, graph) {
     .attr("class", "node")
     .attr("cx", d => d.x)
     .attr("cy", d => d.y)
-    .attr("id", d => d.id)
+    .attr("name", d => d.id)
     .attr("fill", d => colors.fn(d.domain))
     .attr("r", 5)
   
@@ -274,6 +270,9 @@ function circleDraw(map, graph) {
      .attr("x2", d => layout[d.sink].x)
      .attr("y2", d => layout[d.sink].y) 
      .attr("stroke", "gray")
+
+  tooltip(svg, "circle.node")
+  return map
 }
 
 function circleLayout(svg, width, height) {
@@ -319,6 +318,7 @@ function treeDraw(map, graph) {
       .selectAll(".node").data(nodes)
         .enter().append("g")
         .attr("class", "node")
+        .attr("name", d => d.id)
         .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
 
   node.append("circle")
@@ -339,6 +339,9 @@ function treeDraw(map, graph) {
            .attr("fill-opacity", "0")
            .attr("stroke-width", ".5")
            .attr("stroke", "blue")
+
+  tooltip(svg, "g.node")
+  return map
 }
 
 
