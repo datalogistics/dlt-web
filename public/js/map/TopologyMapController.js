@@ -13,7 +13,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
   var map = null
   if ($routeParams.layout == "circle") {map = circleLayout(svg, 960, 500)}
-  else if ($routeParams.layout == "tree") {map = treeLayout(svg, 960, 500)}
+  else if ($routeParams.layout == "circtree") {map = treeLayout(svg, 960, 500)}
   else {map = forceLayout(svg, 1200, 500);}
 
   var baseGraph = domainsGraph(UnisService)
@@ -145,6 +145,36 @@ function basicSetup(width, height, svg) {
   return group 
 }
 
+//Adds a "domain" field to each node
+//Returns a function that colors by domain!
+function domainColors(nodes, svg, x,y) {
+  nodes = nodes.map(n => {n["domain"] = n.path.split(":")[2]; return n})
+  var domains = nodes.map(n => n.domain)
+                            .reduce((acc, d) => {acc.add(d); return acc}, new Set())
+  domains = Array.from(domains)
+  var fn = d3.scale.category10().domain(domains)
+
+  if (svg) {
+    var legend = svg.append("g")
+                    .attr("class", "legend")
+                    .attr("transform", "translate(" + x + "," + y + ")")
+    legend = legend.selectAll(".circle").data(domains)
+    legend.enter().append("circle")
+          .attr("class", "legend-item")
+          .attr("r", 8)
+          .attr("cx", 0)
+          .attr("cy", (d,i) => i*25)
+          .attr("fill", fn)
+    legend.enter().append("text")
+          .attr("class", "legend-label")
+          .attr("x", 10)
+          .attr("y", (d,i) => i*25+5)
+          .text(d => d)
+  }
+
+  return {fn: fn, nodes: nodes}
+}
+
 // ---------------- Spring force embedded -----
 
 //Setup a spring-force embedding.
@@ -168,7 +198,7 @@ function forceDraw(map, graph) {
   var svg = map.group
   var layout = map.layout
 
-  var nodes = gatherLeaves(graph.tree).map(n => clone(n)).map(n => {n["domain"] = n.path.split(":")[2]; return n})
+  var nodes = gatherLeaves(graph.tree).map(n => clone(n))
   var links = graph.links
                .filter(l => l.source != l.sink)
                .map(l => {return {source: pathToIndex(l.source, nodes), target: pathToIndex(l.sink, nodes)}})
@@ -176,29 +206,9 @@ function forceDraw(map, graph) {
   layout.nodes(nodes.map(e => {return {id: e.id, details: e}}))
   layout.links(links)
   layout.start()
-  
-  var networkDomains = nodes.map(n => n.domain)
-                            .reduce((acc, d) => {acc.add(d); return acc}, new Set())
-  networkDomains = Array.from(networkDomains)
 
-  var colors = d3.scale.category10().domain(networkDomains)
-
-  var legend = svg.append("g")
-                  .attr("class", "legend")
-                  .attr("transform", "translate(15,10)")
-  legend = legend.selectAll(".circle").data(networkDomains)
-  legend.enter().append("circle")
-        .attr("class", "legend-item")
-        .attr("r", 8)
-        .attr("cx", 0)
-        .attr("cy", (d,i) => i*25)
-        .attr("fill", d => colors(d))
-  legend.enter().append("text")
-        .attr("class", "legend-label")
-        .attr("x", 10)
-        .attr("y", (d,i) => i*25+5)
-        .text(d => d)
-
+  var colors = domainColors(nodes, svg, 10, 15)
+  nodes = colors.nodes
 
   var node = svg.selectAll(".node").data(layout.nodes())
   var link = svg.selectAll(".link").data(layout.links())
@@ -212,7 +222,7 @@ function forceDraw(map, graph) {
         .attr("cx", function(d) {return d.x})
         .attr("cy", function(d) {return d.y})
         .attr("r", function(d) {return 5})
-        .attr("fill", d => colors(d.details.domain))
+        .attr("fill", d => colors.fn(d.details.domain))
         .call(layout.drag)
 
     link.attr("x1", function(d) {return d.source.x})
@@ -231,7 +241,10 @@ function circleDraw(map, graph) {
   var width = map.width
   var height = map.height
 
-  var nodes = gatherLeaves(graph.tree).map(e => {return {id: e.id, details: e}})
+  var nodes = gatherLeaves(graph.tree).map(n => clone(n))
+  var colors = domainColors(nodes, svg, 10, 15)
+  nodes = colors.nodes
+
   var angularSpacing = (Math.PI*2)/nodes.length
   var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + (width/2))
   var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + (height/2))
@@ -239,7 +252,7 @@ function circleDraw(map, graph) {
                .map((e,i) => {e["y"] = layoutY(150, i); return e})
 
   var layout = {}
-  nodes.forEach(e => layout[e.details.path] = e)
+  nodes.forEach(e => layout[e.path] = e)
 
   var node = svg.selectAll(".node").data(nodes)
   node.enter().append("circle")
@@ -247,6 +260,7 @@ function circleDraw(map, graph) {
     .attr("cx", d => d.x)
     .attr("cy", d => d.y)
     .attr("id", d => d.id)
+    .attr("fill", d => colors.fn(d.domain))
     .attr("r", 5)
   
     
@@ -275,7 +289,7 @@ function treeDraw(map, graph) {
   var diameter = width/2
   var pad = 50
 
-  svg.attr("transform", "translate(" + diameter/2 + ", " + diameter/2 + ")")
+  var tree = svg.append("g").attr("transform", "translate(" + (diameter/2 + 100) + ", " + diameter/2 + ")")
 
   var layout = d3.layout.tree()
                   .children(n => n.children ? n.children : [])
@@ -285,10 +299,13 @@ function treeDraw(map, graph) {
   var diagonal = d3.svg.diagonal.radial()
     .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; });
   
-  var nodes = layout.nodes(graph.tree),
-      treelinks = layout.links(nodes);
+  var nodes = layout.nodes(graph.tree)
+  var treelinks = layout.links(nodes)
 
-  var treelink = svg.append("g").attr("id", "tree-links")
+  var colors = domainColors(nodes, svg, 10, 15)
+  nodes = colors.nodes
+
+  var treelink = tree.append("g").attr("id", "tree-links")
       .selectAll(".tree-link").data(treelinks)
       .enter().append("path")
         .attr("class", "tree-link")
@@ -298,14 +315,15 @@ function treeDraw(map, graph) {
         .attr("fill-opacity", "0")
         .attr("d", diagonal);
 
-  var node = svg.append("g").attr("id", "nodes")
+  var node = tree.append("g").attr("id", "nodes")
       .selectAll(".node").data(nodes)
         .enter().append("g")
         .attr("class", "node")
         .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
 
   node.append("circle")
-      .attr("r", 4.5);
+      .attr("r", 4.5)
+      .attr("fill", d => colors.fn(d.domain))
 
   var graphLinks = graph.links
                .filter(l => l.source != l.sink)
@@ -313,7 +331,7 @@ function treeDraw(map, graph) {
                .map(l => {return {source: polarToCartesian(l.source.y, l.source.x),
                                   target: polarToCartesian(l.target.y, l.target.x)}})
 
-   var graphlink = svg.append("g").attr("id", "graph-links")
+   var graphlink = tree.append("g").attr("id", "graph-links")
          .selectAll(".graph-link").data(graphLinks)
          .enter().append("path")
            .attr("d", d => arc(d.source, d.target))
@@ -344,7 +362,7 @@ function arc(source, target) {
       dy = target.y - source.y,
       dr = Math.sqrt(dx * dx + dy * dy);
   return "M" + source.x + "," + source.y + "A" + dr + "," + dr +
-        " 0 1,1 " + target.x + "," + target.y;
+        " 0 0,0 " + target.x + "," + target.y;
 }
 
 // --------------- Utilities to load domain data from UNIS ---------------
