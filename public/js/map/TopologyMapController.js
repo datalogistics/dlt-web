@@ -1,22 +1,27 @@
 function topologyMapController($scope, $routeParams, $http, UnisService) {
   //TODO: Maybe move graph-loading stuff to the server (like download tracking data) so the UNIS instance isn't hard-coded
   var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["*:*"] //Pass multiple paths like ?path=*&path=*:*
+  var width = 1200
+  var height = 500
     
     
   var svg = d3.select("#topologyMap").append("svg")
-               .attr("width", 1200)
-               .attr("height", 500)
+               .attr("width", width)
+               .attr("height", height)
 
-  var map = null
+  var draw
   $routeParams.layout = $routeParams.layout.toLowerCase()
-  if ($routeParams.layout == "circle") {map = circleLayout(svg, 960, 500)}
-  else if ($routeParams.layout == "circtree") {map = treeLayout(svg, 960, 500)}
-  else {map = forceLayout(svg, 1200, 500);}
+  if ($routeParams.layout == "circle") {draw = circleDraw}
+  else if ($routeParams.layout == "sunburst") {draw = sunburstDraw}
+  else if ($routeParams.layout == "icicle") {draw = icicleDraw}
+  else if ($routeParams.layout == "circtree") {draw = treeDraw}
+  else {draw = forceDraw}
 
   var baseGraph = domainsGraph(UnisService)
   var graph = subsetGraph(baseGraph, paths)
+  var group = basicSetup(svg, width, height)
 
-  map.doDraw(map, graph)
+  draw(graph, group, width, height)
   
   //Cleanup functions here!
   $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
@@ -127,7 +132,7 @@ function clone(obj) {
 }
 
 //Ensures that an SVG group context exists
-function basicSetup(width, height, svg) {
+function basicSetup(svg, width, height) {
   if (svg === undefined) {
     svg = d3.select("html").append("svg")
                .attr("width", width)
@@ -173,27 +178,12 @@ function domainColors(nodes, svg, x,y) {
 }
 
 // ---------------- Spring force embedded -----
-
-//Setup a spring-force embedding.
-//
-//width -- how wide to make the canvas
-//height -- how tall to make the canvas 
-//svg -- svg element to use (overrides selector is present) 
-//returns the root element and a function for layout 
-function forceLayout(svg, width, height) {
-  var group = basicSetup(width, height, svg)
+function forceDraw(graph, svg, width, height) {
   var layout = d3.layout.force()
       .size([width, height])
       .linkDistance(function(l) {return 15})
       .linkStrength(function(l) {return .75})
       .charge(function(n) {return -100*n.weight})
-
-  return {group: group, layout: layout, doDraw:forceDraw}
-}
-
-function forceDraw(map, graph) {
-  var svg = map.group
-  var layout = map.layout
 
   var nodes = gatherLeaves(graph.tree).map(n => clone(n))
   var links = graph.links
@@ -232,11 +222,7 @@ function forceDraw(map, graph) {
 }
 
 // ------------------------- Circular embedding -------------------------
-function circleDraw(map, graph) {
-  var svg = map.group
-  var width = map.width
-  var height = map.height
-
+function circleDraw(graph, svg, width, height) {
   var nodes = gatherLeaves(graph.tree).map(n => clone(n))
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
@@ -275,16 +261,8 @@ function circleDraw(map, graph) {
   return map
 }
 
-function circleLayout(svg, width, height) {
-  var group = basicSetup(width, height, svg)
-  return {group:group, width: width, height: height, doDraw: circleDraw}
-}
-
-// ------------------------- Tree embedding -------------------------
-function treeDraw(map, graph) {
-  var svg = map.group
-  var width = map.width
-  var height = map.height
+// ------------------------- Circular Tree Embedding -------------------------
+function treeDraw(graph, svg, width, height) {
   var diameter = width/2
   var pad = 50
 
@@ -303,6 +281,22 @@ function treeDraw(map, graph) {
 
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
+
+  var graphLinks = graph.links
+               .filter(l => l.source != l.sink)
+               .map(l => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
+               .map(l => {return {source: polarToCartesian(l.source.y, l.source.x),
+                                  target: polarToCartesian(l.target.y, l.target.x)}})
+
+   var graphlink = tree.append("g").attr("id", "graph-links")
+         .selectAll(".graph-link").data(graphLinks)
+         .enter().append("path")
+           .attr("d", d => arc(d.source, d.target))
+           .attr("class", "graph-link")
+           .attr("fill-opacity", "0")
+           .attr("stroke-width", ".5")
+           .attr("stroke", "blue")
+
 
   var treelink = tree.append("g").attr("id", "tree-links")
       .selectAll(".tree-link").data(treelinks)
@@ -324,30 +318,8 @@ function treeDraw(map, graph) {
   node.append("circle")
       .attr("r", 4.5)
       .attr("fill", d => colors.fn(d.domain))
-
-  var graphLinks = graph.links
-               .filter(l => l.source != l.sink)
-               .map(l => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
-               .map(l => {return {source: polarToCartesian(l.source.y, l.source.x),
-                                  target: polarToCartesian(l.target.y, l.target.x)}})
-
-   var graphlink = tree.append("g").attr("id", "graph-links")
-         .selectAll(".graph-link").data(graphLinks)
-         .enter().append("path")
-           .attr("d", d => arc(d.source, d.target))
-           .attr("class", "graph-link")
-           .attr("fill-opacity", "0")
-           .attr("stroke-width", ".5")
-           .attr("stroke", "blue")
-
   tooltip(svg, "g.node")
   return map
-}
-
-
-function treeLayout(svg, width, height) {
-  var group = basicSetup(width, height, svg)
-  return {group: group, width: width, height: height, doDraw: treeDraw}
 }
 
 function polarToCartesian(radius, angleInDegrees) {
@@ -367,6 +339,75 @@ function arc(source, target) {
   return "M" + source.x + "," + source.y + "A" + dr + "," + dr +
         " 0 0,0 " + target.x + "," + target.y;
 }
+
+
+// ------------------ Sunburst --------------
+function sunburstDraw(graph, svg, width, height) {
+  var radius = Math.min(width, height) / 2
+ 
+  var partition = d3.layout.partition()
+      .sort(null)
+      .size([2 * Math.PI, radius])
+      .value(function(d) { return 1; });
+  
+  var nodes = partition.nodes(graph.tree)
+  var colors = domainColors(nodes, svg, 10, 15)
+  nodes = colors.nodes
+  var maxLevel = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)+5
+  
+  svg = svg.append("g").attr("transform", "translate(" + width / 2 + "," + height * .52 + ")")
+
+  var arc = d3.svg.arc()
+      .startAngle(function(d) {return d.x; })
+      .endAngle(function(d) {return d.x + d.dx; })
+      .innerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth-1)})
+      .outerRadius(function(d) {return radius - (radius/maxLevel)*d.depth})
+
+  var path = svg.datum(graph.tree).selectAll("path")
+      .data(nodes)
+    .enter().append("path")
+      .attr("class", "node")
+      .attr("name", d => d.id)
+      .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
+      .attr("d", arc)
+      .style("stroke", "#fff")
+      .attr("fill", d => colors.fn(d.domain))
+      .style("fill-rule", "evenodd")
+  
+  tooltip(svg, "path.node")
+
+}
+// ------------------ Icicle --------------
+function icicleDraw(graph, svg, space_width, height) {
+  width = space_width-200
+  height = 200
+  var partition = d3.layout.partition()
+      .sort(null)
+      .size([width, height])
+      .value(function(d) { return 1; });
+ 
+  var nodes = partition.nodes(graph.tree)
+  var colors = domainColors(nodes, svg, 10, 15)
+  nodes = colors.nodes
+  svg = svg.append("g").attr("transform", "translate(" + (space_width-width) + "," + 0 + ")")
+
+  var x = d3.scale.linear().range([0, width]).domain([0,width])
+  var y = d3.scale.linear().range([0, height]).domain([0,height])
+
+  rect = svg.selectAll("rect")
+    .data(nodes)
+  .enter().append("rect")
+    .attr("class", "node")
+    .attr("name", d => d.id)
+    .attr("x", d => x(d.x))
+    .attr("y", d => y(d.y))
+    .attr("width", d => x(d.dx))
+    .attr("height", d => y(d.dy))
+    .attr("fill", d => colors.fn(d.domain))
+
+  tooltip(svg, "rect.node")
+}
+
 
 // --------------- Utilities to load domain data from UNIS ---------------
 // Graph is pair of nodes and links
