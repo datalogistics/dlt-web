@@ -169,15 +169,24 @@ function basicSetup(svg, width, height) {
   return group 
 }
 
+
+function removeGray(colors) {
+  return colors.filter(c => c.substring(1,3) != c.substring(3,5) || c.substring(1,3) != c.substring(5,7))
+}
 //Adds a "domain" field to each node
 //Returns a function that colors by domain!
 function domainColors(nodes, svg, x,y) {
-
-  nodes = nodes.map(n => {n["domain"] = (n.domain ? n.domain : n.path.split(PATH_SEPARATOR)[1]); return n})
+  nodes = nodes.map(n => {n["domain"] = n.path.split(PATH_SEPARATOR)[1]; return n})
   var domains = nodes.map(n => n.domain)
+                            .filter(d => d && d.trim().length >0)
                             .reduce((acc, d) => {acc.add(d); return acc}, new Set())
   domains = Array.from(domains)
-  var fn = d3.scale.category10().domain(domains)
+  var base = d3.scale.category10().domain(domains)
+  base.range(removeGray(base.range()))
+  var fn = function(v) {
+    if (!v || v.trim() == "" || v.trim() == "other") {return "gray"}
+    return base(v.trim())
+  }
 
   if (svg) {
     var legend = svg.append("g")
@@ -479,7 +488,7 @@ function domainsGraph(UnisService) {
 
   var usedNodes = domains.reduce((acc, domain) => acc.concat(domain.children), [])
   domains.push({id: "other", children: nodes.filter(n => usedNodes.indexOf(n) < 0)})
-  var root = {id: "root", domain: "root", children: domains}
+  var root = {id: "root", children: domains}
   
   UnisService.links //Ensure URN nodes...
          .reduce((acc, link) => {
