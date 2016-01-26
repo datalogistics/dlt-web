@@ -1,3 +1,4 @@
+var PATH_SEPARATOR = ":"
 function topologyMapController($scope, $routeParams, $http, UnisService) {
   //TODO: Maybe move graph-loading stuff to the server (like download tracking data) so the UNIS instance isn't hard-coded
   var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["*:*"] //Pass multiple paths like ?path=*&path=*:*
@@ -14,7 +15,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   if ($routeParams.layout == "circle") {draw = circleDraw}
   else if ($routeParams.layout == "sunburst") {draw = sunburstDraw}
   else if ($routeParams.layout == "icicle") {draw = icicleDraw}
-  else if ($routeParams.layout == "circtree") {draw = treeDraw}
+  else if ($routeParams.layout == "circletree") {draw = treeDraw}
   else {draw = forceDraw}
 
   var baseGraph = domainsGraph(UnisService)
@@ -58,8 +59,12 @@ function subsetGraph(graph, paths) {
 
 function findEndpoint(expansion, target) {
   var matchLen = function(a,b) {
-    for(i=0; i<a.length && i<b.length; i++) {
-      if (a[i] != b[i]) {return i-1}
+    var aParts = a.split(PATH_SEPARATOR)
+    var bParts = b.split(PATH_SEPARATOR)
+    for(i=0; i<aParts.length && i<bParts.length; i++) {
+      if (aParts[i] != bParts[i]) {
+        return aParts.slice(0, i).reduce((acc, e) => acc+e.length, 0)+1
+      }
     }
     return Math.min(a.length, b.length)
   }
@@ -98,7 +103,7 @@ function trimTree(root, paths) {
   } else {
     tagged = paths.reduce(
               function(acc, path) {
-                return tagPath(acc, path.split(":"))
+                return tagPath(acc, path.split(PATH_SEPARATOR))
               }, root)
   }
 
@@ -164,7 +169,7 @@ function basicSetup(svg, width, height) {
 //Adds a "domain" field to each node
 //Returns a function that colors by domain!
 function domainColors(nodes, svg, x,y) {
-  nodes = nodes.map(n => {n["domain"] = n.path.split(":")[1]; return n})
+  nodes = nodes.map(n => {n["domain"] = n.path.split(PATH_SEPARATOR)[1]; return n})
   var domains = nodes.map(n => n.domain)
                             .reduce((acc, d) => {acc.add(d); return acc}, new Set())
   domains = Array.from(domains)
@@ -276,7 +281,7 @@ function circleDraw(graph, svg, width, height) {
 }
 
 // ------------------------- Circular Tree Embedding -------------------------
-function treeDraw(graph, svg, width, height) {
+function treeDraw(graph, svg, width, height, nodeClick) {
   var diameter = width/2
   var pad = 50
 
@@ -325,14 +330,15 @@ function treeDraw(graph, svg, width, height) {
   var node = tree.append("g").attr("id", "nodes")
       .selectAll(".node").data(nodes)
         .enter().append("g")
-        .attr("class", "node")
-        .attr("name", d => d.id)
         .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
 
   node.append("circle")
       .attr("r", 4.5)
       .attr("fill", d => colors.fn(d.domain))
-  tooltip(svg, "g.node")
+      .attr("class", "node")
+      .attr("name", d => d.id)
+      .on("click", nodeClick)
+  tooltip(svg, "circle.node")
   return map
 }
 
@@ -507,9 +513,8 @@ function URNtoDictionary(urn) {
 }
 
 function addPaths(root, prefix) {
-  var separator = ":"
   root["path"] = prefix + root.id 
-  if (root.children) {root.children.forEach(child => addPaths(child, root["path"] + separator))}
+  if (root.children) {root.children.forEach(child => addPaths(child, root["path"] + PATH_SEPARATOR))}
 }
 
 function ensureURNNode(urn, root) {
