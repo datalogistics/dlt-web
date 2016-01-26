@@ -28,6 +28,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
   function expandNode(d, i) {
     //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully)
+    if (!d._children) {return} 
     var idx = paths.indexOf(d.path)
     if (idx < 0) {
       paths.push(d.path)
@@ -91,11 +92,10 @@ function trimTree(root, paths) {
     if (children) {
       children = tree.children.filter(c => c.__keep__).map(filterTree)
     }
+    tree._children = tree.children
     tree.children = (children && children.length > 0) ? children : undefined
     return tree
   }
-
-
 
   paths = paths.map(p => p.trim()).filter(p => p.length > 0)
   var tagged;
@@ -128,9 +128,7 @@ function tagPath(root, path) {
    return root
 }
 
-function pathToIndex(path, nodes) {
-  return nodes.map(e => e.path).indexOf(path)
-}
+function pathToIndex(path, nodes) {return nodes.map(e => e.path).indexOf(path)}
 
 // Gather up just the leaf nodes of a tree
 function gatherLeaves(root) {
@@ -170,12 +168,13 @@ function basicSetup(svg, width, height) {
 }
 
 
-function removeGray(colors) {
-  return colors.filter(c => c.substring(1,3) != c.substring(3,5) || c.substring(1,3) != c.substring(5,7))
-}
 //Adds a "domain" field to each node
 //Returns a function that colors by domain!
 function domainColors(nodes, svg, x,y) {
+  function removeGray(colors) {
+    return colors.filter(c => c.substring(1,3) != c.substring(3,5) || c.substring(1,3) != c.substring(5,7))
+  }
+
   nodes = nodes.map(n => {n["domain"] = n.path.split(PATH_SEPARATOR)[1]; return n})
   var domains = nodes.map(n => n.domain)
                             .filter(d => d && d.trim().length >0)
@@ -451,6 +450,7 @@ function icicleDraw(graph, svg, space_width, height, nodeClick) {
   var graphLinks = graph.links
                .filter(l => l.source != l.sink)
                .map(l => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
+               .map(l => {return l.source.x <= l.target.x ? l : {source: l.target, target: l.source}})
 
   var graphlink = svg.append("g").attr("id", "graph-links")
          .selectAll(".graph-link").data(graphLinks)
@@ -460,7 +460,7 @@ function icicleDraw(graph, svg, space_width, height, nodeClick) {
            .attr("fill-opacity", "0")
            .attr("stroke-width", ".5")
            .attr("stroke", "blue")
-
+           .attr("pointer-events", "none")
 
   tooltip(svg, "rect.node")
 }
