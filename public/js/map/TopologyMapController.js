@@ -21,12 +21,26 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   var graph = subsetGraph(baseGraph, paths)
   var group = basicSetup(svg, width, height)
 
-  draw(graph, group, width, height)
+  draw(graph, group, width, height, expandNode)
+
+  function expandNode(d, i) {
+    //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully)
+    var targetPath = d.path + ":*" //TODO: GET RID OF THIS STUPID TRAILING STAR
+    var idx = paths.indexOf(targetPath)
+    if (idx < 0) {
+      paths.push(targetPath)
+    } else {
+      paths.splice(idx, 1)
+    }
+    var graph = subsetGraph(baseGraph, paths) 
+    group.selectAll("*").remove()
+    draw(graph, group, width, height, expandNode)
+  }
+
   
   //Cleanup functions here!
   $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
 }
-
 function subsetGraph(graph, paths) {
   //Just the selected nodes
                         
@@ -79,7 +93,7 @@ function trimTree(root, paths) {
   var tagged;
   if (paths.length == 0) {
     root = clone(root)
-    root[children] = undefined
+    root["children"] = undefined
     tagged = root
   } else {
     tagged = paths.reduce(
@@ -150,7 +164,7 @@ function basicSetup(svg, width, height) {
 //Adds a "domain" field to each node
 //Returns a function that colors by domain!
 function domainColors(nodes, svg, x,y) {
-  nodes = nodes.map(n => {n["domain"] = n.path.split(":")[2]; return n})
+  nodes = nodes.map(n => {n["domain"] = n.path.split(":")[1]; return n})
   var domains = nodes.map(n => n.domain)
                             .reduce((acc, d) => {acc.add(d); return acc}, new Set())
   domains = Array.from(domains)
@@ -389,7 +403,7 @@ function sunburstDraw(graph, svg, width, height) {
 
 }
 // ------------------ Icicle --------------
-function icicleDraw(graph, svg, space_width, height) {
+function icicleDraw(graph, svg, space_width, height, nodeClick) {
   width = space_width-200
   height = 200
   var partition = d3.layout.partition()
@@ -412,6 +426,7 @@ function icicleDraw(graph, svg, space_width, height) {
     .attr("width", d => d.dx)
     .attr("height", d => d.dy)
     .attr("fill", d => colors.fn(d.domain))
+  .on("click", nodeClick)
 
   var graphLinks = graph.links
                .filter(l => l.source != l.sink)
@@ -493,8 +508,8 @@ function URNtoDictionary(urn) {
 
 function addPaths(root, prefix) {
   var separator = ":"
-  root["path"] = prefix + separator + root.id
-  if (root.children) {root.children.forEach(child => addPaths(child, prefix + separator + root.id))}
+  root["path"] = prefix + root.id 
+  if (root.children) {root.children.forEach(child => addPaths(child, root["path"] + separator))}
 }
 
 function ensureURNNode(urn, root) {
