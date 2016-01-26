@@ -13,12 +13,13 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
                .attr("height", height)
 
   var draw
-  $routeParams.layout = $routeParams.layout.toLowerCase()
+  $routeParams.layout = $routeParams.layout ? $routeParams.layout.toLowerCase() : ""
   if ($routeParams.layout == "circle") {draw = circleDraw}
   else if ($routeParams.layout == "blackhole") {draw = blackholeDraw}
   else if ($routeParams.layout == "icicle") {draw = icicleDraw}
   else if ($routeParams.layout == "circletree") {draw = treeDraw}
-  else {draw = forceDraw}
+  else if ($routeParams.layout == "force") {draw = forceDraw}
+  else {draw = blackholeDraw}
 
   var baseGraph = domainsGraph(UnisService)
   var graph = subsetGraph(baseGraph, paths)
@@ -413,8 +414,8 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
       .endAngle(function(d) {return d.x + d.dx; })
       .innerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth)})
       .outerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth)})
-
-  var path = svg.datum(graph.tree).selectAll("path")
+ 
+ var path = svg.datum(graph.tree).selectAll("path")
       .data(nodes)
     .enter().append("path")
       .attr("class", "node")
@@ -423,6 +424,7 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
       .attr("d", arc)
       .style("stroke", "#fff")
       .attr("fill", d => colors.fn(d.domain))
+      .attr("tip", d=>arc.centroid(d))
       .style("fill-rule", "evenodd")
       .on("click", nodeClick)
   
@@ -441,7 +443,8 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
      .attr("y2", d => arcInner.centroid(d.target)[1])
      .attr("stroke", "gray")
 
-  //tooltip(svg, "path.node")  //Need a differen way to find "where is this" for the arcs
+  tooltip(svg, "path.node")  //TODO: Need a different way to find "where is this" for the arcs, 
+
 }
 // ------------------ Icicle --------------
 function icicleDraw(graph, svg, space_width, height, nodeClick) {
