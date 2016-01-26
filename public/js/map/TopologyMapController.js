@@ -1,7 +1,9 @@
-var PATH_SEPARATOR = ":"
+var PATH_SEPARATOR = "/"
+var SANITARY = ":"  //Cannot be the same as PATH_SEPARATOR
+
 function topologyMapController($scope, $routeParams, $http, UnisService) {
   //TODO: Maybe move graph-loading stuff to the server (like download tracking data) so the UNIS instance isn't hard-coded
-  var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["*:*"] //Pass multiple paths like ?path=*&path=*:*
+  var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["root"] //Pass multiple paths like ?path=*&path=*:*
   var width = 1200
   var height = 500
     
@@ -26,10 +28,9 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
   function expandNode(d, i) {
     //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully)
-    var targetPath = d.path + ":*" //TODO: GET RID OF THIS STUPID TRAILING STAR
-    var idx = paths.indexOf(targetPath)
+    var idx = paths.indexOf(d.path)
     if (idx < 0) {
-      paths.push(targetPath)
+      paths.push(d.path)
     } else {
       paths.splice(idx, 1)
     }
@@ -56,6 +57,8 @@ function subsetGraph(graph, paths) {
 
   return {tree: subTree, links: links}
 }
+
+function sanitize(string) {return string.replace("SANITARY", ":SAN:").replace(PATH_SEPARATOR, ":SEP:")}
 
 function findEndpoint(expansion, target) {
   var matchLen = function(a,b) {
@@ -113,12 +116,12 @@ function trimTree(root, paths) {
 //root -- root of tree
 //path -- path as array of nodes
 function tagPath(root, path) {
-   var target = path[0]
-   if (path.length == 0) {return root}
-   if (target != "*" && target != root.id) {return root}
-
    root = clone(root)
    root["__keep__"] = true
+
+   var target = path[0]
+   if (path.length == 0) {return root}
+   if (target != root.id) {return root}
 
    var rest = path.slice(1, path.length)
    if (root.children) {root.children = root.children.map(child => tagPath(child, rest))}
@@ -197,7 +200,7 @@ function domainColors(nodes, svg, x,y) {
 }
 
 // ---------------- Spring force embedded -----
-function forceDraw(graph, svg, width, height) {
+function forceDraw(graph, svg, width, height, nodeClick) {
   var layout = d3.layout.force()
       .size([width, height])
       .linkDistance(function(l) {return 15})
@@ -229,6 +232,7 @@ function forceDraw(graph, svg, width, height) {
         .attr("fill", d => colors.fn(d.details.domain))
         .attr("r", 5)
         .call(layout.drag)
+        .on("click", nodeClick)
 
     link.attr("x1", d => d.source.x)
         .attr("y1", d => d.source.y)
