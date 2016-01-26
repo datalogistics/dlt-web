@@ -332,12 +332,23 @@ function polarToCartesian(radius, angleInDegrees) {
 }
 //Return a path between (source.x, source.y) and (target.x, target.y)
 //Based on http://stackoverflow.com/questions/17156283/d3-js-drawing-arcs-between-two-points-on-map-from-file
-function arc(source, target) {
-  var dx = target.x - source.x,
-      dy = target.y - source.y,
+//pct_w and pct_h are used as percent offsets (defaulting to 0) 
+function arc(source, target, pct_w, pct_h) {
+  pct_w = pct_w ? pct_w : 0
+  pct_h = pct_h ? pct_h : 0
+  
+  var sx = source.x + (pct_w * source.dx ? source.dx : 0),
+      sy = source.y + (pct_h * source.dy ? source.dy : 0),
+      tx = target.x + (pct_w * target.dx ? target.dx : 0),
+      ty = target.y + (pct_h * target.dy ? target.dy : 0)
+
+  var dx = tx - sx,
+      dy = ty - sy,
       dr = Math.sqrt(dx * dx + dy * dy);
-  return "M" + source.x + "," + source.y + "A" + dr + "," + dr +
-        " 0 0,0 " + target.x + "," + target.y;
+  
+
+  return "M" + sx + "," + sy + "A" + dr + "," + dr +
+        " 0 0,0 " + tx + "," + ty;
 }
 
 
@@ -391,19 +402,30 @@ function icicleDraw(graph, svg, space_width, height) {
   nodes = colors.nodes
   svg = svg.append("g").attr("transform", "translate(" + (space_width-width) + "," + 0 + ")")
 
-  var x = d3.scale.linear().range([0, width]).domain([0,width])
-  var y = d3.scale.linear().range([0, height]).domain([0,height])
-
   rect = svg.selectAll("rect")
     .data(nodes)
   .enter().append("rect")
     .attr("class", "node")
     .attr("name", d => d.id)
-    .attr("x", d => x(d.x))
-    .attr("y", d => y(d.y))
-    .attr("width", d => x(d.dx))
-    .attr("height", d => y(d.dy))
+    .attr("x", d => d.x)
+    .attr("y", d => d.y)
+    .attr("width", d => d.dx)
+    .attr("height", d => d.dy)
     .attr("fill", d => colors.fn(d.domain))
+
+  var graphLinks = graph.links
+               .filter(l => l.source != l.sink)
+               .map(l => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
+
+  var graphlink = svg.append("g").attr("id", "graph-links")
+         .selectAll(".graph-link").data(graphLinks)
+         .enter().append("path")
+           .attr("d", d => arc(d.source, d.target, .5, 1))
+           .attr("class", "graph-link")
+           .attr("fill-opacity", "0")
+           .attr("stroke-width", ".5")
+           .attr("stroke", "blue")
+
 
   tooltip(svg, "rect.node")
 }
