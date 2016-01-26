@@ -351,10 +351,10 @@ function arc(source, target, pct_w, pct_h) {
   pct_w = pct_w ? pct_w : 0
   pct_h = pct_h ? pct_h : 0
   
-  var sx = source.x + (pct_w * source.dx ? source.dx : 0),
-      sy = source.y + (pct_h * source.dy ? source.dy : 0),
-      tx = target.x + (pct_w * target.dx ? target.dx : 0),
-      ty = target.y + (pct_h * target.dy ? target.dy : 0)
+  var sx = source.x + (pct_w * (source.dx ? source.dx : 0)),
+      sy = source.y + (pct_h * (source.dy ? source.dy : 0)),
+      tx = target.x + (pct_w * (target.dx ? target.dx : 0)),
+      ty = target.y + (pct_h * (target.dy ? target.dy : 0))
 
   var dx = tx - sx,
       dy = ty - sy,
