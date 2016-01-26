@@ -15,7 +15,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   var draw
   $routeParams.layout = $routeParams.layout.toLowerCase()
   if ($routeParams.layout == "circle") {draw = circleDraw}
-  else if ($routeParams.layout == "sunburst") {draw = sunburstDraw}
+  else if ($routeParams.layout == "blackhole") {draw = blackholeDraw}
   else if ($routeParams.layout == "icicle") {draw = icicleDraw}
   else if ($routeParams.layout == "circletree") {draw = treeDraw}
   else {draw = forceDraw}
@@ -254,7 +254,7 @@ function forceDraw(graph, svg, width, height, nodeClick) {
 }
 
 // ------------------------- Circular embedding -------------------------
-function circleDraw(graph, svg, width, height) {
+function circleDraw(graph, svg, width, height, nodeClick) {
   var nodes = gatherLeaves(graph.tree).map(n => clone(n))
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
@@ -276,7 +276,7 @@ function circleDraw(graph, svg, width, height) {
     .attr("name", d => d.id)
     .attr("fill", d => colors.fn(d.domain))
     .attr("r", 5)
-  
+    .on("click", nodeClick)
     
   var links = graph.links.filter(l => l.source != l.sink)
 
@@ -385,8 +385,9 @@ function arc(source, target, pct_w, pct_h) {
 }
 
 
-// ------------------ Sunburst --------------
-function sunburstDraw(graph, svg, width, height) {
+// ------------------ Black Hole --------------
+// Like a sunburst, but inward instead of outward
+function blackholeDraw(graph, svg, width, height, nodeClick) {
   var radius = Math.min(width, height) / 2
  
   var partition = d3.layout.partition()
@@ -406,6 +407,12 @@ function sunburstDraw(graph, svg, width, height) {
       .endAngle(function(d) {return d.x + d.dx; })
       .innerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth-1)})
       .outerRadius(function(d) {return radius - (radius/maxLevel)*d.depth})
+  
+ var arcInner = d3.svg.arc()
+      .startAngle(function(d) {return d.x; })
+      .endAngle(function(d) {return d.x + d.dx; })
+      .innerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth)})
+      .outerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth)})
 
   var path = svg.datum(graph.tree).selectAll("path")
       .data(nodes)
@@ -417,9 +424,24 @@ function sunburstDraw(graph, svg, width, height) {
       .style("stroke", "#fff")
       .attr("fill", d => colors.fn(d.domain))
       .style("fill-rule", "evenodd")
+      .on("click", nodeClick)
   
-  tooltip(svg, "path.node")
 
+  var graphLinks = graph.links
+               .filter(l => l.source != l.sink)
+               .map(l => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
+               .map(l => {return l.source.x <= l.target.x ? l : {source: l.target, target: l.source}})
+
+  var link = svg.selectAll(".link").data(graphLinks)
+  link.enter().append("line")
+     .attr("class", "link")
+     .attr("x1", d => arcInner.centroid(d.source)[0])
+     .attr("y1", d => arcInner.centroid(d.source)[1])
+     .attr("x2", d => arcInner.centroid(d.target)[0])
+     .attr("y2", d => arcInner.centroid(d.target)[1])
+     .attr("stroke", "gray")
+
+  //tooltip(svg, "path.node")  //Need a differen way to find "where is this" for the arcs
 }
 // ------------------ Icicle --------------
 function icicleDraw(graph, svg, space_width, height, nodeClick) {
