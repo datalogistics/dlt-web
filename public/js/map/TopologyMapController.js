@@ -1,5 +1,5 @@
-var PATH_SEPARATOR = "/"
-var SANITARY = ":"  //Cannot be the same as PATH_SEPARATOR
+var PATH_SEPARATOR = ":"
+var SANITARY = ":"  //TODO: USE THIS....and it cannot be the same as PATH_SEPARATOR
 
 function topologyMapController($scope, $routeParams, $http, UnisService) {
   //TODO: Maybe move graph-loading stuff to the server (like download tracking data) so the UNIS instance isn't hard-coded
@@ -28,23 +28,25 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   draw(graph, group, width, height, expandNode)
 
   function expandNode(d, i) {
-    //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully)
+    //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully) with ._children/.children
     if (!d._children) {return} 
-    var idx = paths.indexOf(d.path)
-    if (idx < 0) {
-      paths.push(d.path)
-    } else {
-      paths.splice(idx, 1)
+    var targetParts = d.path.split(PATH_SEPARATOR)
+    var newPaths = paths.filter(path => !(path == d.path
+                                         || (pathMatch(path, d.path) == targetParts.length)))
+    if (newPaths.length == paths.length) {
+      newPaths = paths
+      newPaths.push(d.path)
     }
+    paths = newPaths
     var graph = subsetGraph(baseGraph, paths) 
     group.selectAll("*").remove()
     draw(graph, group, width, height, expandNode)
   }
-
   
   //Cleanup functions here!
   $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
 }
+
 function subsetGraph(graph, paths) {
   //Just the selected nodes
                         
@@ -62,27 +64,26 @@ function subsetGraph(graph, paths) {
 
 function sanitize(string) {return string.replace("SANITARY", ":SAN:").replace(PATH_SEPARATOR, ":SEP:")}
 
-function findEndpoint(expansion, target) {
-  var matchLen = function(a,b) {
+//How many segments between A and B match?
+function pathMatch(a,b) {
     var aParts = a.split(PATH_SEPARATOR)
     var bParts = b.split(PATH_SEPARATOR)
     for(i=0; i<aParts.length && i<bParts.length; i++) {
-      if (aParts[i] != bParts[i]) {
-        return aParts.slice(0, i).reduce((acc, e) => acc+e.length, 0)+1
-      }
+      if (aParts[i] != bParts[i]) {return i} 
     }
-    return Math.min(a.length, b.length)
-  }
+    return Math.min(aParts.length, bParts.length)
+}
 
+function findEndpoint(expansion, target) {
   var bestMatch = expansion.reduce(
     function (acc, node, i) {
-      var match = matchLen(target, node.path)
+      var match = pathMatch(target, node.path)
       if (match >= acc.matchLen) {return {matchLen: match, idx: i}}
       return acc
     },
     {matchLen: 0, idx: -1})
 
-  return target.substring(0, bestMatch.matchLen)
+  return target.split(PATH_SEPARATOR).slice(0, bestMatch.matchLen).join(PATH_SEPARATOR)
 }
 
 //root -- root of tree
@@ -431,8 +432,8 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
 
   var graphLinks = graph.links
                .filter(l => l.source != l.sink)
-               .map(l => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
-               .map(l => {return l.source.x <= l.target.x ? l : {source: l.target, target: l.source}})
+               .map((l,i) => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
+               .map((l,i) => {return l.source.x <= l.target.x ? l : {source: l.target, target: l.source}})
 
   var link = svg.selectAll(".link").data(graphLinks)
   link.enter().append("line")
