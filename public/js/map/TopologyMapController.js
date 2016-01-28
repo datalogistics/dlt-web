@@ -390,6 +390,14 @@ function arc(source, target, pct_w, pct_h) {
 
 // ------------------ Black Hole --------------
 // Like a sunburst, but inward instead of outward
+
+function addParent(tree, parent) {
+  tree = clone(tree)
+  tree["parent"] = parent
+  if (tree._children) {tree._children = tree._children.map(n => addParent(n, tree))}
+  return tree
+}
+
 function blackholeDraw(graph, svg, width, height, nodeClick) {
   var radius = Math.min(width, height) / 2
  
@@ -398,26 +406,36 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
       .size([2 * Math.PI, radius])
       .value(function(d) {return d._children ? d._children.length : 1; });
   
-  var nodes = partition.nodes(graph.tree)
+  var nodes = partition.nodes(addParent(graph.tree))
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
   var maxLevel = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)+5
   
   svg = svg.append("g").attr("transform", "translate(" + width / 2 + "," + height * .52 + ")")
 
+  var graphLinks = graph.links
+               .filter(l => l.source != l.sink)
+               .map((l,i) => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
+
   var arc = d3.svg.arc()
       .startAngle(function(d) {return d.x; })
       .endAngle(function(d) {return d.x + d.dx; })
       .innerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth-1)})
       .outerRadius(function(d) {return radius - (radius/maxLevel)*d.depth})
-  
+
  var arcInner = d3.svg.arc()
       .startAngle(function(d) {return d.x; })
       .endAngle(function(d) {return d.x + d.dx; })
       .innerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth)})
       .outerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth)})
- 
- var path = svg.datum(graph.tree).selectAll("path")
+
+  nodes.forEach(function (n) {
+    var p = arcInner.centroid(n)
+    if (n.x ==0 && n.y ==0) {p[0] = 0; p[1]=0}
+    n["center"] = p
+  }) 
+  
+ svg.append("g").attr("id", "nodes").selectAll("path")
       .data(nodes)
     .enter().append("path")
       .attr("class", "node")
@@ -426,25 +444,27 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
       .attr("d", arc)
       .style("stroke", "#fff")
       .attr("fill", d => colors.fn(d.domain))
-      .attr("tip", d=>arc.centroid(d))
       .style("fill-rule", "evenodd")
       .on("click", nodeClick)
   
+  var bundle = d3.layout.bundle()
 
-  var graphLinks = graph.links
-               .filter(l => l.source != l.sink)
-               .map((l,i) => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
-               .map((l,i) => {return l.source.x <= l.target.x ? l : {source: l.target, target: l.source}})
+  var line = d3.svg.line()
+              .interpolate("bundle")
+              .tension(.85)
+              .x(d => d.center[0])
+              .y(d => d.center[1])
 
-  var link = svg.selectAll(".link").data(graphLinks)
-  link.enter().append("line")
-     .attr("class", "link")
-     .attr("x1", d => arcInner.centroid(d.source)[0])
-     .attr("y1", d => arcInner.centroid(d.source)[1])
-     .attr("x2", d => arcInner.centroid(d.target)[0])
-     .attr("y2", d => arcInner.centroid(d.target)[1])
-     .attr("stroke", "gray")
-
+  var link = svg.append("g").attr("id", "links").selectAll(".graph-link").data(bundle(graphLinks))
+  link.enter().append("path")
+     .attr("class", "graph-link")
+     .attr("d", line)
+     .attr("fill-opacity", "0")
+     .attr("stroke-width", "4")
+     .attr("stroke", "cornflowerblue")
+     .attr("SOURCE", d => d[0].id)
+     .attr("TARGET", d => d[2].id)
+  
   tooltip(svg, "path.node")  //TODO: Need a different way to find "where is this" for the arcs, 
 
 }
