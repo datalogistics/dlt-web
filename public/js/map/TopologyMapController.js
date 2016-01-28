@@ -103,7 +103,7 @@ function trimTree(root, paths) {
   paths = paths.map(p => p.trim()).filter(p => p.length > 0)
   var tagged;
   if (paths.length == 0) {
-    root = clone(root)
+    root = shallowClone(root)
     root["children"] = undefined
     tagged = root
   } else {
@@ -119,7 +119,7 @@ function trimTree(root, paths) {
 //root -- root of tree
 //path -- path as array of nodes
 function tagPath(root, path) {
-   root = clone(root)
+   root = shallowClone(root)
    root["__keep__"] = true
 
    var target = path[0]
@@ -145,11 +145,11 @@ function gatherLeaves(root) {
   }
 }
 
-function clone(obj) {
+function shallowClone(obj) {
     if (null == obj || "object" != typeof obj) return obj;
     var copy = obj.constructor();
     for (var attr in obj) {
-        if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
     }
     return copy;
 }
@@ -219,7 +219,7 @@ function forceDraw(graph, svg, width, height, nodeClick) {
       .linkStrength(function(l) {return .75})
       .charge(function(n) {return -100*n.weight})
 
-  var nodes = gatherLeaves(graph.tree).map(n => clone(n))
+  var nodes = gatherLeaves(graph.tree).map(n => shallowClone(n))
   var links = graph.links
                .filter(l => l.source != l.sink)
                .map(l => {return {source: pathToIndex(l.source, nodes), target: pathToIndex(l.sink, nodes)}})
@@ -258,7 +258,7 @@ function forceDraw(graph, svg, width, height, nodeClick) {
 
 // ------------------------- Circular embedding -------------------------
 function circleDraw(graph, svg, width, height, nodeClick) {
-  var nodes = gatherLeaves(graph.tree).map(n => clone(n))
+  var nodes = gatherLeaves(graph.tree).map(n => shallowClone(n))
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
 
@@ -392,7 +392,7 @@ function arc(source, target, pct_w, pct_h) {
 // Like a sunburst, but inward instead of outward
 
 function addParent(tree, parent) {
-  tree = clone(tree)
+  tree = shallowClone(tree)
   tree["parent"] = parent
   if (tree._children) {tree._children = tree._children.map(n => addParent(n, tree))}
   return tree
@@ -406,47 +406,44 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
       .size([2 * Math.PI, radius])
       .value(function(d) {return d._children ? d._children.length : 1; });
   
-  var nodes = partition.nodes(addParent(graph.tree))
+  var nodes = partition.nodes(graph.tree)
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
   var maxLevel = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)+5
-  
+ 
   svg = svg.append("g").attr("transform", "translate(" + width / 2 + "," + height * .52 + ")")
 
+  var arc = d3.svg.arc()
+      .startAngle(d => d.x)
+      .endAngle(d => d.x + d.dx)
+      .innerRadius(d => radius - (radius/maxLevel)*(d.depth-1))
+      .outerRadius(d => radius - (radius/maxLevel)*d.depth)
+  
+  
+  svg.append("g").attr("id", "nodes").selectAll("path")
+       .data(nodes)
+     .enter().append("path")
+       .attr("class", "node")
+       .attr("name", d => d.id)
+       .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
+       .attr("d", arc)
+       .style("stroke", "#fff")
+       .attr("fill", d => colors.fn(d.domain))
+       .style("fill-rule", "evenodd")
+       .on("click", nodeClick)
+ 
+  //LINKS
+  arc.innerRadius(d => radius - (radius/maxLevel)*d.depth)
+  nodes = partition.nodes(addParent(graph.tree))
+  nodes.forEach(function (n) {
+     var p = arc.centroid(n)
+     if (n.x ==0 && n.y ==0) {p[0] = 0; p[1]=0}
+     n["center"] = p
+   }) 
   var graphLinks = graph.links
                .filter(l => l.source != l.sink)
                .map((l,i) => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
-
-  var arc = d3.svg.arc()
-      .startAngle(function(d) {return d.x; })
-      .endAngle(function(d) {return d.x + d.dx; })
-      .innerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth-1)})
-      .outerRadius(function(d) {return radius - (radius/maxLevel)*d.depth})
-
- var arcInner = d3.svg.arc()
-      .startAngle(function(d) {return d.x; })
-      .endAngle(function(d) {return d.x + d.dx; })
-      .innerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth)})
-      .outerRadius(function(d) {return radius - (radius/maxLevel)*(d.depth)})
-
-  nodes.forEach(function (n) {
-    var p = arcInner.centroid(n)
-    if (n.x ==0 && n.y ==0) {p[0] = 0; p[1]=0}
-    n["center"] = p
-  }) 
-  
- svg.append("g").attr("id", "nodes").selectAll("path")
-      .data(nodes)
-    .enter().append("path")
-      .attr("class", "node")
-      .attr("name", d => d.id)
-      .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
-      .attr("d", arc)
-      .style("stroke", "#fff")
-      .attr("fill", d => colors.fn(d.domain))
-      .style("fill-rule", "evenodd")
-      .on("click", nodeClick)
-  
+ 
   var bundle = d3.layout.bundle()
 
   var line = d3.svg.line()
