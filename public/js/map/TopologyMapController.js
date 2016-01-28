@@ -29,6 +29,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
   function expandNode(d, i) {
     //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully) with ._children/.children
+    //TODO: Preserve inner selection: filter the paths sent to to subset to only those with their parent in the paths (changes the add/remove logic)
     if (!d._children) {return} 
     var targetParts = d.path.split(PATH_SEPARATOR)
     var newPaths = paths.filter(path => !(path == d.path
@@ -395,7 +396,7 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
   var partition = d3.layout.partition()
       .sort(null)
       .size([2 * Math.PI, radius])
-      .value(function(d) { return 1; });
+      .value(function(d) {return d._children ? d._children.length : 1; });
   
   var nodes = partition.nodes(graph.tree)
   var colors = domainColors(nodes, svg, 10, 15)
