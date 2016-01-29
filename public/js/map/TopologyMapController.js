@@ -476,11 +476,11 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
   nodes = partition.nodes(addParent(graph.tree))
   nodes = nodes.map(n => {
     if (n.children) {
-      n["center"] = circularMean(n.children.map(arc.centroid))
-      n["center"] = {t: n.center.t, r: ((width/2)-50)/maxDepth*n.depth} //Move to a level
+      //n["center"] = circularMean(n.children.map(arc.centroid))
+      var base = toPolar(arc.centroid(n))
+      n["center"] = {t: base.t, r: ((width/2)-50)/maxDepth*n.depth} //Move to a level
     } else {
-      var centroid = toPolar(arc.centroid(n))
-      n["center"] = centroid 
+      n["center"] = toPolar(arc.centroid(n))
     }
     return  n
   }).map(n => {
@@ -509,15 +509,15 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
   
   tooltip(svg, "path.node")  //TODO: Need a different way to find "where is this" for the arcs, 
   
-  var link = svg.append("g").attr("id", "P").selectAll("rect").data(nodes)
-  link.enter().append("rect")
-    .attr("x", d => toCartesian(d.center).x)
-    .attr("y", d => toCartesian(d.center).y)
-    .attr("id", d => d.id)
-    .attr("polar", d => d.center)
-    .attr("width", 10)
-    .attr("height", 10)
-
+//  var link = svg.append("g").attr("id", "P").selectAll("rect").data(nodes)
+//  link.enter().append("rect")
+//    .attr("x", d => toCartesian(d.center).x-5)
+//    .attr("y", d => toCartesian(d.center).y-5)
+//    .attr("id", d => d.id)
+//    .attr("polar", d => d.center)
+//    .attr("width", 10)
+//    .attr("height", 10)
+//
 }
 // ------------------ Icicle --------------
 function icicleDraw(graph, svg, space_width, height, nodeClick) {
