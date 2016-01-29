@@ -448,15 +448,15 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
   var nodes = partition.nodes(graph.tree)
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
-  var maxDepth = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)+5
+  var maxDepth = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)
  
   svg = svg.append("g").attr("transform", "translate(" + width / 2 + "," + height * .52 + ")")
 
   var arc = d3.svg.arc()
       .startAngle(d => d.x)
       .endAngle(d => d.x + d.dx)
-      .innerRadius(d => radius - (radius/maxDepth)*(d.depth-1))
-      .outerRadius(d => radius - (radius/maxDepth)*d.depth)
+      .innerRadius(d => radius - (radius/(maxDepth+5))*(d.depth-1))
+      .outerRadius(d => radius - (radius/(maxDepth+5))*d.depth)
   
   
   svg.append("g").attr("id", "nodes").selectAll("path")
@@ -472,15 +472,16 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
        .on("click", nodeClick)
  
   //LINKS
-  arc.innerRadius(d => radius - (radius/maxDepth)*d.depth)
-  nodes = partition.nodes(addParent(graph.tree))
+  arc.innerRadius(d => radius - (radius/(maxDepth+5))*d.depth)
+  nodes = partition.nodes(addParent(graph.tree)).map(n => {n["centroid"] = toPolar(arc.centroid(n)); return n})
+  var minR = nodes.reduce((acc, n) => Math.min(acc, n.centroid.r), width)
+  console.log(minR, maxDepth)
+
   nodes = nodes.map(n => {
     if (n.children) {
-      //n["center"] = circularMean(n.children.map(arc.centroid))
-      var base = toPolar(arc.centroid(n))
-      n["center"] = {t: base.t, r: ((width/2)-50)/maxDepth*n.depth} //Move to a level
+      n["center"] = {t: n.centroid.t, r: (minR/maxDepth)*n.depth} //Move to a level
     } else {
-      n["center"] = toPolar(arc.centroid(n))
+      n["center"] = n.centroid 
     }
     return  n
   }).map(n => {
@@ -505,19 +506,20 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
      .attr("d", line)
      .attr("fill-opacity", "0")
      .attr("stroke-width", "1")
-     .attr("stroke", "cornflowerblue")
+     .attr("stroke", "gray")
   
   tooltip(svg, "path.node")  //TODO: Need a different way to find "where is this" for the arcs, 
   
-//  var link = svg.append("g").attr("id", "P").selectAll("rect").data(nodes)
-//  link.enter().append("rect")
-//    .attr("x", d => toCartesian(d.center).x-5)
-//    .attr("y", d => toCartesian(d.center).y-5)
-//    .attr("id", d => d.id)
-//    .attr("polar", d => d.center)
-//    .attr("width", 10)
-//    .attr("height", 10)
-//
+  var link = svg.append("g").attr("id", "P").selectAll("rect").data(nodes)
+  link.enter().append("rect")
+    .attr("x", d => toCartesian(d.center).x-2.5)
+    .attr("y", d => toCartesian(d.center).y-2.5)
+    .attr("id", d => d.id)
+    .attr("polar", d => d.center)
+    .attr("width", 5)
+    .attr("height", 5)
+    .attr("fill", "red")
+
 }
 // ------------------ Icicle --------------
 function icicleDraw(graph, svg, space_width, height, nodeClick) {
