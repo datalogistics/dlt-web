@@ -320,8 +320,8 @@ function treeDraw(graph, svg, width, height, nodeClick) {
   var graphLinks = graph.links
                .filter(l => l.source != l.sink)
                .map(l => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
-               .map(l => {return {source: polarToCartesian(l.source.y, l.source.x),
-                                  target: polarToCartesian(l.target.y, l.target.x)}})
+               .map(l => {return {source: toCartesian(l.source.y, (l.source.x-90)*(Math.PI/180)),
+                                  target: toCartesian(l.target.y, (l.target.x-90)*Math.PI/180)}})
 
    var graphlink = tree.append("g").attr("id", "graph-links")
          .selectAll(".graph-link").data(graphLinks)
@@ -358,14 +358,42 @@ function treeDraw(graph, svg, width, height, nodeClick) {
   return map
 }
 
-function polarToCartesian(radius, angleInDegrees) {
-  var angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
+//Two arguments: radius, angleInRadians
+//One Argument: [radius, angleInRadians]
+//One ARgument: {r: radius, t: angleInRadians}
+function toCartesian(radius, angleInRadians) {
+  if (!angleInRadians) {
+    if (radius[0]) {
+      angleInRadians = radius[1]
+      radius = radius[0]
+    } else {
+      angleInRadians = radius.t
+      radius = radius.r
+    }
+  }
 
   return {
     x: (radius * Math.cos(angleInRadians)),
     y: (radius * Math.sin(angleInRadians))
   };
 }
+
+//Two arguments: x,y 
+//One Argument: [x,y]
+//One ARgument: {x: x, y: y}
+function toPolar(x,y) {
+  if (!y) {
+    if (x[0]) {
+      y=x[1]
+      x=x[0]
+    } else {
+      y=x.y
+      x=x.x
+    }
+  }
+  return {r: Math.sqrt(x*x+y*y), t: Math.atan2(y,x)}
+}
+
 //Return a path between (source.x, source.y) and (target.x, target.y)
 //Based on http://stackoverflow.com/questions/17156283/d3-js-drawing-arcs-between-two-points-on-map-from-file
 //pct_w and pct_h are used as percent offsets (defaulting to 0) 
@@ -398,6 +426,17 @@ function addParent(tree, parent) {
   return tree
 }
 
+function circularMean(items) {
+  var sums = items.reduce(function (acc, c) {
+      var polar = toPolar(c[0], c[1])
+      return {r: acc.r + polar.r, ts: acc.ts+Math.sin(polar.t), tc: acc.tc+Math.cos(polar.t)}
+    }, {r:0, ts:0, tc: 0})
+  
+  var avg = {r: sums.r/items.length, 
+             t: Math.atan2(sums.ts/items.length, sums.tc/items.length)}
+  return avg;
+}
+
 function blackholeDraw(graph, svg, width, height, nodeClick) {
   var radius = Math.min(width, height) / 2
  
@@ -409,15 +448,15 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
   var nodes = partition.nodes(graph.tree)
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
-  var maxLevel = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)+5
+  var maxDepth = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)+5
  
   svg = svg.append("g").attr("transform", "translate(" + width / 2 + "," + height * .52 + ")")
 
   var arc = d3.svg.arc()
       .startAngle(d => d.x)
       .endAngle(d => d.x + d.dx)
-      .innerRadius(d => radius - (radius/maxLevel)*(d.depth-1))
-      .outerRadius(d => radius - (radius/maxLevel)*d.depth)
+      .innerRadius(d => radius - (radius/maxDepth)*(d.depth-1))
+      .outerRadius(d => radius - (radius/maxDepth)*d.depth)
   
   
   svg.append("g").attr("id", "nodes").selectAll("path")
@@ -433,13 +472,21 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
        .on("click", nodeClick)
  
   //LINKS
-  arc.innerRadius(d => radius - (radius/maxLevel)*d.depth)
+  arc.innerRadius(d => radius - (radius/maxDepth)*d.depth)
   nodes = partition.nodes(addParent(graph.tree))
-  nodes.forEach(function (n) {
-     var p = arc.centroid(n)
-     if (n.x ==0 && n.y ==0) {p[0] = 0; p[1]=0}
-     n["center"] = p
-   }) 
+  nodes = nodes.map(n => {
+    if (n.children) {
+      n["center"] = circularMean(n.children.map(arc.centroid))
+      n["center"] = {t: n.center.t, r: ((width/2)-50)/maxDepth*n.depth} //Move to a level
+    } else {
+      var centroid = toPolar(arc.centroid(n))
+      n["center"] = centroid 
+    }
+    return  n
+  }).map(n => {
+      return n
+  })
+
   var graphLinks = graph.links
                .filter(l => l.source != l.sink)
                .map((l,i) => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
@@ -449,20 +496,27 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
   var line = d3.svg.line()
               .interpolate("bundle")
               .tension(.85)
-              .x(d => d.center[0])
-              .y(d => d.center[1])
+              .x(d => toCartesian(d.center).x)
+              .y(d => toCartesian(d.center).y)
 
   var link = svg.append("g").attr("id", "links").selectAll(".graph-link").data(bundle(graphLinks))
   link.enter().append("path")
      .attr("class", "graph-link")
      .attr("d", line)
      .attr("fill-opacity", "0")
-     .attr("stroke-width", "4")
+     .attr("stroke-width", "1")
      .attr("stroke", "cornflowerblue")
-     .attr("SOURCE", d => d[0].id)
-     .attr("TARGET", d => d[2].id)
   
   tooltip(svg, "path.node")  //TODO: Need a different way to find "where is this" for the arcs, 
+  
+  var link = svg.append("g").attr("id", "P").selectAll("rect").data(nodes)
+  link.enter().append("rect")
+    .attr("x", d => toCartesian(d.center).x)
+    .attr("y", d => toCartesian(d.center).y)
+    .attr("id", d => d.id)
+    .attr("polar", d => d.center)
+    .attr("width", 10)
+    .attr("height", 10)
 
 }
 // ------------------ Icicle --------------
