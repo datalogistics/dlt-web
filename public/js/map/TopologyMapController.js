@@ -183,6 +183,7 @@ function domainColors(nodes, svg, x,y) {
                             .filter(d => d && d.trim().length >0)
                             .reduce((acc, d) => {acc.add(d); return acc}, new Set())
   domains = Array.from(domains)
+  domains.sort()
   var base = d3.scale.category10().domain(domains)
   base.range(removeGray(base.range()))
   var fn = function(v) {
@@ -418,14 +419,6 @@ function arc(source, target, pct_w, pct_h) {
 
 // ------------------ Black Hole --------------
 // Like a sunburst, but inward instead of outward
-
-function addParent(tree, parent) {
-  tree = shallowClone(tree)
-  tree["parent"] = parent
-  if (tree._children) {tree._children = tree._children.map(n => addParent(n, tree))}
-  return tree
-}
-
 function circularMean(items) {
   var sums = items.reduce(function (acc, c) {
       var polar = toPolar(c[0], c[1])
@@ -437,14 +430,64 @@ function circularMean(items) {
   return avg;
 }
 
+//Sort the nodes array so the link distance is minized
+//Probably not a metric TSP solution because we don't treat the nodes list as circular
+function reduceEnergy(nodes, links) {
+  function energy(items) {
+    return links.filter(l => pathToIndex(l.source, items) >= 0 && pathToIndex(l.sink, items) >=0)
+                .map(l => {return {source: pathToIndex(l.source, items), target: pathToIndex(l.sink, items)}})
+                .reduce((acc, link) => (acc + Math.abs(link.source - link.target)), 0)
+  }
+  //Swaps i and j in a copy of the array
+  function swap(arr, i, j) {
+    var copy = arr.slice()
+    var tmp = copy[i]
+    copy[i] = copy[j]
+    copy[j] = tmp
+    return copy
+  }
+
+  function betterOrder(original, i, j) {
+    var copy = swap(original.array, i ,j)
+    var swp = energy(copy)
+    if (swp < original.energy) {return {array: copy, energy: swp}}
+    return original 
+  }
+  
+   var best = {array: nodes, energy: energy(nodes)}
+   var changed = true
+   while (changed) {
+     changed = false
+     for (var i=0; i<best.array.length-1; i++) {
+       var post = betterOrder(best, i, i+1)
+       changed = changed || (post.energy != best.energy)
+       best = post
+     }
+   }
+   return best.array
+}
+
+function reduceTreeEnergy(tree, links) {
+  if (tree.children) {
+    tree = shallowClone(tree)
+    tree.children = reduceEnergy(tree.children, links).map(c => reduceTreeEnergy(c, links))
+                       .map((n,i) => {n.sort = i; return n}) 
+  } 
+  return tree
+}
+
 function blackholeDraw(graph, svg, width, height, nodeClick) {
   var radius = Math.min(width, height) / 2
  
   var partition = d3.layout.partition()
       .sort(null)
+      //.sort((a,b) => a.sort - b.sort)
       .size([2 * Math.PI, radius])
-      .value(function(d) {return d._children ? d._children.length : 1; });
-  
+      .value(d => d._children ? d._children.length : 1)
+
+ 
+  //console.log(reduceTreeEnergy(graph.tree, graph.links))
+  //var nodes = partition.nodes(reduceTreeEnergy(graph.tree, graph.links))
   var nodes = partition.nodes(graph.tree)
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
@@ -457,8 +500,7 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
       .endAngle(d => d.x + d.dx)
       .innerRadius(d => radius - (radius/(maxDepth+5))*(d.depth-1))
       .outerRadius(d => radius - (radius/(maxDepth+5))*d.depth)
-  
-  
+ 
   svg.append("g").attr("id", "nodes").selectAll("path")
        .data(nodes)
      .enter().append("path")
@@ -473,9 +515,8 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
  
   //LINKS
   arc.innerRadius(d => radius - (radius/(maxDepth+5))*d.depth)
-  nodes = partition.nodes(addParent(graph.tree)).map(n => {n["centroid"] = toPolar(arc.centroid(n)); return n})
+  nodes = nodes.map(n => {n["centroid"] = toPolar(arc.centroid(n)); return n})
   var minR = nodes.reduce((acc, n) => Math.min(acc, n.centroid.r), width)
-  console.log(minR, maxDepth)
 
   nodes = nodes.map(n => {
     if (n.children) {
@@ -519,7 +560,6 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
     .attr("width", 5)
     .attr("height", 5)
     .attr("fill", "red")
-
 }
 // ------------------ Icicle --------------
 function icicleDraw(graph, svg, space_width, height, nodeClick) {
@@ -668,4 +708,3 @@ function portToPath(root) {
   },
   [])
 }
-
