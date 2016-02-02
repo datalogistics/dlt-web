@@ -21,7 +21,8 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   else if ($routeParams.layout == "force") {draw = forceDraw}
   else {draw = blackholeDraw}
 
-  var baseGraph = domainsGraph(UnisService)
+  var baseGraph = setOrder(domainsGraph(UnisService))
+
   var graph = subsetGraph(baseGraph, paths)
   var group = basicSetup(svg, width, height)
 
@@ -46,6 +47,29 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   
   //Cleanup functions here!
   $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
+}
+
+//Set an order for children
+function setOrder(graph) {
+  function linkCount(node) {
+    var pathLen = node.path.split(PATH_SEPARATOR).length
+    var ins = graph.links.map(l => l.source).filter(l => pathMatch(l, node.path)==pathLen).length
+    var outs = graph.links.map(l => l.sink).filter(l => pathMatch(l, node.path)==pathLen).length
+    return ins+outs
+  }
+
+  function orderChildren(tree) {
+    if (tree.children) {
+      tree = shallowClone(tree)
+      tree.children = tree.children.map(orderChildren)
+      tree.children.map(n => {n.links = linkCount(n); return n})
+      tree.children.sort((a,b) => a.links - b.links)
+      tree.children.forEach((n, i) => {n.sort = i; return n})
+      return tree
+    }
+    return shallowClone(tree)
+  }
+  return {root: orderChildren(graph.root), links: graph.links}
 }
 
 function subsetGraph(graph, paths) {
@@ -434,7 +458,7 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
   var radius = Math.min(width, height) / 2
  
   var partition = d3.layout.partition()
-      .sort(null)
+      .sort((a,b) => a.sort-b.sort)
       .size([2 * Math.PI, radius])
       .value(d => d._children ? d._children.length : 1)
 
@@ -458,6 +482,8 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
        .attr("class", "node")
        .attr("name", d => d.id)
        .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
+       .attr("links", d => d.links)
+       .attr("sort", d => d.sort)
        .attr("d", arc)
        .style("stroke", "#fff")
        .attr("fill", d => colors.fn(d.domain))
