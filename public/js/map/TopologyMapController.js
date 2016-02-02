@@ -216,10 +216,10 @@ function domainColors(nodes, svg, x,y) {
   }
 
   if (svg) {
-    var legend = svg.append("g")
+    var legendRoot = svg.append("g")
                     .attr("class", "legend")
                     .attr("transform", "translate(" + x + "," + y + ")")
-    legend = legend.selectAll(".circle").data(domains)
+    legend = legendRoot.selectAll(".circle").data(domains)
     legend.enter().append("circle")
           .attr("class", "legend-item")
           .attr("r", 8)
@@ -233,7 +233,7 @@ function domainColors(nodes, svg, x,y) {
           .text(d => d)
   }
 
-  return {fn: fn, nodes: nodes}
+  return {fn: fn, nodes: nodes, legend: legendRoot}
 }
 
 // ---------------- Spring force embedded -----
@@ -454,6 +454,20 @@ function circularMean(items) {
   return avg;
 }
 
+function showId(svg, enter) {
+  if (enter) {
+    return function(item,a,b,c) {
+      svg.text(item.id)
+         .attr("x", d3.mouse(this)[0])
+         .attr("y", d3.mouse(this)[1]-10)
+    }
+  } else {
+    return function(item) {
+      svg.text("")
+    }
+  }
+}
+
 function blackholeDraw(graph, svg, width, height, nodeClick) {
   var radius = Math.min(width, height) / 2
  
@@ -462,7 +476,6 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
       .size([2 * Math.PI, radius])
       .value(d => d._children ? d._children.length : 1)
 
- 
   var nodes = partition.nodes(graph.tree)
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
@@ -475,8 +488,14 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
       .endAngle(d => d.x + d.dx)
       .innerRadius(d => radius - (radius/(maxDepth+5))*(d.depth-1))
       .outerRadius(d => radius - (radius/(maxDepth+5))*d.depth)
- 
-  svg.append("g").attr("id", "nodes").selectAll("path")
+
+
+  var label = svg.append("text")
+                 .attr("id", "hover-label")
+                 .attr("text-anchor", "middle")
+                 .attr("pointer-events", "none")
+
+  svg.insert("g","#hover-label").attr("id", "nodes").selectAll("path")
        .data(nodes)
      .enter().append("path")
        .attr("class", "node")
@@ -489,6 +508,8 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
        .attr("fill", d => colors.fn(d.domain))
        .style("fill-rule", "evenodd")
        .on("click", nodeClick)
+       .on("mouseleave", showId(label, false))
+       .on("mousemove", showId(label, true))
  
   //LINKS
   arc.innerRadius(d => radius - (radius/(maxDepth+5))*d.depth)
@@ -525,18 +546,8 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
      .attr("fill-opacity", "0")
      .attr("stroke-width", "1")
      .attr("stroke", "gray")
+     .attr("pointer-events", "none")
   
-  tooltip(svg, "path.node")  //TODO: Need a different way to find "where is this" for the arcs, 
-  
-  var link = svg.append("g").attr("id", "P").selectAll("rect").data(nodes)
-  link.enter().append("rect")
-    .attr("x", d => toCartesian(d.center).x-2.5)
-    .attr("y", d => toCartesian(d.center).y-2.5)
-    .attr("id", d => d.id)
-    .attr("polar", d => d.center)
-    .attr("width", 5)
-    .attr("height", 5)
-    .attr("fill", "red")
 }
 // ------------------ Icicle --------------
 function icicleDraw(graph, svg, space_width, height, nodeClick) {
