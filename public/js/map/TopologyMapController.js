@@ -430,64 +430,15 @@ function circularMean(items) {
   return avg;
 }
 
-//Sort the nodes array so the link distance is minized
-//Probably not a metric TSP solution because we don't treat the nodes list as circular
-function reduceEnergy(nodes, links) {
-  function energy(items) {
-    return links.filter(l => pathToIndex(l.source, items) >= 0 && pathToIndex(l.sink, items) >=0)
-                .map(l => {return {source: pathToIndex(l.source, items), target: pathToIndex(l.sink, items)}})
-                .reduce((acc, link) => (acc + Math.abs(link.source - link.target)), 0)
-  }
-  //Swaps i and j in a copy of the array
-  function swap(arr, i, j) {
-    var copy = arr.slice()
-    var tmp = copy[i]
-    copy[i] = copy[j]
-    copy[j] = tmp
-    return copy
-  }
-
-  function betterOrder(original, i, j) {
-    var copy = swap(original.array, i ,j)
-    var swp = energy(copy)
-    if (swp < original.energy) {return {array: copy, energy: swp}}
-    return original 
-  }
-  
-   var best = {array: nodes, energy: energy(nodes)}
-   var changed = true
-   while (changed) {
-     changed = false
-     for (var i=0; i<best.array.length-1; i++) {
-       var post = betterOrder(best, i, i+1)
-       changed = changed || (post.energy != best.energy)
-       best = post
-     }
-   }
-   return best.array
-}
-
-function reduceTreeEnergy(tree, links) {
-  if (tree.children) {
-    tree = shallowClone(tree)
-    tree.children = reduceEnergy(tree.children, links).map(c => reduceTreeEnergy(c, links))
-                       .map((n,i) => {n.sort = i; return n}) 
-  } 
-  return tree
-}
-
 function blackholeDraw(graph, svg, width, height, nodeClick) {
   var radius = Math.min(width, height) / 2
  
   var partition = d3.layout.partition()
       .sort(null)
-      //.sort((a,b) => a.sort - b.sort)
       .size([2 * Math.PI, radius])
       .value(d => d._children ? d._children.length : 1)
 
  
-  //console.log(reduceTreeEnergy(graph.tree, graph.links))
-  //var nodes = partition.nodes(reduceTreeEnergy(graph.tree, graph.links))
   var nodes = partition.nodes(graph.tree)
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
