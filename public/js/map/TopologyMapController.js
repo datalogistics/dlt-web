@@ -453,27 +453,43 @@ function circularMean(items) {
              t: Math.atan2(sums.ts/items.length, sums.tc/items.length)}
   return avg;
 }
-
-function showId(svg, enter) {
-  if (enter) {
-    return function(item,a,b,c) {
-      svg.text(item.id)
-         .attr("x", d3.mouse(this)[0])
-         .attr("y", d3.mouse(this)[1]-10)
-    }
-  } else {
-    return function(item) {
-      svg.text("")
+function blackholeDraw(graph, svg, width, height, nodeClick) {
+  function showId(svg, enter) {
+    if (enter) {
+      return function(item) {
+        svg.text(item.id)
+           .attr("x", d3.mouse(this)[0])
+           .attr("y", d3.mouse(this)[1]-10)
+      }
+    } else {
+      return function(item) {
+        svg.text("")
+      }
     }
   }
-}
 
-function blackholeDraw(graph, svg, width, height, nodeClick) {
+  function showLinks(enter) {
+    if (enter) {
+      return function(item) {
+        var target = graphLinks.filter(l => l.source.path == item.path || l.target.path == item.path)
+        target.forEach(l => l.selected = true)
+        drawLinks()
+      }
+    } else {
+      return function(item) {
+        graphLinks.forEach(l => l.selected = false)
+        drawLinks()
+      }
+    }
+  }
+
+
   var radius = Math.min(width, height) / 2
  
   var partition = d3.layout.partition()
       .sort((a,b) => a.sort-b.sort)
       .size([2 * Math.PI, radius])
+      //.value(d => d.links ? d.links : 1)
       .value(d => d._children ? d._children.length : 1)
 
   var nodes = partition.nodes(graph.tree)
@@ -501,15 +517,16 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
        .attr("class", "node")
        .attr("name", d => d.id)
        .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
-       .attr("links", d => d.links)
-       .attr("sort", d => d.sort)
+       .attr("path" , d=> d.path)
        .attr("d", arc)
        .style("stroke", "#fff")
        .attr("fill", d => colors.fn(d.domain))
        .style("fill-rule", "evenodd")
        .on("click", nodeClick)
-       .on("mouseleave", showId(label, false))
        .on("mousemove", showId(label, true))
+       .on("mouseenter", showLinks(true))
+       .on("mouseleave.tip", showId(label, false))
+       .on("mouseleave.link", showLinks(false))
  
   //LINKS
   arc.innerRadius(d => radius - (radius/(maxDepth+5))*d.depth)
@@ -529,24 +546,31 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
 
   var graphLinks = graph.links
                .filter(l => l.source != l.sink)
-               .map((l,i) => {return {source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
- 
-  var bundle = d3.layout.bundle()
+               .map((l,i) => {return {selected: l.selected, source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
+  var linkRoot = svg.append("g").attr("id", "links")
+  drawLinks()
 
-  var line = d3.svg.line()
-              .interpolate("bundle")
-              .tension(.85)
-              .x(d => toCartesian(d.center).x)
-              .y(d => toCartesian(d.center).y)
+  function drawLinks() {
+    var bundle = d3.layout.bundle()
+    var link = linkRoot.selectAll(".graph-link").data(bundle(graphLinks), (d,i) => i)
+    var line = d3.svg.line()
+                .interpolate("bundle")
+                .tension(.85)
+                .x(d => toCartesian(d.center).x)
+                .y(d => toCartesian(d.center).y)
 
-  var link = svg.append("g").attr("id", "links").selectAll(".graph-link").data(bundle(graphLinks))
-  link.enter().append("path")
-     .attr("class", "graph-link")
-     .attr("d", line)
-     .attr("fill-opacity", "0")
-     .attr("stroke-width", "1")
-     .attr("stroke", "gray")
-     .attr("pointer-events", "none")
+    link.enter().append("path")
+       .attr("class", "graph-link")
+       .attr("d", line)
+
+    link 
+       .attr("fill-opacity", "0")
+       .attr("stroke-width", (d,i) => graphLinks[i].selected ? 3 : 1)
+       .attr("stroke", (d, i) => graphLinks[i].selected ? "black" : "gray")
+       .attr("pointer-events", "none")
+
+    link.exit().remove()
+  }
   
 }
 // ------------------ Icicle --------------
