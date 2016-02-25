@@ -628,6 +628,7 @@ function domainsGraph(UnisService) {
                               values["selfRef"] = port.selfRef
                               values["id"] = values.port
                               return values})
+                .filter(Boolean)  // Filters out 'falsy' values, undefined is one of them
 
   var nodes = UnisService.nodes
                   .map(n => {return {id: n.id, location: n.location, selfRef: n.selfRef, children: n.ports ? n.ports.map(p => p.href) : []}})
@@ -674,7 +675,8 @@ function URNtoDictionary(urn) {
     result["port"] = parts[5]
     return result
   } else {
-    throw "Could not create plausible URN dictionary for: " + urn
+    console.error("Error, could not create plausible URN dictionary for: " + urn)
+    return undefined
   }
 }
 
@@ -685,7 +687,7 @@ function addPaths(root, prefix) {
 
 function ensureURNNode(urn, root) {
   var parts = URNtoDictionary(urn)
-  if (!parts.domain || !parts.node || !parts.port) {
+  if (!parts || !parts.domain || !parts.node || !parts.port) {
     console.log("Could not ensure endpoint", urn); return;
   }
   
