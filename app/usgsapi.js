@@ -16,15 +16,18 @@ var path = require('path')
 var baseurl = "http://earthexplorer.usgs.gov/inventory/json/";
 var baseurlHtpps = "https://earthexplorer.usgs.gov/inventory/json/";
 var usgsapi = {
-  _call : function(name , params , cb) {
+  _call : function(name , params ,isPost) {
     var def = q.defer();
     var jsonStr = JSON.stringify(params);
-    request.get(baseurlHtpps + name + '?jsonRequest='+jsonStr  , function(err,r,resp) {
-      resp = JSON.parse(resp);
-      def.resolve(resp);      
-      if (cb)
-        cb.apply(this,arguments);
-    });
+    var handler = function(err,r,resp) {
+	resp = JSON.parse(resp);
+	def.resolve(resp);
+    };
+    if (isPost) {
+      request.post({url : baseurlHtpps + name , form :{'jsonRequest': jsonStr}},handler);
+    } else {
+      request.get({url : baseurlHtpps + name + '?jsonRequest='+jsonStr}, handler);
+    };    
     return def.promise;
   },
   login : function(uname,pwd) {
@@ -32,7 +35,7 @@ var usgsapi = {
       username : uname ,
       password : pwd
     };
-    return this._call("login",{ username : uname , password: pwd });
+    return this._call("login",{ username : uname , password: pwd },true);
   },
   logout  : function(key) {
     this._call("logout",{ apiKey : key } , function(err,r,resp){

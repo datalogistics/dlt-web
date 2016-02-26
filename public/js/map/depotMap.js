@@ -1,3 +1,24 @@
+//Find where a location is on the map (pixel coordinates)
+//Adds items to the map if not found then returns the new location
+function mapLocation(map, entry) {
+  var name = undefined
+  if (entry.host) {
+    name = entry.host
+  } else {
+    name = entry.split(":")[0]
+  }
+
+  var selector = ".depotLocation[name='" + name + "']"
+  var node = map.svg.selectAll(selector).node()
+  if (node == null) {
+    console.error("Could not find map location: " + name)
+    mapPoints(map.projection, map.svg)([{location: [], name: name, port: "", depot_id: "GENERATED_ID" + Math.random()}])
+    return mapLocation(map, name)
+  }
+  var parent = d3.select(node.parentNode)
+  return d3.transform(parent.attr("transform")).translate
+}
+
 // Add a highlight halo to a specified map item(s).
 // 
 // svg -- Root svg element to find things in
@@ -115,7 +136,7 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       var count = group.select(".count")
       if (count.empty()) {
         group.append("text")
-          .text(function (d) {return 2})
+          .text("2")
           .attr("class", "count")
           .attr("baseline-shift", "-4.5px")
           .attr("text-anchor", "middle")
@@ -132,6 +153,7 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       return invisiblePoint(group)
     });
   }
+  return group
 }
 
 //Add nodes to the side of the map, because their lat/lon is not known

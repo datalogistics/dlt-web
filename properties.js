@@ -124,7 +124,7 @@ var self = {
     requestCert: true,
     rejectUnauthorized: false
   },
-  usgs_row_searchurl : "http://landsat.usgs.gov/includes/scripts/get_metadata.php",
+  usgs_row_searchurl : "http://earthexplorer.usgs.gov/EE/InventoryStream/pathrow",
   usgs_lat_searchurl : "http://earthexplorer.usgs.gov/EE/InventoryStream/latlong",
   usgs_api_credentials : {
     username : "indianadlt",

@@ -9,3 +9,4 @@ angular.module('map', [])
   .controller("DownloadMapController", downloadMapController)
   .controller("ProbeMapController", probeMapController)
   .controller("TopologyMapController", topologyMapController)
+  .controller("ExnodeMapController", exnodeMapController);

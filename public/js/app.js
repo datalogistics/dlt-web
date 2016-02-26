@@ -125,11 +125,27 @@ angular.module('periApp',
                }).
                when('/downloads/',{
                  templateUrl: 'views/download_map.html',
-                 controller: 'DownloadMapController'
+                 controller: 'DownloadMapController',
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
                }).
                when('/downloads/filter',{
                  templateUrl: 'views/download_map.html',
-                 controller: 'DownloadMapController'
+                 controller: 'DownloadMapController',
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               })
+               .when('/exnode/:id', {
+                 templateUrl: 'views/exnode_map.html',
+                 controller: 'ExnodeMapController',
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
                })
                .otherwise({redirectTo: '/'});
 
