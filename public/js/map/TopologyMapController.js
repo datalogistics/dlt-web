@@ -405,10 +405,12 @@ function treeDraw(graph, selection, svg, width, height, nodeClick) {
   return map
 }
 
-//Two arguments: radius, angleInRadians
-//One Argument: [radius, angleInRadians]
-//One ARgument: {r: radius, t: angleInRadians}
 function toCartesian(radius, angleInRadians) {
+  //Convert radius,angle to {x,y}
+  //Two arguments: radius, angleInRadians
+  //One Argument: [radius, angleInRadians]
+  //One Argument: {r: radius, t: angleInRadians}
+
   if (!angleInRadians) {
     if (radius[0]) {
       angleInRadians = radius[1]
@@ -465,7 +467,11 @@ function arc(source, target, pct_w, pct_h) {
 
 // ------------------ Black Hole --------------
 // Like a sunburst, but inward instead of outward
+
+
 function circularMean(items) {
+  //Mid-point for things arranged around a circle
+  //https://en.wikipedia.org/wiki/Mean_of_circular_quantities
   var sums = items.reduce(function (acc, c) {
       var polar = toPolar(c[0], c[1])
       return {r: acc.r + polar.r, ts: acc.ts+Math.sin(polar.t), tc: acc.tc+Math.cos(polar.t)}
@@ -475,6 +481,19 @@ function circularMean(items) {
              t: Math.atan2(sums.ts/items.length, sums.tc/items.length)}
   return avg;
 }
+
+function cross(list) {
+  //All pairs in a list of unique items (does not include self links)
+  //So [a,b,c] => [[a,b], [a,c], [b,c]]
+  var crossed = []
+  for(var i=0; i<list.length; i++) {
+    for (j=i+1; j<list.length; j++) {
+      crossed.push([list[i], list[j]])
+    }
+  }
+  return crossed
+}
+
 function blackholeDraw(graph, selection, svg, width, height, nodeClick) {
   function showId(svg, enter) {
     if (enter) {
@@ -576,11 +595,15 @@ function blackholeDraw(graph, selection, svg, width, height, nodeClick) {
 
   var graphLinks = graph.links
                .filter(l => l.source != l.sink)
-               .map((l,i) => {return {selected: l.selected, source: nodes[pathToIndex(l.source, nodes)], target: nodes[pathToIndex(l.sink, nodes)]}})
+               .map((l,i) => {return {selected: l.selected,
+                                      source: nodes[pathToIndex(l.source, nodes)], 
+                                      target: nodes[pathToIndex(l.sink, nodes)]}})
+
   var linkRoot = svg.append("g").attr("id", "links")
   drawLinks()
 
   function drawLinks() {
+    //A separate function to support the mouse-over-highlights-links behavior
     var bundle = d3.layout.bundle()
     var link = linkRoot.selectAll(".graph-link").data(bundle(graphLinks), (d,i) => i)
     var line = d3.svg.line()
@@ -601,8 +624,29 @@ function blackholeDraw(graph, selection, svg, width, height, nodeClick) {
 
     link.exit().remove()
   }
+
+  //SELECTION LINKS
   
+  var selectionPoints = selection.map(s => nodes[pathToIndex(s, nodes)])
+                                 .filter(n => n)
+                                 .map(n => toCartesian(n.centroid))
+
+  var crossed = cross(selectionPoints)
+  var selectionRoot = svg.append("g").attr("id", "selection-links")
+                         .selectAll(".selection-link").data(crossed)
+
+  selectionRoot.enter().append("line")
+    .attr("x1", d => d[0].x)
+    .attr("y1", d => d[0].y)
+    .attr("x2", d => d[1].x)
+    .attr("y2", d => d[1].y)
+    .attr("fill-opacity", 0)
+    .attr("stroke-width", 2)
+    .attr("stroke", "green")
 }
+
+
+
 // ------------------ Icicle --------------
 function icicleDraw(graph, svg, space_width, height, nodeClick) {
   width = space_width-200
