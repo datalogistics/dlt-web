@@ -15,7 +15,8 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
   var draw
   $routeParams.layout = $routeParams.layout ? $routeParams.layout.toLowerCase() : ""
-  if ($routeParams.layout == "blackhole") {draw = blackholeDraw}
+  if ($routeParams.layout == "circle") {draw = circleDraw}
+  else if ($routeParams.layout == "blackhole") {draw = blackholeDraw}
   else {draw = blackholeDraw}
 
   var baseGraph = setOrder(domainsGraph(UnisService))
@@ -195,6 +196,75 @@ function shallowClone(obj) {
     }
     return copy;
 }
+
+
+// ------------------------- Nested Circular Embedding -------------------------
+function circleDraw(graph, selection,  svg, width, height, nodeClick) {
+
+  function crd(r, theta) {return r*Math.sin(theta/2)}
+
+  function layoutGroup(group, center, radius, layout) {
+    var angularSpacing = (Math.PI*2)/group.length
+    var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + center.x)
+    var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + center.y)
+    group.forEach((e,i) => 
+                  layout[e.path] = {
+                    x: layoutX(radius, i), 
+                    y: layoutY(radius,i), 
+                    r: crd(radius, angularSpacing)*.9,
+                    node: e
+                  })
+    return layout 
+  }
+
+  function layoutTree(root, center, radius, layout) {
+    if (root.children) {
+      layoutGroup(root.children, center, radius, layout)
+
+      root.children.forEach(n => {
+        var c = {x: layout[n.path].x, y:layout[n.path].y}
+        var r = layout[n.path].r
+        layoutTree(n, c, r*.6, layout) 
+      }) 
+    }
+    return layout
+  }
+
+  var layout = layoutTree(graph.tree, {x: width/2, y: height/2+20}, width/8, {})
+ 
+  //TODO: Do something here to suprress "other" if there are no "other" entries
+  var nodes = Object.keys(layout).map(k => layout[k].node)
+  var colors = domainColors(nodes, svg, 10, 15)
+  nodes = colors.nodes
+
+  var node = svg.selectAll(".tree-node").data(nodes)
+  node.enter().append("circle")
+    .attr("class", "tree-node")
+    .attr("cx", d => layout[d.path].x)
+    .attr("cy", d => layout[d.path].y)
+    .attr("name", d => d.id)
+    .attr("path" , d=> d.path)
+    .attr("fill", d => colors.fn(d.domain))
+    .attr("stroke", "black")
+    .attr("stroke-width", 2)
+    .attr("r",  d => layout[d.path].r)
+    .on("click", nodeClick)
+    
+  var links = graph.links.filter(l => l.source != l.sink)
+
+  var link = svg.selectAll(".link").data(links)
+  link.enter().append("line")
+     .attr("class", "link")
+     .attr("x1", d => layout[d.source].x)
+     .attr("y1", d => layout[d.source].y) 
+     .attr("x2", d => layout[d.sink].x)
+     .attr("y2", d => layout[d.sink].y) 
+     .attr("stroke", "gray")
+
+  tooltip(svg, "circle.node")
+  return map
+}
+  
 
 // ------------------ Black Hole --------------
 // Like a sunburst, but inward instead of outward
