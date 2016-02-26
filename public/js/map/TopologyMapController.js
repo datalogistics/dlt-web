@@ -25,12 +25,15 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
   var graph = subsetGraph(baseGraph, paths)
   var group = basicSetup(svg, width, height)
+  var selection = []
 
-  draw(graph, group, width, height, expandNode)
+  var mouseClick = clickBranch(expandNode, selectNode)
+  draw(graph, selection, group, width, height, mouseClick)
 
   function expandNode(d, i) {
     //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully) with ._children/.children
     //TODO: Preserve inner selection: filter the paths sent to to subset to only those with their parent in the paths (changes the add/remove logic)
+    //TODO: Add an alt-click to expand all?
     if (!d._children) {return} 
     var targetParts = d.path.split(PATH_SEPARATOR)
     var newPaths = paths.filter(path => !(path == d.path
@@ -42,11 +45,30 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
     paths = newPaths
     var graph = subsetGraph(baseGraph, paths) 
     group.selectAll("*").remove()
-    draw(graph, group, width, height, expandNode)
+    draw(graph, selection, group, width, height, mouseClick)
+  }
+
+  function selectNode(d, i) {
+    var key = d.path 
+    var at = selection.indexOf(key)
+    if (at <0) {selection.push(key)}
+    else {selection.splice(at, 1)}
+    var graph = subsetGraph(baseGraph, paths) 
+    group.selectAll("*").remove()
+    draw(graph, selection, group, width, height, mouseClick)
   }
   
   //Cleanup functions here!
   $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
+}
+
+//Dispatcher for click events based on key press.  
+//Lets the events be defined separately.
+function clickBranch(none, shift) {
+  return function(d,i) {
+    if (d3.event.shiftKey) {return shift(d,i)}
+    return none(d,i)
+  }
 }
 
 //Set an order for children
@@ -237,7 +259,7 @@ function domainColors(nodes, svg, x,y) {
 }
 
 // ---------------- Spring force embedded -----
-function forceDraw(graph, svg, width, height, nodeClick) {
+function forceDraw(graph, selection, svg, width, height, nodeClick) {
   var layout = d3.layout.force()
       .size([width, height])
       .linkDistance(function(l) {return 15})
@@ -282,7 +304,7 @@ function forceDraw(graph, svg, width, height, nodeClick) {
 }
 
 // ------------------------- Circular embedding -------------------------
-function circleDraw(graph, svg, width, height, nodeClick) {
+function circleDraw(graph,selection,  svg, width, height, nodeClick) {
   var nodes = gatherLeaves(graph.tree).map(n => shallowClone(n))
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
@@ -322,7 +344,7 @@ function circleDraw(graph, svg, width, height, nodeClick) {
 }
 
 // ------------------------- Circular Tree Embedding -------------------------
-function treeDraw(graph, svg, width, height, nodeClick) {
+function treeDraw(graph, selection, svg, width, height, nodeClick) {
   var diameter = width/2
   var pad = 50
 
@@ -453,7 +475,7 @@ function circularMean(items) {
              t: Math.atan2(sums.ts/items.length, sums.tc/items.length)}
   return avg;
 }
-function blackholeDraw(graph, svg, width, height, nodeClick) {
+function blackholeDraw(graph, selection, svg, width, height, nodeClick) {
   function showId(svg, enter) {
     if (enter) {
       return function(item) {
@@ -496,7 +518,14 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
 
   var nodes = partition.nodes(graph.tree)
   var colors = domainColors(nodes, svg, 10, 15)
+  var colorsFN = colors.fn
+  colors.fn = function(d) {
+    var c = colorsFN(d.domain)
+    if (selection.indexOf(d.path) >= 0) {return d3.rgb(c).darker()}
+    return c
+  }
   nodes = colors.nodes
+
   var maxDepth = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)
  
   svg = svg.append("g").attr("transform", "translate(" + width / 2 + "," + height * .52 + ")")
@@ -506,7 +535,6 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
       .endAngle(d => d.x + d.dx)
       .innerRadius(d => radius - (radius/(maxDepth+5))*(d.depth-1))
       .outerRadius(d => radius - (radius/(maxDepth+5))*d.depth)
-
 
   var label = svg.append("text")
                  .attr("id", "hover-label")
@@ -522,7 +550,7 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
        .attr("path" , d=> d.path)
        .attr("d", arc)
        .style("stroke", "#fff")
-       .attr("fill", d => colors.fn(d.domain))
+       .attr("fill", d => colors.fn(d))
        .style("fill-rule", "evenodd")
        .on("click", nodeClick)
        .on("mousemove", showId(label, true))
