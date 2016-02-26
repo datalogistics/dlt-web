@@ -49,6 +49,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   }
 
   function selectNode(d, i) {
+    //TODO: Heirarchy aware selection? For example: Select grabs all children or selected child that is collapsed is shown as semi-selected parent?
     var key = d.path 
     var at = selection.indexOf(key)
     if (at <0) {selection.push(key)}
