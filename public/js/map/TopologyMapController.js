@@ -3,7 +3,9 @@ var SANITARY = ":"  //TODO: USE THIS....and it cannot be the same as PATH_SEPARA
 
 function topologyMapController($scope, $routeParams, $http, UnisService) {
   //TODO: Maybe move graph-loading stuff to the server (like download tracking data) so the UNIS instance isn't hard-coded
-  var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["root"] //Pass multiple paths like ?path=*&path=*:*
+  var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["root"] //Pass multiple paths multiple path-entries in the query string 
+  paths = paths.map(p => p.startsWith("root:") ? p : "root:" + p)
+
   var width = 1200
   var height = 500
     
@@ -97,6 +99,7 @@ function setOrder(graph) {
 
 function subsetGraph(graph, paths) {
   //Just the selected nodes
+  console.log(paths)
                         
   var subTree = trimTree(graph.root, paths) 
   var leaves = gatherLeaves(subTree)
