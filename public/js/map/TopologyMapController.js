@@ -471,7 +471,9 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
   function showLinks(enter) {
     if (enter) {
       return function(item) {
-        var target = graphLinks.filter(l => l.source.path == item.path || l.target.path == item.path)
+        var targetParts = item.path.split(PATH_SEPARATOR).length
+        var target = graphLinks.filter(l => pathMatch(l.source.path, item.path) == targetParts 
+                                             || pathMatch(l.target.path, item.path) == targetParts )
         target.forEach(l => l.selected = true)
         drawLinks()
       }
@@ -565,7 +567,7 @@ function blackholeDraw(graph, svg, width, height, nodeClick) {
 
     link 
        .attr("fill-opacity", "0")
-       .attr("stroke-width", (d,i) => graphLinks[i].selected ? 3 : 1)
+       .attr("stroke-width", (d,i) => graphLinks[i].selected ? 2 : 1)
        .attr("stroke", (d, i) => graphLinks[i].selected ? "black" : "gray")
        .attr("pointer-events", "none")
 
@@ -626,7 +628,7 @@ function domainsGraph(UnisService) {
   var ports = UnisService.ports 
                 .map(port => {var values = URNtoDictionary(port.urn)
                               values["selfRef"] = port.selfRef
-                              values["id"] = values.port
+                              values["id"] = port.name 
                               return values})
                 .filter(Boolean)  // Filters out 'falsy' values, undefined is one of them
 
@@ -639,14 +641,22 @@ function domainsGraph(UnisService) {
                   .map(d => {d.children = nodes.filter(n => d.children.indexOf(n.selfRef) >= 0); return d})
                   .map(d => {d.id = d.id.startsWith("domain_") ? d.id.substring("domain_".length) : d.id; return d})
 
+  //Fill in the unknown domain/node parts on ports
+  domains.forEach(domain => 
+       domain.children.forEach(node =>
+          node.children.forEach(port => {
+               if (!port.domain) {port["domain"] = domain.id}
+               if (!port.node) {port["node"] = node.id}
+          })))
+
   var usedNodes = domains.reduce((acc, domain) => acc.concat(domain.children), [])
   domains.push({id: "other", children: nodes.filter(n => usedNodes.indexOf(n) < 0)})
   var root = {id: "root", children: domains}
   
   UnisService.links //Ensure URN nodes...
          .reduce((acc, link) => {
-            if (link.endpoints.source.href.startsWith("urn")) {acc.push(link.endpoints.source.href)}
-            if (link.endpoints.sink.href.startsWith("urn")) {acc.push(link.endpoints.sink.href)}
+            if (link.endpoints[0].href.startsWith("urn")) {acc.push(link.endpoints[0].href)}
+            if (link.endpoints[1].href.startsWith("urn")) {acc.push(link.endpoints[1].href)}
             return acc
          }, [])
          .map(endpoint => ensureURNNode(endpoint, root))
@@ -654,9 +664,13 @@ function domainsGraph(UnisService) {
 
   var pathMapping = portToPath(domains).reduce((acc, pair) => {acc[pair.ref] = pair.path; return acc}, {})
   var links = UnisService.links
-                 .map(l => {return {source: pathMapping[l.endpoints.source.href], 
-                                     sink: pathMapping[l.endpoints.sink.href]}})
-                 .filter(l => l.source && l.sink) 
+                 .map(l => {return {source: pathMapping[l.endpoints[0].href], 
+                                     sink: pathMapping[l.endpoints[1].href]}})
+
+  var badlinks = links.filter(l => !l.source || !l.sink)
+  if (badlinks.length > 0) {console.error("Problematic links dropped for missing source or sink: ", badlinks.length)}
+
+  links = links.filter(l => l.source && l.sink) 
 
   var graph = {root: root, links: links}
   return graph
@@ -675,8 +689,8 @@ function URNtoDictionary(urn) {
     result["port"] = parts[5]
     return result
   } else {
-    console.error("Error, could not create plausible URN dictionary for: " + urn)
-    return undefined
+    //console.log("Returning empty dictionary. Could not create plausible URN dictionary for: " + urn)
+    return {} 
   }
 }
 
