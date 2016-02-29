@@ -200,18 +200,20 @@ function shallowClone(obj) {
 
 // ------------------------- Nested Circular Embedding -------------------------
 function circleDraw(graph, selection,  svg, width, height, nodeClick) {
+  function layoutGroup(group, center, outer_radius, layout) {
+      //Per: http://www.had2know.com/academics/inner-circular-ring-radii-formulas-calculator.html
+    //Alternative if this prooves too wasteful: https://en.wikipedia.org/wiki/Circle_packing_in_a_circle
+    var member_radius = outer_radius*Math.sin(Math.PI/group.length)/(1+Math.sin(Math.PI/group.length))
+    var inner_radius = outer_radius - member_radius
 
-  function crd(r, theta) {return r*Math.sin(theta/2)}
-
-  function layoutGroup(group, center, radius, layout) {
     var angularSpacing = (Math.PI*2)/group.length
     var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + center.x)
     var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + center.y)
     group.forEach((e,i) => 
                   layout[e.path] = {
-                    x: layoutX(radius, i), 
-                    y: layoutY(radius,i), 
-                    r: crd(radius, angularSpacing)*.9,
+                    x: layoutX(inner_radius, i), 
+                    y: layoutY(inner_radius,i), 
+                    r: member_radius*.9,
                     node: e
                   })
     return layout 
@@ -224,15 +226,14 @@ function circleDraw(graph, selection,  svg, width, height, nodeClick) {
       root.children.forEach(n => {
         var c = {x: layout[n.path].x, y:layout[n.path].y}
         var r = layout[n.path].r
-        layoutTree(n, c, r*.6, layout) 
+        layoutTree(n, c, r, layout) 
       }) 
     }
     return layout
   }
 
-  var layout = layoutTree(graph.tree, {x: width/2, y: height/2+20}, width/8, {})
+  var layout = layoutTree(graph.tree, {x: width/2, y: height/2+20}, width/4, {})
  
-  //TODO: Do something here to suprress "other" if there are no "other" entries
   var nodes = Object.keys(layout).map(k => layout[k].node)
   var colors = domainColors(nodes, svg, 10, 15)
   nodes = colors.nodes
@@ -600,7 +601,6 @@ function domainsGraph(UnisService) {
           })))
 
   var usedNodes = domains.reduce((acc, domain) => acc.concat(domain.children), [])
-  domains.push({id: "other", children: nodes.filter(n => usedNodes.indexOf(n) < 0)})
   var root = {id: "root", children: domains}
   
   var links = UnisService.links
