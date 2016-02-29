@@ -603,22 +603,30 @@ function domainsGraph(UnisService) {
   domains.push({id: "other", children: nodes.filter(n => usedNodes.indexOf(n) < 0)})
   var root = {id: "root", children: domains}
   
-  UnisService.links //Ensure URN nodes...
-         .reduce((acc, link) => {
-            if (link.endpoints[0].href.startsWith("urn")) {acc.push(link.endpoints[0].href)}
-            if (link.endpoints[1].href.startsWith("urn")) {acc.push(link.endpoints[1].href)}
-            return acc
-         }, [])
-         .map(endpoint => ensureURNNode(endpoint, root))
+  var links = UnisService.links
+                 .map(link => {
+                   if (link.directed) {
+                     return {source: link.endpoints.source.href, 
+                             sink: link.endpoints.sink.href}
+                   } else {
+                     return {source: link.endpoints[0].href, 
+                             sink: link.endpoints[1].href}
+                   }})
+  
+  var badlinks = links.filter(l => !l.source || !l.sink)
+  if (badlinks.length > 0) {console.error("Problematic links dropped for missing source or sink: ", badlinks.length)}
+
+  links.reduce((acc, link) => {
+            if (link.source.startsWith("urn")) {acc.push(link.source)}
+            if (link.sink.startsWith("urn")) {acc.push(link.sink)}
+            return acc}, [])
+      .forEach(endpoint => ensureURNNode(endpoint, root))
+
   addPaths(root, "")
 
   var pathMapping = portToPath(domains).reduce((acc, pair) => {acc[pair.ref] = pair.path; return acc}, {})
-  var links = UnisService.links
-                 .map(l => {return {source: pathMapping[l.endpoints[0].href], 
-                                     sink: pathMapping[l.endpoints[1].href]}})
-
-  var badlinks = links.filter(l => !l.source || !l.sink)
-  if (badlinks.length > 0) {console.error("Problematic links dropped for missing source or sink: ", badlinks.length)}
+  links = links.map(link => {return {source: pathMapping[link.source.href], 
+                                     sink: pathMapping[link.sink.href]}})
 
   links = links.filter(l => l.source && l.sink) 
 
