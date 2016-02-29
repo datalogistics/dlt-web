@@ -16,6 +16,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   var draw
   $routeParams.layout = $routeParams.layout ? $routeParams.layout.toLowerCase() : ""
   if ($routeParams.layout == "circle") {draw = circleDraw}
+  else if ($routeParams.layout == "spoke") {draw = spokeDraw}
   else if ($routeParams.layout == "blackhole") {draw = blackholeDraw}
   else {draw = blackholeDraw}
 
@@ -197,42 +198,66 @@ function shallowClone(obj) {
     return copy;
 }
 
+// ------------------------- Spoke-based drill down -------------------------
+function spokeDraw(graph, selection,  svg, width, height, nodeClick) {
+  var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
+  var maxLayer = Object.keys(layout).reduce((acc, n) => Math.max(layout[n].layer, acc), 0)
+ 
+  var nodes = Object.keys(layout).map(k => layout[k].node)
+  var colors = domainColors(nodes, svg, 10, 15)
+  colors.fn = selectionOverlay(selection, colors.fn)
+  nodes = colors.nodes
+
+  var node = svg.selectAll(".tree-node").data(nodes)
+  node.enter().append("circle")
+    .attr("class", "tree-node")
+    .attr("cx", d => layout[d.path].x)
+    .attr("cy", d => layout[d.path].y)
+    .attr("name", d => d.id)
+    .attr("path" , d=> d.path)
+    .attr("fill", colors.fn)
+    .attr("stroke", "black")
+    .attr("stroke-width", 2)
+    .attr("r",  d => 10+(maxLayer-layout[d.path].layer)*5)
+    .on("click", nodeClick)
+    
+  var links = graph.links.filter(l => l.source != l.sink)
+
+  var link = svg.selectAll(".link").data(links)
+  link.enter().append("line")
+     .attr("class", "link")
+     .attr("x1", d => layout[d.source].x)
+     .attr("y1", d => layout[d.source].y) 
+     .attr("x2", d => layout[d.sink].x)
+     .attr("y2", d => layout[d.sink].y) 
+     .attr("stroke", "gray")
+
+  tooltip(svg, "circle.tree-node")
+  
+  //SELECTION LINKS
+  var selectionPoints = selection.map(s => nodes[pathToIndex(s, nodes)])
+                                 .filter(n => n)
+                                 .map(n => layout[n.path])
+
+  var crossed = cross(selectionPoints)
+  var selectionRoot = svg.append("g").attr("id", "selection-links")
+                         .selectAll(".selection-link").data(crossed)
+
+  selectionRoot.enter().append("line")
+    .attr("x1", d => d[0].x)
+    .attr("y1", d => d[0].y)
+    .attr("x2", d => d[1].x)
+    .attr("y2", d => d[1].y)
+    .attr("fill-opacity", 0)
+    .attr("stroke-width", 2)
+    .attr("stroke", "gray")
+  return map
+}
+
 
 // ------------------------- Nested Circular Embedding -------------------------
 function circleDraw(graph, selection,  svg, width, height, nodeClick) {
-  function layoutGroup(group, center, outer_radius, layout) {
-      //Per: http://www.had2know.com/academics/inner-circular-ring-radii-formulas-calculator.html
-    //Alternative if this prooves too wasteful: https://en.wikipedia.org/wiki/Circle_packing_in_a_circle
-    var member_radius = outer_radius*Math.sin(Math.PI/group.length)/(1+Math.sin(Math.PI/group.length))
-    var inner_radius = outer_radius - member_radius
-
-    var angularSpacing = (Math.PI*2)/group.length
-    var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + center.x)
-    var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + center.y)
-    group.forEach((e,i) => 
-                  layout[e.path] = {
-                    x: layoutX(inner_radius, i), 
-                    y: layoutY(inner_radius,i), 
-                    r: member_radius*.9,
-                    node: e
-                  })
-    return layout 
-  }
-
-  function layoutTree(root, center, radius, layout) {
-    if (root.children) {
-      layoutGroup(root.children, center, radius, layout)
-
-      root.children.forEach(n => {
-        var c = {x: layout[n.path].x, y:layout[n.path].y}
-        var r = layout[n.path].r
-        layoutTree(n, c, r, layout) 
-      }) 
-    }
-    return layout
-  }
-
-  var layout = layoutTree(graph.tree, {x: width/2, y: height/2+20}, width/4, {})
+  var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
  
   var nodes = Object.keys(layout).map(k => layout[k].node)
   var colors = domainColors(nodes, svg, 10, 15)
@@ -589,6 +614,38 @@ function arc(source, target, pct_w, pct_h) {
 
   return "M" + sx + "," + sy + "A" + dr + "," + dr +
         " 0 0,0 " + tx + "," + ty;
+}
+function layoutTree(layer, root, center, radius, layout) {
+  function layoutGroup(layer, group, center, outer_radius, layout) {
+    //Per: http://www.had2know.com/academics/inner-circular-ring-radii-formulas-calculator.html
+    //Alternative if this prooves too wasteful: https://en.wikipedia.org/wiki/Circle_packing_in_a_circle
+    var member_radius = outer_radius*Math.sin(Math.PI/group.length)/(1+Math.sin(Math.PI/group.length))
+    var inner_radius = outer_radius - member_radius
+
+    var angularSpacing = (Math.PI*2)/group.length
+    var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + center.x)
+    var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + center.y)
+    group.forEach((e,i) => 
+                  layout[e.path] = {
+                    x: layoutX(inner_radius, i), 
+                    y: layoutY(inner_radius,i), 
+                    r: member_radius*.9,
+                    layer: layer,
+                    node: e
+                  })
+                  return layout 
+  }
+
+  if (root.children) {
+    layoutGroup(layer, root.children, center, radius, layout)
+
+    root.children.forEach(n => {
+      var c = {x: layout[n.path].x, y:layout[n.path].y}
+      var r = layout[n.path].r
+      layoutTree(layer+1, n, c, r, layout) 
+    }) 
+  }
+  return layout
 }
 
 
