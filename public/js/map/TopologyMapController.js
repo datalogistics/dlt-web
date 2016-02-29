@@ -236,6 +236,7 @@ function circleDraw(graph, selection,  svg, width, height, nodeClick) {
  
   var nodes = Object.keys(layout).map(k => layout[k].node)
   var colors = domainColors(nodes, svg, 10, 15)
+  colors.fn = selectionOverlay(selection, colors.fn)
   nodes = colors.nodes
 
   var node = svg.selectAll(".tree-node").data(nodes)
@@ -245,7 +246,7 @@ function circleDraw(graph, selection,  svg, width, height, nodeClick) {
     .attr("cy", d => layout[d.path].y)
     .attr("name", d => d.id)
     .attr("path" , d=> d.path)
-    .attr("fill", d => colors.fn(d.domain))
+    .attr("fill", colors.fn)
     .attr("stroke", "black")
     .attr("stroke-width", 2)
     .attr("r",  d => layout[d.path].r)
@@ -262,7 +263,25 @@ function circleDraw(graph, selection,  svg, width, height, nodeClick) {
      .attr("y2", d => layout[d.sink].y) 
      .attr("stroke", "gray")
 
-  tooltip(svg, "circle.node")
+  tooltip(svg, "circle.tree-node")
+  
+  //SELECTION LINKS
+  var selectionPoints = selection.map(s => nodes[pathToIndex(s, nodes)])
+                                 .filter(n => n)
+                                 .map(n => layout[n.path])
+
+  var crossed = cross(selectionPoints)
+  var selectionRoot = svg.append("g").attr("id", "selection-links")
+                         .selectAll(".selection-link").data(crossed)
+
+  selectionRoot.enter().append("line")
+    .attr("x1", d => d[0].x)
+    .attr("y1", d => d[0].y)
+    .attr("x2", d => d[1].x)
+    .attr("y2", d => d[1].y)
+    .attr("fill-opacity", 0)
+    .attr("stroke-width", 2)
+    .attr("stroke", "gray")
   return map
 }
   
@@ -339,12 +358,7 @@ function blackholeDraw(graph, selection, svg, width, height, nodeClick) {
 
   var nodes = partition.nodes(graph.tree)
   var colors = domainColors(nodes, svg, 10, 15)
-  var colorsFN = colors.fn
-  colors.fn = function(d) {
-    var c = colorsFN(d.domain)
-    if (selection.indexOf(d.path) >= 0) {return d3.rgb(c).darker()}
-    return c
-  }
+  colors.fn = selectionOverlay(selection, colors.fn)
   nodes = colors.nodes
 
   var maxDepth = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)
@@ -371,7 +385,7 @@ function blackholeDraw(graph, selection, svg, width, height, nodeClick) {
        .attr("path" , d=> d.path)
        .attr("d", arc)
        .style("stroke", "#fff")
-       .attr("fill", d => colors.fn(d))
+       .attr("fill", colors.fn)
        .style("fill-rule", "evenodd")
        .on("click", nodeClick)
        .on("mousemove", showId(label, true))
@@ -506,6 +520,16 @@ function domainColors(nodes, svg, x,y) {
   }
 
   return {fn: fn, nodes: nodes, legend: legendRoot}
+}
+
+function selectionOverlay(selection, base) {
+  // Modify coloring based on selection.  
+  // Assumes there is a "domain" and "path" attribute in the argument
+  return function(d) {
+    var c = base(d.domain)
+    if (selection.indexOf(d.path) >= 0) {return d3.rgb(c).darker()}
+    return c
+  }
 }
 
 function toCartesian(radius, angleInRadians) {
