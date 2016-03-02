@@ -200,21 +200,11 @@ function shallowClone(obj) {
 
 // ------------------------- Spoke-based drill down -------------------------
 // This can be used for map overlay...I hope
+// TODO: Treat the parent as a child with a pre-set position so no actual child gets put there
+// TODO: Allow the nodes to come with pre-set positions that are preserved (i.e., to put them on a map)
 function spokeDraw(graph, selection,  svg, width, height, nodeClick) {
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
   var maxLayer = Object.keys(layout).reduce((acc, n) => Math.max(layout[n].layer, acc), 0)
-
-
-  var tree = d3.layout.tree()
-                .size([360, width/8])
-                .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; })
-
-  var layout = tree.nodes(graph.tree)
-                .map(n => {
-                  var cartesian = toCartesian(n.y, (n.x-90)/180 * Math.PI)
-                  return {x: cartesian.x+width/2, y:cartesian.y+height/2, node: n}})
-                .reduce((acc, entry) => {acc[entry.node.path] = entry; return acc}, {})
-
 
   var nodes = Object.keys(layout).map(k => layout[k].node)
   var colors = domainColors(nodes, svg, 10, 15)
