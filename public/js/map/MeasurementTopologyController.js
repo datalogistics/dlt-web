@@ -18,7 +18,7 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
   else if ($routeParams.layout == "blackhole") {draw = blackholeDraw}
   else {draw = blackholeDraw}
 
-  var baseGraph = setOrder(domainsGraph(UnisService, true))
+  var baseGraph = setOrder(measurementLinks(domainsGraph(UnisService, false)))
 
   var graph = subsetGraph(baseGraph, paths)
   var group = basicSetup(svg, width, height)
@@ -58,4 +58,13 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
   
   //Cleanup functions here!
   $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
+
+
+  function measurementLinks(graph) {
+    var measures = UnisService.measurements
+    debugger
+
+    graph.links = []
+    return graph
+  }
 }

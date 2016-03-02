@@ -13,8 +13,8 @@ function setOrder(graph) {
   //Set an order for children
   function linkCount(node) {
     var pathLen = node.path.split(PATH_SEPARATOR).length
-    var ins = graph.links.map(l => l.source).filter(l => pathMatch(l, node.path)==pathLen).length
-    var outs = graph.links.map(l => l.sink).filter(l => pathMatch(l, node.path)==pathLen).length
+    var ins = graph.links ? graph.links.map(l => l.source).filter(l => pathMatch(l, node.path)==pathLen).length : 0
+    var outs = graph.links ? graph.links.map(l => l.sink).filter(l => pathMatch(l, node.path)==pathLen).length : 0
     return ins+outs
   }
 
@@ -645,6 +645,7 @@ function domainsGraph(UnisService, loadLinks) {
 
   var usedNodes = domains.reduce((acc, domain) => acc.concat(domain.children), [])
   var root = {id: "root", children: domains}
+  addPaths(root, "")
 
   var links
   if (loadLinks) {
@@ -668,7 +669,6 @@ function domainsGraph(UnisService, loadLinks) {
               return acc}, [])
         .forEach(endpoint => ensureURNNode(endpoint, root))
 
-    addPaths(root, "")
 
     var pathMapping = portToPath(domains).reduce((acc, pair) => {acc[cannonicalURL(pair.ref)] = pair.path; return acc}, {})
     links = links.map(link => {return {source: pathMapping[cannonicalURL(link.source)], 
