@@ -208,6 +208,26 @@ function spokeDraw(graph, selection,  svg, width, height, nodeClick) {
   colors.fn = selectionOverlay(selection, colors.fn)
   nodes = colors.nodes
 
+  //Tree links
+  function getTreeLinks(acc, root) {
+    if (root.children) {
+      root.children.forEach(child => acc.push([root.path, child.path]))
+      root.children.forEach(child => getTreeLinks(acc, child))
+    }
+    return acc
+  }
+  var treeLinks = getTreeLinks([], graph.tree).filter(l => l[0] != "root")
+  var treelink = svg.append("g").attr("id", "tree-links")
+      .selectAll(".tree-link").data(treeLinks)
+      .enter().append("line")
+        .attr("class", "tree-link")
+        .attr("stroke-width", 1) 
+        .attr("stroke", "black")
+        .attr("x1", d => layout[d[0]].x)
+        .attr("y1", d => layout[d[0]].y)
+        .attr("x2", d => layout[d[1]].x)
+        .attr("y2", d => layout[d[1]].y)
+
   var node = svg.selectAll(".tree-node").data(nodes)
   node.enter().append("circle")
     .attr("class", "tree-node")
@@ -218,13 +238,14 @@ function spokeDraw(graph, selection,  svg, width, height, nodeClick) {
     .attr("fill", colors.fn)
     .attr("stroke", "black")
     .attr("stroke-width", 2)
-    .attr("r",  d => 10+(maxLayer-layout[d.path].layer)*5)
+    .attr("r",  d => 10)//+Math.max(0, 2-layout[d.path].layer)*5)
     .on("click", nodeClick)
     
-  var links = graph.links.filter(l => l.source != l.sink)
 
-  var link = svg.selectAll(".link").data(links)
-  link.enter().append("line")
+  //Topology/graph links
+  var graphLinks = graph.links.filter(l => l.source != l.sink)
+  var graphLink = svg.selectAll(".link").data(graphLinks)
+  graphLink.enter().append("line")
      .attr("class", "link")
      .attr("x1", d => layout[d.source].x)
      .attr("y1", d => layout[d.source].y) 
@@ -233,7 +254,7 @@ function spokeDraw(graph, selection,  svg, width, height, nodeClick) {
      .attr("stroke", "gray")
 
   tooltip(svg, "circle.tree-node")
-  
+
   //SELECTION LINKS
   var selectionPoints = selection.map(s => nodes[pathToIndex(s, nodes)])
                                  .filter(n => n)
@@ -623,8 +644,8 @@ function layoutTree(layer, root, center, radius, layout) {
     var inner_radius = outer_radius - member_radius
 
     var angularSpacing = (Math.PI*2)/group.length
-    var layoutX = (r, i) => (r*Math.cos(i * angularSpacing) + center.x)
-    var layoutY = (r, i) => (r*Math.sin(i * angularSpacing) + center.y)
+    var layoutX = (r, i) => (r*Math.cos(i * angularSpacing + Math.PI/2 * layer) + center.x)
+    var layoutY = (r, i) => (r*Math.sin(i * angularSpacing + Math.PI/2 * layer) + center.y)
     group.forEach((e,i) => 
                   layout[e.path] = {
                     x: layoutX(inner_radius, i), 
