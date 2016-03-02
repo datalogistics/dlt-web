@@ -8,5 +8,6 @@ angular.module('map', [])
   .controller('MapController', mapController)
   .controller("DownloadMapController", downloadMapController)
   .controller("ProbeMapController", probeMapController)
+  .controller("MeasurementTopologyController", measurementTopologyController)
   .controller("TopologyMapController", topologyMapController)
-  .controller("ExnodeMapController", exnodeMapController);
+  .controller("ExnodeMapController", exnodeMapController)

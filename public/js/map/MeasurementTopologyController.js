@@ -1,6 +1,5 @@
-function topologyMapController($scope, $routeParams, $http, UnisService) {
+function measurementTopologyController($scope, $routeParams, $http, UnisService) {
   var PATH_SEPARATOR = ":"
-  var SANITARY = ":"  //TODO: USE THIS....and it cannot be the same as PATH_SEPARATOR
 
   var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["root"] //Pass multiple paths multiple path-entries in the query string 
   paths = paths.map(p => p.startsWith("root:") ? p : "root:" + p)
@@ -50,7 +49,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
     //TODO: Heirarchy aware selection? For example: Select grabs all children or selected child that is collapsed is shown as semi-selected parent?
     var key = d.path 
     var at = selection.indexOf(key)
-    if (at <0) {selection.push(key)}
+    if (at < 0) {selection.push(key)}
     else {selection.splice(at, 1)}
     var graph = subsetGraph(baseGraph, paths) 
     group.selectAll("*").remove()
@@ -59,6 +58,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   
   //Cleanup functions here!
   $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
+
 
   // --------------- Utilities to load domain data from UNIS ---------------
   // Graph is pair of nodes and links

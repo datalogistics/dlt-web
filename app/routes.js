@@ -276,11 +276,11 @@ module.exports = function(app) {
       opt.handler(options);      
     };
   };
-  app.get('/api/topologies/:id', getGenericHandlerWithId({path : '/topologies', name : 'topologies' , handler : registerGenericHandler}));
   app.get('/api/domains/:id', getGenericHandlerWithId({path : '/domains', name : 'domains' , handler : registerGenericHandler}));
   app.get('/api/nodes/:id', getGenericHandlerWithId({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
   app.get('/api/services/:id', getGenericHandlerWithId({path : '/services', name : 'services' , handler : registerGenericHandler}));
   app.get('/api/exnodes/:id', getGenericHandlerWithId({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));
+  app.get('/api/topologies/:id', getGenericHandlerWithId({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));
   app.get('/api/measurements/:id', getGenericHandlerWithId({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));
   app.get('/api/metadata/:id', getGenericHandlerWithId({path : '/metadata', name : 'metadata' , handler : registerGenericHandler}));
   app.get('/api/data/:id', getGenericHandlerWithId({path : '/data', name : 'data' , handler : registerGenericHandler}));
