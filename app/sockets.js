@@ -221,7 +221,7 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
 function restart_socket(args,socket, idList) {
   // Delete from socketMap
   console.log("REstarting socket");
-  var arr = socketMap[args.path].sockets;
+  var arr = socketMap[args.path].sockets || [];
   // Find and delete the socket from this array
   var i = arr.indexOf(socket); // Should give the index since it is exactly the same object
   pathIdObj.unregisterAllIds(args[1]);
