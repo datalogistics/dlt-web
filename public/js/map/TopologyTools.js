@@ -238,7 +238,7 @@ function circleDraw(graph, groupLabel, selection,  svg, width, height, nodeClick
     .attr("path" , d=> d.path)
     .attr("fill", colors.fn)
     .attr("stroke", "black")
-    .attr("stroke-width", 2)
+    .attr("stroke-width", 1)
     .attr("r",  d => layout[d.path].r)
     .on("click", nodeClick)
     
@@ -251,7 +251,8 @@ function circleDraw(graph, groupLabel, selection,  svg, width, height, nodeClick
      .attr("y1", d => layout[d.source].y) 
      .attr("x2", d => layout[d.sink].x)
      .attr("y2", d => layout[d.sink].y) 
-     .attr("stroke", "gray")
+     .attr("stroke-width", 2)
+     .attr("stroke", "black")
 
   tooltip(svg, "circle.tree-node")
   
