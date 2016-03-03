@@ -1,6 +1,7 @@
 function measurementTopologyController($scope, $routeParams, $http, UnisService) {
   var PATH_SEPARATOR = ":"
 
+  var groupFilter = $routeParams.group ? $routeParams.group : undefined
   var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["root"] //Pass multiple paths multiple path-entries in the query string 
   paths = paths.map(p => p.startsWith("root:") ? p : "root:" + p)
 
@@ -18,7 +19,7 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
   else if ($routeParams.layout == "blackhole") {draw = blackholeDraw}
   else {draw = blackholeDraw}
 
-  var baseGraph = setOrder(measurementLinks(domainsGraph(UnisService, false)))
+  var baseGraph = setOrder(domainsGraph(UnisService, groupFilter, true))
 
   var graph = subsetGraph(baseGraph, paths)
   var group = basicSetup(svg, width, height)

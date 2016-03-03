@@ -1,8 +1,9 @@
 var PATH_SEPARATOR = ":"
 
-//Dispatcher for click events based on key press.  
-//Lets the events be defined separately.
 function clickBranch(none, shift) {
+  //Dispatcher for click events based on key press.  
+  //Lets the events be defined separately.
+  //
   return function(d,i) {
     if (d3.event.shiftKey) {return shift(d,i)}
     return none(d,i)
@@ -11,6 +12,7 @@ function clickBranch(none, shift) {
 
 function setOrder(graph) {
   //Set an order for children
+  
   function linkCount(node) {
     var pathLen = node.path.split(PATH_SEPARATOR).length
     var ins = graph.links ? graph.links.map(l => l.source).filter(l => pathMatch(l, node.path)==pathLen).length : 0
@@ -32,9 +34,93 @@ function setOrder(graph) {
   return {root: orderChildren(graph.root), links: graph.links}
 }
 
+function pathMatch(a,b) {
+  //How many segments between A and B match?
+  
+  var aParts = a.split(PATH_SEPARATOR)
+  var bParts = b.split(PATH_SEPARATOR)
+  for(i=0; i<aParts.length && i<bParts.length; i++) {
+    if (aParts[i] != bParts[i]) {return i} 
+  }
+  return Math.min(aParts.length, bParts.length)
+}
+
+
 function subsetGraph(graph, paths) {
   //Retain just items in the selected paths and their immediate children
                         
+  function findEndpoint(expansion, target) {
+    var bestMatch = expansion.reduce(
+      function (acc, node, i) {
+        var match = pathMatch(target, node.path)
+        if (match >= acc.matchLen) {return {matchLen: match, idx: i}}
+        return acc
+      },
+      {matchLen: 0, idx: -1})
+
+    return target.split(PATH_SEPARATOR).slice(0, bestMatch.matchLen).join(PATH_SEPARATOR)
+  }
+
+  function trimTree(root, paths) {
+    //root -- root of tree
+    //paths -- paths to keep as arrays of strings
+
+    console.log(paths)
+    var filterTree = function(tree) {
+      var children = tree.children
+      if (children) {
+        children = tree.children.filter(c => c.__keep__).map(filterTree)
+      }
+      tree._children = tree.children
+      tree.children = (children && children.length > 0) ? children : undefined
+      return tree
+    }
+
+    function tagPath(root, path) {
+      //root -- root of tree
+      //path -- path as array of nodes
+       root = shallowClone(root)
+       root["__keep__"] = true
+
+       var target = path[0]
+       if (path.length == 0) {return root}
+       if (target != root.id) {return root}
+
+       var rest = path.slice(1, path.length)
+       if (root.children) {root.children = root.children.map(child => tagPath(child, rest))}
+       return root
+    }
+
+
+    paths = paths.map(p => p.trim()).filter(p => p.length > 0)
+    var tagged;
+    if (paths.length == 0) {
+      root = shallowClone(root)
+      root["children"] = undefined
+      tagged = root
+    } else {
+      tagged = paths.reduce(
+        function(acc, path) {
+          return tagPath(acc, path.split(PATH_SEPARATOR))
+        }, root)
+    }
+
+    return filterTree(tagged)
+  }
+
+  // Gather up just the leaf nodes of a tree
+  function gatherLeaves(root) {
+    if (root.children) {
+      return root.children
+                .map(child => gatherLeaves(child))
+                .reduce((acc, node) => {return acc.concat(node)}, [])
+
+    } else {
+      return [root]
+    }
+  }
+
+
   var subTree = trimTree(graph.root, paths) 
   var leaves = gatherLeaves(subTree)
 
@@ -47,85 +133,7 @@ function subsetGraph(graph, paths) {
   return {tree: subTree, links: links}
 }
 
-function pathMatch(a,b) {
-  //How many segments between A and B match?
-  var aParts = a.split(PATH_SEPARATOR)
-  var bParts = b.split(PATH_SEPARATOR)
-  for(i=0; i<aParts.length && i<bParts.length; i++) {
-    if (aParts[i] != bParts[i]) {return i} 
-  }
-  return Math.min(aParts.length, bParts.length)
-}
-
-function findEndpoint(expansion, target) {
-  var bestMatch = expansion.reduce(
-    function (acc, node, i) {
-      var match = pathMatch(target, node.path)
-      if (match >= acc.matchLen) {return {matchLen: match, idx: i}}
-      return acc
-    },
-    {matchLen: 0, idx: -1})
-
-  return target.split(PATH_SEPARATOR).slice(0, bestMatch.matchLen).join(PATH_SEPARATOR)
-}
-
-function trimTree(root, paths) {
-  //root -- root of tree
-  //paths -- paths to keep as arrays of strings
-  var filterTree = function(tree) {
-    var children = tree.children
-    if (children) {
-      children = tree.children.filter(c => c.__keep__).map(filterTree)
-    }
-    tree._children = tree.children
-    tree.children = (children && children.length > 0) ? children : undefined
-    return tree
-  }
-
-  paths = paths.map(p => p.trim()).filter(p => p.length > 0)
-  var tagged;
-  if (paths.length == 0) {
-    root = shallowClone(root)
-    root["children"] = undefined
-    tagged = root
-  } else {
-    tagged = paths.reduce(
-      function(acc, path) {
-        return tagPath(acc, path.split(PATH_SEPARATOR))
-      }, root)
-  }
-
-  return filterTree(tagged)
-}
-
-//root -- root of tree
-//path -- path as array of nodes
-function tagPath(root, path) {
-   root = shallowClone(root)
-   root["__keep__"] = true
-
-   var target = path[0]
-   if (path.length == 0) {return root}
-   if (target != root.id) {return root}
-
-   var rest = path.slice(1, path.length)
-   if (root.children) {root.children = root.children.map(child => tagPath(child, rest))}
-   return root
-}
-
 function pathToIndex(path, nodes) {return nodes.map(e => e.path).indexOf(path)}
-
-// Gather up just the leaf nodes of a tree
-function gatherLeaves(root) {
-  if (root.children) {
-    return root.children
-              .map(child => gatherLeaves(child))
-              .reduce((acc, node) => {return acc.concat(node)}, [])
-
-  } else {
-    return [root]
-  }
-}
 
 function shallowClone(obj) {
     if (null == obj || "object" != typeof obj) return obj;
@@ -344,7 +352,7 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeCli
       .sort((a,b) => a.sort-b.sort)
       .size([2 * Math.PI, radius])
       //.value(d => d.links ? d.links : 1)
-      .value(d => d._children ? d._children.length : 1)
+      .value(d => d._children ? d._children.length + 1 : 1) //Children+1 in case there is a children array BUT it has no items
 
   var nodes = partition.nodes(graph.tree)
   var colors = groupColors(groupLabel, nodes, svg, 10, 15)
@@ -474,6 +482,7 @@ function basicSetup(svg, width, height) {
 function groupColors(groupLabel, nodes, svg, x,y) {
   //Adds a "group" field to each node
   //Returns a function that colors by group 
+  //TODO: Pass a group accessor function instead of adding it as an annotation here.
   
   function removeGray(colors) {
     return colors.filter(c => c.substring(1,3) != c.substring(3,5) || c.substring(1,3) != c.substring(5,7))
@@ -621,7 +630,7 @@ function layoutTree(layer, root, center, radius, layout) {
 // Graph is pair of nodes and links
 // Nodes is a tree
 // links is a list of pairs of paths in the tree
-function domainsGraph(UnisService, loadLinks) {
+function domainsGraph(UnisService, groupFilter, loadLinks) {
   var ports = UnisService.ports 
                 .map(port => {var values = URNtoDictionary(port.urn)
                               values["selfRef"] = port.selfRef
@@ -634,6 +643,7 @@ function domainsGraph(UnisService, loadLinks) {
                   .map(n => {n.children = ports.filter(p => n.children.indexOf(cannonicalURL(p.selfRef)) >= 0); return n})
 
   var domains = UnisService.domains
+                  .filter(d => groupFilter ? d.id == groupFilter : true)
                   .map(d => {return {id: d.id, children: d.nodes.map(n => n.href)}})
                   .map(d => {d.children = nodes.filter(n => d.children.indexOf(n.selfRef) >= 0); return d})
                   .map(d => {d.id = d.id.startsWith("domain_") ? d.id.substring("domain_".length) : d.id; return d})
