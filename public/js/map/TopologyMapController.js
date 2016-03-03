@@ -1,7 +1,7 @@
 function topologyMapController($scope, $routeParams, $http, UnisService) {
   var PATH_SEPARATOR = ":"
-  var SANITARY = ":"  //TODO: USE THIS....and it cannot be the same as PATH_SEPARATOR
 
+  var group_filter = $routeParams.group ? $routeParams.group : undefined
   var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["root"] //Pass multiple paths multiple path-entries in the query string 
   paths = paths.map(p => p.startsWith("root:") ? p : "root:" + p)
 
@@ -26,7 +26,9 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   var selection = []
 
   var mouseClick = clickBranch(expandNode, selectNode)
-  draw(graph, selection, group, width, height, mouseClick)
+  var groupLabel = "domain"
+
+  draw(graph, groupLabel, selection, group, width, height, mouseClick)
 
   function expandNode(d, i) {
     //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully) with ._children/.children
@@ -43,7 +45,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
     paths = newPaths
     var graph = subsetGraph(baseGraph, paths) 
     group.selectAll("*").remove()
-    draw(graph, selection, group, width, height, mouseClick)
+    draw(graph, groupLabel, selection, group, width, height, mouseClick)
   }
 
   function selectNode(d, i) {
@@ -54,7 +56,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
     else {selection.splice(at, 1)}
     var graph = subsetGraph(baseGraph, paths) 
     group.selectAll("*").remove()
-    draw(graph, selection, group, width, height, mouseClick)
+    draw(graph, groupLabel, selection, group, width, height, mouseClick)
   }
   
   //Cleanup functions here!

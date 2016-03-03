@@ -140,13 +140,13 @@ function shallowClone(obj) {
 // This can be used for map overlay...I hope
 // TODO: Treat the parent as a child with a pre-set position so no actual child gets put there
 // TODO: Allow the nodes to come with pre-set positions that are preserved (i.e., to put them on a map)
-function spokeDraw(graph, selection,  svg, width, height, nodeClick) {
+function spokeDraw(graph, groupLabel, selection,  svg, width, height, nodeClick) {
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
   var maxLayer = Object.keys(layout).reduce((acc, n) => Math.max(layout[n].layer, acc), 0)
 
   var nodes = Object.keys(layout).map(k => layout[k].node)
-  var colors = domainColors(nodes, svg, 10, 15)
-  colors.fn = selectionOverlay(selection, colors.fn)
+  var colors = groupColors(groupLabel, nodes, svg, 10, 15)
+  colors.fn = selectionOverlay(groupLabel, selection, colors.fn)
   nodes = colors.nodes
   
   
@@ -221,12 +221,12 @@ function spokeDraw(graph, selection,  svg, width, height, nodeClick) {
 
 
 // ------------------------- Nested Circular Embedding -------------------------
-function circleDraw(graph, selection,  svg, width, height, nodeClick) {
+function circleDraw(graph, groupLabel, selection,  svg, width, height, nodeClick) {
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
  
   var nodes = Object.keys(layout).map(k => layout[k].node)
-  var colors = domainColors(nodes, svg, 10, 15)
-  colors.fn = selectionOverlay(selection, colors.fn)
+  var colors = groupColors(groupLabel, nodes, svg, 10, 15)
+  colors.fn = selectionOverlay(groupLabel, selection, colors.fn)
   nodes = colors.nodes
 
   var node = svg.selectAll(".tree-node").data(nodes)
@@ -305,7 +305,7 @@ function cross(list) {
   return crossed
 }
 
-function blackholeDraw(graph, selection, svg, width, height, nodeClick) {
+function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeClick) {
   function showId(svg, enter) {
     if (enter) {
       return function(item) {
@@ -337,7 +337,6 @@ function blackholeDraw(graph, selection, svg, width, height, nodeClick) {
     }
   }
 
-
   var radius = Math.min(width, height) / 2
  
   var partition = d3.layout.partition()
@@ -347,8 +346,8 @@ function blackholeDraw(graph, selection, svg, width, height, nodeClick) {
       .value(d => d._children ? d._children.length : 1)
 
   var nodes = partition.nodes(graph.tree)
-  var colors = domainColors(nodes, svg, 10, 15)
-  colors.fn = selectionOverlay(selection, colors.fn)
+  var colors = groupColors(groupLabel, nodes, svg, 10, 15)
+  colors.fn = selectionOverlay(groupLabel, selection, colors.fn)
   nodes = colors.nodes
 
   var maxDepth = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)
@@ -471,20 +470,22 @@ function basicSetup(svg, width, height) {
 }
 
 
-//Adds a "domain" field to each node
-//Returns a function that colors by domain!
-function domainColors(nodes, svg, x,y) {
+function groupColors(groupLabel, nodes, svg, x,y) {
+  //Adds a "group" field to each node
+  //Returns a function that colors by group 
+  
   function removeGray(colors) {
     return colors.filter(c => c.substring(1,3) != c.substring(3,5) || c.substring(1,3) != c.substring(5,7))
   }
 
-  nodes = nodes.map(n => {n["domain"] = n.path.split(PATH_SEPARATOR)[1]; return n})
-  var domains = nodes.map(n => n.domain)
-                            .filter(d => d && d.trim().length >0)
-                            .reduce((acc, d) => {acc.add(d); return acc}, new Set())
-  domains = Array.from(domains)
-  domains.sort()
-  var base = d3.scale.category10().domain(domains)
+  nodes = nodes.map(n => {n[groupLabel] = n.path.split(PATH_SEPARATOR)[1]; return n})
+  var groups = nodes.map(n => n[groupLabel])
+                    .filter(d => d && d.trim().length >0)
+                    .reduce((acc, d) => {acc.add(d); return acc}, new Set())
+  groups = Array.from(groups)
+  groups.sort()
+
+  var base = d3.scale.category10().domain(groups)
   base.range(removeGray(base.range()))
   var fn = function(v) {
     if (!v || v.trim() == "" || v.trim() == "other") {return "gray"}
@@ -495,7 +496,7 @@ function domainColors(nodes, svg, x,y) {
     var legendRoot = svg.append("g")
                     .attr("class", "legend")
                     .attr("transform", "translate(" + x + "," + y + ")")
-    legend = legendRoot.selectAll(".circle").data(domains)
+    legend = legendRoot.selectAll(".circle").data(groups)
     legend.enter().append("circle")
           .attr("class", "legend-item")
           .attr("r", 8)
@@ -512,11 +513,11 @@ function domainColors(nodes, svg, x,y) {
   return {fn: fn, nodes: nodes, legend: legendRoot}
 }
 
-function selectionOverlay(selection, base) {
+function selectionOverlay(groupLabel, selection, base) {
   // Modify coloring based on selection.  
-  // Assumes there is a "domain" and "path" attribute in the argument
+  // Assumes there is a "group" and "path" attribute in the argument
   return function(d) {
-    var c = base(d.domain)
+    var c = base(d[groupLabel])
     if (selection.indexOf(d.path) >= 0) {return d3.rgb(c).darker()}
     return c
   }
@@ -580,6 +581,7 @@ function arc(source, target, pct_w, pct_h) {
   return "M" + sx + "," + sy + "A" + dr + "," + dr +
         " 0 0,0 " + tx + "," + ty;
 }
+
 function layoutTree(layer, root, center, radius, layout) {
   function layoutGroup(layer, group, center, outer_radius, layout) {
     //Per: http://www.had2know.com/academics/inner-circular-ring-radii-formulas-calculator.html
@@ -612,7 +614,6 @@ function layoutTree(layer, root, center, radius, layout) {
   }
   return layout
 }
-
 
 
 // --------------- Utilities to load domain data from UNIS ---------------
