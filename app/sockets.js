@@ -221,13 +221,14 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
 function restart_socket(args,socket, idList) {
   // Delete from socketMap
   console.log("REstarting socket");
-  var arr = socketMap[args.path].sockets || [];
-  // Find and delete the socket from this array
-  var i = arr.indexOf(socket); // Should give the index since it is exactly the same object
-  pathIdObj.unregisterAllIds(args[1]);
-  arr.splice(i,1);
+  if (socketMap[args.path]) {
+    var arr = socketMap[args.path].sockets || [];
+    // Find and delete the socket from this array
+    var i = arr.indexOf(socket); // Should give the index since it is exactly the same object
+    pathIdObj.unregisterAllIds(args[1]);
+    arr.splice(i,1);
+  }
   _createWebSocket.apply(this,args);
-
 }
 function _getGenericHandler(resource, emitName,client) {
   var opt = getHttpOptions({'name': resource});
