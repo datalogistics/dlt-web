@@ -173,7 +173,8 @@ function spokeDraw(graph, selection,  svg, width, height, nodeClick) {
      .attr("y1", d => layout[d.source].y) 
      .attr("x2", d => layout[d.sink].x)
      .attr("y2", d => layout[d.sink].y) 
-     .attr("stroke", "gray")
+     .attr("stroke", "black")
+     .attr("stroke-width", 2)
 
   tooltip(svg, "circle.tree-node")
 
@@ -186,12 +187,12 @@ function spokeDraw(graph, selection,  svg, width, height, nodeClick) {
     return acc
   }
   var treeLinks = getTreeLinks([], graph.tree).filter(l => l[0] != "root")
-  var treelink = svg.append("g").attr("id", "tree-links")
+  var treelink = svg.insert("g", ".tree-node").attr("id", "tree-links")
       .selectAll(".tree-link").data(treeLinks)
       .enter().append("line")
         .attr("class", "tree-link")
         .attr("stroke-width", 1) 
-        .attr("stroke", "black")
+        .attr("stroke", "gray")
         .attr("x1", d => layout[d[0]].x)
         .attr("y1", d => layout[d[0]].y)
         .attr("x2", d => layout[d[1]].x)
