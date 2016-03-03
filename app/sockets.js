@@ -67,6 +67,11 @@ var pathIdObj = (function() {
       clmap[path][clientId] = clmap[path][clientId] || [];
       clmap[path][clientId].push(im);
     },
+    // Removes all subscribed id list - used to clear on socket error 
+    unregisterAllIds : function(path) {
+      if (pmap[path])
+	pmap[path] = {};
+    },
     unregisterId : function(clientId , path,id) {
       var arr = (clmap[path]|| {})[clientId] || [];
       // TODO use a map to make O(1) 
@@ -219,8 +224,10 @@ function restart_socket(args,socket, idList) {
   var arr = socketMap[args.path].sockets;
   // Find and delete the socket from this array
   var i = arr.indexOf(socket); // Should give the index since it is exactly the same object
+  pathIdObj.unregisterAllIds(args[1]);
   arr.splice(i,1);
   _createWebSocket.apply(this,args);
+
 }
 function _getGenericHandler(resource, emitName,client) {
   var opt = getHttpOptions({'name': resource});
