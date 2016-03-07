@@ -107,17 +107,6 @@ function subsetGraph(graph, paths) {
     return filterTree(tagged)
   }
 
-  // Gather up just the leaf nodes of a tree
-  function gatherLeaves(root) {
-    if (root.children) {
-      return root.children
-                .map(child => gatherLeaves(child))
-                .reduce((acc, node) => {return acc.concat(node)}, [])
-
-    } else {
-      return [root]
-    }
-  }
 
 
   var subTree = trimTree(graph.root, paths) 
@@ -130,6 +119,18 @@ function subsetGraph(graph, paths) {
                  .filter(link => link.source != link.sink)
 
   return {tree: subTree, links: links}
+}
+
+// Gather up just the leaf nodes of a tree
+function gatherLeaves(root) {
+  if (root.children) {
+    return root.children
+              .map(child => gatherLeaves(child))
+              .reduce((acc, node) => {return acc.concat(node)}, [])
+
+  } else {
+    return [root]
+  }
 }
 
 function pathToIndex(path, nodes) {return nodes.map(e => e.path).indexOf(path)}
@@ -694,6 +695,7 @@ function domainsGraph(UnisService, groupFilter, loadLinks) {
   }
 
   var graph = {root: root, links: links}
+  console.log(graph)
   return graph
 
   function validLinks(link) {
@@ -771,16 +773,6 @@ function domainsGraph(UnisService, groupFilter, loadLinks) {
 
 /// ------------- Testing Tools -------
 function fakeLinks(graph, n, selfLink) {
-  function gatherLeaves(root) {
-    if (root.children) {
-      return root.children
-                .map(child => gatherLeaves(child))
-                .reduce((acc, node) => {return acc.concat(node)}, [])
-    } else {
-      return [root]
-    }
-  }
-
   var leaves = gatherLeaves(graph.root)
   var links = []
   while (links.length < n) {
