@@ -241,19 +241,43 @@ module.exports = function(app) {
       opt.handler(options);
     }
   }
-  app.get('/api/probes', getGenericHandler({path : '/probes', name : 'probes' , handler : registerGenericHandler}));
-  app.get('/api/topologies', getGenericHandler({path : '/topologies', name : 'topologies' , handler : registerGenericHandler}));
-  app.get('/api/domains', getGenericHandler({path : '/domains', name : 'domains' , handler : registerGenericHandler}));
-  app.get('/api/nodes', getGenericHandler({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
-  app.get('/api/links', getGenericHandler({path : '/links', name : 'links' , handler : registerGenericHandler}));
-  app.get('/api/paths', getGenericHandler({path : '/paths', name : 'paths' , handler : registerGenericHandler}));
-  app.get('/api/services', getGenericHandler({path : '/services', name : 'services' , handler : registerGenericHandler}));
-  app.get('/api/exnodes', getGenericHandler({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));
-  app.get('/api/measurements', getGenericHandler({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));
-  app.get('/api/metadata', getGenericHandler({path : '/metadata', name : 'metadata' , handler : registerGenericHandler}));
-  app.get('/api/data', getGenericHandler({path : '/data', name : 'data' , handler : registerGenericHandler}));
-  app.get('/api/ports', getGenericHandler({path : '/ports', name : 'ports' , handl : registerGenericHandler}));
-  
+
+  app.get('/api/probes', getGenericHandler({path : '/probes', name : 'probes'}));
+  app.get('/api/topologies', getGenericHandler({path : '/topologies', name : 'topologies'}));
+  app.get('/api/domains', getGenericHandler({path : '/domains', name : 'domains'}));
+  app.get('/api/nodes', getGenericHandler({path : '/nodes', name : 'nodes'}));
+  app.get('/api/links', getGenericHandler({path : '/links', name : 'links'}));
+  app.get('/api/paths', getGenericHandler({path : '/paths', name : 'paths'}));
+  app.get('/api/services', getGenericHandler({path : '/services', name : 'services'}));
+  app.get('/api/exnodes', getGenericHandler({path : '/exnodes', name : 'exnodes'}));
+  app.get('/api/measurements', getGenericHandler({path : '/measurements', name : 'measurements'}));
+  app.get('/api/metadata', getGenericHandler({path : '/metadata', name : 'metadata'}));
+  app.get('/api/data', getGenericHandler({path : '/data', name : 'data'}));
+  app.get('/api/ports', getGenericHandler({path : '/ports', name : 'ports'}));
+
+  //TODO: This is a low-security hack.  It lets anybody use this server as an HTTP redirect.
+  app.get('/api/redirect', function(req, res) {
+    var url = req.query.url
+    console.log("Redirect sending to:", url)
+    var fdata = "";
+    request.get(url)
+      .on('data',function(data) {
+        var data = data.toString();
+        fdata = fdata + data;          
+      })
+      .on('end',function() {
+        try {
+          var obj = JSON.parse(fdata);
+          res.send(obj)
+        } catch (e) {            
+          console.log("Error parsing JSON from socket: ",e);
+          res.send(e)
+        }
+      })
+      .on('error',function() {res.send(e)});
+    })
+          
+
   function getGenericHandlerWithId(opt) {
     var path = opt.path , name = opt.name ;
     var handler = opt.handler;
@@ -273,18 +297,20 @@ module.exports = function(app) {
       },getHttpOptions({
         name : name + "_id"
       }));
-      opt.handler(options);      
+      opt.handler = opt.handler || registerGenericHandler;
+      opt.handler(options);
     };
   };
-  app.get('/api/domains/:id', getGenericHandlerWithId({path : '/domains', name : 'domains' , handler : registerGenericHandler}));
-  app.get('/api/nodes/:id', getGenericHandlerWithId({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
-  app.get('/api/services/:id', getGenericHandlerWithId({path : '/services', name : 'services' , handler : registerGenericHandler}));
-  app.get('/api/exnodes/:id', getGenericHandlerWithId({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));
-  app.get('/api/topologies/:id', getGenericHandlerWithId({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));
-  app.get('/api/measurements/:id', getGenericHandlerWithId({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));
-  app.get('/api/metadata/:id', getGenericHandlerWithId({path : '/metadata', name : 'metadata' , handler : registerGenericHandler}));
-  app.get('/api/data/:id', getGenericHandlerWithId({path : '/data', name : 'data' , handler : registerGenericHandler}));
-  app.get('/api/ports/:id', getGenericHandlerWithId({path : '/ports', name : 'ports' , handler : registerGenericHandler}));
+
+  app.get('/api/domains/:id', getGenericHandlerWithId({path : '/domains', name : 'domains'}));
+  app.get('/api/nodes/:id', getGenericHandlerWithId({path : '/nodes', name : 'nodes'}));
+  app.get('/api/services/:id', getGenericHandlerWithId({path : '/services', name : 'services'}));
+  app.get('/api/exnodes/:id', getGenericHandlerWithId({path : '/exnodes', name : 'exnodes'}));
+  app.get('/api/topologies/:id', getGenericHandlerWithId({path : '/measurements', name : 'measurements'}));
+  app.get('/api/measurements/:id', getGenericHandlerWithId({path : '/measurements', name : 'measurements'}));
+  app.get('/api/metadata/:id', getGenericHandlerWithId({path : '/metadata', name : 'metadata'}));
+  app.get('/api/data/:id', getGenericHandlerWithId({path : '/data', name : 'data'}));
+  app.get('/api/ports/:id', getGenericHandlerWithId({path : '/ports', name : 'ports'}));
   app.get('/api/getVersion',function(req,res) {
     var host , port ;
     if (req.query.host && req.query.port) {
@@ -325,6 +351,7 @@ module.exports = function(app) {
     },getHttpOptions({
       name : 'exnodes'
     }));
+
     registerGenericHandler(options, function(obj){
       var exjson =  obj[0].value;
       // Return matching id children
