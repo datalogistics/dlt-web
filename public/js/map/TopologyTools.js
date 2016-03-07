@@ -65,7 +65,6 @@ function subsetGraph(graph, paths) {
     //root -- root of tree
     //paths -- paths to keep as arrays of strings
 
-    console.log(paths)
     var filterTree = function(tree) {
       var children = tree.children
       if (children) {
@@ -205,7 +204,7 @@ function spokeDraw(graph, groupLabel, selection,  svg, width, height, nodeClick)
         .attr("y1", d => layout[d[0]].y)
         .attr("x2", d => layout[d[1]].x)
         .attr("y2", d => layout[d[1]].y)
-
+        .attr("pointer-events", "visibleStroke")
 
   //SELECTION LINKS
   var selectionPoints = selection.map(s => nodes[pathToIndex(s, nodes)])
@@ -261,6 +260,7 @@ function circleDraw(graph, groupLabel, selection,  svg, width, height, nodeClick
      .attr("y2", d => layout[d.sink].y) 
      .attr("stroke-width", 2)
      .attr("stroke", "black")
+     .attr("pointer-events", "visibleStroke")
 
   tooltip(svg, "circle.tree-node")
   
@@ -314,7 +314,7 @@ function cross(list) {
   return crossed
 }
 
-function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeClick) {
+function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeClick, linkClick) {
   function showId(svg, enter) {
     if (enter) {
       return function(item) {
@@ -432,9 +432,10 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeCli
 
     link 
        .attr("fill-opacity", "0")
-       .attr("stroke-width", (d,i) => graphLinks[i].selected ? 2 : 1)
+       .attr("stroke-width", (d,i) => graphLinks[i].selected ? 3 : 2)
        .attr("stroke", (d, i) => graphLinks[i].selected ? "black" : "gray")
-       .attr("pointer-events", "none")
+       .attr("pointer-events", "visibleStroke")
+       .on("click", d => console.log("click", d))
 
     link.exit().remove()
   }
@@ -765,4 +766,29 @@ function domainsGraph(UnisService, groupFilter, loadLinks) {
     },
     [])
   }
+}
+
+
+/// ------------- Testing Tools -------
+function fakeLinks(graph, n, selfLink) {
+  function gatherLeaves(root) {
+    if (root.children) {
+      return root.children
+                .map(child => gatherLeaves(child))
+                .reduce((acc, node) => {return acc.concat(node)}, [])
+    } else {
+      return [root]
+    }
+  }
+
+  var leaves = gatherLeaves(graph.root)
+  var links = []
+  while (links.length < n) {
+    var src = leaves[Math.floor(Math.random() * leaves.length)]
+    var dst = leaves[Math.floor(Math.random() * leaves.length)]
+
+    if (src != dst || selfLink) {links.push({source: src.path, sink: dst.path})}
+  }
+  graph.links = links
+  return graph
 }
