@@ -118,6 +118,10 @@ var self = {
       key: null,
       cert: null,
       use_ssl: false
+    },
+    helm : {
+      host:  "dev.crest.iu.edu",
+      port: "9001",
     }
   },
   sslOptions : {

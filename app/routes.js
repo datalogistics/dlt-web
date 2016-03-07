@@ -255,10 +255,11 @@ module.exports = function(app) {
   app.get('/api/data', getGenericHandler({path : '/data', name : 'data'}));
   app.get('/api/ports', getGenericHandler({path : '/ports', name : 'ports'}));
 
-  //TODO: This is a low-security hack.  It lets anybody use this server as an HTTP redirect.
-  app.get('/api/redirect', function(req, res) {
-    var url = req.query.url
-    console.log("Redirect sending to:", url)
+  app.get('/api/helm', function(req, res) {
+    //Redirect specific requests to the helm server...
+    var helm = cfg.serviceMap.helm
+    var url = "http://" + helm.host + ":" + helm.port + "/" + req.query.path
+    console.log("Helm request sending to:", url)
     var fdata = "";
     request.get(url)
       .on('data',function(data) {
