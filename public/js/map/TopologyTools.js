@@ -1,4 +1,56 @@
-var PATH_SEPARATOR = ":"
+var PATH_SEPARATOR = ":" //TODO: This global is a bad idea.  Needs to be factor out somehow...
+
+function draw(baseGraph, groupLabel, paths, svg, layout, width, height) {
+  //Main entry function for topology drawing
+  
+  if (layout == "circle") {drawWith = circleDraw}
+  else if (layout == "spoke") {drawWith = spokeDraw}
+  else if (layout == "blackhole") {drawWith = blackholeDraw}
+  else {drawWith = blackholeDraw}
+  
+  //TODO: Add an 'events' dictionary to setup non-default interactions
+  var nodeClick = clickBranch(expandNode, selectNode)
+  var linkClick = function(d) {console.log(d)}
+  
+  var group = basicSetup(svg, width, height)
+  var groupLabel = "domain"
+  var selection = []
+  var graph = subsetGraph(baseGraph, paths)
+
+  drawWith(graph, groupLabel, selection, group, width, height, nodeClick, linkClick)
+
+  function expandNode(d, i) {
+    //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully) with ._children/.children
+    //TODO: Preserve inner selection: filter the paths sent to to subset to only those with their parent in the paths (changes the add/remove logic)
+    //TODO: Add an alt-click to expand all?
+   
+    if (!d._children) {return} 
+    var targetParts = d.path.split(PATH_SEPARATOR)
+    var newPaths = paths.filter(path => !(path == d.path
+      || (pathMatch(path, d.path) == targetParts.length)))
+      if (newPaths.length == paths.length) {
+        newPaths = paths
+        newPaths.push(d.path)
+      }
+      paths = newPaths
+      var graph = subsetGraph(baseGraph, paths) 
+      group.selectAll("*").remove()
+      drawWith(graph, groupLabel, selection, group, width, height, nodeClick, linkClick)
+  }
+
+  function selectNode(d, i) {
+    //TODO: Heirarchy aware selection? For example: Select grabs all children or selected child that is collapsed is shown as semi-selected parent?
+    var key = d.path 
+    var at = selection.indexOf(key)
+    if (at < 0) {selection.push(key)}
+    else {selection.splice(at, 1)}
+    var graph = subsetGraph(baseGraph, paths) 
+    group.selectAll("*").remove()
+    drawWith(graph, groupLabel, selection, group, width, height, nodeClick, linkClick)
+  }
+}
+
+
 
 function clickBranch(none, shift) {
   //Dispatcher for click events based on key press.  
@@ -31,7 +83,7 @@ function setOrder(graph) {
     }
     return shallowClone(tree)
   }
-  return {root: orderChildren(graph.root), links: graph.links}
+  return {tree: orderChildren(graph.tree), links: graph.links}
 }
 
 function pathMatch(a,b) {
@@ -109,7 +161,7 @@ function subsetGraph(graph, paths) {
 
 
 
-  var subTree = trimTree(graph.root, paths) 
+  var subTree = trimTree(graph.tree, paths) 
   var leaves = gatherLeaves(subTree)
 
   //Rebuild links to fit just selected nodes
@@ -386,6 +438,7 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeCli
        .style("stroke", "#fff")
        .attr("fill", colors.fn)
        .style("fill-rule", "evenodd")
+       .attr("pointer-events", "visiblePaint")
        .on("click", nodeClick)
        .on("mousemove", showId(label, true))
        .on("mouseenter", showLinks(true))
@@ -436,7 +489,7 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeCli
        .attr("stroke-width", (d,i) => graphLinks[i].selected ? 3 : 2)
        .attr("stroke", (d, i) => graphLinks[i].selected ? "black" : "gray")
        .attr("pointer-events", "visibleStroke")
-       .on("click", d => console.log("click", d))
+       .on("click", linkClick)
 
     link.exit().remove()
   }
@@ -694,7 +747,7 @@ function domainsGraph(UnisService, groupFilter, loadLinks) {
     if (badlinks.length > 0) {console.error("Problematic links dropped for missing source or sink: ", badlinks.length, "\n", badlinks, "\nRetaining " + links.length)}
   }
 
-  var graph = {root: root, links: links}
+  var graph = {tree: root, links: links}
   console.log(graph)
   return graph
 
@@ -773,7 +826,7 @@ function domainsGraph(UnisService, groupFilter, loadLinks) {
 
 /// ------------- Testing Tools -------
 function fakeLinks(graph, n, selfLink) {
-  var leaves = gatherLeaves(graph.root)
+  var leaves = gatherLeaves(graph.tree)
   var links = []
   while (links.length < n) {
     var src = leaves[Math.floor(Math.random() * leaves.length)]
