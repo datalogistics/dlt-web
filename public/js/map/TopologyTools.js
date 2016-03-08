@@ -1,6 +1,6 @@
 var PATH_SEPARATOR = ":" //TODO: This global is a bad idea.  Needs to be factor out somehow...
 
-function draw(baseGraph, groupLabel, paths, svg, layout, width, height) {
+function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions) {
   //Main entry function for topology drawing
   
   if (layout == "circle") {drawWith = circleDraw}
@@ -8,16 +8,26 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height) {
   else if (layout == "blackhole") {drawWith = blackholeDraw}
   else {drawWith = blackholeDraw}
   
-  //TODO: Add an 'events' dictionary to setup non-default interactions
-  var nodeClick = clickBranch(expandNode, selectNode)
-  var linkClick = function(d) {console.log(d)}
-  
   var group = basicSetup(svg, width, height)
   var groupLabel = "domain"
   var selection = []
   var graph = subsetGraph(baseGraph, paths)
 
-  drawWith(graph, groupLabel, selection, group, width, height, nodeClick, linkClick)
+  if (!actions) {actions = {}}
+  if (!actions.nodeClick) {actions.nodeClick = clickBranch(expandNode, selectNode)}
+  if (!actions.linkClick) {actions.linkClick = function(d) {console.log(d)}}
+
+  drawWith(graph, groupLabel, selection, group, width, height, actions)
+
+  function clickBranch(none, shift) {
+    //Dispatcher for click events based on key press.  
+    //Lets the events be defined separately.
+    //
+    return function(d,i) {
+      if (d3.event.shiftKey) {return shift(d,i)}
+      return none(d,i)
+    }
+  }
 
   function expandNode(d, i) {
     //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully) with ._children/.children
@@ -35,7 +45,7 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height) {
       paths = newPaths
       var graph = subsetGraph(baseGraph, paths) 
       group.selectAll("*").remove()
-      drawWith(graph, groupLabel, selection, group, width, height, nodeClick, linkClick)
+      drawWith(graph, groupLabel, selection, group, width, height, actions)
   }
 
   function selectNode(d, i) {
@@ -46,21 +56,10 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height) {
     else {selection.splice(at, 1)}
     var graph = subsetGraph(baseGraph, paths) 
     group.selectAll("*").remove()
-    drawWith(graph, groupLabel, selection, group, width, height, nodeClick, linkClick)
+    drawWith(graph, groupLabel, selection, group, width, height, actions)
   }
 }
 
-
-
-function clickBranch(none, shift) {
-  //Dispatcher for click events based on key press.  
-  //Lets the events be defined separately.
-  //
-  return function(d,i) {
-    if (d3.event.shiftKey) {return shift(d,i)}
-    return none(d,i)
-  }
-}
 
 function setOrder(graph) {
   //Set an order for children
@@ -166,8 +165,11 @@ function subsetGraph(graph, paths) {
 
   //Rebuild links to fit just selected nodes
   var links = graph.links
-                 .map(link => {return {source: findEndpoint(leaves, link.source),
-                                       sink: findEndpoint(leaves, link.sink)}})
+                 .map(link => {
+                   link = shallowClone(link)
+                   link.source = findEndpoint(leaves, link.source)
+                   link.sink = findEndpoint(leaves, link.sink)
+                   return link})
                  .filter(link => link.source != link.sink)
 
   return {tree: subTree, links: links}
@@ -200,7 +202,7 @@ function shallowClone(obj) {
 // This can be used for map overlay...I hope
 // TODO: Treat the parent as a child with a pre-set position so no actual child gets put there
 // TODO: Allow the nodes to come with pre-set positions that are preserved (i.e., to put them on a map)
-function spokeDraw(graph, groupLabel, selection,  svg, width, height, nodeClick) {
+function spokeDraw(graph, groupLabel, selection,  svg, width, height) {
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
   var maxLayer = Object.keys(layout).reduce((acc, n) => Math.max(layout[n].layer, acc), 0)
 
@@ -221,7 +223,7 @@ function spokeDraw(graph, groupLabel, selection,  svg, width, height, nodeClick)
     .attr("stroke", "black")
     .attr("stroke-width", 2)
     .attr("r",  d => 10)//+Math.max(0, 2-layout[d.path].layer)*5)
-    .on("click", nodeClick)
+    .on("click", actions.nodeClick)
     
 
   //Topology/graph links
@@ -281,7 +283,7 @@ function spokeDraw(graph, groupLabel, selection,  svg, width, height, nodeClick)
 
 
 // ------------------------- Nested Circular Embedding -------------------------
-function circleDraw(graph, groupLabel, selection,  svg, width, height, nodeClick) {
+function circleDraw(graph, groupLabel, selection,  svg, width, height) {
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
  
   var nodes = Object.keys(layout).map(k => layout[k].node)
@@ -300,7 +302,7 @@ function circleDraw(graph, groupLabel, selection,  svg, width, height, nodeClick
     .attr("stroke", "black")
     .attr("stroke-width", 1)
     .attr("r",  d => layout[d.path].r)
-    .on("click", nodeClick)
+    .on("click", actions.nodeClick)
     
   var links = graph.links.filter(l => l.source != l.sink)
 
@@ -367,7 +369,7 @@ function cross(list) {
   return crossed
 }
 
-function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeClick, linkClick) {
+function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions) {
   function showId(svg, enter) {
     if (enter) {
       return function(item) {
@@ -386,11 +388,8 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeCli
     if (enter) {
       return function(item) {
         if (item.length > 1) {
-          var target = graphLinks.filter(l => (l.source.path == item[0].path && l.target.path == item[item.length-1].path)
-                                                || (l.target.path == item[0].path && l.source.path == item[item.length-1].path))
-
-          if (target.length ==0) {console.error("Could not find link for", item)}
-          target.forEach(l => l.selected = true)
+          //TODO: Move this link-centric one to another method, also show the ids of the endpoints
+          pathToLink(item).forEach(l => l.selected = true)
         } else {
           var targetParts = item.path.split(PATH_SEPARATOR).length
           var target = graphLinks.filter(l => pathMatch(l.source.path, item.path) == targetParts 
@@ -405,6 +404,22 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeCli
         drawLinks()
       }
     }
+  }
+
+  function linkClick(item) {
+    //Convert the path that a click returns to the associated data item(s), then invoke the click event
+    if (actions.linkClick) {actions.linkClick.call(this, pathToLink(item))}
+  }
+
+
+  function pathToLink(path) {
+    //Given a 'bundle' produced path, return the relevant link object
+    var target = graphLinks.filter(
+      l => (l.source.path == path[0].path && l.target.path == path[path.length-1].path)
+            || (l.target.path == path[0].path && l.source.path == path[path.length-1].path))
+
+    if (target.length ==0) {console.error("Could not find link for", item)}
+    return target
   }
 
   var radius = Math.min(width, height) / 2
@@ -447,7 +462,7 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeCli
        .attr("fill", colors.fn)
        .style("fill-rule", "evenodd")
        .attr("pointer-events", "visiblePaint")
-       .on("click", nodeClick)
+       .on("click", actions.nodeClick)
        .on("mousemove", showId(label, true))
        .on("mouseleave.tip", showId(label, false))
        .on("mouseenter", showLinks(true))
@@ -471,9 +486,12 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeCli
 
   var graphLinks = graph.links
                .filter(l => l.source != l.sink)
-               .map((l,i) => {return {selected: l.selected,
-                                      source: nodes[pathToIndex(l.source, nodes)], 
-                                      target: nodes[pathToIndex(l.sink, nodes)]}})
+               .map((l,i) => {
+                 var link = shallowClone(l)
+                 link.selected = l.selected,
+                 link.source = nodes[pathToIndex(l.source, nodes)]
+                 link.target = nodes[pathToIndex(l.sink, nodes)]
+                 return link})
 
   var linkRoot = svg.append("g").attr("id", "links")
   drawLinks()
@@ -758,7 +776,6 @@ function domainsGraph(UnisService, groupFilter, loadLinks) {
   }
 
   var graph = {tree: root, links: links}
-  console.log(graph)
   return graph
 
   function validLinks(link) {
@@ -798,7 +815,7 @@ function domainsGraph(UnisService, groupFilter, loadLinks) {
   function ensureURNNode(urn, root) {
     var parts = URNtoDictionary(urn)
     if (!parts || !parts.domain || !parts.node || !parts.port) {
-      console.log("Could not ensure endpoint", urn); return;
+      console.error("Could not ensure endpoint", urn); return;
     }
     
     var domain = root.children.filter(domain => domain.id == parts.domain)
