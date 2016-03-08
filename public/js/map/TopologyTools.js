@@ -385,10 +385,18 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeCli
   function showLinks(enter) {
     if (enter) {
       return function(item) {
-        var targetParts = item.path.split(PATH_SEPARATOR).length
-        var target = graphLinks.filter(l => pathMatch(l.source.path, item.path) == targetParts 
-                                             || pathMatch(l.target.path, item.path) == targetParts )
-        target.forEach(l => l.selected = true)
+        if (item.length > 1) {
+          var target = graphLinks.filter(l => (l.source.path == item[0].path && l.target.path == item[item.length-1].path)
+                                                || (l.target.path == item[0].path && l.source.path == item[item.length-1].path))
+
+          if (target.length ==0) {console.error("Could not find link for", item)}
+          target.forEach(l => l.selected = true)
+        } else {
+          var targetParts = item.path.split(PATH_SEPARATOR).length
+          var target = graphLinks.filter(l => pathMatch(l.source.path, item.path) == targetParts 
+                                               || pathMatch(l.target.path, item.path) == targetParts)
+          target.forEach(l => l.selected = true)
+        }
         drawLinks()
       }
     } else {
@@ -441,8 +449,8 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeCli
        .attr("pointer-events", "visiblePaint")
        .on("click", nodeClick)
        .on("mousemove", showId(label, true))
-       .on("mouseenter", showLinks(true))
        .on("mouseleave.tip", showId(label, false))
+       .on("mouseenter", showLinks(true))
        .on("mouseleave.link", showLinks(false))
  
   //LINKS
@@ -490,6 +498,8 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, nodeCli
        .attr("stroke", (d, i) => graphLinks[i].selected ? "black" : "gray")
        .attr("pointer-events", "visibleStroke")
        .on("click", linkClick)
+       .on("mouseenter", showLinks(true))
+       .on("mouseleave.link", showLinks(false))
 
     link.exit().remove()
   }
