@@ -1,4 +1,4 @@
-function measurementTopologyController($scope, $routeParams, $http) {
+function measurementTopologyController($scope, $routeParams, $http, UnisService) {
   var PATH_SEPARATOR = ":"
 
   var path = $routeParams.path
@@ -22,7 +22,50 @@ function measurementTopologyController($scope, $routeParams, $http) {
     var data = rsp.data
     var baseGraph = setOrder(measurementsGraph(data))
 
-    draw(baseGraph, groupLabel, paths, svg, layout, width, height)
+    var actions = {linkClick: showMeasurement}
+    
+    draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
+
+
+    function showMeasurement(links) {
+      var ids = links.map(l => l.id)
+      var measures = UnisService.measurements.filter(m => ids.indexOf(m.id) >=0).map(m => m.selfRef)
+      var metas = UnisService.metadata.filter(m => measures.indexOf(m.parameters.measurement.href) >= 0)
+      console.log("Requested charts for metadata: ", metas)
+
+
+      $scope.showData(metas[0], "Measurement", "Measured")
+    }
+
+    $scope.showData = function(metadata , name , buttonName) {
+      // TODO add a way to configure which labels or event types open up in a dialog and which open in a new window
+      // Maybe give a button which can be used to toggle behavior
+      if (true) {
+        var params = {
+          id : metadata.id,
+          name : name ,
+          buttonName : buttonName
+        };
+        window.open('/popup/graphs?'+$.param(params),null, "width=600,height=420,resizable,scrollbars,status");
+      } else {
+        $scope.metadataId = metadata.id;
+        $scope.depotInstitutionName = name;
+        $scope.dialogButtonName = buttonName;
+        var modal = $modal.open({
+          templateUrl: '/views/depot_data.html',
+          controller: 'DepotController',
+          scope : $scope,
+          size : 'lg',
+          resolve: {
+            'unis': function(UnisService) {
+              return UnisService.init()
+            }
+          }
+        });
+        modal.result.finally(function(){UnisService.unsubDataId(metadata.id,"dialog");});
+      }
+    };
+
 
     function measurementsGraph(data) {
       //Convert the helm response to the topology graph format
