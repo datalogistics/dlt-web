@@ -170,7 +170,6 @@ function subsetGraph(graph, paths) {
                    link.source = findEndpoint(leaves, link.source)
                    link.sink = findEndpoint(leaves, link.sink)
                    return link})
-                 .filter(link => link.source != link.sink)
 
   return {tree: subTree, links: links}
 }
@@ -227,16 +226,14 @@ function spokeDraw(graph, groupLabel, selection,  svg, width, height, actions) {
     
 
   //Topology/graph links
-  var graphLinks = graph.links.filter(l => l.source != l.sink)
-  var graphLink = svg.selectAll(".link").data(graphLinks)
-  graphLink.enter().append("line")
-     .attr("class", "link")
-     .attr("x1", d => layout[d.source].x)
-     .attr("y1", d => layout[d.source].y) 
-     .attr("x2", d => layout[d.sink].x)
-     .attr("y2", d => layout[d.sink].y) 
+  var graphLink = svg.selectAll(".link").data(graph.links)
+  graphLink.enter().append("path")
+     .attr("class", "graph-link")
+     .attr("d", d => arc(layout[d.source], layout[d.sink]))
      .attr("stroke", "black")
-     .attr("stroke-width", 2)
+     .attr("stroke-width", 4)
+     .attr("fill", "none")
+     .attr("pointer-events", "visibleStroke")
 
   tooltip(svg, "circle.tree-node")
 
@@ -259,7 +256,7 @@ function spokeDraw(graph, groupLabel, selection,  svg, width, height, actions) {
         .attr("y1", d => layout[d[0]].y)
         .attr("x2", d => layout[d[1]].x)
         .attr("y2", d => layout[d[1]].y)
-        .attr("pointer-events", "visibleStroke")
+        .attr("pointer-events", "none")
 
   //SELECTION LINKS
   var selectionPoints = selection.map(s => nodes[pathToIndex(s, nodes)])
@@ -304,17 +301,13 @@ function circleDraw(graph, groupLabel, selection,  svg, width, height, actions) 
     .attr("r",  d => layout[d.path].r)
     .on("click", actions.nodeClick)
     
-  var links = graph.links.filter(l => l.source != l.sink)
-
-  var link = svg.selectAll(".link").data(links)
-  link.enter().append("line")
-     .attr("class", "link")
-     .attr("x1", d => layout[d.source].x)
-     .attr("y1", d => layout[d.source].y) 
-     .attr("x2", d => layout[d.sink].x)
-     .attr("y2", d => layout[d.sink].y) 
+  var link = svg.selectAll(".link").data(graph.links)
+  link.enter().append("path")
+     .attr("class", "graph-link")
+     .attr("d", d => arc(layout[d.source], layout[d.sink]))
      .attr("stroke-width", 2)
      .attr("stroke", "black")
+     .attr("fill", "none")
      .attr("pointer-events", "visibleStroke")
 
   tooltip(svg, "circle.tree-node")
@@ -654,25 +647,36 @@ function toPolar(x,y) {
   return {r: Math.sqrt(x*x+y*y), t: Math.atan2(y,x)}
 }
 
-//Return a path between (source.x, source.y) and (target.x, target.y)
-//Based on http://stackoverflow.com/questions/17156283/d3-js-drawing-arcs-between-two-points-on-map-from-file
-//pct_w and pct_h are used as percent offsets (defaulting to 0) 
-function arc(source, target, pct_w, pct_h) {
+function arc(source, target, pct_w, pct_h, r) {
+  //pct_w and pct_h are used as percent offsets (defaulting to 0) 
+  //"r" is the radius of a self-loop, defaulting to 10
+  //Return a path between (source.x, source.y) and (target.x, target.y)
+  //Based on http://stackoverflow.com/questions/17156283/d3-js-drawing-arcs-between-two-points-on-map-from-file
   pct_w = pct_w ? pct_w : 0
   pct_h = pct_h ? pct_h : 0
-  
-  var sx = source.x + (pct_w * (source.dx ? source.dx : 0)),
-      sy = source.y + (pct_h * (source.dy ? source.dy : 0)),
-      tx = target.x + (pct_w * (target.dx ? target.dx : 0)),
-      ty = target.y + (pct_h * (target.dy ? target.dy : 0))
+ 
+  if (source.x != target.x || source.y != target.y) {
+    //Different source and target
+    var sx = source.x + (pct_w * (source.dx ? source.dx : 0)),
+        sy = source.y + (pct_h * (source.dy ? source.dy : 0)),
+        tx = target.x + (pct_w * (target.dx ? target.dx : 0)),
+        ty = target.y + (pct_h * (target.dy ? target.dy : 0))
 
-  var dx = tx - sx,
-      dy = ty - sy,
-      dr = Math.sqrt(dx * dx + dy * dy);
-  
+    var dx = tx - sx,
+        dy = ty - sy,
+        dr = Math.sqrt(dx * dx + dy * dy);
+    
 
-  return "M" + sx + "," + sy + "A" + dr + "," + dr +
-        " 0 0,0 " + tx + "," + ty;
+    return "M" + sx + "," + sy + "A" + dr + "," + dr +
+          " 0 0,0 " + tx + "," + ty;
+  } else {
+    r = r ? r :10 
+    //Based on: https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths
+    return `M ${source.x} ${source.y}`
+           + ` l -${r} 0`
+           + ` a ${r} ${r} 0 1 0 ${r} ${r}`
+           + `Z`
+  }
 }
 
 function layoutTree(layer, root, center, radius, layout) {
