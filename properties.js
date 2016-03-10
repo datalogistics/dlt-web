@@ -49,7 +49,7 @@ var self = {
   authArr : [],
   routeMap : {
     // Aggregate from the following by default 
-    'default'  : ['dlt', 'monitor'],
+    'default'  : ['dev'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : ['dev'],
@@ -61,8 +61,8 @@ var self = {
     'measurements_id' : [],
     'metadata': [],
     'metadata_id' : [],
-    'data': ['dlt_ms','monitor_ms'],
-    'data_id': ['dlt_ms','monitor_ms'],
+    'data': ['dev'],
+    'data_id': ['dev'],
     'ports': [],
     'ports_id' : []
   },
@@ -79,7 +79,7 @@ var self = {
     },
     dev : {
       url : "dev.incntre.iu.edu" ,
-      port : "8888",
+      port : "8889",
       key: null,
       cert: null,
       use_ssl: false
@@ -100,7 +100,7 @@ var self = {
     },
     dev_ms : {
       url : "dev.incntre.iu.edu",
-      port : "8888",
+      port : "8889",
       key: "./dlt-client.pem",
       cert: "./dlt-client.pem",
       use_ssl: false
@@ -118,6 +118,10 @@ var self = {
       key: null,
       cert: null,
       use_ssl: false
+    },
+    helm : {
+      host:  "dev.crest.iu.edu",
+      port: "9001",
     }
   },
   sslOptions : {

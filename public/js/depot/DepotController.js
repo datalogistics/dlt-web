@@ -213,14 +213,14 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     if (true) {
       var params = {
         id : metadata.id,
-        name : name ,
-        buttonName : buttonName
+        title : name ,
+        subtitle : buttonName
       };
       window.open('/popup/graphs?'+$.param(params),null, "width=600,height=420,resizable,scrollbars,status");
     } else {
       $scope.metadataId = metadata.id;
-      $scope.depotInstitutionName = name;
-      $scope.dialogButtonName = buttonName;
+      $scope.title = title;
+      $scope.subtitle = subtitle;
       var modal = $modal.open({
         templateUrl: '/views/depot_data.html',
         controller: 'DepotController',

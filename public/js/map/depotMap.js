@@ -69,21 +69,21 @@ function highlightMapLocations(svg, selector, filter, retries) {
 }
 
 //Add the tool tip functionality
-function tooltip(svg) {
+function tooltip(svg, selector) {
   if (d3.select("#map-tool-tip").empty()) {
     tip = d3.tip()
               .attr('class', 'd3-tip')
               .attr('id', "map-tool-tip")
               .html(function() {
                 var x = d3.select(this);
-                return x.attr('name').replace(/\|/g,"</p>")
+                return x.attr('name') ? x.attr('name').replace(/\|/g,"</p>") : "(None)"
               })
 
     svg.call(tip);
   }
 
   var timer;
-  svg.selectAll("circle.depotNode").on('mouseover', function(){
+  svg.selectAll(selector).on('mouseover', function(){
       clearTimeout(timer);
       tip.show.apply(this,arguments);
   })
@@ -111,8 +111,10 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       .attr("style", "display:none")
     
     if (depot_id !== undefined) {circ.attr('depot_id', depot_id)}
+    return group;
   }
-  
+  var name = name + (port ? ":" + port : "")
+
   if (nodes.empty()) {
     var group = svg.append("g")
       .attr("transform", translate)
@@ -124,10 +126,10 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       .attr('stroke',"#76231F")
       .attr('stroke-width', '1.25')
       .attr('class', "depotNode")
-      .attr('name', name + ":" + port)
+      .attr('name', name)
       .attr('location', lonLat)
-    
-    invisiblePoint(group)
+      
+    return invisiblePoint(group)
   } else {
     nodes.each(function(d,i) {
       var group = d3.select(this)
@@ -147,13 +149,12 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       
       var super_circ = group.select(".depotNode")
       var existingName = super_circ.attr("name")
-      super_circ.attr("name", name + ":" + port + "|" + existingName)
-      invisiblePoint(group)
+      super_circ.attr("name", name + "|" + existingName)
+      return invisiblePoint(group)
     });
   }
   return group
 }
-
 
 //Add nodes to the side of the map, because their lat/lon is not known
 //baseLataLon tells where to put the first off map location.  Others are placed in a line down from there.
@@ -161,11 +162,10 @@ function addOffMapLocation(projection, idx, baseLatLon, name, port, svg, depot_i
     pair = [baseLatLon[0]-idx*.3, baseLatLon[1]-idx]  //the idx*.3 straigthens out the line
     node = addMapLocation(projection, name, port, pair, svg, depot_id)
     node.append("text")
-       .attr("dx", function(d){return 10})
-       .attr("dy", function(d){return 4})
-       .text(function(d) {return name})
+        .attr("dx", function(d){return 10})
+        .attr("dy", function(d){return 4})
+        .text(function(d) {return name})
 }
-
 
 //Map a collection of places.  The places should be a list of dictionaries {name, location}.
 //Location should be either {latitude, longitude} or []
@@ -175,7 +175,8 @@ function mapPoints(projection, svg, elementId) {
     var svg_points = svg.select("#overlay")
 
     points.forEach(function(item) {
-      if (item.location.length == 0
+      if (item.location === undefined
+         || item.location.length == 0
          || item.location.latitude == undefined
          || item.location.longitude == undefined
          || (item.location.latitude == 0 && item.location.longitude == 0)) {
@@ -187,7 +188,7 @@ function mapPoints(projection, svg, elementId) {
         pair = [item.location.longitude, item.location.latitude]
         node = addMapLocation(projection, item.name, item.port, pair, svg_points, item.depot_id)
       }
-      tooltip(svg)
+      tooltip(svg, "circle.depotNode")
     })
   }
 }
@@ -196,6 +197,7 @@ function mapPoints(projection, svg, elementId) {
 //selector -- used to grab an element of the page and append svg into into it
 //width -- how wide to make the map
 //height -- how tall to make the map
+//svg -- svg element to use (overrides selector is present) 
 //returns the map projection 
 function baseMap(selector, width, height, svg) {
   projection = d3.geo.albersUsa()
@@ -241,7 +243,6 @@ function baseMap(selector, width, height, svg) {
           .attr("width", width)
           .attr("height", height);
   
-    
     console.log("Base map loaded.")
   });
   return {svg: svg, projection: projection}
@@ -263,8 +264,10 @@ function allServiceData(services, match, natmap, then) {
     var name =  uniqueIds[i]
     var item = uniqueServices[name]
 
-    if (item.serviceType && item.serviceType != match) {
-      continue;
+    if (match != null) {
+      if (item.serviceType && item.serviceType != match) {
+          continue;
+      }
     }
 
     port = 6714;
@@ -399,7 +402,7 @@ function backplaneLinks(map, natmap) {
     })
     
     if (mapNode.empty()) {
-      console.error("link endpoint not in depot map: ", endpoint, port)
+      //console.error("link endpoint not in depot map: ", endpoint, port)
       return undefined;
     }
 

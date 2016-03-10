@@ -1,13 +1,11 @@
 function depotNewWinGraphController($scope, $routeParams, $location, $filter, $rootScope,$modal, UnisService) {
   console.log($routeParams);
   var metadata_id = $routeParams.id;
-  var name = $routeParams.name;
-  var buttonName = $routeParams.buttonName;
   if (metadata_id) {    
     $scope.eventType = [];
     $scope.metadataId = metadata_id;
-    $scope.depotInstitutionName = name;
-    $scope.dialogButtonName = buttonName;
+    $scope.title = $routeParams.title
+    $scope.subtitle = $routeParams.subtitle
 
     UnisService.getMetadataId(metadata_id, function(metadata) {
       var eventType = metadata.eventType;

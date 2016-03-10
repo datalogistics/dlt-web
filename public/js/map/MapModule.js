@@ -7,4 +7,7 @@
 angular.module('map', [])
   .controller('MapController', mapController)
   .controller("DownloadMapController", downloadMapController)
-  .controller("ExnodeMapController", exnodeMapController);
+  .controller("ExnodeMapController", exnodeMapController)
+  .controller("MeasurementTopologyController", measurementTopologyController)
+  .controller("TopologyMapController", topologyMapController)
+  .controller("ExnodeMapController", exnodeMapController)

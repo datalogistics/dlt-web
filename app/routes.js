@@ -241,14 +241,44 @@ module.exports = function(app) {
       opt.handler(options);
     }
   }
-  app.get('/api/nodes', getGenericHandler({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
-  app.get('/api/services', getGenericHandler({path : '/services', name : 'services' , handler : registerGenericHandler}));
-  app.get('/api/exnodes', getGenericHandler({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));
-  app.get('/api/measurements', getGenericHandler({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));
-  app.get('/api/metadata', getGenericHandler({path : '/metadata', name : 'metadata' , handler : registerGenericHandler}));
-  app.get('/api/data', getGenericHandler({path : '/data', name : 'data' , handler : registerGenericHandler}));
-  app.get('/api/ports', getGenericHandler({path : '/ports', name : 'ports' , handl : registerGenericHandler}));
-  
+
+  app.get('/api/probes', getGenericHandler({path : '/probes', name : 'probes'}));
+  app.get('/api/topologies', getGenericHandler({path : '/topologies', name : 'topologies'}));
+  app.get('/api/domains', getGenericHandler({path : '/domains', name : 'domains'}));
+  app.get('/api/nodes', getGenericHandler({path : '/nodes', name : 'nodes'}));
+  app.get('/api/links', getGenericHandler({path : '/links', name : 'links'}));
+  app.get('/api/paths', getGenericHandler({path : '/paths', name : 'paths'}));
+  app.get('/api/services', getGenericHandler({path : '/services', name : 'services'}));
+  app.get('/api/exnodes', getGenericHandler({path : '/exnodes', name : 'exnodes'}));
+  app.get('/api/measurements', getGenericHandler({path : '/measurements', name : 'measurements'}));
+  app.get('/api/metadata', getGenericHandler({path : '/metadata', name : 'metadata'}));
+  app.get('/api/data', getGenericHandler({path : '/data', name : 'data'}));
+  app.get('/api/ports', getGenericHandler({path : '/ports', name : 'ports'}));
+
+  app.get('/api/helm', function(req, res) {
+    //Redirect specific requests to the helm server...
+    var helm = cfg.serviceMap.helm
+    var url = "http://" + helm.host + ":" + helm.port + "/" + req.query.path
+    console.log("Helm request sending to:", url)
+    var fdata = "";
+    request.get(url)
+      .on('data',function(data) {
+        var data = data.toString();
+        fdata = fdata + data;          
+      })
+      .on('end',function() {
+        try {
+          var obj = JSON.parse(fdata);
+          res.send(obj)
+        } catch (e) {            
+          console.log("Error parsing JSON from socket: ",e);
+          res.send(e)
+        }
+      })
+      .on('error',function() {res.send(e)});
+    })
+          
+
   function getGenericHandlerWithId(opt) {
     var path = opt.path , name = opt.name ;
     var handler = opt.handler;
@@ -268,16 +298,20 @@ module.exports = function(app) {
       },getHttpOptions({
         name : name + "_id"
       }));
-      opt.handler(options);      
+      opt.handler = opt.handler || registerGenericHandler;
+      opt.handler(options);
     };
   };
-  app.get('/api/nodes/:id', getGenericHandlerWithId({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
-  app.get('/api/services/:id', getGenericHandlerWithId({path : '/services', name : 'services' , handler : registerGenericHandler}));
-  app.get('/api/exnodes/:id', getGenericHandlerWithId({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));
-  app.get('/api/measurements/:id', getGenericHandlerWithId({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));
-  app.get('/api/metadata/:id', getGenericHandlerWithId({path : '/metadata', name : 'metadata' , handler : registerGenericHandler}));
-  app.get('/api/data/:id', getGenericHandlerWithId({path : '/data', name : 'data' , handler : registerGenericHandler}));
-  app.get('/api/ports/:id', getGenericHandlerWithId({path : '/ports', name : 'ports' , handler : registerGenericHandler}));
+
+  app.get('/api/domains/:id', getGenericHandlerWithId({path : '/domains', name : 'domains'}));
+  app.get('/api/nodes/:id', getGenericHandlerWithId({path : '/nodes', name : 'nodes'}));
+  app.get('/api/services/:id', getGenericHandlerWithId({path : '/services', name : 'services'}));
+  app.get('/api/exnodes/:id', getGenericHandlerWithId({path : '/exnodes', name : 'exnodes'}));
+  app.get('/api/topologies/:id', getGenericHandlerWithId({path : '/measurements', name : 'measurements'}));
+  app.get('/api/measurements/:id', getGenericHandlerWithId({path : '/measurements', name : 'measurements'}));
+  app.get('/api/metadata/:id', getGenericHandlerWithId({path : '/metadata', name : 'metadata'}));
+  app.get('/api/data/:id', getGenericHandlerWithId({path : '/data', name : 'data'}));
+  app.get('/api/ports/:id', getGenericHandlerWithId({path : '/ports', name : 'ports'}));
   app.get('/api/getVersion',function(req,res) {
     var host , port ;
     if (req.query.host && req.query.port) {
@@ -318,6 +352,7 @@ module.exports = function(app) {
     },getHttpOptions({
       name : 'exnodes'
     }));
+
     registerGenericHandler(options, function(obj){
       var exjson =  obj[0].value;
       // Return matching id children
@@ -454,38 +489,38 @@ module.exports = function(app) {
   app.get('/api/natmap',function(req, res) {
     var rmap = {};
     var stream = fs.createReadStream(cfg.nat_map_file)
-      .on ("error", function (error){
-        console.log (error);
-	res.json({});
-      })
-      .on("end", function () {
-	stream.close();
-	res.json(rmap);
-      });
-    
+        .on ("error", function (error){
+          console.log (error);
+          res.json({});
+        })
+        .on("end", function () {
+          stream.close();
+          res.json(rmap);
+        });
+
     var rd = readline.createInterface({
       input: stream,
       output: process.stdout,
       terminal: false
     });
-    
+
     rd.on('line', function(line) {
       if (line[0] != '#') {
-	var ary = line.split(':');
-	if (ary[4]) {
-	  rmap[ary[4]] = {
-	    'data_ip' : ary[0],
-	    'internal': ary[1],
-	    'port'    : ary[2],
-	    'external': ary[3]
-	  };
-	}
+        var ary = line.split(':');
+        if (ary[4]) {
+          rmap[ary[4]] = {
+            'data_ip' : ary[0],
+            'internal': ary[1],
+            'port'    : ary[2],
+            'external': ary[3]
+          };
+        }
       }
     });
   });
   
-  usgsapi.addRoutes('/usgsapi/',app);
   auth.addRoutes('/',app);
+  usgsapi.addRoutes('/usgsapi/',app);  
   app.get('/popup/*', function(req,res) {
     res.render('../views/popup.html');
   });  

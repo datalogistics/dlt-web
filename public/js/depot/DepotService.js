@@ -10,10 +10,10 @@ var ETS = {
   'user': "ps:tools:blipp:linux:cpu:utilization:user",
   'sys' : "ps:tools:blipp:linux:cpu:utilization:system",
   'in'  : "ps:tools:blipp:linux:network:utilization:bytes:in",
-  'out' : "ps:tools:blipp:linux:network:utilization:bytes:out"
+  'out' : "ps:tools:blipp:linux:network:utilization:bytes:out",
 };
 
-var MY_ETS = [ETS.used, ETS.free, ETS.in, ETS.out];
+var MY_ETS = Object.keys(ETS)
 
 var format_GB = function(){
   return function(d){
@@ -63,8 +63,12 @@ ETS_CHART_CONFIG[ETS.out]  = {selector: "#CHART-Time-Rate",
 
 function getETSChartConfig(key){  
   var arr = key.split(":");
-  return ETS_CHART_CONFIG[arr[arr.length-1]];
-};
+  var config = ETS_CHART_CONFIG[arr[arr.length-1]];
+  config = config 
+            ? config 
+            : {selector: "#CHART-Time-Value", xformat: format_timestamp, yformat: format_rate}
+  return config
+}
 
 function depotService($http, UnisService, CommChannel) {
   var service = {};
