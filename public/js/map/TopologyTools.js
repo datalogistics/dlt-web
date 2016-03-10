@@ -202,7 +202,7 @@ function shallowClone(obj) {
 // This can be used for map overlay...I hope
 // TODO: Treat the parent as a child with a pre-set position so no actual child gets put there
 // TODO: Allow the nodes to come with pre-set positions that are preserved (i.e., to put them on a map)
-function spokeDraw(graph, groupLabel, selection,  svg, width, height) {
+function spokeDraw(graph, groupLabel, selection,  svg, width, height, actions) {
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
   var maxLayer = Object.keys(layout).reduce((acc, n) => Math.max(layout[n].layer, acc), 0)
 
@@ -283,7 +283,7 @@ function spokeDraw(graph, groupLabel, selection,  svg, width, height) {
 
 
 // ------------------------- Nested Circular Embedding -------------------------
-function circleDraw(graph, groupLabel, selection,  svg, width, height) {
+function circleDraw(graph, groupLabel, selection,  svg, width, height, actions) {
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
  
   var nodes = Object.keys(layout).map(k => layout[k].node)
@@ -679,10 +679,11 @@ function layoutTree(layer, root, center, radius, layout) {
   function layoutGroup(layer, group, center, outer_radius, layout) {
     //Per: http://www.had2know.com/academics/inner-circular-ring-radii-formulas-calculator.html
     //Alternative if this prooves too wasteful: https://en.wikipedia.org/wiki/Circle_packing_in_a_circle
-    var member_radius = outer_radius*Math.sin(Math.PI/group.length)/(1+Math.sin(Math.PI/group.length))
+    var slots = Math.max(group.length, 2) 
+    var member_radius = outer_radius*Math.sin(Math.PI/slots)/(1+Math.sin(Math.PI/slots))
     var inner_radius = outer_radius - member_radius
 
-    var angularSpacing = (Math.PI*2)/group.length
+    var angularSpacing = (Math.PI*2)/slots
     var layoutX = (r, i) => (r*Math.cos(i * angularSpacing + Math.PI/2 * layer) + center.x)
     var layoutY = (r, i) => (r*Math.sin(i * angularSpacing + Math.PI/2 * layer) + center.y)
     group.forEach((e,i) => 
