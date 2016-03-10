@@ -1,10 +1,11 @@
 <h2 class="lead text-center">
-    <div>{{ depotInstitutionName}} ({{dialogButtonName}})</div>
-<!--    <div>{{ eventType }} </div>    -->
+    <div style="font-weight:bold">{{title}}</div>
+    <div style="font-style:italic; font-size:60%">{{subtitle}}</div>
 </h2>
 <!---This visibility trick is not great. 
 It is required because the angular bindings for nvd3 do
-not support functions setting axis label based on a function
+not support functions setting axis label based on a function. 
+Visibility is set by chainging style to empty in DepotController
 
 A better long-term option is probably to scrap nvd3 and use vanilla d3
 --!>
@@ -58,6 +59,24 @@ A better long-term option is probably to scrap nvd3 and use vanilla d3
     yAxisTickFormat="yAxisFormatFunction()"
     xAxisLabel="Time"
     yAxisLabel="Percent"
+    interactive="true">
+  </nvd3-line-chart>
+</div>
+
+<div id="CHART-Time-Value" style="display: none">
+  <nvd3-line-chart
+    data="graphData"
+    width="500"
+    height="300"
+    margin="{left:80,top:10,bottom:0,right:0}"
+    showXAxis="true"
+    showYAxis="true"
+    tooltips="true"
+    noData="No Data for this Event Type"
+    xAxisTickFormat="xAxisTickFormat_Date_Format()"
+    yAxisTickFormat="yAxisFormatFunction()"
+    xAxisLabel="Time"
+    yAxisLabel="Value (Units unknown)"
     interactive="true">
   </nvd3-line-chart>
 </div>
