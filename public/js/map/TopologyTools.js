@@ -229,7 +229,7 @@ function spokeDraw(graph, groupLabel, selection,  svg, width, height, actions) {
   var graphLink = svg.selectAll(".link").data(graph.links)
   graphLink.enter().append("path")
      .attr("class", "graph-link")
-     .attr("d", d => arc(layout[d.source], layout[d.sink]))
+     .attr("d", d => link_arc(layout[d.source], layout[d.sink]))
      .attr("stroke", "black")
      .attr("stroke-width", 4)
      .attr("fill", "none")
@@ -304,7 +304,7 @@ function circleDraw(graph, groupLabel, selection,  svg, width, height, actions) 
   var link = svg.selectAll(".link").data(graph.links)
   link.enter().append("path")
      .attr("class", "graph-link")
-     .attr("d", d => arc(layout[d.source], layout[d.sink]))
+     .attr("d", d => link_arc(layout[d.source], layout[d.sink]))
      .attr("stroke-width", 2)
      .attr("stroke", "black")
      .attr("fill", "none")
@@ -377,11 +377,11 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions
     }
   }
 
-  function showLinks(enter) {
+  function highlightLinks(enter) {
     if (enter) {
       return function(item) {
-        if (item.length > 1) {
-          //TODO: Move this link-centric one to another method, also show the ids of the endpoints
+        if (item.length > 0) {
+          //TODO: Move this action-occured-on-link one to another method, also show the ids of the endpoints
           pathToLink(item).forEach(l => l.selected = true)
         } else {
           var targetParts = item.path.split(PATH_SEPARATOR).length
@@ -458,8 +458,8 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions
        .on("click", actions.nodeClick)
        .on("mousemove", showId(label, true))
        .on("mouseleave.tip", showId(label, false))
-       .on("mouseenter", showLinks(true))
-       .on("mouseleave.link", showLinks(false))
+       .on("mouseenter", highlightLinks(true))
+       .on("mouseleave.link", highlightLinks(false))
  
   //LINKS
   arc.innerRadius(d => radius - (radius/(maxDepth+5))*d.depth)
@@ -478,7 +478,6 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions
   })
 
   var graphLinks = graph.links
-               .filter(l => l.source != l.sink)
                .map((l,i) => {
                  var link = shallowClone(l)
                  link.selected = l.selected,
@@ -493,11 +492,17 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions
     //A separate function to support the mouse-over-highlights-links behavior
     var bundle = d3.layout.bundle()
     var link = linkRoot.selectAll(".graph-link").data(bundle(graphLinks), (d,i) => i)
-    var line = d3.svg.line()
-                .interpolate("bundle")
-                .tension(.85)
-                .x(d => toCartesian(d.center).x)
-                .y(d => toCartesian(d.center).y)
+    var basicLine = d3.svg.line()
+          .interpolate("bundle")
+          .tension(.85)
+          .x(d => toCartesian(d.center).x)
+          .y(d => toCartesian(d.center).y)
+    function line(d) {
+      console.log(d)
+      var p = toCartesian(d[0].centroid.r, d[0].centroid.t)
+      if (d.length == 1) {return self_arc(p, 10, {x:0, y:0})}
+      else {return basicLine(d)}
+    }
 
     link.enter().append("path")
        .attr("class", "graph-link")
@@ -509,8 +514,8 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions
        .attr("stroke", (d, i) => graphLinks[i].selected ? "black" : "gray")
        .attr("pointer-events", "visibleStroke")
        .on("click", linkClick)
-       .on("mouseenter", showLinks(true))
-       .on("mouseleave.link", showLinks(false))
+       .on("mouseenter", highlightLinks(true))
+       .on("mouseleave.link", highlightLinks(false))
 
     link.exit().remove()
   }
@@ -647,7 +652,21 @@ function toPolar(x,y) {
   return {r: Math.sqrt(x*x+y*y), t: Math.atan2(y,x)}
 }
 
-function arc(source, target, pct_w, pct_h, r) {
+function self_arc(point, r, toward) {
+  //Makes a self-pointing loop
+  //r -- radius of the loop
+  //toward -- a second point that the loop heads toward 
+  //Based on: https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths
+  r = r ? r :10 
+  toward = toward ? toward : {x: point.x - 10, y: point.y+10}
+
+  return `M ${point.x} ${point.y}`
+         + ` l -${r} 0`
+         + ` a ${r} ${r} 0 1 0 ${r} ${r}`
+         + `Z`
+}
+
+function link_arc(source, target, pct_w, pct_h) {
   //pct_w and pct_h are used as percent offsets (defaulting to 0) 
   //"r" is the radius of a self-loop, defaulting to 10
   //Return a path between (source.x, source.y) and (target.x, target.y)
@@ -669,14 +688,7 @@ function arc(source, target, pct_w, pct_h, r) {
 
     return "M" + sx + "," + sy + "A" + dr + "," + dr +
           " 0 0,0 " + tx + "," + ty;
-  } else {
-    r = r ? r :10 
-    //Based on: https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths
-    return `M ${source.x} ${source.y}`
-           + ` l -${r} 0`
-           + ` a ${r} ${r} 0 1 0 ${r} ${r}`
-           + `Z`
-  }
+  } else {return self_arc(source)}
 }
 
 function layoutTree(layer, root, center, radius, layout) {
