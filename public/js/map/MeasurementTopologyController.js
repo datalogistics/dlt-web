@@ -31,15 +31,16 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
       var ids = links.map(l => l.id)
       var measures = UnisService.measurements.filter(m => ids.indexOf(m.id) >=0).map(m => m.selfRef)
       var metas = UnisService.metadata.filter(m => measures.indexOf(m.parameters.measurement.href) >= 0)
-      metas.forEach(showData)
+      metas = metas.filter(m => m.eventType !="ps:tools:blipp:linux:net:traceroute:hopip")
+      metas.forEach(showdata)
     }
 
-    function showData(metadata) {
-      // TODO add a way to configure which labels or event types open up in a dialog and which open in a new window
-      // Maybe give a button which can be used to toggle behavior
+    function showdata(metadata) {
+      // todo add a way to configure which labels or event types open up in a dialog and which open in a new window
+      // maybe give a button which can be used to toggle behavior
         var params = {
           id : metadata.id,
-          title : metadata.eventType,
+          title : metadata.eventtype,
           subtitle : metadata.id 
         };
         window.open('/popup/graphs?'+$.param(params),null, "width=600,height=420,resizable,scrollbars,status");
