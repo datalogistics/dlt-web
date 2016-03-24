@@ -323,7 +323,7 @@ module.exports = function(app) {
       // Return matching id children
       arr = exjson.map(function(x){            
         return {
-          "id" : x.id ,
+          "id" : cfg.exnodeParent_UsingSelfRef ? x.selfRef : x.id ,
           "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
           "isFile": x.mode == "file" ? true: false,
           "parent" : x.parent == null? "#" : x.parent,

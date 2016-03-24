@@ -45,6 +45,7 @@ var self = {
   // })(),
   // Match exnodes using name if true , else use properties.metadata.scene_id
   exnodeMatchingFromName : true,
+  exnodeParent_UsingSelfRef : false,
   // Try to login and maintain cookie for the following UNIS instances
   authArr : [],
   routeMap : {
