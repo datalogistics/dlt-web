@@ -2,57 +2,17 @@
 
 ## Dependencies
 
-### node.js (v0.10.28)
+### node.js (> v4)
 
-#### OSX
+#### OSX and linux
 
-if homebrew
+`curl -L https://git.io/n-install | bash`
 
-`$ brew install node`
+`n stable`
 
-else
+#### Windows
 
-`$ git clone git://github.com/ry/node.git`
-
-`$ cd node`
-
-`$ ./configure`
-
-`$ make`
-
-`$ make install`
-
-#### Ubuntu
-
-`$ sudo apt-get install g++ curl libssl-dev apache2-utils`
-
-`$ sudo apt-get install git-core`
-
-`$ git clone git://github.com/ry/node.git`
-
-`$ cd node`
-
-`$ ./configure`
-
-`$ make`
-
-`$ make install`
-
-#### Fedora 15
-
-`$ cd /usr/src`
-
-`$ sudo wget http://nodejs.org/dist/v0.10.28/node-v0.10.28.tar.gz`
-
-`$ sudo tar -xvzf node-v0.10.28.tar.gz`
-
-`$ cd node-v0.10.28`
-
-`$ sudo ./configure`
-
-`$ sudo make`
-
-`$ sudo make install`
+Directly download installer from https://nodejs.org/en/download/ and use https://github.com/hakobera/nvmw to manage node version
 
 ## Test Installation
 
