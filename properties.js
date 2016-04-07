@@ -4,7 +4,7 @@ _ = require('underscore');
 // var bunyan = require('bunyan');
 var self = {
   port : process.env.PORT || 42424,
-  ENABLE_HTTPS : false,
+  ENABLE_HTTPS : true,
   // Defaulting to self-signed certs 
   ssl : {
     key : './cert/server.key',
@@ -45,7 +45,7 @@ var self = {
   // })(),
   // Match exnodes using name if true , else use properties.metadata.scene_id
   exnodeMatchingFromName : true,
-  exnodeParent_UsingSelfRef : false,
+  exnodeParent_UsingSelfRef : true,
   // Try to login and maintain cookie for the following UNIS instances
   authArr : [],
   routeMap : {
