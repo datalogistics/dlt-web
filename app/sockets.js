@@ -218,18 +218,36 @@ function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
     _createWebSocket(obj,path, name, emit , isAggregate , onopencb);
   }
 }
+var DEFAULT_TIME = 1000;
+var TIME_THRESHOLD = 5000000;
+var R_TIME = DEFAULT_TIME;
+var RESTART_TIMER , RESTART_AT = 0;
 function restart_socket(args,socket, idList) {
   // Delete from socketMap
-  console.log("REstarting socket");
-  if (socketMap[args.path]) {
-    var arr = socketMap[args.path].sockets || [];
-    // Find and delete the socket from this array
-    var i = arr.indexOf(socket); // Should give the index since it is exactly the same object
-    pathIdObj.unregisterAllIds(args[1]);
-    arr.splice(i,1);
+  console.log("REstarting socket in " + R_TIME + " seconds");
+  var currTime = new Date().getTime();
+  if (RESTART_AT < currTime) {
+    if (currTime - RESTART_AT > TIME_THRESHOLD)
+      R_TIME = DEFAULT_TIME;
+    RESTART_AT = currTime + R_TIME;
+    clearTimeout(RESTART_TIMER);
+    RESTART_TIMER = setTimeout(function() {
+      if (socketMap[args.path]) {
+	var arr = socketMap[args.path].sockets || [];
+	// Find and delete the socket from this array
+	var i = arr.indexOf(socket); // Should give the index since it is exactly the same object
+	pathIdObj.unregisterAllIds(args[1]);
+	arr.splice(i,1);
+      }
+      _createWebSocket.apply(this,args);
+      if (R_TIME*2 < TIME_THRESHOLD)
+	R_TIME += R_TIME;  // exponential backoff
+    },R_TIME);
+  } else {
+    console.log ("Restarting in " + (RESTART_AT - currTime)/1000 + "seconds");
   }
-  _createWebSocket.apply(this,args);
 }
+
 function _getGenericHandler(resource, emitName,client) {
   var opt = getHttpOptions({'name': resource});
   return function(data) {
