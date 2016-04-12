@@ -50,11 +50,11 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
         'cloud_cover': usf.cloud ,
         'seasonal': usf.isSeasonal,
         'aoi_entry':'path_row',
-        'begin_path': usf.pathStart,
+        'start_path': usf.pathStart,
         'end_path': usf.pathEnd,
-        'begin_row': usf.rowStart,
+        'start_row': usf.rowStart,
         'end_row': usf.rowEnd,
-        'output_type':'unknown'
+	'format' : 'xml'
       });
     } else {
       SocketService.emit('usgs_lat_search', {

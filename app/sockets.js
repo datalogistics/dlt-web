@@ -28,12 +28,16 @@ var rMap = cfg.routeMap;
 var socketMap = {};
 var resourceMap = {};
 // A map of maps from path to client
-var pathIdObj = (function(){
+var pathIdObj = (function() {
   // Store the map of maps used to register client for each path , each id
   var pmap = {};
   // Store the map of maps from path to client Id to array of pmap leaf obj
   var clmap = {};
-  return{
+  return {
+    getAllIds : function(path) {
+      var pm = pmap[path] = pmap[path] || {};
+      return pm;
+    },
     isRegId : function(path , id) {
       var pm = pmap[path] = pmap[path] || {};
       var im = pm[id] || {};
@@ -62,6 +66,11 @@ var pathIdObj = (function(){
       clmap[path] = clmap[path] || {};
       clmap[path][clientId] = clmap[path][clientId] || [];
       clmap[path][clientId].push(im);
+    },
+    // Removes all subscribed id list - used to clear on socket error 
+    unregisterAllIds : function(path) {
+      if (pmap[path])
+	pmap[path] = {};
     },
     unregisterId : function(clientId , path,id) {
       var arr = (clmap[path]|| {})[clientId] || [];
@@ -111,86 +120,131 @@ var pathIdObj = (function(){
 })();
 
 
+function _createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
+  var proto = "ws";
+  var args = arguments;
+  var ssl_opts = {};
+  if (opt.doSSL) {
+    proto = "wss";
+    ssl_opts = {'cert': fs.readFileSync(opt.cert),
+                'key': fs.readFileSync(opt.key)};
+    ssl_opts = _.extend(ssl_opts, cfg.sslOptions);
+  }
+  var pathname = "/subscribe/"+path;
+  
+  var urlstr = url.format({'protocol': proto,
+                           'slashes' : true,
+                           'hostname': opt.host,
+                           'port'    : opt.port,
+                           'pathname': pathname});
+  
+  console.log("Creating websocket for: " + urlstr);
+  
+  try{ 
+    var socket = new WebSocket(urlstr, ssl_opts);
+  } catch(e) {
+    console.log("Unable to connect ");
+    socketMap[path] = undefined;
+  }
+  socket.on('open', function() {
+    if (onopencb)
+      onopencb();
+  });
+  // Remember all Id's used in this socket if aggregate
+  var IdList = [];
+  socket.on('message', function(data) {
+    var count = 0;
+    for (var LPPP in JSON.parse(data))
+      count++;      
+    // console.log('UNIS socket (): ', count , " for Path ",path);
+    var smap =  socketMap;
+    if (!smap[path].clients)
+      return;
+    smap[path] = smap[path] || {};
+    data.__source = name;
+    //smap[path].clients = smap[path].clients || [];
+    //console.log("Emitting to client " , smap[path].clients );
+    if(!isAggregate) {
+      smap[path].clients.forEach(function(client) {
+        client.emit(emit, data);
+      });
+    } else {
+      var dataJ = (JSON.parse(data));
+      //console.log("Number of connected clients ", smap[path].clients.length,
+      //            smap[path].clients.map(function(x){ return x.id;}));
+      smap[path].clients.filter(function(x) {
+        // Returns true if path doesn't exist
+	var flag = false;
+	for (var g in dataJ) {
+	  var id = g;
+	  var it = x[g];
+	  // console.log(x.id ,path, g);
+	  if (pathIdObj.isRegClient(x.id , path , g)) {
+	    flag = true;
+	    break;
+	  }
+	}	  
+        return flag;
+      }).forEach(function(client) {
+        client.emit(emit, data);
+      }); 
+    }
+  });
+  socket.on('close', function() {
+    console.log('UNIS: socket closed');
+  });
+  process.on('uncaughtException', function (err) {
+    console.error('Process ERROR:', err.stack);
+    // restart sockets by killing eveything and calling this func again
+    restart_socket(args,socket,IdList);
+  });
+  // save the socket handles
+  var smap = socketMap;
+  socketMap = socketMap || {};
+  socketMap[path] = socketMap[path] || {};
+  socketMap[path].sockets = socketMap[path].sockets || [];
+  socketMap[path].sockets.push(socket);
+}
+
 function createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
   for (var i = 0; i < opt.hostArr.length; i++) {
-    var proto = "ws";
-    var ssl_opts = {};
-    if (opt.doSSLArr[i]) {
-      proto = "wss";
-      ssl_opts = {'cert': fs.readFileSync(opt.certArr[i]),
-                  'key': fs.readFileSync(opt.keyArr[i])};
-      ssl_opts = _.extend(ssl_opts, cfg.sslOptions);
-    }
-    var pathname = "/subscribe/"+path;
-    
-    var urlstr = url.format({'protocol': proto,
-                             'slashes' : true,
-                             'hostname': opt.hostArr[i],
-                             'port'    : opt.portArr[i],
-                             'pathname': pathname});
-    
-    console.log("Creating websocket for: " + urlstr);
-    
-    try{ 
-      var socket = new WebSocket(urlstr, ssl_opts);
-    } catch(e) {
-      console.log("Unable to connect ");
-      socketMap[path] = undefined;
-    }
-    socket.on('open', function() {          
-      if (onopencb)
-        onopencb();
-    });
-    socket.on('message', function(data) {
-      var count = 0;
-      for (var LPPP in JSON.parse(data))
-	count++;      
-      // console.log('UNIS socket (): ', count , " for Path ",path);
-      var smap =  socketMap;
-      if (!smap[path].clients)
-	return;
-      smap[path] = smap[path] || {};
-      data.__source = name;
-      //smap[path].clients = smap[path].clients || [];
-      //console.log("Emitting to client " , smap[path].clients );
-      if(!isAggregate) {
-        smap[path].clients.forEach(function(client) {
-          client.emit(emit, data);
-        });
-      } else {
-        var dataJ = (JSON.parse(data));
-        //console.log("Number of connected clients ", smap[path].clients.length,
-	//            smap[path].clients.map(function(x){ return x.id;}));
-        smap[path].clients.filter(function(x){
-          // Returns true if path doesn't exist
-	  var flag = false;
-	  for (var g in dataJ) {
-	    var id = g;
-	    var it = x[g];
-	    // console.log(x.id ,path, g);
-	    if (pathIdObj.isRegClient(x.id , path , g)) {
-	      flag = true;
-	      break;
-	    }
-	  }	  
-          return flag;
-        }).forEach(function(client) {
-          client.emit(emit, data);
-        }); 
+    var obj = {
+      host : opt.hostArr[i],
+      port : opt.portArr[i],
+      key : opt.keyArr[i],
+      doSSL : opt.doSSLArr[i],
+      cert : opt.certArr[i]
+    };
+    _createWebSocket(obj,path, name, emit , isAggregate , onopencb);
+  }
+}
+var DEFAULT_TIME = 1000;
+var TIME_THRESHOLD = 5000000;
+var R_TIME = DEFAULT_TIME;
+var RESTART_TIMER , RESTART_AT = 0;
+function restart_socket(args,socket, idList) {
+  // Delete from socketMap
+  console.log("REstarting socket in " + R_TIME + " seconds");
+  var currTime = new Date().getTime();
+  if (RESTART_AT < currTime) {
+    if (currTime - RESTART_AT > TIME_THRESHOLD)
+      R_TIME = DEFAULT_TIME;
+    RESTART_AT = currTime + R_TIME;
+    clearTimeout(RESTART_TIMER);
+    RESTART_TIMER = setTimeout(function() {
+      if (socketMap[args.path]) {
+	var arr = socketMap[args.path].sockets || [];
+	// Find and delete the socket from this array
+	var i = arr.indexOf(socket); // Should give the index since it is exactly the same object
+	pathIdObj.unregisterAllIds(args[1]);
+	arr.splice(i,1);
       }
-    });
-    socket.on('close', function() {
-      console.log('UNIS: socket closed');
-    });
-    process.on('uncaughtException', function (err) {
-        console.error('Process ERROR:', err.stack);
-    });
-    // save the socket handles
-    var smap = socketMap;
-    socketMap = socketMap || {};
-    socketMap[path] = socketMap[path] || {};
-    socketMap[path].sockets = socketMap[path].sockets || [];
-    socketMap[path].sockets.push(socket);
+      _createWebSocket.apply(this,args);
+      if (R_TIME*2 < TIME_THRESHOLD)
+	R_TIME += R_TIME;  // exponential backoff
+    },R_TIME);
+  } else {
+    console.log ("Restarting in " + (RESTART_AT - currTime)/1000 + "seconds");
   }
 }
 
@@ -215,11 +269,12 @@ function _getGenericHandler(resource, emitName,client) {
         pathIdObj.unregisterId(client.id , path,data.id);
       } else {
         // Sockets using /subscribeAgg gets its own map
-        //console.log("Id" ,data.id);
+        // console.log("Id" ,data.id);
+	// IsRegClient
         if(!pathIdObj.isRegClient(client.id, path , data.id)) {
           if (!smap) {
             socketMap[path] = {'clients': [client]};
-            createWebSocket(opt,path, resource, emit,true,function(){
+            createWebSocket(opt,path, resource, emit,true,function() {
               smap = socketMap[path];
               smap.sockets.forEach(function (x) {
 		// only attempt if connected
@@ -254,7 +309,7 @@ function _getGenericHandler(resource, emitName,client) {
 	    //console.log("registering client: ", client.id, path, data.id);
             pathIdObj.regClient(client.id,path,data.id);
           }
-        } else {         
+        } else {
           // Avoid multi pushing for same client
           //socketMap[path].clients.push(client);
         }
