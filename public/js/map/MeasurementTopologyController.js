@@ -55,9 +55,9 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
       }
 
       var nodes = data.nodes
-                    .map(n => {return {id: n, children: []}})
+                    .map(n => {return {id: n.name, domain: n.domain, children: []}})
                     .reduce((acc, n) => {acc[n.id] = n; return acc;}, {})
-      data.ports.forEach(p => nodes[p.node].children.push({id: p.id}))
+      data.ports.forEach(p => nodes[p.node].children.push(p))
 
       var root = {
         id: "root", 

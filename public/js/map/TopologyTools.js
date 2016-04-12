@@ -498,7 +498,6 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions
           .x(d => toCartesian(d.center).x)
           .y(d => toCartesian(d.center).y)
     function line(d) {
-      console.log(d)
       var p = toCartesian(d[0].centroid.r, d[0].centroid.t)
       if (d.length == 1) {return self_arc(p, 10, {x:0, y:0})}
       else {return basicLine(d)}
