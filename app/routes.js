@@ -313,7 +313,7 @@ module.exports = function(app) {
     var arr = [];
     var options = _.extend({
       req : req , res : res ,
-      path : '/exnodes?fields=name,selfRef,parent,mode,size,created,modified'+paramString,
+      path : '/exnodes?fields=name,selfRef,parent,mode,size,created,modified&'+paramString,
       name : 'exnodes'
     },getHttpOptions({
       name : 'exnodes'
