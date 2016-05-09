@@ -9,20 +9,19 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
   else {drawWith = blackholeDraw}
   
   var group = basicSetup(svg, width, height)
-  var groupLabel = "domain"
-  var selection = []
+  var edits = {group:[], pairs:[]} 
   var graph = subsetGraph(baseGraph, paths)
 
   if (!actions) {actions = {}}
   if (!actions.nodeClick) {actions.nodeClick = clickBranch(expandNode, selectNode)}
   if (!actions.linkClick) {actions.linkClick = function(d) {console.log(d)}}
+  if (!actions.editFilter) {actions.editFilter = ""}
 
-  drawWith(graph, groupLabel, selection, group, width, height, actions)
+  drawWith(graph, groupLabel, edits, group, width, height, actions)
 
   function clickBranch(none, shift) {
     //Dispatcher for click events based on key press.  
     //Lets the events be defined separately.
-    //
     return function(d,i) {
       if (d3.event.shiftKey) {return shift(d,i)}
       return none(d,i)
@@ -31,7 +30,7 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
 
   function expandNode(d, i) {
     //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully) with ._children/.children
-    //TODO: Preserve inner selection: filter the paths sent to to subset to only those with their parent in the paths (changes the add/remove logic)
+    //TODO: Preserve inner edits: filter the paths sent to to subset to only those with their parent in the paths (changes the add/remove logic)
     //TODO: Add an alt-click to expand all?
    
     if (!d._children) {return} 
@@ -45,18 +44,24 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
       paths = newPaths
       var graph = subsetGraph(baseGraph, paths) 
       group.selectAll("*").remove()
-      drawWith(graph, groupLabel, selection, group, width, height, actions)
+      drawWith(graph, groupLabel, edits, group, width, height, actions)
   }
 
   function selectNode(d, i) {
-    //TODO: Heirarchy aware selection? For example: Select grabs all children or selected child that is collapsed is shown as semi-selected parent?
+    //TODO: Heirarchy aware edits? For example: Select grabs all children or selected child that is collapsed is shown as semi-selected parent?
+
+    // RIGHT HERE --- Need to Keep the NODE clicked, not just its KEY.  REWORK!!!
+
     var key = d.path 
-    var at = selection.indexOf(key)
-    if (at < 0) {selection.push(key)}
-    else {selection.splice(at, 1)}
+    var at = edits.group.reduce((acc,e,i) => (e.path === key ? i : acc), -1)
+
+    if (at < 0) {edits.group.push(d)}
+    else {edits.group.splice(at, 1)}
+
     var graph = subsetGraph(baseGraph, paths) 
+    actions.editProgress(edits)
     group.selectAll("*").remove()
-    drawWith(graph, groupLabel, selection, group, width, height, actions)
+    drawWith(graph, groupLabel, edits, group, width, height, actions)
   }
 }
 
@@ -201,13 +206,13 @@ function shallowClone(obj) {
 // This can be used for map overlay...I hope
 // TODO: Treat the parent as a child with a pre-set position so no actual child gets put there
 // TODO: Allow the nodes to come with pre-set positions that are preserved (i.e., to put them on a map)
-function spokeDraw(graph, groupLabel, selection,  svg, width, height, actions) {
+function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
   var maxLayer = Object.keys(layout).reduce((acc, n) => Math.max(layout[n].layer, acc), 0)
 
   var nodes = Object.keys(layout).map(k => layout[k].node)
   var colors = groupColors(groupLabel, nodes, svg, 10, 15)
-  colors.fn = selectionOverlay(groupLabel, selection, colors.fn)
+  colors.fn = selectionOverlay(groupLabel, edits.groups, colors.fn)
   nodes = colors.nodes
   
   
@@ -259,7 +264,7 @@ function spokeDraw(graph, groupLabel, selection,  svg, width, height, actions) {
         .attr("pointer-events", "none")
 
   //SELECTION LINKS
-  var selectionPoints = selection.map(s => nodes[pathToIndex(s, nodes)])
+  var selectionPoints = edit.group.map(s => nodes[pathToIndex(s, nodes)])
                                  .filter(n => n)
                                  .map(n => layout[n.path])
 
@@ -280,12 +285,12 @@ function spokeDraw(graph, groupLabel, selection,  svg, width, height, actions) {
 
 
 // ------------------------- Nested Circular Embedding -------------------------
-function circleDraw(graph, groupLabel, selection,  svg, width, height, actions) {
+function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
  
   var nodes = Object.keys(layout).map(k => layout[k].node)
   var colors = groupColors(groupLabel, nodes, svg, 10, 15)
-  colors.fn = selectionOverlay(groupLabel, selection, colors.fn)
+  colors.fn = selectionOverlay(groupLabel, edits.group, colors.fn)
   nodes = colors.nodes
 
   var node = svg.selectAll(".tree-node").data(nodes)
@@ -313,7 +318,7 @@ function circleDraw(graph, groupLabel, selection,  svg, width, height, actions) 
   tooltip(svg, "circle.tree-node")
   
   //SELECTION LINKS
-  var selectionPoints = selection.map(s => nodes[pathToIndex(s, nodes)])
+  var selectionPoints = edit.group.map(s => nodes[pathToIndex(s, nodes)])
                                  .filter(n => n)
                                  .map(n => layout[n.path])
 
@@ -362,7 +367,7 @@ function cross(list) {
   return crossed
 }
 
-function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions) {
+function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions) {
   function showId(svg, enter) {
     if (enter) {
       return function(item) {
@@ -399,6 +404,7 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions
     }
   }
 
+
   function linkClick(item) {
     //Convert the path that a click returns to the associated data item(s), then invoke the click event
     if (actions.linkClick) {actions.linkClick.call(this, pathToLink(item))}
@@ -424,13 +430,13 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions
       .value(d => d._children ? d._children.length + 1 : 1) //Children+1 in case there is a children array BUT it has no items
 
   var nodes = partition.nodes(graph.tree)
-  var colors = groupColors(groupLabel, nodes, svg, 10, 15)
-  colors.fn = selectionOverlay(groupLabel, selection, colors.fn)
+  var colors = groupColors(groupLabel, nodes, rootSvg, 10, 15)
+  colors.fn = selectionOverlay(groupLabel, edits.group, colors.fn)
   nodes = colors.nodes
 
   var maxDepth = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)
  
-  svg = svg.append("g").attr("transform", "translate(" + width / 2 + "," + height * .52 + ")")
+  var svg = rootSvg.append("g").attr("transform", "translate(" + width / 2 + "," + height * .52 + ")")
 
   var arc = d3.svg.arc()
       .startAngle(d => d.x)
@@ -443,7 +449,25 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions
                  .attr("text-anchor", "middle")
                  .attr("pointer-events", "none")
 
-  svg.insert("g","#hover-label").attr("id", "nodes").selectAll("path")
+  dragline = svg.insert("line")
+     .attr("id", "__DRAGLINE__")
+     .attr("x1", 0)
+     .attr("y1", 0)
+     .attr("x2", 0)
+     .attr("y2", 0)
+     .attr("fill-opacity", 0)
+     .attr("stroke-width", 2)
+     .attr("stroke", "blue")
+  
+  var mouseCurrentlyOver
+  function rememberTarget(enter) {
+    if (enter) {return function(item) {mouseCurrentlyOver = item}}
+    else {return function(item) {mouseCurrentlyOver = undefined}}
+  }
+
+  svg.insert("g","#hover-label")
+       .attr("id", "nodes")
+       .selectAll("path")
        .data(nodes)
      .enter().append("path")
        .attr("class", "node")
@@ -455,7 +479,8 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions
        .attr("fill", colors.fn)
        .style("fill-rule", "evenodd")
        .attr("pointer-events", "visiblePaint")
-       .on("click", actions.nodeClick)
+       .attr("depth", d=> d.path.split(":").length -1)
+       .on("click.show", actions.nodeClick)
        .on("mousemove", showId(label, true))
        .on("mouseleave.tip", showId(label, false))
        .on("mouseenter", highlightLinks(true))
@@ -519,14 +544,53 @@ function blackholeDraw(graph, groupLabel, selection, svg, width, height, actions
     link.exit().remove()
   }
 
-  //SELECTION LINKS
-  var selectionPoints = selection.map(s => nodes[pathToIndex(s, nodes)])
+  //Edit links 
+
+  //TODO: How to delete a drag-made line? 
+  var drag = d3.behavior.drag()
+        .on("drag", function(d, i) {
+          p = toCartesian(d.centroid)
+          dragline.attr("x1", p.x)
+                  .attr("y1", p.y)
+          dragline.attr("x2", d3.mouse(this)[0]-2)
+                  .attr("y2", d3.mouse(this)[1]-2)
+        })
+        .on("dragend", function(d,i) {
+          var same = function(a,b) {return a[0].path === b[0].path && a[1].path === b[1].path}
+          var containedIn = function(item, list) {
+            return list.reduce((acc, v, i) => Math.max(acc, same(v, item) ? i : -1), -1)
+          }
+          dragline.attr("x1", 0)
+                  .attr("y1", 0)
+                  .attr("x2", 0)
+                  .attr("y2", 0)
+
+          if (mouseCurrentlyOver !== undefined) {
+            var pair = [d, mouseCurrentlyOver].sort((a,b) => (a.path > b.path)) //Canonical order
+            if (pair[0].path !== pair[1].path && containedIn(pair, edits.pairs)<0) {
+              edits.pairs.push(pair)
+              actions.editProgress(edits)
+              rootSvg.selectAll("*").remove()
+              drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)
+            }
+          }
+        })
+
+   svg.select("#nodes").selectAll(".node"+actions.editFilter)
+       .call(drag)
+       .on("mouseenter.drag", rememberTarget(true))
+       .on("mouseleave.drag", rememberTarget(false))
+  
+  var selectionPoints = edits.group.map(node => node.path)
+                                 .map(p => nodes[pathToIndex(p, nodes)])
                                  .filter(n => n)
                                  .map(n => toCartesian(n.centroid))
+  var editPairs = cross(selectionPoints)
+  editPairs = editPairs.concat(edits.pairs.map(p => [toCartesian(p[0].centroid), 
+                                         toCartesian(p[1].centroid)]))
 
-  var crossed = cross(selectionPoints)
   var selectionRoot = svg.append("g").attr("id", "selection-links")
-                         .selectAll(".selection-link").data(crossed)
+                         .selectAll(".selection-link").data(editPairs)
 
   selectionRoot.enter().append("line")
     .attr("x1", d => d[0].x)
@@ -562,13 +626,13 @@ function basicSetup(svg, width, height) {
 function groupColors(groupLabel, nodes, svg, x,y) {
   //Adds a "group" field to each node
   //Returns a function that colors by group 
-  //TODO: Pass a group accessor function instead of adding it as an annotation here.
+  //TODO: Pass a group accessor function instead of adding it as an annotation here. (Thus eliminate the copy to grouplabel)
   
   function removeGray(colors) {
     return colors.filter(c => c.substring(1,3) != c.substring(3,5) || c.substring(1,3) != c.substring(5,7))
   }
 
-  nodes = nodes.map(n => {n[groupLabel] = n.path.split(PATH_SEPARATOR)[1]; return n})
+  nodes = nodes.map(n => {n[groupLabel] = n.path.split(PATH_SEPARATOR)[1]; return n}) 
   var groups = nodes.map(n => n[groupLabel])
                     .filter(d => d && d.trim().length >0)
                     .reduce((acc, d) => {acc.add(d); return acc}, new Set())
@@ -606,6 +670,8 @@ function groupColors(groupLabel, nodes, svg, x,y) {
 function selectionOverlay(groupLabel, selection, base) {
   // Modify coloring based on selection.  
   // Assumes there is a "group" and "path" attribute in the argument
+
+  selection = selection.map(node => node.path)
   return function(d) {
     var c = base(d[groupLabel])
     if (selection.indexOf(d.path) >= 0) {return d3.rgb(c).darker()}

@@ -255,11 +255,41 @@ module.exports = function(app) {
   app.get('/api/data', getGenericHandler({path : '/data', name : 'data'}));
   app.get('/api/ports', getGenericHandler({path : '/ports', name : 'ports'}));
 
-  app.get('/api/helm', function(req, res) {
+  app.post('/api/helm', function(req, res) {
     //Redirect specific requests to the helm server...
     var helm = cfg.serviceMap.helm
+    var url = "http://" + helm.host + ":" + helm.port + "/" + req.query.op
+
+
+    var msg = JSON.stringify(req.body)
+    console.log("Helm POST request sending to:", url, msg)
+
+
+
+    var options = {
+      uri: url,
+      method: "POST",
+      headers: {
+        'content-type': 'application/perfsonar+json',
+        'content-length': Buffer.byteLength(msg)
+      },
+      body: msg
+    }
+
+    var post = request(options, function(err, rsp, body){
+      if (err) {
+        console.error("ERROR in Helm POST.", err)
+      } else {
+        console.log("Helm message sent.  Response: ", body)
+      }
+    })
+  })
+
+  app.get('/api/helm', function(req, res) {
+    //Redirect specific requests to the helm server via GET...
+    var helm = cfg.serviceMap.helm
     var url = "http://" + helm.host + ":" + helm.port + "/" + req.query.path
-    console.log("Helm request sending to:", url)
+    console.log("Helm GET request sending to:", url)
     var fdata = "";
     request.get(url)
       .on('data',function(data) {
@@ -275,7 +305,7 @@ module.exports = function(app) {
           res.send(e)
         }
       })
-      .on('error',function() {res.send(e)});
+      .on('error',function(e) {res.send(e)});
     })
           
 

@@ -79,7 +79,7 @@ var self = {
     },
     dev : {
       url : "dev.incntre.iu.edu" ,
-      port : "8889",
+      port : "8890",
       key: null,
       cert: null,
       use_ssl: false
@@ -121,7 +121,7 @@ var self = {
     },
     helm : {
       host:  "dev.crest.iu.edu",
-      port: "9001",
+      port: "8080",
     }
   },
   sslOptions : {
