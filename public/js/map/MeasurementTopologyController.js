@@ -15,9 +15,7 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
                .attr("height", height)
 
   var layout = $routeParams.layout ? $routeParams.layout.toLowerCase() : ""
-  var groupLabel = "colorby"
-
-
+  var groupLabel = "node"
 
   var helmEdits = {}
   function queueForHelm(edits) {
@@ -90,7 +88,7 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
       }
 
       var nodes = data.nodes
-                    .map(n => {return {id: n.name, domain: n.domain, children: []}})
+                    .map(n => {return {id: n.name, node:n.name, domain: n.domain, children: []}})
                     .reduce((acc, n) => {acc[n.id] = n; return acc;}, {})
       data.ports.forEach(p => nodes[p.node].children.push(p))
 
@@ -102,10 +100,11 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
 
       addPaths(root, undefined, "") 
       var ports = gatherLeaves(root).reduce((acc, p) => {acc[p.id] = p; return acc;}, {})
-      var links = data.measurements.map(m => {
-        return {source: ports[m.src].path, 
-                sink: ports[m.dest].path, 
-                id: m.measurement}})
+      var links = data.measurements
+        .filter(m => m.dest && m.src)
+        .map(m => {return {source: ports[m.src].path, 
+                           sink: ports[m.dest].path, 
+                           id: m.measurement}})
 
       //TODO: Link consolidation: Same source/sink => one path with multiple measurements
       return {links: links, tree: root}

@@ -524,13 +524,23 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
           .y(d => toCartesian(d.center).y)
     function line(d) {
       var p = toCartesian(d[0].centroid.r, d[0].centroid.t)
-      if (d.length == 1) {return self_arc(p, 10, {x:0, y:0})}
+      if (d.length == 1) {return self_arc(p, 10)}
       else {return basicLine(d)}
+    }
+
+    function rotate(d) {
+     if (d.length == 1) {
+       var pt = toCartesian(d[0].centroid)
+       angle = d[0].x*(180/Math.PI)
+       return `rotate(${angle},${pt.x},${pt.y})`
+     }
+     return ""
     }
 
     link.enter().append("path")
        .attr("class", "graph-link")
        .attr("d", line)
+       .attr("transform", rotate)
 
     link 
        .attr("fill-opacity", "0")
@@ -632,7 +642,6 @@ function groupColors(groupLabel, nodes, svg, x,y) {
     return colors.filter(c => c.substring(1,3) != c.substring(3,5) || c.substring(1,3) != c.substring(5,7))
   }
 
-  nodes = nodes.map(n => {n[groupLabel] = n.path.split(PATH_SEPARATOR)[1]; return n}) 
   var groups = nodes.map(n => n[groupLabel])
                     .filter(d => d && d.trim().length >0)
                     .reduce((acc, d) => {acc.add(d); return acc}, new Set())
@@ -717,14 +726,13 @@ function toPolar(x,y) {
   return {r: Math.sqrt(x*x+y*y), t: Math.atan2(y,x)}
 }
 
-function self_arc(point, r, toward) {
+function self_arc(point, r) {
   //Makes a self-pointing loop
   //r -- radius of the loop
-  //toward -- a second point that the loop heads toward 
   //Based on: https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths
   r = r ? r :10 
-  toward = toward ? toward : {x: point.x - 10, y: point.y+10}
 
+  var angle =0
   return `M ${point.x} ${point.y}`
          + ` l -${r} 0`
          + ` a ${r} ${r} 0 1 0 ${r} ${r}`
@@ -751,8 +759,7 @@ function link_arc(source, target, pct_w, pct_h) {
         dr = Math.sqrt(dx * dx + dy * dy);
     
 
-    return "M" + sx + "," + sy + "A" + dr + "," + dr +
-          " 0 0,0 " + tx + "," + ty;
+    return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,0 " + tx + "," + ty
   } else {return self_arc(source)}
 }
 
@@ -823,7 +830,7 @@ function domainsGraph(UnisService, groupFilter, loadLinks) {
 
   var usedNodes = domains.reduce((acc, domain) => acc.concat(domain.children), [])
   var root = {id: "root", children: domains}
-  addPaths(root, "")
+  addPaths(root, undefined, "")
 
   var links
   if (loadLinks) {
@@ -889,9 +896,15 @@ function domainsGraph(UnisService, groupFilter, loadLinks) {
   function cannonicalURL(url) {
     return decodeURIComponent(url.replace(/\+/g, ' '))}
 
-  function addPaths(root, prefix) {
+  function addPaths(root, top, prefix) {
     root["path"] = prefix + root.id 
-    if (root.children) {root.children.forEach(child => addPaths(child, root["path"] + PATH_SEPARATOR))}
+    root["__top__"] = top 
+    if (root.children) {
+      root.children.forEach(child => {
+        top = root["id"] === "root" ? child["id"] : top
+        addPaths(child, top, root["path"] + PATH_SEPARATOR)
+      })
+    }
   }
 
   function ensureURNNode(urn, root) {

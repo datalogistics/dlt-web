@@ -16,7 +16,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   var baseGraph = setOrder(domainsGraph(UnisService, groupFilter, true))
   //baseGraph = fakeLinks(baseGraph, 3)
 
-  draw(baseGraph, "domain", paths, svg, layout, width, height)
+  draw(baseGraph, "__top__", paths, svg, layout, width, height)
 
   var group = basicSetup(svg, width, height)
   var selection = []
