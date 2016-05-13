@@ -397,8 +397,9 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
                                                edits.insert.length)
       if (insertCancel < edits.insert.length) {edits.insert.splice(insertCancel, 1)}
       drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)
+      actions.editProgress(edits)
     } else {
-      console.log("TODO: Edit measurement in side panel.  Add a delete action to remove the old and an insert pair with the new config")
+      actions.linkClick.call(link, d3.event, edits)
     }
   }
 
@@ -409,10 +410,11 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
 
         if (cancelDelete < edits.delete.length) {edits.delete.splice(cancelDelete, 1)}
         else {edits.delete.push(link)}
+        actions.editProgress(edits)
       })
       drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)
     } else {
-      console.log("TODO: Edit measurement in side panel.  Add a delete action to remove the old and an insert pair with the new config")
+      actions.linkClick.call(links, d3.event, edits)
     }
   }
 

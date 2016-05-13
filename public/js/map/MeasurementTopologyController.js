@@ -35,11 +35,12 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
               'address': node.ipv4}
     }
 
-    var pairs = helmEdits["pairs"].map(pair=>pair.map(toHelm))
-    var mesh = helmEdits["group"].map(toHelm)
-    
-    console.log("Submitting mesh to helm", mesh)
-    $http.post("/api/helm?op=fullmesh", mesh)
+    var inserts = helmEdits["insert"].map(pair=>pair.map(toHelm))
+    var deletes = helmEdits["delete"].map(e => e.id)
+   
+    var msg = {insert: inserts, delete: deletes}
+    console.log("Submitting edits to helm", msg)
+    //$http.post("/api/helm?op=edits", msg)
   }
 
   var submit = d3.select("#topologyMap").append("button")
@@ -58,18 +59,8 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
     
     draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
 
-
     function editMeasurement(link, event, edits) {
-      if (event.altKey) {
-        var idx = edits.delete.reduce((acc, v, i) => (v[0] == link[0] && v[1] == link[1]) ? Math.min(i, acc) : acc, edits.delete.length)
-        if (idx < edits.delete.length) {
-          edits.delete.splice(idx, 1)
-        } else {
-          edits.delete.push(link)
-        }
-      } else {
-         console.log("TODO: Edit measurement in side panel.  Add a delete action to remove the old and an insert pair with the new config")
-      }
+      console.log("TODO: Show edit panel and record details in the edit model.")
     }
 
     function measurementsGraph(data) {
