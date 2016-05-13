@@ -21,20 +21,25 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
 
   function expandNode(d, i) {
     //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully) with ._children/.children
-    //TODO: Preserve inner edits: filter the paths sent to to subset to only those with their parent in the paths (changes the add/remove logic)
     //TODO: Add an alt-click to expand all?
    
     if (!d._children) {return} 
     var targetParts = d.path.split(PATH_SEPARATOR)
     var newPaths = paths.filter(path => !(path == d.path
       || (pathMatch(path, d.path) == targetParts.length)))
+      
       if (newPaths.length == paths.length) {
         newPaths = paths
         newPaths.push(d.path)
       }
+
+      //Prevents collapse that would hide an edit end-point
+      insertPaths = edits.insert.map(e => [e[0].path, e[1].path])
+      deletePaths = edits.delete.map(e => [e.source.path, e.target.path])
+      editPaths = Array.prototype.concat.apply([], insertPaths.concat(deletePaths))
+
       paths = newPaths
-      var graph = subsetGraph(baseGraph, paths) 
-      group.selectAll("*").remove()
+      var graph = subsetGraph(baseGraph, paths.concat(editPaths))
       drawWith(graph, groupLabel, edits, group, width, height, actions)
   }
 }
@@ -183,6 +188,8 @@ function shallowClone(obj) {
 function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
   var maxLayer = Object.keys(layout).reduce((acc, n) => Math.max(layout[n].layer, acc), 0)
+  
+  svg.selectAll("*").remove()
 
   var nodes = Object.keys(layout).map(k => layout[k].node)
   var colors = groupColors(groupLabel, nodes, svg, 10, 15)
@@ -583,7 +590,6 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
             if (pair[0].path !== pair[1].path && containedIn(pair, edits.insert)<0) {
               edits.insert.push(pair)
               actions.editProgress(edits)
-              rootSvg.selectAll("*").remove()
               drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)
             }
           }
