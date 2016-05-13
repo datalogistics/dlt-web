@@ -34,16 +34,14 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
       }
 
       //Prevents collapse that would hide an edit end-point
-      insertPaths = edits.insert.map(e => [e[0].path, e[1].path])
       deletePaths = edits.delete.map(e => [e.source.path, e.target.path])
-      editPaths = Array.prototype.concat.apply([], insertPaths.concat(deletePaths))
+      editPaths = Array.prototype.concat.apply([], deletePaths.concat(edits.insert))
 
       paths = newPaths
       var graph = subsetGraph(baseGraph, paths.concat(editPaths))
       drawWith(graph, groupLabel, edits, group, width, height, actions)
   }
 }
-
 
 function setOrder(graph) {
   //Set an order for children
@@ -399,7 +397,7 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
   function editNewLink(link) {
     if (d3.event.altKey) {
       var insertCancel = edits.insert.reduce((acc, v, i) => 
-                                             (v[0].id == link[0].id && v[1].id == link[1].id) 
+                                             (v[0] == link[0] && v[1] == link[1]) 
                                                ? Math.min(i, acc) : acc, 
                                                edits.insert.length)
       if (insertCancel < edits.insert.length) {edits.insert.splice(insertCancel, 1)}
@@ -565,8 +563,6 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
   }
 
   //Edit links 
-
-  //TODO: How to delete a drag-made line? 
   var drag = d3.behavior.drag()
         .on("drag", function(d, i) {
           p = toCartesian(d.centroid)
@@ -576,7 +572,7 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
                   .attr("y2", d3.mouse(this)[1]-2)
         })
         .on("dragend", function(d,i) {
-          var same = function(a,b) {return a[0].path === b[0].path && a[1].path === b[1].path}
+          var same = function(a,b) {return a[0] === b[0] && a[1] === b[1]}
           var containedIn = function(item, list) {
             return list.reduce((acc, v, i) => Math.max(acc, same(v, item) ? i : -1), -1)
           }
@@ -586,8 +582,9 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
                   .attr("y2", 0)
 
           if (mouseCurrentlyOver !== undefined) {
-            var pair = [d, mouseCurrentlyOver].sort((a,b) => (a.path > b.path)) //Canonical order
-            if (pair[0].path !== pair[1].path && containedIn(pair, edits.insert)<0) {
+            var pair = [d.path, mouseCurrentlyOver.path].sort() //Canonical order
+            if (pair[0] !== pair[1] && containedIn(pair, edits.insert)<0) {
+              console.log(pair)
               edits.insert.push(pair)
               actions.editProgress(edits)
               drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)
@@ -602,8 +599,9 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
  
 
   var  linkEndpoints = function(link) {
-    var p1 = toCartesian(link[0].centroid)
-    var p2 = toCartesian(link[1].centroid)
+
+    var p1 = toCartesian(nodes[pathToIndex(link[0], nodes)].centroid)
+    var p2 = toCartesian(nodes[pathToIndex(link[1], nodes)].centroid)
     return {"x1": p1.x, "y1": p1.y, "x2":p2.x, "y2":p2.y}
   }
 
@@ -620,8 +618,6 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
     .attr("stroke-width", 3)
     .attr("stroke", "green")
     .on("click", d => editNewLink(d))
-    //.on("mouseenter", highlightLinks(true))
-    //.on("mouseleave.link", highlightLinks(false))
 }
 
 
