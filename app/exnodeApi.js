@@ -103,10 +103,11 @@ function getExnodeData(idlist,hdetails) {
     str = idlist.join(",");
   }
   var data = "";
+  var filter = "&fields=id,name,selfRef,metadata.scene,metadata.productCode";
   http.get({
     host : hdetails.url,
     port : hdetails.port,
-    path : '/exnodes?'+ (fromName? "name=reg=" : "properties.metadata.scene_id=")+str
+    path : '/exnodes?'+ (fromName? "name=reg=" : "properties.metadata.scene_id=")+str+filter
   }, function(http_res) {
     http_res.on('data', function (chunk) {
       data += chunk;
