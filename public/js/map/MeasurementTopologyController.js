@@ -19,7 +19,7 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
 
   var helmEdits = {}
   function queueForHelm(edits) {
-    if (edits.group.length > 0 || edits.pairs.length > 0) {
+    if (edits.delete.length > 0 || edits.insert.length > 0) {
       document.getElementById("HelmSubmit").disabled=false
     } else {
       document.getElementById("HelmSubmit").disabled=true
@@ -52,32 +52,25 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
     //TODO: Add error reporting...
     var data = rsp.data
     var baseGraph = setOrder(measurementsGraph(data))
-    var actions = {linkClick: showMeasurement,
+    var actions = {linkClick: editMeasurement,
                    editFilter: "[depth='2']",
                    editProgress: queueForHelm}
     
     draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
 
 
-    function showMeasurement(links) {
-      var ids = links.map(l => l.id)
-      var measures = UnisService.measurements.filter(m => ids.indexOf(m.id) >=0).map(m => m.selfRef)
-      var metas = UnisService.metadata.filter(m => measures.indexOf(m.parameters.measurement.href) >= 0)
-      metas = metas.filter(m => m.eventType !="ps:tools:blipp:linux:net:traceroute:hopip")
-      metas.forEach(showGraphs)
+    function editMeasurement(link, event, edits) {
+      if (event.altKey) {
+        var idx = edits.delete.reduce((acc, v, i) => (v[0] == link[0] && v[1] == link[1]) ? Math.min(i, acc) : acc, edits.delete.length)
+        if (idx < edits.delete.length) {
+          edits.delete.splice(idx, 1)
+        } else {
+          edits.delete.push(link)
+        }
+      } else {
+         console.log("TODO: Edit measurement in side panel.  Add a delete action to remove the old and an insert pair with the new config")
+      }
     }
-
-    function showGraphs(metadata) {
-      //TODO: add a way to configure which labels or event types open up in a dialog and which open in a new window
-      //maybe give a button which can be used to toggle behavior
-        var params = {
-          id : metadata.id,
-          title : metadata.eventtype,
-          subtitle : metadata.id 
-        };
-        window.open('/popup/graphs?'+$.param(params),null, "width=600,height=420,resizable,scrollbars,status");
-    };
-
 
     function measurementsGraph(data) {
       //Convert the helm response to the topology graph format

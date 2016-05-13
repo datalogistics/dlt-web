@@ -9,24 +9,15 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
   else {drawWith = blackholeDraw}
   
   var group = basicSetup(svg, width, height)
-  var edits = {group:[], pairs:[]} 
+  var edits = {insert:[], "delete":[]} 
   var graph = subsetGraph(baseGraph, paths)
 
   if (!actions) {actions = {}}
-  if (!actions.nodeClick) {actions.nodeClick = clickBranch(expandNode, selectNode)}
-  if (!actions.linkClick) {actions.linkClick = function(d) {console.log(d)}}
+  if (!actions.nodeClick) {actions.nodeClick = expandNode}
+  if (!actions.linkClick) {actions.linkClick = function(d) {}}
   if (!actions.editFilter) {actions.editFilter = ""}
 
   drawWith(graph, groupLabel, edits, group, width, height, actions)
-
-  function clickBranch(none, shift) {
-    //Dispatcher for click events based on key press.  
-    //Lets the events be defined separately.
-    return function(d,i) {
-      if (d3.event.shiftKey) {return shift(d,i)}
-      return none(d,i)
-    }
-  }
 
   function expandNode(d, i) {
     //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully) with ._children/.children
@@ -45,23 +36,6 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
       var graph = subsetGraph(baseGraph, paths) 
       group.selectAll("*").remove()
       drawWith(graph, groupLabel, edits, group, width, height, actions)
-  }
-
-  function selectNode(d, i) {
-    //TODO: Heirarchy aware edits? For example: Select grabs all children or selected child that is collapsed is shown as semi-selected parent?
-
-    // RIGHT HERE --- Need to Keep the NODE clicked, not just its KEY.  REWORK!!!
-
-    var key = d.path 
-    var at = edits.group.reduce((acc,e,i) => (e.path === key ? i : acc), -1)
-
-    if (at < 0) {edits.group.push(d)}
-    else {edits.group.splice(at, 1)}
-
-    var graph = subsetGraph(baseGraph, paths) 
-    actions.editProgress(edits)
-    group.selectAll("*").remove()
-    drawWith(graph, groupLabel, edits, group, width, height, actions)
   }
 }
 
@@ -340,8 +314,6 @@ function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
 
 // ------------------ Black Hole --------------
 // Like a sunburst, but inward instead of outward
-
-
 function circularMean(items) {
   //Mid-point for things arranged around a circle
   //https://en.wikipedia.org/wiki/Mean_of_circular_quantities
@@ -405,20 +377,43 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
   }
 
 
-  function linkClick(item) {
-    //Convert the path that a click returns to the associated data item(s), then invoke the click event
-    if (actions.linkClick) {actions.linkClick.call(this, pathToLink(item))}
-  }
-
-
   function pathToLink(path) {
-    //Given a 'bundle' produced path, return the relevant link object
-    var target = graphLinks.filter(
+    //Given a 'bundle' produced path, return the relevant link object(s)
+    var targets = graphLinks.filter(
       l => (l.source.path == path[0].path && l.target.path == path[path.length-1].path)
             || (l.target.path == path[0].path && l.source.path == path[path.length-1].path))
 
-    if (target.length ==0) {console.error("Could not find link for", item)}
-    return target
+    if (targets.length ==0) {console.error("Could not find link for", item)}
+
+    return targets 
+  }
+ 
+
+  function editNewLink(link) {
+    if (d3.event.altKey) {
+      var insertCancel = edits.insert.reduce((acc, v, i) => 
+                                             (v[0].id == link[0].id && v[1].id == link[1].id) 
+                                               ? Math.min(i, acc) : acc, 
+                                               edits.insert.length)
+      if (insertCancel < edits.insert.length) {edits.insert.splice(insertCancel, 1)}
+      drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)
+    } else {
+      console.log("TODO: Edit measurement in side panel.  Add a delete action to remove the old and an insert pair with the new config")
+    }
+  }
+
+  function editExistingLink(links) {
+    if (d3.event.altKey) {
+      links.forEach(link => {
+        var cancelDelete = edits.delete.reduce((acc, v, i) => (v.id == link.id) ? Math.min(i, acc) : acc, links.length)
+
+        if (cancelDelete < edits.delete.length) {edits.delete.splice(cancelDelete, 1)}
+        else {edits.delete.push(link)}
+      })
+      drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)
+    } else {
+      console.log("TODO: Edit measurement in side panel.  Add a delete action to remove the old and an insert pair with the new config")
+    }
   }
 
   var radius = Math.min(width, height) / 2
@@ -431,11 +426,11 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
 
   var nodes = partition.nodes(graph.tree)
   var colors = groupColors(groupLabel, nodes, rootSvg, 10, 15)
-  colors.fn = selectionOverlay(groupLabel, edits.group, colors.fn)
   nodes = colors.nodes
 
   var maxDepth = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)
  
+  rootSvg.selectAll("*").remove()
   var svg = rootSvg.append("g").attr("transform", "translate(" + width / 2 + "," + height * .52 + ")")
 
   var arc = d3.svg.arc()
@@ -512,6 +507,7 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
 
   var linkRoot = svg.append("g").attr("id", "links")
   drawLinks()
+  
 
   function drawLinks() {
     //A separate function to support the mouse-over-highlights-links behavior
@@ -522,6 +518,7 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
           .tension(.85)
           .x(d => toCartesian(d.center).x)
           .y(d => toCartesian(d.center).y)
+
     function line(d) {
       var p = toCartesian(d[0].centroid.r, d[0].centroid.t)
       if (d.length == 1) {return self_arc(p, 10)}
@@ -537,6 +534,10 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
      return ""
     }
 
+    function markedForDelete(link) {
+      return edits.delete.filter(e => e.id == link.id).length > 0
+    }
+
     link.enter().append("path")
        .attr("class", "graph-link")
        .attr("d", line)
@@ -545,9 +546,9 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
     link 
        .attr("fill-opacity", "0")
        .attr("stroke-width", (d,i) => graphLinks[i].selected ? 3 : 2)
-       .attr("stroke", (d, i) => graphLinks[i].selected ? "black" : "gray")
+       .attr("stroke", (d,i) => markedForDelete(graphLinks[i]) ? "red" : "gray")
        .attr("pointer-events", "visibleStroke")
-       .on("click", linkClick)
+       .on("click", d => editExistingLink(pathToLink(d)))
        .on("mouseenter", highlightLinks(true))
        .on("mouseleave.link", highlightLinks(false))
 
@@ -577,8 +578,8 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
 
           if (mouseCurrentlyOver !== undefined) {
             var pair = [d, mouseCurrentlyOver].sort((a,b) => (a.path > b.path)) //Canonical order
-            if (pair[0].path !== pair[1].path && containedIn(pair, edits.pairs)<0) {
-              edits.pairs.push(pair)
+            if (pair[0].path !== pair[1].path && containedIn(pair, edits.insert)<0) {
+              edits.insert.push(pair)
               actions.editProgress(edits)
               rootSvg.selectAll("*").remove()
               drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)
@@ -590,26 +591,29 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
        .call(drag)
        .on("mouseenter.drag", rememberTarget(true))
        .on("mouseleave.drag", rememberTarget(false))
-  
-  var selectionPoints = edits.group.map(node => node.path)
-                                 .map(p => nodes[pathToIndex(p, nodes)])
-                                 .filter(n => n)
-                                 .map(n => toCartesian(n.centroid))
-  var editPairs = cross(selectionPoints)
-  editPairs = editPairs.concat(edits.pairs.map(p => [toCartesian(p[0].centroid), 
-                                         toCartesian(p[1].centroid)]))
+ 
+
+  var  linkEndpoints = function(link) {
+    var p1 = toCartesian(link[0].centroid)
+    var p2 = toCartesian(link[1].centroid)
+    return {"x1": p1.x, "y1": p1.y, "x2":p2.x, "y2":p2.y}
+  }
 
   var selectionRoot = svg.append("g").attr("id", "selection-links")
-                         .selectAll(".selection-link").data(editPairs)
+                         .selectAll(".selection-link").data(edits.insert)
 
+  //ADD CLICK FUNCTIONS TO DRAWN LINKS (possibly the same as existing links)
   selectionRoot.enter().append("line")
-    .attr("x1", d => d[0].x)
-    .attr("y1", d => d[0].y)
-    .attr("x2", d => d[1].x)
-    .attr("y2", d => d[1].y)
+    .attr("x1", d => linkEndpoints(d).x1)
+    .attr("y1", d => linkEndpoints(d).y1)
+    .attr("x2", d => linkEndpoints(d).x2)
+    .attr("y2", d => linkEndpoints(d).y2)
     .attr("fill-opacity", 0)
-    .attr("stroke-width", 2)
+    .attr("stroke-width", 3)
     .attr("stroke", "green")
+    .on("click", d => editNewLink(d))
+    //.on("mouseenter", highlightLinks(true))
+    //.on("mouseleave.link", highlightLinks(false))
 }
 
 
@@ -632,12 +636,17 @@ function basicSetup(svg, width, height) {
   return group 
 }
 
-
 function groupColors(groupLabel, nodes, svg, x,y) {
   //Adds a "group" field to each node
   //Returns a function that colors by group 
   //TODO: Pass a group accessor function instead of adding it as an annotation here. (Thus eliminate the copy to grouplabel)
-  
+
+  function entryDict(val) {
+    var d = {}
+    d[groupLabel] = val
+    return d
+  } 
+
   function removeGray(colors) {
     return colors.filter(c => c.substring(1,3) != c.substring(3,5) || c.substring(1,3) != c.substring(5,7))
   }
@@ -651,6 +660,7 @@ function groupColors(groupLabel, nodes, svg, x,y) {
   var base = d3.scale.category10().domain(groups)
   base.range(removeGray(base.range()))
   var fn = function(v) {
+    var v = v[groupLabel]
     if (!v || v.trim() == "" || v.trim() == "other") {return "gray"}
     return base(v.trim())
   }
@@ -659,7 +669,7 @@ function groupColors(groupLabel, nodes, svg, x,y) {
     var legendRoot = svg.append("g")
                     .attr("class", "legend")
                     .attr("transform", "translate(" + x + "," + y + ")")
-    legend = legendRoot.selectAll(".circle").data(groups)
+    legend = legendRoot.selectAll(".circle").data(groups.map(entryDict))
     legend.enter().append("circle")
           .attr("class", "legend-item")
           .attr("r", 8)
@@ -670,7 +680,7 @@ function groupColors(groupLabel, nodes, svg, x,y) {
           .attr("class", "legend-label")
           .attr("x", 10)
           .attr("y", (d,i) => i*25+5)
-          .text(d => d)
+          .text(d => d[groupLabel])
   }
 
   return {fn: fn, nodes: nodes, legend: legendRoot}
