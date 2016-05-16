@@ -430,14 +430,13 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
       .size([2 * Math.PI, radius])
       //.value(d => d.links ? d.links : 1)
       .value(d => d._children ? d._children.length + 1 : 1) //Children+1 in case there is a children array BUT it has no items
-
+  
+  rootSvg.selectAll("*").remove()
   var nodes = partition.nodes(graph.tree)
   var colors = groupColors(groupLabel, nodes, rootSvg, 10, 15)
-  nodes = colors.nodes
 
   var maxDepth = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)
  
-  rootSvg.selectAll("*").remove()
   var svg = rootSvg.append("g").attr("transform", "translate(" + width / 2 + "," + height * .52 + ")")
 
   var arc = d3.svg.arc()
