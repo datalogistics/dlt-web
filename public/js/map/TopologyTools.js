@@ -203,6 +203,7 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
     .attr("stroke", "black")
     .attr("stroke-width", 2)
     .attr("r",  d => 10)//+Math.max(0, 2-layout[d.path].layer)*5)
+    .attr("depth", d=> d.path.split(":").length -1)
     .on("click", actions.nodeClick)
     
 
@@ -211,7 +212,7 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
   graphLink.enter().append("path")
      .attr("class", "graph-link")
      .attr("d", d => link_arc(layout[d.source], layout[d.sink]))
-     .attr("stroke", "black")
+     .attr("stroke", d => markedForDelete(d,edits) ? "red" : "black")
      .attr("stroke-width", 4)
      .attr("fill", "none")
      .attr("pointer-events", "visibleStroke")
@@ -239,6 +240,11 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
         .attr("y2", d => layout[d[1]].y)
         .attr("pointer-events", "none")
 
+
+  var redraw = function() {drawWith(graph, groupLabel, edits, svg, width, height, actions)}
+  enableEditing(svg, nodes, graph.links, actions, edits, redraw, 
+                undefined, d=>layout[d.path])
+
   return map
 }
 
@@ -258,6 +264,7 @@ function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
     .attr("cy", d => layout[d.path].y)
     .attr("name", d => d.id)
     .attr("path" , d=> d.path)
+    .attr("depth", d=> d.path.split(":").length -1)
     .attr("fill", colors.fn)
     .attr("stroke", "black")
     .attr("stroke-width", 1)
@@ -269,11 +276,16 @@ function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
      .attr("class", "graph-link")
      .attr("d", d => link_arc(layout[d.source], layout[d.sink]))
      .attr("stroke-width", 2)
-     .attr("stroke", "black")
+     .attr("stroke", d => markedForDelete(d,edits) ? "red" : "black")
      .attr("fill", "none")
      .attr("pointer-events", "visibleStroke")
 
   tooltip(svg, "circle.tree-node")
+
+  var redraw = function() {drawWith(graph, groupLabel, edits, svg, width, height, actions)}
+  enableEditing(svg, nodes, graph.links, actions, edits, redraw, 
+                undefined, d=>layout[d.path])
+
   return map
 }
   
@@ -380,22 +392,12 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
                  .attr("text-anchor", "middle")
                  .attr("pointer-events", "none")
 
-  dragline = svg.insert("line")
-     .attr("id", "__DRAGLINE__")
-     .attr("x1", 0)
-     .attr("y1", 0)
-     .attr("x2", 0)
-     .attr("y2", 0)
-     .attr("fill-opacity", 0)
-     .attr("stroke-width", 2)
-     .attr("stroke", "blue")
-  
   svg.insert("g","#hover-label")
        .attr("id", "nodes")
        .selectAll("path")
        .data(nodes)
      .enter().append("path")
-       .attr("class", "node")
+       .attr("class", "tree-node")
        .attr("name", d => d.id)
        .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
        .attr("path" , d=> d.path)
@@ -462,11 +464,7 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
      }
      return ""
     }
-
-    function markedForDelete(link) {
-      return edits.delete.filter(e => e.id == link.id).length > 0
-    }
-
+    
     link.enter().append("path")
        .attr("class", "graph-link")
        .attr("d", line)
@@ -475,7 +473,7 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
     link 
        .attr("fill-opacity", "0")
        .attr("stroke-width", (d,i) => graphLinks[i].selected ? 3 : 2)
-       .attr("stroke", (d,i) => markedForDelete(graphLinks[i]) ? "red" : "gray")
+       .attr("stroke", (d,i) => markedForDelete(graphLinks[i], edits) ? "red" : "gray")
        .attr("pointer-events", "visibleStroke")
        .on("mouseenter", highlightLinks(true))
        .on("mouseleave.link", highlightLinks(false))
@@ -484,22 +482,30 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
   }
 
   var redraw = function() {drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)}
-  enableEditing(svg, nodes, links, actions, edits, redraw, pathToLink)
+  enableEditing(svg, nodes, links, actions, edits, redraw, 
+                pathToLink, d => toCartesian(d.centroid))
 }
 
 
 // -------------------  Editing Utilities ------------
-function enableEditing(svg, nodes, links, actions, edits, redraw, dataToLink) {
+function markedForDelete(link, edits) {
+  return edits.delete.filter(e => e.id == link.id).length > 0
+}
+
+function enableEditing(svg, nodes, links, actions, edits, redraw, dataToLink, dataToLayout) {
   //Add editing to the nodes, links and actions tools
  
   if (dataToLink === undefined) {dataToLink = d => d}
+  if (dataToLayout == undefined) {dataToLayout = d => d}
+
+  function indexOf(item, list, comp) {
+    return list.reduce((acc, v, i) => comp(item, v) ? Math.min(i, acc) : acc, list.length)
+  }
 
   function editNewLink(link) {
     if (d3.event.altKey) {
-      var insertCancel = edits.insert.reduce((acc, v, i) => 
-                                             (v[0] == link[0] && v[1] == link[1]) 
-                                               ? Math.min(i, acc) : acc, 
-                                               edits.insert.length)
+      var insertCancel = indexOf(link, edits.insert,
+                                 (a,b) => a[0] === b[0] && a[1] === b[1])
       if (insertCancel < edits.insert.length) {edits.insert.splice(insertCancel, 1)}
       actions.editProgress(edits)
       redraw()
@@ -510,24 +516,42 @@ function enableEditing(svg, nodes, links, actions, edits, redraw, dataToLink) {
 
   function editExistingLink(links) {
     if (d3.event.altKey) {
-      links.forEach(link => {
-        var cancelDelete = edits.delete.reduce((acc, v, i) => (v.id == link.id) ? Math.min(i, acc) : acc, links.length)
-
+      if (links.id === undefined) {
+        //If the action hits more than one item
+        links.forEach(link => {
+          var cancelDelete = indexOf(link, edits.delete, (a,b) => (a.id === b.id))
+          if (cancelDelete < edits.delete.length) {edits.delete.splice(cancelDelete, 1)}
+          else {edits.delete.push(link)}
+          actions.editProgress(edits)
+        })
+      } else {
+        var link = links
+        var cancelDelete = indexOf(link, edits.delete, (a,b) => (a.id === b.id))
         if (cancelDelete < edits.delete.length) {edits.delete.splice(cancelDelete, 1)}
         else {edits.delete.push(link)}
         actions.editProgress(edits)
-      })
+      }
       redraw()
     } else {
       actions.linkClick.call(links, d3.event, edits)
     }
   }
-
+  
+  dragline = svg.insert("line")
+     .attr("id", "__DRAGLINE__")
+     .attr("x1", 0)
+     .attr("y1", 0)
+     .attr("x2", 0)
+     .attr("y2", 0)
+     .attr("fill-opacity", 0)
+     .attr("stroke-width", 2)
+     .attr("stroke", "blue")
+  
   svg.selectAll(".graph-link").on("click", d => editExistingLink(dataToLink(d)))
 
   var drag = d3.behavior.drag()
         .on("drag", function(d, i) {
-          p = toCartesian(d.centroid)
+          p = dataToLayout(d)
           dragline.attr("x1", p.x)
                   .attr("y1", p.y)
           dragline.attr("x2", d3.mouse(this)[0]-2)
@@ -559,15 +583,15 @@ function enableEditing(svg, nodes, links, actions, edits, redraw, dataToLink) {
     else {return function(item) {mouseCurrentlyOver = undefined}}
   }
 
-  svg.select("#nodes").selectAll(".node"+actions.editFilter)
+  svg.selectAll(".tree-node"+actions.editFilter)
        .call(drag)
        .on("mouseenter.drag", rememberTarget(true))
        .on("mouseleave.drag", rememberTarget(false))
  
 
   var  linkEndpoints = function(link) {
-    var p1 = toCartesian(nodes[pathToIndex(link[0], nodes)].centroid)
-    var p2 = toCartesian(nodes[pathToIndex(link[1], nodes)].centroid)
+    var p1 = dataToLayout(nodes[pathToIndex(link[0], nodes)])
+    var p2 = dataToLayout(nodes[pathToIndex(link[1], nodes)])
     return {"x1": p1.x, "y1": p1.y, "x2":p2.x, "y2":p2.y}
   }
 
