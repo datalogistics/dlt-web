@@ -191,9 +191,6 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
 
   var nodes = Object.keys(layout).map(k => layout[k].node)
   var colors = groupColors(groupLabel, nodes, svg, 10, 15)
-  colors.fn = selectionOverlay(groupLabel, edits.groups, colors.fn)
-  nodes = colors.nodes
-  
   
   var node = svg.selectAll(".tree-node").data(nodes)
   node.enter().append("circle")
@@ -242,35 +239,17 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
         .attr("y2", d => layout[d[1]].y)
         .attr("pointer-events", "none")
 
-  //SELECTION LINKS
-  var selectionPoints = edit.group.map(s => nodes[pathToIndex(s, nodes)])
-                                 .filter(n => n)
-                                 .map(n => layout[n.path])
-
-  var crossed = cross(selectionPoints)
-  var selectionRoot = svg.append("g").attr("id", "selection-links")
-                         .selectAll(".selection-link").data(crossed)
-
-  selectionRoot.enter().append("line")
-    .attr("x1", d => d[0].x)
-    .attr("y1", d => d[0].y)
-    .attr("x2", d => d[1].x)
-    .attr("y2", d => d[1].y)
-    .attr("fill-opacity", 0)
-    .attr("stroke-width", 2)
-    .attr("stroke", "gray")
   return map
 }
 
 
 // ------------------------- Nested Circular Embedding -------------------------
 function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
+  svg.selectAll("*").remove()
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
  
   var nodes = Object.keys(layout).map(k => layout[k].node)
   var colors = groupColors(groupLabel, nodes, svg, 10, 15)
-  colors.fn = selectionOverlay(groupLabel, edits.group, colors.fn)
-  nodes = colors.nodes
 
   var node = svg.selectAll(".tree-node").data(nodes)
   node.enter().append("circle")
@@ -295,24 +274,6 @@ function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
      .attr("pointer-events", "visibleStroke")
 
   tooltip(svg, "circle.tree-node")
-  
-  //SELECTION LINKS
-  var selectionPoints = edit.group.map(s => nodes[pathToIndex(s, nodes)])
-                                 .filter(n => n)
-                                 .map(n => layout[n.path])
-
-  var crossed = cross(selectionPoints)
-  var selectionRoot = svg.append("g").attr("id", "selection-links")
-                         .selectAll(".selection-link").data(crossed)
-
-  selectionRoot.enter().append("line")
-    .attr("x1", d => d[0].x)
-    .attr("y1", d => d[0].y)
-    .attr("x2", d => d[1].x)
-    .attr("y2", d => d[1].y)
-    .attr("fill-opacity", 0)
-    .attr("stroke-width", 2)
-    .attr("stroke", "gray")
   return map
 }
   
@@ -381,7 +342,6 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
     }
   }
 
-
   function pathToLink(path) {
     //Given a 'bundle' produced path, return the relevant link object(s)
     var targets = graphLinks.filter(
@@ -391,36 +351,6 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
     if (targets.length ==0) {console.error("Could not find link for", item)}
 
     return targets 
-  }
- 
-
-  function editNewLink(link) {
-    if (d3.event.altKey) {
-      var insertCancel = edits.insert.reduce((acc, v, i) => 
-                                             (v[0] == link[0] && v[1] == link[1]) 
-                                               ? Math.min(i, acc) : acc, 
-                                               edits.insert.length)
-      if (insertCancel < edits.insert.length) {edits.insert.splice(insertCancel, 1)}
-      drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)
-      actions.editProgress(edits)
-    } else {
-      actions.linkClick.call(link, d3.event, edits)
-    }
-  }
-
-  function editExistingLink(links) {
-    if (d3.event.altKey) {
-      links.forEach(link => {
-        var cancelDelete = edits.delete.reduce((acc, v, i) => (v.id == link.id) ? Math.min(i, acc) : acc, links.length)
-
-        if (cancelDelete < edits.delete.length) {edits.delete.splice(cancelDelete, 1)}
-        else {edits.delete.push(link)}
-        actions.editProgress(edits)
-      })
-      drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)
-    } else {
-      actions.linkClick.call(links, d3.event, edits)
-    }
   }
 
   var radius = Math.min(width, height) / 2
@@ -460,12 +390,6 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
      .attr("stroke-width", 2)
      .attr("stroke", "blue")
   
-  var mouseCurrentlyOver
-  function rememberTarget(enter) {
-    if (enter) {return function(item) {mouseCurrentlyOver = item}}
-    else {return function(item) {mouseCurrentlyOver = undefined}}
-  }
-
   svg.insert("g","#hover-label")
        .attr("id", "nodes")
        .selectAll("path")
@@ -514,7 +438,6 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
   var linkRoot = svg.append("g").attr("id", "links")
   drawLinks()
   
-
   function drawLinks() {
     //A separate function to support the mouse-over-highlights-links behavior
     var bundle = d3.layout.bundle()
@@ -554,14 +477,54 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
        .attr("stroke-width", (d,i) => graphLinks[i].selected ? 3 : 2)
        .attr("stroke", (d,i) => markedForDelete(graphLinks[i]) ? "red" : "gray")
        .attr("pointer-events", "visibleStroke")
-       .on("click", d => editExistingLink(pathToLink(d)))
        .on("mouseenter", highlightLinks(true))
        .on("mouseleave.link", highlightLinks(false))
 
     link.exit().remove()
   }
 
-  //Edit links 
+  var redraw = function() {drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)}
+  enableEditing(svg, nodes, links, actions, edits, redraw, pathToLink)
+}
+
+
+// -------------------  Editing Utilities ------------
+function enableEditing(svg, nodes, links, actions, edits, redraw, dataToLink) {
+  //Add editing to the nodes, links and actions tools
+ 
+  if (dataToLink === undefined) {dataToLink = d => d}
+
+  function editNewLink(link) {
+    if (d3.event.altKey) {
+      var insertCancel = edits.insert.reduce((acc, v, i) => 
+                                             (v[0] == link[0] && v[1] == link[1]) 
+                                               ? Math.min(i, acc) : acc, 
+                                               edits.insert.length)
+      if (insertCancel < edits.insert.length) {edits.insert.splice(insertCancel, 1)}
+      actions.editProgress(edits)
+      redraw()
+    } else {
+      actions.linkClick.call(link, d3.event, edits)
+    }
+  }
+
+  function editExistingLink(links) {
+    if (d3.event.altKey) {
+      links.forEach(link => {
+        var cancelDelete = edits.delete.reduce((acc, v, i) => (v.id == link.id) ? Math.min(i, acc) : acc, links.length)
+
+        if (cancelDelete < edits.delete.length) {edits.delete.splice(cancelDelete, 1)}
+        else {edits.delete.push(link)}
+        actions.editProgress(edits)
+      })
+      redraw()
+    } else {
+      actions.linkClick.call(links, d3.event, edits)
+    }
+  }
+
+  svg.selectAll(".graph-link").on("click", d => editExistingLink(dataToLink(d)))
+
   var drag = d3.behavior.drag()
         .on("drag", function(d, i) {
           p = toCartesian(d.centroid)
@@ -583,22 +546,26 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
           if (mouseCurrentlyOver !== undefined) {
             var pair = [d.path, mouseCurrentlyOver.path].sort() //Canonical order
             if (pair[0] !== pair[1] && containedIn(pair, edits.insert)<0) {
-              console.log(pair)
               edits.insert.push(pair)
               actions.editProgress(edits)
-              drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)
+              redraw()
             }
           }
         })
+  
+  var mouseCurrentlyOver
+  function rememberTarget(enter) {
+    if (enter) {return function(item) {mouseCurrentlyOver = item}}
+    else {return function(item) {mouseCurrentlyOver = undefined}}
+  }
 
-   svg.select("#nodes").selectAll(".node"+actions.editFilter)
+  svg.select("#nodes").selectAll(".node"+actions.editFilter)
        .call(drag)
        .on("mouseenter.drag", rememberTarget(true))
        .on("mouseleave.drag", rememberTarget(false))
  
 
   var  linkEndpoints = function(link) {
-
     var p1 = toCartesian(nodes[pathToIndex(link[0], nodes)].centroid)
     var p2 = toCartesian(nodes[pathToIndex(link[1], nodes)].centroid)
     return {"x1": p1.x, "y1": p1.y, "x2":p2.x, "y2":p2.y}
@@ -607,7 +574,6 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
   var selectionRoot = svg.append("g").attr("id", "selection-links")
                          .selectAll(".selection-link").data(edits.insert)
 
-  //ADD CLICK FUNCTIONS TO DRAWN LINKS (possibly the same as existing links)
   selectionRoot.enter().append("line")
     .attr("x1", d => linkEndpoints(d).x1)
     .attr("y1", d => linkEndpoints(d).y1)
@@ -618,8 +584,6 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
     .attr("stroke", "green")
     .on("click", d => editNewLink(d))
 }
-
-
 
 // ------------------   Drawing Utilities ------------
 
@@ -686,7 +650,7 @@ function groupColors(groupLabel, nodes, svg, x,y) {
           .text(d => d[groupLabel])
   }
 
-  return {fn: fn, nodes: nodes, legend: legendRoot}
+  return {fn: fn, legend: legendRoot}
 }
 
 function selectionOverlay(groupLabel, selection, base) {
