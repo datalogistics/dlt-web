@@ -37,14 +37,15 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     return $filter('date')(date, "MM/dd/yyyy");
   };
   var today = new Date();
-  $scope.maxDate = $filter('date')(today, 'yyyy-MM-dd');
+  //$scope.maxDate = $filter('date')(today, 'yyyy-MM-dd');
+  $scope.maxDate = today;
   $scope.isUsgsLoading = false;
   $scope.submitUsgsForm = function(){
     console.log(usf);    
     $scope.isUsgsLoading = true;
     if (usf.searchModel == 'row'){
       SocketService.emit('usgs_row_search', {
-        'sensor_name':usf.sensorName,
+        'sensor':usf.sensorName,
         'start_date': toMMFormat(usf.startDate),
         'end_date': toMMFormat(usf.endDate),
         'cloud_cover': usf.cloud ,
@@ -58,7 +59,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
       });
     } else {
       SocketService.emit('usgs_lat_search', {
-        'sensor_name':usf.sensorName,
+        'sensor':usf.sensorName,
         'start_date': toMMFormat(usf.startDate),
         'end_date': toMMFormat(usf.endDate),
         'cloud_cover': usf.cloud ,
