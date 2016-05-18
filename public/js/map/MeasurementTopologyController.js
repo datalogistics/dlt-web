@@ -18,15 +18,6 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
   var groupLabel = "node"
 
   var helmEdits = {}
-  function queueForHelm(edits) {
-    if (edits.delete.length > 0 || edits.insert.length > 0) {
-      document.getElementById("HelmSubmit").disabled=false
-    } else {
-      document.getElementById("HelmSubmit").disabled=true
-    }
-    helmEdits = edits
-  }
-
   function submitToHelm() {
     var toHelm = function(node) {
       return {'domain': node.domain,
@@ -58,6 +49,25 @@ function measurementTopologyController($scope, $routeParams, $http, UnisService)
                    editProgress: queueForHelm}
     
     draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
+
+    function queueForHelm(edits) {
+      if (edits.delete.length > 0 || edits.insert.length > 0) {
+        document.getElementById("HelmSubmit").disabled=false
+      } else {
+        document.getElementById("HelmSubmit").disabled=true
+      }
+
+     function findNode(path, tree, prior) {
+       if (tree.path == path) {return tree}
+       if (tree.children === undefined) {return prior}
+       var found = tree.children.reduce((acc, child) => findNode(path, child, acc))
+       return found === undefined ? prior : found
+     }
+
+     helmEdits = {delete: edits.delete, 
+                 insert: edits.insert.map(e => [findNode(e[0], baseGraph.tree), findNode(e[1], baseGraph.tree)])}
+    }
+
 
     function editMeasurement(link, event, edits) {
       console.log("TODO: Show edit panel and record details in the edit model.")
