@@ -368,7 +368,7 @@ module.exports = function(app) {
     if(id ==1) {
       req.query.parent = "null=";
     } else if(id) {
-      req.query.parent = id;
+      req.query['parent.href'] = id;
     }
     // Ascending sort by name
     // Since all path and rows have 0 appened to them, so an ordinary string sort will work even though they are numbers
@@ -377,7 +377,7 @@ module.exports = function(app) {
     var arr = [];
     var options = _.extend({
       req : req , res : res ,
-      path : '/exnodes?'+paramString,
+      path : '/exnodes?fields=name,selfRef,parent,mode,size,created,modified&'+paramString,
       name : 'exnodes'
     },getHttpOptions({
       name : 'exnodes'
@@ -388,10 +388,10 @@ module.exports = function(app) {
       // Return matching id children
       arr = exjson.map(function(x){            
         return {
-          "id" : x.id ,
+          "id" : x.selfRef,
           "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
           "isFile": x.mode == "file" ? true: false,
-          "parent" : x.parent == null? "#" : x.parent,
+          "parent" : x.parent == null? "#" : x.parent.href,
           "children" :  x.mode != "file",
           "undetermined" : true,
           "state" : {
