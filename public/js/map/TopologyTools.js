@@ -494,7 +494,9 @@ function markedForDelete(link, edits) {
 
 function enableEditing(svg, nodes, links, actions, edits, redraw, dataToLink, dataToLayout) {
   //Add editing to the nodes, links and actions tools
- 
+  //Only works if actions.editProgress exists
+
+  if (actions.editProgress === undefined) {return}
   if (dataToLink === undefined) {dataToLink = d => d}
   if (dataToLayout == undefined) {dataToLayout = d => d}
 
