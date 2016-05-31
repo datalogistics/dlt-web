@@ -17,13 +17,14 @@ function getSchemaProperties(obj) {
  * public/js/exnode/
  * ExnodeController.js
  */
-function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,SocketService) {
+function exnodeController($scope, $routeParams, $location, ExnodeService,$log,SocketService) {
   // Dangerous code
   // SocketService.emit('exnode_getAllChildren', {id : null});
   // SocketService.on('exnode_childFiles' , function(d){
   //   console.log("***********************",d);
   // });
   // The Exnode file browser 
+  //
   $scope.fieldArr = [];      
   $scope.addField = function(){
     var x = {
@@ -127,17 +128,27 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   
   SocketService.on('exnode_childFiles', childFileHandler);
 
-  $scope.clearState = function(a,b){
+  $scope.invalidateLoaded = function(a,b){
     var info = b.node.original;
+    var jstr = jQuery.jstree.reference(this);
+    jstr.save_state()
     if (!info.isFile) {
-      var jstr = jQuery.jstree.reference(this);
       jstr.get_node(info.id).state.loaded = false;
     }
   }
+
+  $scope.saveTreeState = function(a,b) {
+    var jstr = jQuery.jstree.reference(this);
+    jstr.save_state()
+
+  }
+
   function selectNodeGen(prefix) {
     return function(a,b){
       var info = b.node.original;
       var selectedIds = $scope[prefix + 'selectedIds'] = $scope[prefix + 'selectedIds'] || {} ;
+      var jstr = jQuery.jstree.reference(this);
+      jstr.save_state()
       if (!info.isFile) {
         // Do nothing
         return;
@@ -161,6 +172,8 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
   
   function unselectNodeGen(prefix){
     return function(a,b){
+      var jstr = jQuery.jstree.reference(this);
+      jstr.save_state()
       var info = b.node.original;
       if(!info.isFile) {
         // Do Nothing
@@ -208,12 +221,8 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     client_action([id], 'download');
   };
 
-  $scope.showExnodeMap = function(id) {
-    var parts = id.split("/")
-    id = parts[parts.length-1]
-    console.log("Showing exnode map for ", id)
-    $location.path("/exnode/"+id)
-  }
+
+
 
   $scope.downloadAll = function(){
     var arr = [];
@@ -241,5 +250,13 @@ function exnodeController($scope, $routeParams, $location, $rootScope, ExnodeSer
     dom.hide();
     dom.submit();
   };
+
+  $scope.showExnodeMap = function(id) {
+
+    var parts = id.split("/")
+    id = parts[parts.length-1]
+    console.log("Showing exnode map for ", id)
+    $location.path("/exnode/"+id, true)
+  }
 }
 

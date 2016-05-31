@@ -79,8 +79,8 @@ var self = {
       port : "8888"
     },
     dev : {
-      url : "dev.incntre.iu.edu" ,
-      port : "8888",
+      url : "unis.crest.iu.edu" ,
+      port : "8890",
       key: null,
       cert: null,
       use_ssl: false

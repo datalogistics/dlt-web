@@ -31,8 +31,11 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         extents = exnode.extents.map(function(e) {return {id: e.id, offset: e.offset, size: e.size, depot: parseLocation(e.mapping.read)}})
                                     .map(function(e) {e["xy"] = mapLocation(map, e.depot); return e})
                                     .sort((a,b) => a.depot.localeCompare(b.depot)) 
+      } else if (exnode.mode == "directory") {
+        errorMessage(map, "Exnode is for a directory, no extents")
+        return 
       } else {
-        extents = [{id: exnode.id, offset: exnode.offset, size: exnode.size, depot: parseLocation(e.mapping.read)}]
+        extents = [{id: exnode.id, offset: exnode.offset, size: exnode.size, depot: parseLocation(exnode.mapping.read)}]
       }
       
       var cells = range(0, 500).map(function(e) {return {depots:new Set(), exnodes:[]}})
@@ -57,13 +60,16 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       exnodeStats(map, exnode, cells, 970, 100)
       legend(map, exnode, extents, fill, 970, 230)
     } else {
-      map.svg.append("text")
-          .attr("fill", "red")
-          .attr("transform", "translate(300,10)")
-          .text("Error: Exnode not found or is empty")
+      errorMessage(map, "Error: Exnode not found or is empty")
     }
   }
 
+  function errorMessage(map, message) {
+      map.svg.append("text")
+          .attr("fill", "red")
+          .attr("transform", "translate(300,10)")
+          .text(message)
+  }
 
   function spokeExtents(svg, rootSize, extents, fill) {
     var unique_depot_by_location = extents.reduce(function(acc, e) {
