@@ -154,22 +154,23 @@ function _createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
   var IdList = [];
   socket.on('message', function(data) {
     var count = 0;
-    for (var LPPP in JSON.parse(data))
+    var raw_data = JSON.stringify(JSON.parse(data).data)
+    for (var LPPP in JSON.parse(raw_data))
       count++;      
     // console.log('UNIS socket (): ', count , " for Path ",path);
     var smap =  socketMap;
     if (!smap[path].clients)
       return;
     smap[path] = smap[path] || {};
-    data.__source = name;
+    raw_data.__source = name;
     //smap[path].clients = smap[path].clients || [];
     //console.log("Emitting to client " , smap[path].clients );
     if(!isAggregate) {
       smap[path].clients.forEach(function(client) {
-        client.emit(emit, data);
+        client.emit(emit, raw_data);
       });
     } else {
-      var dataJ = (JSON.parse(data));
+      var dataJ = (JSON.parse(raw_data));
       //console.log("Number of connected clients ", smap[path].clients.length,
       //            smap[path].clients.map(function(x){ return x.id;}));
       smap[path].clients.filter(function(x) {
@@ -186,7 +187,7 @@ function _createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
 	}	  
         return flag;
       }).forEach(function(client) {
-        client.emit(emit, data);
+        client.emit(emit, raw_data);
       }); 
     }
   });
