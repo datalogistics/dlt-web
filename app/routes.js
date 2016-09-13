@@ -6,7 +6,6 @@
 var path = require('path')
 , fs = require('fs')
 , readline = require('readline')
-, http = require('http')
 , https = require('https')
 , url = require('url')
 , cfg = require('../properties')
@@ -64,15 +63,16 @@ module.exports = function(app) {
     var pathname = url.parse(req.url).pathname;
     
     // routes.push('http://' + hostname + pathname + '/slice');
-    routes.push('http://' + hostname + pathname + '/nodes');
-    routes.push('http://' + hostname + pathname + '/services');
-    routes.push('http://' + hostname + pathname + '/measurements');
-    routes.push('http://' + hostname + pathname + '/metadata');
-    routes.push('http://' + hostname + pathname + '/data');
-    routes.push('http://' + hostname + pathname + '/ports');
-    routes.push('http://' + hostname + pathname + '/exnodes');
-    routes.push('http://' + hostname + pathname + '/fileTree');
-    routes.push('http://' + hostname + pathname + '/getVersion');
+    routes.push('https://' + hostname + pathname + 'nodes');
+    routes.push('https://' + hostname + pathname + 'domains');
+    routes.push('https://' + hostname + pathname + 'services');
+    routes.push('https://' + hostname + pathname + 'measurements');
+    routes.push('https://' + hostname + pathname + 'metadata');
+    routes.push('https://' + hostname + pathname + 'data');
+    routes.push('https://' + hostname + pathname + 'ports');
+    routes.push('https://' + hostname + pathname + 'exnodes');
+    routes.push('https://' + hostname + pathname + 'fileTree');
+    routes.push('https://' + hostname + pathname + 'getVersion');
     res.json(routes);
   });
   
@@ -99,7 +99,7 @@ module.exports = function(app) {
   };
   
   function registerGenericHandler (options,cb) {
-    var method = http;
+    var method = https;
     var res = options.res, req = options.req;
     options.req = options.res = undefined;
     var keyArr = [].concat(options.keyArr)
@@ -125,10 +125,8 @@ module.exports = function(app) {
     //console.log("Requesting from ", hostArr, certArr);
     var handlerArr = hostArr.map(function(x,index) {
       // Return handler function for each 
-      var method = http;
       if (doSSLArr[index]) {
         options = _.extend(options, sslOptions);
-        method = https;
       }
       var opt = _.extend({}, options);
       // Adding parameters got 
@@ -145,7 +143,7 @@ module.exports = function(app) {
         var defer = q.defer();        
         var prot = "http://";
         if (opt.cert) {
-          prot = "https://";          
+          prot = "http://";          
         }
         var op = {
           url : prot + opt.hostname+":"+opt.port+opt.path,          
@@ -165,6 +163,7 @@ module.exports = function(app) {
           fdata = fdata + data;          
         }).on('end',function() {
           try {
+            console.log(fdata)
             var obj = JSON.parse(fdata);
             return defer.resolve(obj);
           } catch (e) {            
@@ -212,7 +211,7 @@ module.exports = function(app) {
             res.json(json);
           });
         } else {
-          res.send(404);
+          res.sendStatus(404);
         }
 
       });
@@ -221,7 +220,8 @@ module.exports = function(app) {
   };
   
   function getGenericHandler(opt) {
-    var path = opt.path , name = opt.name ;
+    var path = opt.path;
+    var name = opt.name;
     var handler = opt.handler;
     
     return function(req, res) {
@@ -230,9 +230,11 @@ module.exports = function(app) {
       // console.log('STATUS: ' + res.statusCode);
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       // console.log('BODY: ' + JSON.stringify(res.body));
+      var fullpath = "/" + path + "?" + paramString;
+      console.log("GETTING: ", fullpath)
       var options = _.extend({
         req : req , res : res ,
-        path : path + "?" + paramString,
+        path : fullpath,
         name : name
       },getHttpOptions({
         name : name
@@ -241,16 +243,23 @@ module.exports = function(app) {
       opt.handler(options);
     }
   }
-  app.get('/api/nodes', getGenericHandler({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
-  app.get('/api/services', getGenericHandler({path : '/services', name : 'services' , handler : registerGenericHandler}));
-  app.get('/api/exnodes', getGenericHandler({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));
-  app.get('/api/measurements', getGenericHandler({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));
-  app.get('/api/metadata', getGenericHandler({path : '/metadata', name : 'metadata' , handler : registerGenericHandler}));
-  app.get('/api/data', getGenericHandler({path : '/data', name : 'data' , handler : registerGenericHandler}));
-  app.get('/api/ports', getGenericHandler({path : '/ports', name : 'ports' , handl : registerGenericHandler}));
-  
+
+  app.get('/api/probes', getGenericHandler({path : 'probes', name : 'probes'}));
+  app.get('/api/topologies', getGenericHandler({path : 'topologies', name : 'topologies'}));
+  app.get('/api/domains', getGenericHandler({path : 'domains', name : 'domains'}));
+  app.get('/api/nodes', getGenericHandler({path : 'nodes', name : 'nodes'}));
+  app.get('/api/links', getGenericHandler({path : 'links', name : 'links'}));
+  app.get('/api/paths', getGenericHandler({path : 'paths', name : 'paths'}));
+  app.get('/api/services', getGenericHandler({path : 'services', name : 'services'}));
+  app.get('/api/exnodes', getGenericHandler({path : 'exnodes', name : 'exnodes'}));
+  app.get('/api/measurements', getGenericHandler({path : 'measurements', name : 'measurements'}));
+  app.get('/api/metadata', getGenericHandler({path : 'metadata', name : 'metadata'}));
+  app.get('/api/data', getGenericHandler({path : 'data', name : 'data'}));
+  app.get('/api/ports', getGenericHandler({path : 'ports', name : 'ports'}));
+
   function getGenericHandlerWithId(opt) {
-    var path = opt.path , name = opt.name ;
+    var path = opt.path;
+    var name = opt.name;
     var handler = opt.handler;
     return function(req, res) {
       // Get all parameters and just forward it to UNIS 
@@ -260,24 +269,30 @@ module.exports = function(app) {
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       // console.log('BODY: ' + JSON.stringify(res.body));
       var node_id = req.params.id;
-      var method = http;
+      var method = https;
+      var fullpath = path + '/' + node_id + '?' + paramString
+
       var options = _.extend({
         req : req , res : res ,
         name: name+"Id"+ "?" + paramString,
-        path: path + '/' + node_id + '?' + paramString
+        path: fullpath 
       },getHttpOptions({
         name : name + "_id"
       }));
-      opt.handler(options);      
+      opt.handler = opt.handler || registerGenericHandler;
+      opt.handler(options);
     };
   };
-  app.get('/api/nodes/:id', getGenericHandlerWithId({path : '/nodes', name : 'nodes' , handler : registerGenericHandler}));
-  app.get('/api/services/:id', getGenericHandlerWithId({path : '/services', name : 'services' , handler : registerGenericHandler}));
-  app.get('/api/exnodes/:id', getGenericHandlerWithId({path : '/exnodes', name : 'exnodes' , handler : registerGenericHandler}));
-  app.get('/api/measurements/:id', getGenericHandlerWithId({path : '/measurements', name : 'measurements' , handler : registerGenericHandler}));
-  app.get('/api/metadata/:id', getGenericHandlerWithId({path : '/metadata', name : 'metadata' , handler : registerGenericHandler}));
-  app.get('/api/data/:id', getGenericHandlerWithId({path : '/data', name : 'data' , handler : registerGenericHandler}));
-  app.get('/api/ports/:id', getGenericHandlerWithId({path : '/ports', name : 'ports' , handler : registerGenericHandler}));
+
+  app.get('/api/domains/:id', getGenericHandlerWithId({path : 'domains', name : 'domains'}));
+  app.get('/api/nodes/:id', getGenericHandlerWithId({path : 'nodes', name : 'nodes'}));
+  app.get('/api/services/:id', getGenericHandlerWithId({path : 'services', name : 'services'}));
+  app.get('/api/exnodes/:id', getGenericHandlerWithId({path : 'exnodes', name : 'exnodes'}));
+  app.get('/api/topologies/:id', getGenericHandlerWithId({path : 'topologies', name : 'topologies'}));
+  app.get('/api/measurements/:id', getGenericHandlerWithId({path : 'measurements', name : 'measurements'}));
+  app.get('/api/metadata/:id', getGenericHandlerWithId({path : 'metadata', name : 'metadata'}));
+  app.get('/api/data/:id', getGenericHandlerWithId({path : 'data', name : 'data'}));
+  app.get('/api/ports/:id', getGenericHandlerWithId({path : 'ports', name : 'ports'}));
   app.get('/api/getVersion',function(req,res) {
     var host , port ;
     if (req.query.host && req.query.port) {
@@ -318,6 +333,7 @@ module.exports = function(app) {
     },getHttpOptions({
       name : 'exnodes'
     }));
+
     registerGenericHandler(options, function(obj){
       var exjson =  obj[0].value;
       // Return matching id children
@@ -454,38 +470,38 @@ module.exports = function(app) {
   app.get('/api/natmap',function(req, res) {
     var rmap = {};
     var stream = fs.createReadStream(cfg.nat_map_file)
-      .on ("error", function (error){
-        console.log (error);
-	res.json({});
-      })
-      .on("end", function () {
-	stream.close();
-	res.json(rmap);
-      });
-    
+        .on ("error", function (error){
+          console.log (error);
+          res.json({});
+        })
+        .on("end", function () {
+          stream.close();
+          res.json(rmap);
+        });
+
     var rd = readline.createInterface({
       input: stream,
       output: process.stdout,
       terminal: false
     });
-    
+
     rd.on('line', function(line) {
       if (line[0] != '#') {
-	var ary = line.split(':');
-	if (ary[4]) {
-	  rmap[ary[4]] = {
-	    'data_ip' : ary[0],
-	    'internal': ary[1],
-	    'port'    : ary[2],
-	    'external': ary[3]
-	  };
-	}
+        var ary = line.split(':');
+        if (ary[4]) {
+          rmap[ary[4]] = {
+            'data_ip' : ary[0],
+            'internal': ary[1],
+            'port'    : ary[2],
+            'external': ary[3]
+          };
+        }
       }
     });
   });
   
-  usgsapi.addRoutes('/usgsapi/',app);
   auth.addRoutes('/',app);
+  usgsapi.addRoutes('/usgsapi/',app);  
   app.get('/popup/*', function(req,res) {
     res.render('../views/popup.html');
   });  
