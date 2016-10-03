@@ -48,15 +48,18 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
     var topologies = UnisService.topologies
                     .map(e => {return {id: e.id, name: e.name, selfRef: e.selfRef, children: e.domains ? e.domains.map(n => n.href) : []}})
                     .map(e => {e.children = domains.filter(d => e.children.indexOf(d.selfRef) >= 0); return e})
+    
+    var root = {id: "root", name: "root", children: topologies}
+    addPaths(root, "")
+    topologies.push(buildUnnamedTopology(domains, nodes, ports))
 
     if (rootFilter) {
       //TODO: Extend so it finds the root in topos or domains
       topologies = topologies.filter(t => t.id == rootFilter)
       topologies = topologies.length == 1 ? topologies[0].children : topologies
-    }
-
-    var root = {id: "root", name: "root", children: topologies}
-    addPaths(root, undefined, "")
+      root.children = topologies
+    } 
+    addPaths(root, "")
 
     var links
     links = UnisService.links
@@ -100,15 +103,30 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
     function cannonicalURL(url) {return decodeURIComponent(url.replace(/\+/g, ' '))}
 
-    function addPaths(root, top, prefix) {
+    function addPaths(root, prefix, top) {
       root["path"] = prefix + root.id 
       root["__top__"] = top 
       if (root.children) {
         root.children.forEach(child => {
           top = root["name"] === "root" ? child["description"] || child["name"] || child["id"] : top
-          addPaths(child, top, root["path"] + PATH_SEPARATOR)
+          addPaths(child, root["path"] + PATH_SEPARATOR, top) 
         })
       }
+    }
+
+    function buildUnnamedTopology(domains, node, ports) {
+      var unnamed_topo = {id: -1, name: "---", selfRef: "##unnamed_topology##"}
+      var unnamed_domain = {id: -1, name: "---", selfRef: "##unnamed_domain##"}
+      var unnamed_node = {id: -1, name: "---", selfRef: "##unnamed_node##"}
+
+      unnamed_topo["children"] = domains.filter(d => d.path === undefined)
+      unnamed_domain["children"] = nodes.filter(d => d.path === undefined)
+      unnamed_node["children"] = ports.filter(d => d.path === undefined)
+
+      if (unnamed_node.children.length >0) {unnamed_domain.children.push(unnamed_node)}
+      if (unnamed_domain.children.length >0) {unnamed_topo.children.push(unnamed_node)}
+      if (unnamed_topo.children.length > 0) {return unnamed_topo;}
+      return 
     }
 
     function ensureURNNode(urn, root) {
