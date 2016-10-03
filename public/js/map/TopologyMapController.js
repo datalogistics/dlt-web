@@ -34,11 +34,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
   function unisGraph(UnisService, rootFilter) {
     var ports = UnisService.ports 
-                  .map(port => {var values = URNtoDictionary(port.urn)
-                                values["selfRef"] = port.selfRef
-                                values["id"] = port.id
-                                values["name"] = port.name
-                                return values})
+                  .map(port => {return {id: port.id, selfRef: port.selfRef, name: port.name}})
                   .filter(Boolean)  // Filters out 'falsy' values, undefined is one of them
 
     var nodes = UnisService.nodes
@@ -49,22 +45,12 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
                     .map(e => {return {id: e.id, name: e.name, selfRef: e.selfRef, children: e.nodes ? e.nodes.map(n => n.href) : []}})
                     .map(e => {e.children = nodes.filter(n => e.children.indexOf(n.selfRef) >= 0); return e})
 
-   var topologies = UnisService.topologies
-                    .map(e => {return {id: e.id, name: e.name, children: e.domains ? e.domains.map(n => n.href) : []}})
+    var topologies = UnisService.topologies
+                    .map(e => {return {id: e.id, name: e.name, selfRef: e.selfRef, children: e.domains ? e.domains.map(n => n.href) : []}})
                     .map(e => {e.children = domains.filter(d => e.children.indexOf(d.selfRef) >= 0); return e})
 
-    //Fill in the unknown domain/node parts on ports
-    domains.forEach(domain => 
-         domain.children.forEach(node =>
-            node.children.forEach(port => {
-                 if (!port.domain) {port["domain"] = domain.id}
-                 if (!port.node) {port["node"] = node.id}
-            })))
-
-    var usedNodes = domains.reduce((acc, domain) => acc.concat(domain.children), [])
-
     if (rootFilter) {
-      //TODO: Extend so it finds the root in topos or domains or nodes
+      //TODO: Extend so it finds the root in topos or domains
       topologies = topologies.filter(t => t.id == rootFilter)
       topologies = topologies.length == 1 ? topologies[0].children : topologies
     }
@@ -94,7 +80,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
         .forEach(endpoint => ensureURNNode(endpoint, root))
 
 
-    var pathMapping = portToPath(domains).reduce((acc, pair) => {acc[cannonicalURL(pair.ref)] = pair.path; return acc}, {})
+    var pathMapping = HREF2Path(topologies)
     links = links.map(link => {return {source: pathMapping[cannonicalURL(link.source)], 
                                        sink: pathMapping[cannonicalURL(link.sink)]}})
 
@@ -112,27 +98,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
               && (link.sink.startsWith("urn") || link.sink.startsWith("http"))
     }
 
-
-    function URNtoDictionary(urn) {
-      var parts = urn.split(":")
-      if (urn.indexOf("=") > 0) {
-        return parts.map(p => p.split("="))
-                  .filter(p => p.length > 1) 
-                  .reduce((dict, pair) => {dict[pair[0]] = pair[1]; return dict}, {})
-      } else if (parts.length >= 5) {
-        var result = {}
-        result["domain"] = parts[3]
-        result["node"] = parts[4]
-        result["port"] = parts[5]
-        return result
-      } else {
-        //console.log("Returning empty dictionary. Could not create plausible URN dictionary for: " + urn)
-        return {} 
-      }
-    }
-
-    function cannonicalURL(url) {
-      return decodeURIComponent(url.replace(/\+/g, ' '))}
+    function cannonicalURL(url) {return decodeURIComponent(url.replace(/\+/g, ' '))}
 
     function addPaths(root, top, prefix) {
       root["path"] = prefix + root.id 
@@ -170,16 +136,18 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
       }
     }
 
-    function portToPath(root) {
-      return root.reduce(function(acc, entry) {
-        if (entry.children) {
-          acc = acc.concat(portToPath(entry.children))
-        } else {
+    function HREF2Path(root) {
+      function gather(root) {
+        //Build a dictionary that maps hrefs to tree paths
+        return listing = root.reduce(function(acc, entry) {
+          if (entry.children) {acc = acc.concat(gather(entry.children))}
           acc.push({ref: entry.selfRef, path: entry.path})
-        }
-        return acc
-      },
-      [])
+          return acc
+        },
+        [])
+      }
+      var listing = gather(root);
+      return listing.reduce((acc, pair) => {acc[cannonicalURL(pair.ref)] = pair.path; return acc}, {})
     }
   }
 
