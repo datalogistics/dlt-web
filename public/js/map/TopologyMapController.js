@@ -50,15 +50,16 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
                     .map(e => {e.children = domains.filter(d => e.children.indexOf(d.selfRef) >= 0); return e})
     
     var root = {id: "root", name: "root", children: topologies}
-    addPaths(root, "")
-    topologies.push(buildUnnamedTopology(domains, nodes, ports))
+    addPaths(root, "") //Touches everything reachable from a topology so the un-named one can be built properly
+    var unnamed=buildUnnamedTopology(domains, nodes, ports)
+    if (unnamed) {topologies.push(unnamed)}
 
     if (rootFilter) {
       //TODO: Extend so it finds the root in topos or domains
       topologies = topologies.filter(t => t.id == rootFilter)
       topologies = topologies.length == 1 ? topologies[0].children : topologies
-      root.children = topologies
     } 
+    root = {id: "root", name: "root", children: topologies}
     addPaths(root, "")
 
     var links
