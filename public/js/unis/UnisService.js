@@ -10,6 +10,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   var service = {};
   var dataIdCbMap = {};
   
+  service.topologies   = [];
+  service.domains      = [];
   service.nodes        = [];
   service.ports        = [];
   service.links        = [];
@@ -336,7 +338,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       $http.get('/api/services', { cache: true}),
       $http.get('/api/links', { cache: true}),
       $http.get('/api/paths', { cache: true}),
-      $http.get('/api/domains', { cache: true})
+      $http.get('/api/domains', { cache: true}),
+      $http.get('/api/topologies', { cache: true})
     ]).then(function(res) {
       service.nodes = getUniqueById(res[0].data);
       service.ports = getUniqueById(res[1].data);            
@@ -346,6 +349,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       service.links = getUniqueById(res[5].data);
       service.paths = getUniqueById(res[6].data);
       service.domains = getUniqueById(res[7].data);
+      service.topologies = getUniqueById(res[8].data);
 
       service.nodeSelfRefMap = makeMap(service.nodes,"selfRef");
       service.portsSelfRefMap = makeMap(service.ports,"selfRef");

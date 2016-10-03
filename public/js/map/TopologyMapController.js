@@ -1,7 +1,7 @@
 function topologyMapController($scope, $routeParams, $http, UnisService) {
   var PATH_SEPARATOR = ":"
 
-  var groupFilter = $routeParams.group ? $routeParams.group : undefined
+  var rootFilter = $routeParams.root ? $routeParams.root : undefined
   var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["root"] //Pass multiple paths multiple path-entries in the query string 
   paths = paths.map(p => p.startsWith("root:") ? p : "root:" + p)
 
@@ -13,7 +13,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
                .attr("height", height)
 
   var layout = $routeParams.layout ? $routeParams.layout.toLowerCase() : ""
-  var baseGraph = setOrder(domainsGraph(UnisService, groupFilter, true))
+  var baseGraph = setOrder(unisGraph(UnisService, rootFilter))
   //baseGraph = fakeLinks(baseGraph, 3)
 
   draw(baseGraph, "__top__", paths, svg, layout, width, height)
@@ -30,7 +30,9 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
   // Graph is pair of nodes and links
   // Nodes is a tree
   // links is a list of pairs of paths in the tree
-  function domainsGraph(UnisService, groupFilter, loadLinks) {
+
+
+  function unisGraph(UnisService, rootFilter) {
     var ports = UnisService.ports 
                   .map(port => {var values = URNtoDictionary(port.urn)
                                 values["selfRef"] = port.selfRef
@@ -40,14 +42,16 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
                   .filter(Boolean)  // Filters out 'falsy' values, undefined is one of them
 
     var nodes = UnisService.nodes
-                    .map(n => {return {id: n.id, name: n.name, location: n.location, selfRef: n.selfRef, children: n.ports ? n.ports.map(p => cannonicalURL(p.href)) : []}})
-                    .map(n => {n.children = ports.filter(p => n.children.indexOf(cannonicalURL(p.selfRef)) >= 0); return n})
+                    .map(e => {return {id: e.id, name: e.name, location: e.location, selfRef: e.selfRef, children: e.ports ? e.ports.map(p => cannonicalURL(p.href)) : []}})
+                    .map(e => {e.children = ports.filter(p => e.children.indexOf(cannonicalURL(p.selfRef)) >= 0); return e})
 
     var domains = UnisService.domains
-                    .filter(d => groupFilter ? d.id == groupFilter : true)
-                    .map(d => {return {id: d.id, name: d.name, children: d.nodes ? d.nodes.map(n => n.href) : []}})
-                    .map(d => {d.children = nodes.filter(n => d.children.indexOf(n.selfRef) >= 0); return d})
-                    .map(d => {d.id = d.id.startsWith("domain_") ? d.id.substring("domain_".length) : d.id; return d})
+                    .map(e => {return {id: e.id, name: e.name, selfRef: e.selfRef, children: e.nodes ? e.nodes.map(n => n.href) : []}})
+                    .map(e => {e.children = nodes.filter(n => e.children.indexOf(n.selfRef) >= 0); return e})
+
+   var topologies = UnisService.topologies
+                    .map(e => {return {id: e.id, name: e.name, children: e.domains ? e.domains.map(n => n.href) : []}})
+                    .map(e => {e.children = domains.filter(d => e.children.indexOf(d.selfRef) >= 0); return e})
 
     //Fill in the unknown domain/node parts on ports
     domains.forEach(domain => 
@@ -58,40 +62,45 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
             })))
 
     var usedNodes = domains.reduce((acc, domain) => acc.concat(domain.children), [])
-    var root = {id: "root", name: "root", children: domains}
+
+    if (rootFilter) {
+      //TODO: Extend so it finds the root in topos or domains or nodes
+      topologies = topologies.filter(t => t.id == rootFilter)
+      topologies = topologies.length == 1 ? topologies[0].children : topologies
+    }
+
+    var root = {id: "root", name: "root", children: topologies}
     addPaths(root, undefined, "")
 
     var links
-    if (loadLinks) {
-      links = UnisService.links
-                     .map(link => {
-                       if (link.directed) {
-                         return {source: link.endpoints.source.href, 
-                                 sink: link.endpoints.sink.href}
-                       } else {
-                         return {source: link.endpoints[0].href, 
-                                 sink: link.endpoints[1].href}
-                       }})
-      
-      var badlinks = links.filter(l => !validLinks(l))
-      links = links.filter(validLinks)
-      if (badlinks.length > 0) {console.error("Problematic links dropped for missing source or sink: ", badlinks.length, "\n", badlinks, "\nRetaining " + links.length)}
+    links = UnisService.links
+                   .map(link => {
+                     if (link.directed) {
+                       return {source: link.endpoints.source.href, 
+                               sink: link.endpoints.sink.href}
+                     } else {
+                       return {source: link.endpoints[0].href, 
+                               sink: link.endpoints[1].href}
+                     }})
+    
+    var badlinks = links.filter(l => !validLinks(l))
+    links = links.filter(validLinks)
+    if (badlinks.length > 0) {console.error("Problematic links dropped for missing source or sink: ", badlinks.length, "\n", badlinks, "\nRetaining " + links.length)}
 
-      links.reduce((acc, link) => {
-                if (link.source.startsWith("urn")) {acc.push(link.source)}
-                if (link.sink.startsWith("urn")) {acc.push(link.sink)}
-                return acc}, [])
-          .forEach(endpoint => ensureURNNode(endpoint, root))
+    links.reduce((acc, link) => {
+              if (link.source.startsWith("urn")) {acc.push(link.source)}
+              if (link.sink.startsWith("urn")) {acc.push(link.sink)}
+              return acc}, [])
+        .forEach(endpoint => ensureURNNode(endpoint, root))
 
 
-      var pathMapping = portToPath(domains).reduce((acc, pair) => {acc[cannonicalURL(pair.ref)] = pair.path; return acc}, {})
-      links = links.map(link => {return {source: pathMapping[cannonicalURL(link.source)], 
-                                         sink: pathMapping[cannonicalURL(link.sink)]}})
+    var pathMapping = portToPath(domains).reduce((acc, pair) => {acc[cannonicalURL(pair.ref)] = pair.path; return acc}, {})
+    links = links.map(link => {return {source: pathMapping[cannonicalURL(link.source)], 
+                                       sink: pathMapping[cannonicalURL(link.sink)]}})
 
-      var badlinks = links.filter(l => !l.source || !l.sink)
-      links = links.filter(l => l.source && l.sink)
-      if (badlinks.length > 0) {console.error("Problematic links dropped for missing source or sink: ", badlinks.length, "\n", badlinks, "\nRetaining " + links.length)}
-    }
+    var badlinks = links.filter(l => !l.source || !l.sink)
+    links = links.filter(l => l.source && l.sink)
+    if (badlinks.length > 0) {console.error("Problematic links dropped for missing source or sink: ", badlinks.length, "\n", badlinks, "\nRetaining " + links.length)}
 
     var graph = {tree: root, links: links}
     return graph
@@ -130,7 +139,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
       root["__top__"] = top 
       if (root.children) {
         root.children.forEach(child => {
-          top = root["name"] === "root" ? child["name"] : top
+          top = root["name"] === "root" ? child["description"] || child["name"] || child["id"] : top
           addPaths(child, top, root["path"] + PATH_SEPARATOR)
         })
       }

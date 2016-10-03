@@ -74,6 +74,7 @@ module.exports = function(app) {
     routes.push('https://' + hostname + pathname + 'exnodes');
     routes.push('https://' + hostname + pathname + 'fileTree');
     routes.push('https://' + hostname + pathname + 'getVersion');
+    routes.push('https://' + hostname + pathname + 'topologies');
     res.json(routes);
   });
   
@@ -257,6 +258,7 @@ module.exports = function(app) {
   app.get('/api/metadata', getGenericHandler({path : 'metadata', name : 'metadata'}));
   app.get('/api/data', getGenericHandler({path : 'data', name : 'data'}));
   app.get('/api/ports', getGenericHandler({path : 'ports', name : 'ports'}));
+  app.get('/api/topologies', getGenericHandler({path : 'topologies', name : 'topologies'}));
 
   function getGenericHandlerWithId(opt) {
     var path = opt.path;
@@ -295,6 +297,7 @@ module.exports = function(app) {
   app.get('/api/data/:id', getGenericHandlerWithId({path : 'data', name : 'data'}));
   app.get('/api/links/:id', getGenericHandlerWithId({path : 'links', name : 'links'}));
   app.get('/api/ports/:id', getGenericHandlerWithId({path : 'ports', name : 'ports'}));
+  app.get('/api/topologies/:id', getGenericHandlerWithId({path : 'topologies', name : 'topologies'}));
   app.get('/api/getVersion',function(req,res) {
     var host , port ;
     if (req.query.host && req.query.port) {
