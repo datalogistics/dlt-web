@@ -69,6 +69,7 @@ module.exports = function(app) {
     routes.push('https://' + hostname + pathname + 'measurements');
     routes.push('https://' + hostname + pathname + 'metadata');
     routes.push('https://' + hostname + pathname + 'data');
+    routes.push('https://' + hostname + pathname + 'links');
     routes.push('https://' + hostname + pathname + 'ports');
     routes.push('https://' + hostname + pathname + 'exnodes');
     routes.push('https://' + hostname + pathname + 'fileTree');
@@ -292,6 +293,7 @@ module.exports = function(app) {
   app.get('/api/measurements/:id', getGenericHandlerWithId({path : 'measurements', name : 'measurements'}));
   app.get('/api/metadata/:id', getGenericHandlerWithId({path : 'metadata', name : 'metadata'}));
   app.get('/api/data/:id', getGenericHandlerWithId({path : 'data', name : 'data'}));
+  app.get('/api/links/:id', getGenericHandlerWithId({path : 'links', name : 'links'}));
   app.get('/api/ports/:id', getGenericHandlerWithId({path : 'ports', name : 'ports'}));
   app.get('/api/getVersion',function(req,res) {
     var host , port ;

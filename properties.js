@@ -50,7 +50,7 @@ var self = {
   authArr : [],
   routeMap : {
     // Aggregate from the following by default 
-    'default'  : ['dev'],
+    'default'  : ['dev_ms'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : [],
@@ -76,7 +76,15 @@ var self = {
   serviceMap : {
     local : {
       url : "localhost",
-      port : "8888"
+      port : "8888",
+      use_ssl: false
+    },
+    virtual: {
+      url : "192.168.100.100" ,
+      port : "8888",
+      key: null,
+      cert: null,
+      use_ssl: false
     },
     dev : {
       url : "unis.crest.iu.edu" ,
