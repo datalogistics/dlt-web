@@ -692,10 +692,18 @@ function groupColors(groupLabel, nodes, svg, x,y) {
 
   var base = d3.scale.category10().domain(groups)
   base.range(removeGray(base.range()))
-  var fn = function(v) {
-    var v = v[groupLabel]
-    if (!v || v.trim() == "" || v.trim() == "other") {return "gray"}
-    return base(v.trim())
+  function simpleColors(element) {
+    var v = element[groupLabel]
+    var raw;
+    if (!v || v.trim() == "" || v.trim().toLowerCase() == "other") {raw = "gray"}
+    else {raw = base(v.trim())}
+    return raw
+  }
+
+  function childrenColors(element) {
+    var raw = simpleColors(element)
+    if (!element._children || element._children.length == 0) {return d3.rgb(raw).darker()}
+    return raw
   }
 
   if (svg) {
@@ -708,7 +716,7 @@ function groupColors(groupLabel, nodes, svg, x,y) {
           .attr("r", 8)
           .attr("cx", 0)
           .attr("cy", (d,i) => i*25)
-          .attr("fill", fn)
+          .attr("fill", simpleColors)
     legend.enter().append("text")
           .attr("class", "legend-label")
           .attr("x", 10)
@@ -716,7 +724,7 @@ function groupColors(groupLabel, nodes, svg, x,y) {
           .text(d => d[groupLabel])
   }
 
-  return {fn: fn, legend: legendRoot}
+  return {fn: childrenColors, legend: legendRoot}
 }
 
 function selectionOverlay(groupLabel, selection, base) {
