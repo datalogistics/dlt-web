@@ -179,6 +179,28 @@ function shallowClone(obj) {
     return copy;
 }
 
+function addTooltip(svg, selector) {
+  var label = svg.select("__TOOL_TIP__")
+  if (label.empty) {
+     label = svg.append("text")
+                .attr("id", "hover-label")
+                .attr("text-anchor", "middle")
+                .attr("pointer-events", "none")
+  }
+
+  function enter(item) {
+      label.text(item.name)
+         .attr("x", d3.mouse(this)[0])
+         .attr("y", d3.mouse(this)[1]-10)
+  }
+
+  function leave(item) {label.text("")}
+
+  var items = d3.selectAll(selector)
+  items.on("mousemove.tool_tip", enter)
+  items.on("mouseleave.tool_tip", leave)
+}
+
 // ------------------------- Spoke-based drill down -------------------------
 // This can be used for map overlay...I hope
 // TODO: Treat the parent as a child with a pre-set position so no actual child gets put there
@@ -213,11 +235,11 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
      .attr("class", "graph-link")
      .attr("d", d => link_arc(layout[d.source], layout[d.sink]))
      .attr("stroke", d => markedForDelete(d,edits) ? "red" : "black")
-     .attr("stroke-width", 4)
+     .attr("stroke-width", 2)
      .attr("fill", "none")
      .attr("pointer-events", "visibleStroke")
 
-  tooltip(svg, "circle.tree-node")
+  addTooltip(svg, ".tree-node")
 
   //Tree links
   function getTreeLinks(acc, root) {
@@ -251,6 +273,7 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
 
 // ------------------------- Nested Circular Embedding -------------------------
 function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
+  
   svg.selectAll("*").remove()
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
  
@@ -280,7 +303,7 @@ function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
      .attr("fill", "none")
      .attr("pointer-events", "visibleStroke")
 
-  tooltip(svg, "circle.tree-node")
+  addTooltip(svg, ".tree-node")
 
   var redraw = function() {drawWith(graph, groupLabel, edits, svg, width, height, actions)}
   enableEditing(svg, nodes, graph.links, actions, edits, redraw, 
@@ -318,20 +341,6 @@ function cross(list) {
 }
 
 function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions) {
-  function tooltip(svg, enter) {
-    if (enter) {
-      return function(item) {
-        svg.text(item.name)
-           .attr("x", d3.mouse(this)[0])
-           .attr("y", d3.mouse(this)[1]-10)
-      }
-    } else {
-      return function(item) {
-        svg.text("")
-      }
-    }
-  }
-
   function highlightLinks(enter) {
     if (enter) {
       return function(item) {
@@ -370,7 +379,6 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
   var partition = d3.layout.partition()
       .sort((a,b) => a.sort-b.sort)
       .size([2 * Math.PI, radius])
-      //.value(d => d.links ? d.links : 1)
       .value(d => d._children ? d._children.length + 1 : 1) //Children+1 in case there is a children array BUT it has no items
   
   rootSvg.selectAll("*").remove()
@@ -387,12 +395,7 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
       .innerRadius(d => radius - (radius/(maxDepth+5))*(d.depth-1))
       .outerRadius(d => radius - (radius/(maxDepth+5))*d.depth)
 
-  var label = svg.append("text")
-                 .attr("id", "hover-label")
-                 .attr("text-anchor", "middle")
-                 .attr("pointer-events", "none")
-
-  svg.insert("g","#hover-label")
+  svg.insert("g","__tree__")
        .attr("id", "nodes")
        .selectAll("path")
        .data(nodes)
@@ -408,11 +411,11 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
        .attr("pointer-events", "visiblePaint")
        .attr("depth", d=> d.path.split(":").length -1)
        .on("click.show", actions.nodeClick)
-       .on("mousemove", tooltip(label, true))
-       .on("mouseleave.tip", tooltip(label, false))
        .on("mouseenter", highlightLinks(true))
        .on("mouseleave.link", highlightLinks(false))
- 
+
+  addTooltip(svg, ".tree-node")
+
   //LINKS
   arc.innerRadius(d => radius - (radius/(maxDepth+5))*d.depth)
   nodes = nodes.map(n => {n["centroid"] = toPolar(arc.centroid(n)); return n})

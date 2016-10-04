@@ -90,7 +90,6 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
     var badlinks = links.filter(l => !l.source || !l.sink)
     links = links.filter(l => l.source && l.sink)
-    if (badlinks.length > 0) {console.error("Problematic links dropped for missing source or sink: ", badlinks.length, "\n", badlinks, "\nRetaining " + links.length)}
 
     var graph = {tree: root, links: links}
     return graph
@@ -105,6 +104,7 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
     function cannonicalURL(url) {return decodeURIComponent(url.replace(/\+/g, ' '))}
 
     function addPaths(root, prefix, top) {
+      //Add an attributes to each node in the tree with a root-identifier and a full set of ids from root down
       root["path"] = prefix + root.id 
       root["__top__"] = top 
       if (root.children) {
@@ -116,16 +116,16 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
     }
 
     function buildUnnamedTopology(domains, node, ports) {
-      var unnamed_topo = {id: -1, name: "---", selfRef: "##unnamed_topology##"}
-      var unnamed_domain = {id: -1, name: "---", selfRef: "##unnamed_domain##"}
-      var unnamed_node = {id: -1, name: "---", selfRef: "##unnamed_node##"}
+      var unnamed_topo = {id: -1, name: "Other", selfRef: "##unnamed_topology##"}
+      var unnamed_domain = {id: -1, name: "Other", selfRef: "##unnamed_domain##"}
+      var unnamed_node = {id: -1, name: "Other", selfRef: "##unnamed_node##"}
 
       unnamed_topo["children"] = domains.filter(d => d.path === undefined)
       unnamed_domain["children"] = nodes.filter(d => d.path === undefined)
       unnamed_node["children"] = ports.filter(d => d.path === undefined)
 
       if (unnamed_node.children.length >0) {unnamed_domain.children.push(unnamed_node)}
-      if (unnamed_domain.children.length >0) {unnamed_topo.children.push(unnamed_node)}
+      if (unnamed_domain.children.length >0) {unnamed_topo.children.push(unnamed_domain)}
       if (unnamed_topo.children.length > 0) {return unnamed_topo;}
       return 
     }
