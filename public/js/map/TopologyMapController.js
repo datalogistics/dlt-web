@@ -18,7 +18,6 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
   draw(baseGraph, "__top__", paths, svg, layout, width, height)
 
-  var group = basicSetup(svg, width, height)
   var selection = []
   
   //Cleanup functions here!
