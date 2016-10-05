@@ -4,7 +4,7 @@
 <head>
   <base href="/">
 
-  <title>EODN/IDMS</title>
+  <title>Periscope</title>
 
   <!-- CSS -->
   <link rel="stylesheet" href="libs/bootstrap/dist/css/bootstrap.css">
@@ -28,13 +28,13 @@
         <button type="button" class="navbar-toggle btn btn-default btn-lg pull-right" data-toggle="collapse" data-target=".navbar-collapse">
            <span class="glyphicon glyphicon-list"></span>
         </button>
-        <a class="navbar-brand" href="/">EODN-IDMS</a>
+        <a class="navbar-brand" href="/">Periscope</a>
       </div>
 
       <!-- Collect the nav links, forms, and other content for toggling -->
       <div class="collapse navbar-collapse">
         <ul class="nav navbar-nav">
-          <li><a class="header" href="/status">Depots</a></li>
+          <li><a class="header" href="/status">Services</a></li>
           <li><a class="header" href="/browser">Browser</a></li>
           <li><a class="header" href="/downloads">Downloads</a></li>
           <li><a class="header" href="/map">Map</a></li>
@@ -97,7 +97,8 @@
   <script src="libs/topojson/topojson.js"></script>  
 
   <!-- Custom Angular -->
-  <script src="js/common/pubsub.js"></script>  
+  <script src="js/common/pubsub.js"></script>
+  <script src="js/common/eventCharts.js"></script>
   <script src="js/common/jsTree.directive.js"></script>  
   <script src="js/common/directedGraph.js"></script>
   <script src="js/common/directives.js"></script>
@@ -109,10 +110,10 @@
   <script src="js/main/MainService.js"></script>
   <script src="js/main/MainController.js"></script>
   <script src="js/main/MainModule.js"></script>
-  <script src="js/depot/DepotService.js"></script>
-  <script src="js/depot/DepotNewWinGraphController.js"></script>
-  <script src="js/depot/DepotController.js"></script>
-  <script src="js/depot/DepotModule.js"></script>
+  <script src="js/service/ServiceService.js"></script>
+  <script src="js/service/ServiceNewWinGraphController.js"></script>
+  <script src="js/service/ServiceController.js"></script>
+  <script src="js/service/ServiceModule.js"></script>
   <script src="js/exnode/ExnodeSchema.js"></script>
   <script src="js/exnode/ExnodeService.js"></script>
   <script src="js/exnode/DltFormController.js"></script>

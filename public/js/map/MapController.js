@@ -6,7 +6,7 @@ function mapController($scope, $routeParams, $http, UnisService) {
     .then(function(res) {
       var natmap = res.data;
 
-      allServiceData($scope.services, "ibp_server", natmap,
+      allServiceData($scope.services, null, natmap,
         mapPoints(map.projection, map.svg, "depots"));
 
       if (typeof $routeParams.id != 'undefined') {

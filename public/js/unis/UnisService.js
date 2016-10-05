@@ -212,7 +212,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	}
 	services[i].ttl--;
 	if (services[i].ttl < -ttl_off_limit) {
-	  // let's not remove 'off' depots yet
+	  // let's not remove 'off' services yet
 	  //services.splice(i, 1);
 	}
       }

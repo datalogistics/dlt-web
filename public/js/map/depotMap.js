@@ -263,7 +263,7 @@ function allServiceData(services, match, natmap, then) {
     var name =  uniqueIds[i]
     var item = uniqueServices[name]
 
-    if (item.serviceType && item.serviceType != match) {
+    if (match && item.serviceType && item.serviceType != match) {
       continue;
     }
 

@@ -16,17 +16,17 @@ angular.module('periApp', ['ngRoute',
 			   'main',
                            'unis',
 			   'exnode',
-			   'depot',
+			   'service',
 			   'map'])  
   .config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
            function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
              $routeProvider
                .when('/popup/:type', {
-                 templateUrl: 'views/depot_data.html',
-                 controller: 'DepotNewWinGraphController'
+                 templateUrl: 'views/service_data.html',
+                 controller: 'ServiceNewWinGraphController'
                }).when('/popup/:type/:name', {
-                 templateUrl: 'views/depot_data.html',
-                 controller: 'DepotNewWinGraphController'
+                 templateUrl: 'views/service_data.html',
+                 controller: 'ServiceNewWinGraphController'
                }).otherwise({redirectTo: '/popup/1/1'});
         $locationProvider.html5Mode(true);
     }]);

@@ -1,7 +1,7 @@
 /*
- * Depot Controller
- * public/js/depot/
- * DepotController.js
+ * Service Controller
+ * public/js/service/
+ * ServiceController.js
  */
 function getRate(x,y,oldx,oldy) {
   var timeD = x/1e6 - oldx/1e6;
@@ -19,7 +19,7 @@ function getRate(x,y,oldx,oldy) {
   return newArr;
 }
 
-function depotController($scope, $routeParams, $location, $filter, $rootScope, UnisService, DepotService,$modal,$window,$q) {
+function serviceController($scope, $routeParams, $location, $filter, $rootScope, UnisService, ServiceService,$modal,$window,$q) {
   var SHOW_ETS = ['ps:tools:blipp:ibp_server:resource:usage:used',
 	          'ps:tools:blipp:ibp_server:resource:usage:free',
 	          'ps:tools:blipp:linux:cpu:utilization:user',
@@ -36,15 +36,14 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   /**
    Group services by parameter - Keep watching services and group them by location
    */
-  var currentKey = "location"; // Can be anyother property
+  var currentKey = "serviceType"; // Can be anyother property
   $scope.$watch('services', function(serv) {
-    // TODO No need to use filter - just add the query to the URL in services
-    var services = $filter('filter')(serv.slice(0),{serviceType: 'ibp_server'}) || [];    
+    var services = serv.slice(0) || [];
     $scope.groupedServiceMap = services.reduce(function (y,x) {
       var key = x[currentKey];
       // Special casing location - Could technically just try to put this into its toString method
       if (currentKey == "location") {
-        var k  = (key.city || "") + " "  + (key.state || "");        
+        var k = (key.city || "") + " "  + (key.state || "");
         key = k.trim();
       };
       if (!y[key]) {
@@ -170,7 +169,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     if (MY_ETS.indexOf(md.eventType) >= 0) {
       var ss = 0 ;
       if (/network:/.test(md.eventType)) {        
-        try{ ss = ((s.depot[md.eventType] || ss)/1).toFixed(0);} catch(e){};
+        try{ ss = ((s.service[md.eventType] || ss)/1).toFixed(0);} catch(e){};
         var divValue,label; 
         if (ss > 1e3 && ss < 1e6) {
           // Make it kb
@@ -189,7 +188,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
         ss = (ss/divValue).toFixed(2) + " "+ label;
       }
       else {
-        try{ ss = (s.depot[md.eventType]/1e9).toFixed(0);
+        try{ ss = (s.service[md.eventType]/1e9).toFixed(0);
 	     if (Number.isNaN(ss) || ss == "NaN")
 	       ss = "N/A";
 	   } catch(e){
@@ -202,9 +201,7 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
   };
   
   $scope.getServiceMetadata = function(service) {
-    if (service.serviceType == "ibp_server") {
-      return DepotService.depots[service.id].metadata;
-    }
+    return ServiceService.services[service.id].metadata;
   };
   
   $scope.showData = function(metadata , name , buttonName) {
@@ -219,11 +216,11 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
       window.open('/popup/graphs?'+$.param(params),null, "width=600,height=420,resizable,scrollbars,status");
     } else {
       $scope.metadataId = metadata.id;
-      $scope.depotInstitutionName = name;
+      $scope.serviceInstitutionName = name;
       $scope.dialogButtonName = buttonName;
       var modal = $modal.open({
-        templateUrl: '/views/depot_data.html',
-        controller: 'DepotController',
+        templateUrl: '/views/service_data.html',
+        controller: 'ServiceController',
         scope : $scope ,
         size : 'lg',
         resolve: {
@@ -237,24 +234,23 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
         UnisService.unsubDataId(metadata.id,"dialog");
       });
     }
-
-    //$location.path('/depots/' + metadata.id);
   };
   
   $scope.showMap = function(service_id) {
     $location.path('/map/' + service_id);
   };
 
+  // XXX: FIXME!
   function updateService(ser,dat) {
     if (dat &&  !dat.error) {
       var data = dat.data || {};
       if (ser.ttl && ser.ttl < 200)
 	ser.ttl = 200;
-      ser.depot['ps:tools:blipp:ibp_server:resource:usage:used'] = data.totalUsed;
-      ser.depot['ps:tools:blipp:ibp_server:resource:usage:free'] = data.totalFree;
+      ser.service['ps:tools:blipp:ibp_server:resource:usage:used'] = data.totalUsed;
+      ser.service['ps:tools:blipp:ibp_server:resource:usage:free'] = data.totalFree;
     } else {
-      // Kill the depot - Can't find data
-      ser.ttl = ser.depot['ps:tools:blipp:ibp_server:resource:usage:free']  = ser.depot['ps:tools:blipp:ibp_server:resource:usage:used'] = 0;
+      // Kill the service - Can't find data
+      ser.ttl = ser.service['ps:tools:blipp:ibp_server:resource:usage:free'] = ser.service['ps:tools:blipp:ibp_server:resource:usage:used'] = 0;
     }
   }
   $scope.runGetVersion = function(ser,ev) {
@@ -298,14 +294,3 @@ function depotController($scope, $routeParams, $location, $filter, $rootScope, U
     var tmpl = $("#getVersionModal.html");
   };
 }
-
-
-
-
-
-
-
-
-
-
-
