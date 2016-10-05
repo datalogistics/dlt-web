@@ -18,6 +18,7 @@ var WebSocket = require('ws')
 var resourceHelper = require('./resourceHelper');
 var getOptions = resourceHelper.getOptions;
 var getHttpOptions = resourceHelper.getHttpOptions;
+var wsfilterMap = cfg.wsfilterMap;
 
 WebSocket.super_.defaultMaxListeners = 0;
 
@@ -137,7 +138,10 @@ function _createWebSocket(opt,path, name, emit , isAggregate , onopencb) {
                            'hostname': opt.host,
                            'port'    : opt.port,
                            'pathname': pathname});
-  
+
+  if (path in wsfilterMap) {
+    urlstr += "?query="+wsfilterMap[path];
+  }
   console.log("Creating websocket for: " + urlstr);
   
   try{ 

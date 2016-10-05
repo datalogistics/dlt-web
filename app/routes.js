@@ -25,6 +25,7 @@ var resourceHelper = require('./resourceHelper');
 var getOptions = resourceHelper.getOptions;
 var getHttpOptions = resourceHelper.getHttpOptions;
 var sslOptions = cfg.sslOptions;
+var filterMap = cfg.filterMap;
 
 function applyRouteCbs(name,json) {  
   var rcb = routeCb[cfg.routeCb[name]];
@@ -165,7 +166,6 @@ module.exports = function(app) {
           fdata = fdata + data;          
         }).on('end',function() {
           try {
-            console.log(fdata)
             var obj = JSON.parse(fdata);
             return defer.resolve(obj);
           } catch (e) {            
@@ -229,6 +229,9 @@ module.exports = function(app) {
     return function(req, res) {
       // Get all parameters and just forward it to UNIS 
       var paramString = querystring.stringify(req.query);
+      if (path in filterMap) {
+	paramString += "&"+filterMap[path]
+      }
       // console.log('STATUS: ' + res.statusCode);
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       // console.log('BODY: ' + JSON.stringify(res.body));
