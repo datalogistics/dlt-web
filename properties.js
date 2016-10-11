@@ -50,20 +50,20 @@ var self = {
   authArr : [],
   routeMap : {
     // Aggregate from the following by default
-    'default'  : ['dev'],
+    'default'  : ['dev', 'dlt', 'monitor'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : [],
     'nodes': [],
     'nodes_id' : [],
-    'services': [] ,
-    'services_id' : [],
+    'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
+    'services_id' : ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'],
     'measurements': [],
     'measurements_id' : [],
     'metadata': [],
     'metadata_id' : [],
-    'data': [],
-    'data_id': [],
+    'data': ['dev', 'dlt_ms', 'monitor_ms'],
+    'data_id': ['dev', 'dlt_ms', 'monitor_ms'],
     'ports': [],
     'ports_id' : []
   },
@@ -74,16 +74,31 @@ var self = {
     'services_id' : "addLocation"
   },
   filterMap : {
-    services : "serviceType=ceph,ceph-mon,ceph-osd,ibp_server,ps:tools:blipp"
+    services : "serviceType=ceph,ceph-mon,ceph-osd,ibp_server"
   },
   wsfilterMap : {
-    services : '{"serviceType":{"in":["ceph","ceph-mon","ceph-osd","ibp_server","ps:tools:blipp"]}}'
+    services : '{"serviceType":{"in":["ceph","ceph-mon","ceph-osd","ibp_server"]}}'
   },
   serviceMap : {
     local : {
       url : "localhost",
       port : "8888",
       use_ssl : false
+    },
+    msu: {
+	url : "msu-ps01.osris.org",
+	port : "8888",
+	use_ssl : false,
+    },
+    wsu: {
+	url : "wsu-ps01.osris.org",
+	port : "8888",
+	use_ssl : false,
+    },
+    um: {
+	url : "um-ps01.osris.org",
+	port : "8888",
+	use_ssl : false,
     },
     unis : {
       url : "unis.crest.iu.edu",

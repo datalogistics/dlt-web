@@ -4,6 +4,8 @@
  * ServiceService.js
  */
 
+var MY_ETS = [ETS.used, ETS.free, ETS.in, ETS.out];
+
 function serviceService($http, UnisService, CommChannel) {
   var service = {};
   

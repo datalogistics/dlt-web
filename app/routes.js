@@ -135,6 +135,7 @@ module.exports = function(app) {
       // Adding parameters got 
       opt.hostname = hostArr[index];
       opt.port = portArr[index];
+      opt.use_ssl = doSSLArr[index];
       if (certArr[index]) {
         opt.cert = fs.readFileSync(certArr[index]);
       }
@@ -143,10 +144,10 @@ module.exports = function(app) {
       }
       return function() {
         var j = getJarFromReq(nameArr[index],req);
-        var defer = q.defer();        
+        var defer = q.defer();
         var prot = "http://";
-        if (opt.cert) {
-          prot = "http://";          
+        if (opt.use_ssl) {
+          prot = "https://";
         }
         var op = {
           url : prot + opt.hostname+":"+opt.port+opt.path,          
@@ -271,13 +272,11 @@ module.exports = function(app) {
       // Get all parameters and just forward it to UNIS 
       var paramString = querystring.stringify(req.query);
       //console.log("node id: " + req.params.id);
-      // console.log('STATUS: ' + res.statusCode);
-      // console.log('HEADERS: ' + JSON.stringify(res.headers));
-      // console.log('BODY: ' + JSON.stringify(res.body));
+      //console.log('STATUS: ' + res.statusCode);
+      //console.log('HEADERS: ' + JSON.stringify(res.headers));
+      //console.log('BODY: ' + JSON.stringify(res.body));
       var node_id = req.params.id;
-      var method = https;
-      var fullpath = path + '/' + node_id + '?' + paramString
-
+      var fullpath = "/" + path + '/' + node_id + '?' + paramString
       var options = _.extend({
         req : req , res : res ,
         name: name+"Id"+ "?" + paramString,
@@ -457,7 +456,7 @@ module.exports = function(app) {
   usgsapi.addRoutes('/usgsapi/',app);  
   app.get('/popup/*', function(req,res) {
     res.render('../views/popup.html');
-  });  
+  });
   var viewsFolder = "../views";  
   app.get('*.html',function(req,res) {    
     res.render(path.join(viewsFolder,req.url));
@@ -467,5 +466,5 @@ module.exports = function(app) {
   });
   app.get('*', function(req, res) {
     res.render(path.join(viewsFolder,'index.ejs'));
-  });  
+  });
 };
