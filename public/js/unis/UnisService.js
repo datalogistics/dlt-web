@@ -170,6 +170,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       data = JSON.parse(data);
     };
     for (var id in data) {
+      //console.log('Incoming data for ' + id + ' : ', data[id]);
       if (id in dataIdCbMap) {
 	var map = dataIdCbMap[id];
 	for (var i in map) {

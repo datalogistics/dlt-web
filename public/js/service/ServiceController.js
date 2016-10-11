@@ -169,7 +169,7 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
     if (MY_ETS.indexOf(md.eventType) >= 0) {
       var ss = 0 ;
       if (/network:/.test(md.eventType)) {        
-        try{ ss = ((s.service[md.eventType] || ss)/1).toFixed(0);} catch(e){};
+        try{ ss = ((s.sref[md.eventType] || ss)/1).toFixed(0);} catch(e){};
         var divValue,label; 
         if (ss > 1e3 && ss < 1e6) {
           // Make it kb
@@ -188,7 +188,7 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
         ss = (ss/divValue).toFixed(2) + " "+ label;
       }
       else {
-        try{ ss = (s.service[md.eventType]/1e9).toFixed(0);
+        try{ ss = (s.sref[md.eventType]/1e9).toFixed(0);
 	     if (Number.isNaN(ss) || ss == "NaN")
 	       ss = "N/A";
 	   } catch(e){
