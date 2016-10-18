@@ -10,13 +10,13 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
   $http.get('/api/natmap')
     .then(function(res) {
       var natmap = res.data;
-      allServiceData($scope.services, "ibp_server", natmap,
+      allServiceData($scope.services, null, natmap,
         mapPoints(map.projection, map.svg, "depots"));
       return natmap
     })
     .then(function(natmap) {backplaneLinks(map, natmap)})
     .then(() => $http.get('/api/exnodes/?id=' + nodeId))
-    .then(res => displayExnode(map, nodeId, res.data[0])) 
+    .then(res => displayExnode(map, nodeId, res.data[0]))
   
   $scope.$on("$destroy", function() {
     d3.selectAll("#map-tool-tip").each(function() {this.remove()})  //Cleans up the tooltip object when you navigate away
@@ -28,14 +28,14 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       var extents = []
       
       if (exnode.extents) {
-        extents = exnode.extents.map(function(e) {return {id: e.id, offset: e.offset, size: e.size, depot: parseLocation(e.mapping.read)}})
+        extents = exnode.extents.map(function(e) {return {id: e.id, offset: e.offset, size: e.size, depot: parseLocation(e.location)}})
                                     .map(function(e) {e["xy"] = mapLocation(map, e.depot); return e})
                                     .sort((a,b) => a.depot.localeCompare(b.depot)) 
       } else if (exnode.mode == "directory") {
         errorMessage(map, "Exnode is for a directory, no extents")
         return 
       } else {
-        extents = [{id: exnode.id, offset: exnode.offset, size: exnode.size, depot: parseLocation(exnode.mapping.read)}]
+        extents = [{id: exnode.id, offset: exnode.offset, size: exnode.size, depot: parseLocation(exnode.location)}]
       }
       
       var cells = range(0, 500).map(function(e) {return {depots:new Set(), exnodes:[]}})

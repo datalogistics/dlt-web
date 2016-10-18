@@ -74,7 +74,8 @@ var self = {
     'services_id' : "addLocation"
   },
   filterMap : {
-    services : "serviceType=ceph,ceph-mon,ceph-osd,ibp_server"
+    services : "serviceType=ceph,ceph-mon,ceph-osd,ibp_server",
+    exnodes : "inline"
   },
   wsfilterMap : {
     services : '{"serviceType":{"in":["ceph","ceph-mon","ceph-osd","ibp_server"]}}'

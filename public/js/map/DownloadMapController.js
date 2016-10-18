@@ -19,7 +19,7 @@ function downloadMapController($scope, $location, $http, UnisService, SocketServ
   $http.get('/api/natmap')
     .then(function(res) {
       var natmap = res.data;
-      allServiceData($scope.services, "ibp_server", natmap,
+      allServiceData($scope.services, null, natmap,
         mapPoints(map.projection, map.svg, "depots"));
 
       limitSessionIds.forEach(function(id) {
