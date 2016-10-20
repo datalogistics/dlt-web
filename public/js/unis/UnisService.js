@@ -388,10 +388,16 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       params : { host : host,port  :port }
     });
   };
+
+  service.getMostRecent = function(items) {
+    var recent = {}
+    items.forEach(function(e) {
+      var prev = recent[e.id] || e
+      if (prev.ts && e.ts && e.ts > prev.ts) {prev = e}
+      recent[e.id] = e
+    })
+    return Object.keys(recent).map(k => recent[k])
+  }
+
   return service;
 }
-
-
-
-
-
