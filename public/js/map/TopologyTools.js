@@ -148,6 +148,23 @@ function subsetGraph(graph, paths) {
   var subTree = trimTree(graph.tree, paths) 
   var leaves = gatherLeaves(subTree)
 
+  function includesLink(ls, link) {
+    for (var i=0; i<ls.length; i++) {
+     var l = ls[i]
+     if (l == link ||
+         (l.source == link.source && l.sink == link.sink && l.directed == link.directed)) 
+       {
+         return true
+       }
+    }
+    return false
+  }
+
+  function uniques(ls, item) {
+    if (!includesLink(ls, item)) {ls.push(item)}
+    return ls
+  }
+
   //Rebuild links to fit just selected nodes
   var links = graph.links
                  .map(link => {
@@ -155,6 +172,7 @@ function subsetGraph(graph, paths) {
                    link.source = findEndpoint(leaves, link.source)
                    link.sink = findEndpoint(leaves, link.sink)
                    return link})
+                 .reduce(uniques, [])
 
   return {tree: subTree, links: links}
 }
