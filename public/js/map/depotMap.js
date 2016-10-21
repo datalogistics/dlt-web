@@ -263,11 +263,11 @@ function allServiceData(services, match, natmap, then) {
     var name =  uniqueIds[i]
     var item = uniqueServices[name]
 
-    if (item.serviceType && item.serviceType != match) {
+    if (match && item.serviceType && item.serviceType != match) {
       continue;
     }
 
-    port = 6714;
+    port = '';
     name = getServiceName(item);
     if (natmap && name in natmap) {
       port = natmap[name].port || port
@@ -390,7 +390,7 @@ function backplaneLinks(map, natmap) {
       port = mapping.port
     }
     else {
-      port = 6714
+      port = '';
     }
 
     var mapNode = svg.selectAll(".depotLocation").filter(function(d) {

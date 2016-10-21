@@ -1,4 +1,4 @@
-<h2 class="lead text-center">Depot Status</h2>
+<h2 class="lead text-center">Service Status</h2>
 
 <div class="table-responsive">  
   <accordion close-others="oneAtATime">
@@ -17,7 +17,7 @@
           <th>Data Charts</th>
         </tr>
         <input type="text" class="form-control" ng-model="q.accessPoint" placeholder="Filter by service access point..." />
-        <tbody ng-repeat="service in services | filter: {serviceType: 'ibp_server'} | filter:q:strict | orderBy:'[location.state, location.city]' | unique:'accessPoint'">
+        <tbody ng-repeat="service in services | filter:q:strict | orderBy:'[location.state, location.city]' | unique:'accessPoint'">
           <td>
             <button ng-show="service.status === 'ON'" class="btn btn-success disabled">ON</button>
             <button ng-show="service.status === 'Unknown'" class="btn btn-warning disabled">Unknown</button>

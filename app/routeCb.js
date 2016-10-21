@@ -49,7 +49,7 @@ function getLocation(ap,obj) {
   name = unescape((name||"").trim());
   request(url + name, function (err, r, resp) {
     try{ 
-      if (err)
+      if (err || r.statusCode == 404)
 	prom.resolve({error:true});
       else {
 	var res = JSON.parse(resp);

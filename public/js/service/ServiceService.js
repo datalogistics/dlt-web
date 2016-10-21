@@ -1,76 +1,16 @@
 /*
- * Rest Services for Depot
- * public/js/services/
- * DepotService.js
+ * Rest Services for Service (UNIS)
+ * public/js/service/
+ * ServiceService.js
  */
-
-var ETS = {
-  'used': "ps:tools:blipp:ibp_server:resource:usage:used",
-  'free': "ps:tools:blipp:ibp_server:resource:usage:free",
-  'user': "ps:tools:blipp:linux:cpu:utilization:user",
-  'sys' : "ps:tools:blipp:linux:cpu:utilization:system",
-  'in'  : "ps:tools:blipp:linux:network:utilization:bytes:in",
-  'out' : "ps:tools:blipp:linux:network:utilization:bytes:out"
-};
 
 var MY_ETS = [ETS.used, ETS.free, ETS.in, ETS.out];
 
-var format_GB = function(){
-  return function(d){
-    return (d/1e9).toFixed(2); // GB
-  }
-}
-var format_rate = function(){
-  return function(d){
-    return (d/1).toFixed(3);
-  }
-}
-var format_percent = function() {
-  return function(d) {return (d*100).toFixed(2)}
-}
-var format_timestamp = function(){
-  return function(d){
-    var ts = d/1e3;
-    return d3.time.format('%X')(new Date(ts));
-  }
-}
-
-var ETS_CHART_CONFIG = {}
-ETS_CHART_CONFIG['used'] = {selector: "#CHART-Time-GB",
-			      xformat: format_timestamp, yformat: format_GB};
-ETS_CHART_CONFIG['free'] = {selector: "#CHART-Time-GB",
-			      xformat: format_timestamp, yformat: format_GB};
-ETS_CHART_CONFIG['user'] = {selector: "#CHART-Time-Percent",
-			      xformat: format_timestamp, yformat: format_percent};
-ETS_CHART_CONFIG['system']  = {selector: "#CHART-Time-Percent",
-			      xformat: format_timestamp, yformat: format_percent};
-ETS_CHART_CONFIG['in']   = {selector: "#CHART-Time-Rate",
-			      xformat: format_timestamp, yformat: format_rate};
-ETS_CHART_CONFIG['out']  = {selector: "#CHART-Time-Rate",
-			      xformat: format_timestamp, yformat: format_rate};
-ETS_CHART_CONFIG[ETS.used] = {selector: "#CHART-Time-GB",
-			      xformat: format_timestamp, yformat: format_GB};
-ETS_CHART_CONFIG[ETS.free] = {selector: "#CHART-Time-GB",
-			      xformat: format_timestamp, yformat: format_GB};
-ETS_CHART_CONFIG[ETS.user] = {selector: "#CHART-Time-Percent",
-			      xformat: format_timestamp, yformat: format_percent};
-ETS_CHART_CONFIG[ETS.sys]  = {selector: "#CHART-Time-Percent",
-			      xformat: format_timestamp, yformat: format_percent};
-ETS_CHART_CONFIG[ETS.in]   = {selector: "#CHART-Time-Rate",
-			      xformat: format_timestamp, yformat: format_rate};
-ETS_CHART_CONFIG[ETS.out]  = {selector: "#CHART-Time-Rate",
-			      xformat: format_timestamp, yformat: format_rate};
-
-function getETSChartConfig(key){  
-  var arr = key.split(":");
-  return ETS_CHART_CONFIG[arr[arr.length-1]];
-};
-
-function depotService($http, UnisService, CommChannel) {
+function serviceService($http, UnisService, CommChannel) {
   var service = {};
   
-    // depots is a map of service IDs
-  service.depots = {};
+  // services is a map of service IDs
+  service.services = {};
   
   function getMetadata(s) {
     var metadatas = [];
@@ -87,7 +27,12 @@ function depotService($http, UnisService, CommChannel) {
 
     // this case is brutal because our metadata is missing subject hrefs
     // perhaps can fix in blipp for IDMS
-    var ip = s.accessPoint.split(':')[1].replace('//', '');
+    if ("accessPoint" in s) {
+      var ip = s.accessPoint.split(':')[1].replace('//', '');
+    }
+    else {
+      var ip = null;
+    }
     // this search matches on measurement commands
     for(var i = 0; i < meas.length; i++) {
       if(meas[i].configuration && meas[i].configuration.command) {
@@ -179,8 +124,8 @@ function depotService($http, UnisService, CommChannel) {
     return getUniqueById(ret);
   };
 
-  function getValues(depot) {
-    var mds = depot.metadata;
+  function getValues(service) {
+    var mds = service.metadata;
 
     // get values for each metadata
     mds.forEach(function(md) {
@@ -191,22 +136,22 @@ function depotService($http, UnisService, CommChannel) {
             isRate = true;
           }
 	  // in case we do ask for the most recent value right away again...
-          var depotData = [];
-          var oldDepotDt = [];
+          var serviceData = [];
+          var oldServiceDt = [];
           if($.isArray(data)) {
             // data from the subscription
-            depotData = data.pop();
-            oldDepotDt = data[data.length-1];
+            serviceData = data.pop();
+            oldServiceDt = data[data.length-1];
           } else {
             // this gets the last element, which is the most recent in a published message
-            depotData = data[md.id].pop();
-            oldDepotDt = data[md.id][data[md.id].length-1];
+            serviceData = data[md.id].pop();
+            oldServiceDt = data[md.id][data[md.id].length-1];
           }
-          var y = Number(depotData.value) || 0;
+          var y = Number(serviceData.value) || 0;
           if (isRate) {
-            var x = Number(depotData.ts) || 0;
-            var oldx = Number(oldDepotDt.ts) || 0;
-            var oldy = Number(oldDepotDt.value) || 0;            
+            var x = Number(serviceData.ts) || 0;
+            var oldx = Number(oldServiceDt.ts) || 0;
+            var oldy = Number(oldServiceDt.value) || 0;            
             var timeD = x/1e6 - oldx/1e6;
             // Now use this old value to calculate rate
             var yVal;
@@ -214,22 +159,22 @@ function depotService($http, UnisService, CommChannel) {
               yVal = y;
             else 
               yVal = ((y - oldy) / timeD).toFixed(2);
-            depot[md.eventType] =  yVal;
+            service[md.eventType] =  yVal;
           } else {            
-            depot[md.eventType] = y;
+            service[md.eventType] = y;
           }
 	};	
-	UnisService.subDataId(md.id, onData, "depot_"+md.id);
+	UnisService.subDataId(md.id, onData, "service_"+md.id);
       }
     });
   };
 
-  function updateDepots(md) {
+  function updateServices(md) {
     if (MY_ETS.indexOf(md.eventType) >= 0) {
       var services = getServiceByMeta(md)
       services.forEach(function(s) {
-	for (var key in service.depots) {
-	  var d = service.depots[key];
+	for (var key in service.services) {
+	  var d = service.services[key];
 	  if (d.service.id == s.id) {
 	    // don't duplicate
 	    var found = 0;
@@ -248,44 +193,40 @@ function depotService($http, UnisService, CommChannel) {
     }
   };
   
-  function createDepot(s) {
+  function createService(s) {
     var mds = getMetadata(s);
-    var depot = {
+    var curr = {
       'metadata': mds,
       'service': s
     };
-    getValues(depot);
-    service.depots[s.id] = depot;
-    // save a reference to the depot object in the service entry
-    s.depot = depot;
+    getValues(curr);
+    service.services[s.id] = curr;
+    // save a reference to the service object in the service entry
+    s.sref = curr;
   };
   
-  // depot tracking service waits until UNIS has data
+  // service tracking service waits until UNIS has data
   UnisService.init().then(function() {
-    console.log("Depot service initializing...");
+    console.log("Service service initializing...");
     
     UnisService.services.forEach(function(s) {
-      if (s.serviceType == "ibp_server") {
-	createDepot(s);
-      }
+      createService(s);
     });
   });
 
   CommChannel.onNewData('new_service', function(s) {
-    if (s.serviceType == "ibp_server") {
-      createDepot(s);
-    }
+    createService(s);
   });
 
   CommChannel.onNewData('new_metadata', function(md) {
-    // update depot eT mappings when we see new metadata
-    updateDepots(md);
+    // update service eT mappings when we see new metadata
+    updateServices(md);
   });
 
   CommChannel.onNewData('new_port', function(md) {
-    // update depot service intitution names (gleaned from nodeRef URNs)
-    for (var key in service.depots) {
-      var d = service.depots[key];
+    // update service service intitution names (gleaned from nodeRef URNs)
+    for (var key in service.services) {
+      var d = service.services[key];
       getInstitutionName(d.service);
     }
   });

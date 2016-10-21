@@ -4,7 +4,7 @@ _ = require('underscore');
 // var bunyan = require('bunyan');
 var self = {
   port : process.env.PORT || 42424,
-  ENABLE_HTTPS : true,
+  ENABLE_HTTPS : false,
   // Defaulting to self-signed certs 
   ssl : {
     key : './cert/server.key',
@@ -49,21 +49,21 @@ var self = {
   // Try to login and maintain cookie for the following UNIS instances
   authArr : [],
   routeMap : {
-    // Aggregate from the following by default 
-    'default'  : ['dev_ms'],
+    // Aggregate from the following by default
+    'default'  : ['dev', 'dlt', 'monitor'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : [],
     'nodes': [],
     'nodes_id' : [],
-    'services': [] ,
-    'services_id' : [],
+    'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
+    'services_id' : ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'],
     'measurements': [],
     'measurements_id' : [],
     'metadata': [],
     'metadata_id' : [],
-    'data': [],
-    'data_id': [],
+    'data': ['dev', 'dlt_ms', 'monitor_ms'],
+    'data_id': ['dev', 'dlt_ms', 'monitor_ms'],
     'ports': [],
     'ports_id' : []
   },
@@ -73,60 +73,73 @@ var self = {
     'services' : "addLocation",
     'services_id' : "addLocation"
   },
+  filterMap : {
+    services : "serviceType=ceph,ceph-mon,ceph-osd,ibp_server",
+    exnodes : "inline"
+  },
+  wsfilterMap : {
+    services : '{"serviceType":{"in":["ceph","ceph-mon","ceph-osd","ibp_server"]}}'
+  },
   serviceMap : {
     local : {
       url : "localhost",
       port : "8888",
-      use_ssl: false
+      use_ssl : false
     },
-    virtual: {
-      url : "192.168.100.100" ,
+    msu: {
+	url : "msu-ps01.osris.org",
+	port : "8888",
+	use_ssl : false,
+    },
+    wsu: {
+	url : "wsu-ps01.osris.org",
+	port : "8888",
+	use_ssl : false,
+    },
+    um: {
+	url : "um-ps01.osris.org",
+	port : "8888",
+	use_ssl : false,
+    },
+    unis : {
+      url : "unis.crest.iu.edu",
       port : "8888",
-      key: null,
-      cert: null,
-      use_ssl: false
+      use_ssl : false,
     },
     dev : {
-      url : "unis.crest.iu.edu" ,
-      port : "8890",
-      key: null,
-      cert: null,
-      use_ssl: false
+      url : "dev.crest.iu.edu",
+      port : "8888",
+      key : null,
+      cert : null,
+      use_ssl : false
     },
     dlt : {
-      url : "dlt.incntre.iu.edu",
+      url : "dlt.crest.iu.edu",
       port : "9000",
-      key: "./dlt-client.pem",
+      key : "./dlt-client.pem",
       cert: "./dlt-client.pem",
       use_ssl: true
     },
     monitor : {
-      url : "monitor.incntre.iu.edu",
+      url : "monitor.crest.iu.edu",
       port : "9000",
-      key: null,
-      cert: null,
-      use_ssl: false
-    },
-    dev_ms : {
-      url : "dev.incntre.iu.edu",
-      port : "8888",
-      key: "./dlt-client.pem",
-      cert: "./dlt-client.pem",
-      use_ssl: false
+      key : null,
+      cert : null,
+      use_ssl : false
     },
     dlt_ms : {
-      url : "dlt.incntre.iu.edu",
+      url : "dlt.crest.iu.edu",
       port : "9001",
-      key: "./dlt-client.pem",
-      cert: "./dlt-client.pem",
-      use_ssl: true
+      key : "./dlt-client.pem",
+      cert : "./dlt-client.pem",
+      use_ssl : true
     },
     monitor_ms : {
-      url : "monitor.incntre.iu.edu",
+      url : "monitor.crest.iu.edu",
       port : "9001",
-      key: null,
-      cert: null,
-      use_ssl: false
+      key : null,
+      cert : null,
+      use_ssl : false
     }
   },
   sslOptions : {

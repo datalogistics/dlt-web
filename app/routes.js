@@ -25,6 +25,7 @@ var resourceHelper = require('./resourceHelper');
 var getOptions = resourceHelper.getOptions;
 var getHttpOptions = resourceHelper.getHttpOptions;
 var sslOptions = cfg.sslOptions;
+var filterMap = cfg.filterMap;
 
 function applyRouteCbs(name,json) {  
   var rcb = routeCb[cfg.routeCb[name]];
@@ -134,6 +135,7 @@ module.exports = function(app) {
       // Adding parameters got 
       opt.hostname = hostArr[index];
       opt.port = portArr[index];
+      opt.use_ssl = doSSLArr[index];
       if (certArr[index]) {
         opt.cert = fs.readFileSync(certArr[index]);
       }
@@ -142,10 +144,10 @@ module.exports = function(app) {
       }
       return function() {
         var j = getJarFromReq(nameArr[index],req);
-        var defer = q.defer();        
+        var defer = q.defer();
         var prot = "http://";
-        if (opt.cert) {
-          prot = "http://";          
+        if (opt.use_ssl) {
+          prot = "https://";
         }
         var op = {
           url : prot + opt.hostname+":"+opt.port+opt.path,          
@@ -165,7 +167,6 @@ module.exports = function(app) {
           fdata = fdata + data;          
         }).on('end',function() {
           try {
-            console.log(fdata)
             var obj = JSON.parse(fdata);
             return defer.resolve(obj);
           } catch (e) {            
@@ -229,6 +230,9 @@ module.exports = function(app) {
     return function(req, res) {
       // Get all parameters and just forward it to UNIS 
       var paramString = querystring.stringify(req.query);
+      if (path in filterMap) {
+	paramString += "&"+filterMap[path]
+      }
       // console.log('STATUS: ' + res.statusCode);
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       // console.log('BODY: ' + JSON.stringify(res.body));
@@ -268,13 +272,11 @@ module.exports = function(app) {
       // Get all parameters and just forward it to UNIS 
       var paramString = querystring.stringify(req.query);
       //console.log("node id: " + req.params.id);
-      // console.log('STATUS: ' + res.statusCode);
-      // console.log('HEADERS: ' + JSON.stringify(res.headers));
-      // console.log('BODY: ' + JSON.stringify(res.body));
+      //console.log('STATUS: ' + res.statusCode);
+      //console.log('HEADERS: ' + JSON.stringify(res.headers));
+      //console.log('BODY: ' + JSON.stringify(res.body));
       var node_id = req.params.id;
-      var method = https;
-      var fullpath = path + '/' + node_id + '?' + paramString
-
+      var fullpath = "/" + path + '/' + node_id + '?' + paramString
       var options = _.extend({
         req : req , res : res ,
         name: name+"Id"+ "?" + paramString,
@@ -413,62 +415,7 @@ module.exports = function(app) {
   });
 
   app.get('/api/linkmap',function(req, res) {
-    var link_map = {
-      "ucd-ucla"  : {
-        "type": "al2s",
-        "capacity": 200000,
-        "endpoint_a": "128.120.83.5",
-        "endpoint_z": "164.67.126.38"
-      },
-      "ucla-utah" : {
-        "type": "al2s",
-        "capacity": 200000,
-        "endpoint_a": "164.67.126.39",
-        "endpoint_z": "155.99.144.110"
-      },
-      "utah-mizz" : {
-        "type": "al2s",
-        "capacity": 200000,
-        "endpoint_a": "155.99.144.110",
-        "endpoint_z": "128.206.119.42"
-      },
-      "tamu-mizz" : {
-        "type": "al2s",
-        "capacity": 200000,
-        "endpoint_a": "128.206.119.42",
-        "endpoint_z": ""
-      },
-      "mizz-ill" : {
-        "type": "al2s",
-        "capacity": 200000,
-        "endpoint_a": "128.206.119.42",
-        "endpoint_z": "72.36.65.75"
-      },
-      "ill-nyser" : {
-        "type": "al2s",
-        "capacity": 200000,
-        "endpoint_a": "199.109.64.51",
-        "endpoint_z": "72.36.65.75"
-      },
-      "nyser-max" : {
-        "type": "al2s",
-        "capacity": 200000,
-        "endpoint_a": "199.109.64.51",
-        "endpoint_z": "206.196.180.223"
-      },
-      "nyser-bbn" : {
-        "type": "al2s",
-        "capacity": 200000,
-        "endpoint_a": "192.1.242.152",
-        "endpoint_z": "199.109.64.51"
-      },
-      "renci-bbn" : {
-        "type": "al2s",
-        "capacity": 200000,
-        "endpoint_a": "152.54.14.26",
-        "endpoint_z": "192.1.242.152"
-      }
-    }
+    var link_map = {}
     res.json(link_map)
   })
 
@@ -509,7 +456,7 @@ module.exports = function(app) {
   usgsapi.addRoutes('/usgsapi/',app);  
   app.get('/popup/*', function(req,res) {
     res.render('../views/popup.html');
-  });  
+  });
   var viewsFolder = "../views";  
   app.get('*.html',function(req,res) {    
     res.render(path.join(viewsFolder,req.url));
@@ -519,5 +466,5 @@ module.exports = function(app) {
   });
   app.get('*', function(req, res) {
     res.render(path.join(viewsFolder,'index.ejs'));
-  });  
+  });
 };

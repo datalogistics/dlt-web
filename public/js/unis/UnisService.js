@@ -5,7 +5,7 @@
  */
 
 function unisService($q, $http, $timeout, SocketService, CommChannel) {
-  var ttl_off_limit = 60; // 1 minute
+  var ttl_off_limit = 600; // 10 minutes
   var ttl_wiggle = 5;  
   var service = {};
   var dataIdCbMap = {};
@@ -84,7 +84,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     item.ttl = Math.round(((item.ttl + (item.ts / 1e6)) - now));
     var d = $q.defer();
     if (!hasLocationInfo(item)) {
-      var url = DLT_PROPS.FreeGeoIpUrl + getServiceName(item);      
+      var url = DLT_PROPS.FreeGeoIpUrl + getServiceName(item);
       $http.get(url).
 	success(function(data, status, headers, config) {
 	  item.location = {
@@ -170,6 +170,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       data = JSON.parse(data);
     };
     for (var id in data) {
+      //console.log('Incoming data for ' + id + ' : ', data[id]);
       if (id in dataIdCbMap) {
 	var map = dataIdCbMap[id];
 	for (var i in map) {
@@ -193,13 +194,21 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   
   finish = function() {
     var services = service.services;
+    // TODO: sanitize further
+    for(var i = services.length-1; i >= 0; i--) {
+      if (typeof services[i].name == 'undefined') {
+	// remove any rogue entries
+	services.splice(i, 1);
+      }
+    }
+    
     var prom = [] ;
     services.forEach(function(s) {
       prom.push(updateServiceEntry(s));
       // save the initial ts
       s.firstSeen = s.ts;
     });
-
+    
     // set timer value
     onTimeout = function() {
       for(var i = services.length-1; i >= 0; i--) {
@@ -212,8 +221,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	}
 	services[i].ttl--;
 	if (services[i].ttl < -ttl_off_limit) {
-	  // let's not remove 'off' depots yet
-	  //services.splice(i, 1);
+	  // remove 'off' services
+	  services.splice(i, 1);
 	}
       }
       //continue timer
@@ -233,12 +242,6 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     }
     console.log('Service data: ', data);
     var services = service.services;
-
-    // always add a new blipp service entry
-    if (services.serviceType == "ps:tools:blipp") {
-      services.push(data);
-      return;
-    }
 
     var found = false;
     // search for duplicate services

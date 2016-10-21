@@ -17,24 +17,24 @@ function formatRate(ret) {
   return (ret/divValue).toFixed(2) + " "+ label;
 }
 angular.module('avDirective', [])
-  .controller('avController', function($scope, $rootScope, $filter, UnisService, DepotService) {
-    getDepotCount = function() {
-      var count = $filter('filter')(UnisService.services, { serviceType: 'ibp_server' }).length;
+  .controller('avController', function($scope, $rootScope, $filter, UnisService, ServiceService) {
+    getServiceCount = function() {
+      var count = UnisService.services.length
       // If count is 0 , its still loading 
       if (count > 0)
         return "<div class='avtext'>"+ count + "</div>";        
     };
     getNetworkUsage = function() {
       var ret = 0;
-      Object.keys(DepotService.depots).forEach(function(key) {
-	if (DepotService.depots[key][ETS.out]) {
-      	  ret += Number(DepotService.depots[key][ETS.out]) || 0;
+      Object.keys(ServiceService.services).forEach(function(key) {
+	if (ServiceService.services[key][ETS.out]) {
+      	  ret += Number(ServiceService.services[key][ETS.out]) || 0;
 	}
       });
       var inret = 0;
-      Object.keys(DepotService.depots).forEach(function(key) {
-	if (DepotService.depots[key][ETS.in]) {
-      	  inret += Number(DepotService.depots[key][ETS.in]) || 0;
+      Object.keys(ServiceService.services).forEach(function(key) {
+	if (ServiceService.services[key][ETS.in]) {
+      	  inret += Number(ServiceService.services[key][ETS.in]) || 0;
 	}
       });      
 
@@ -42,25 +42,25 @@ angular.module('avDirective', [])
     };
     getStorageUsed = function() {
       var ret = 0;
-      Object.keys(DepotService.depots).forEach(function(key) {
-	if (DepotService.depots[key][ETS.used]) {
-      	  ret += DepotService.depots[key][ETS.used]
+      Object.keys(ServiceService.services).forEach(function(key) {
+	if (ServiceService.services[key][ETS.used]) {
+      	  ret += ServiceService.services[key][ETS.used]
 	}
       });
       return (ret/1e12);//.toFixed(2);
     };
     getStorageFree = function() {
       var ret = 0;
-      Object.keys(DepotService.depots).forEach(function(key) {
-	if (DepotService.depots[key][ETS.free]) {
-      	  ret += DepotService.depots[key][ETS.free]
+      Object.keys(ServiceService.services).forEach(function(key) {
+	if (ServiceService.services[key][ETS.free]) {
+      	  ret += ServiceService.services[key][ETS.free]
 	}
       });
       return (ret/1e12);//.toFixed(2);
     };
 
-    $scope.dcount = {'text': 'Depot Count',
-		     'datafn': getDepotCount};
+    $scope.dcount = {'text': 'Service Count',
+		     'datafn': getServiceCount};
     $scope.dnet   = {'text': 'Network Usage',
 		     'datafn': getNetworkUsage};
     $scope.dused  = {'text': 'Total Storage Used (TB)',

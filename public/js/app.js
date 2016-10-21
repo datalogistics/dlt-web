@@ -23,12 +23,12 @@ angular.module('periApp',
 		'main',
 		'unis',
 		'exnode',
-		'depot',
+		'service',
 		'auth',
 		'map'])
-  .run(function($rootScope,UnisService,DepotService,CommChannel,$modal,$cookies,$http) {
+  .run(function($rootScope,UnisService,ServiceService,CommChannel,$modal,$cookies,$http) {
     $rootScope.unis = UnisService;
-    $rootScope.depot = DepotService;
+    $rootScope.service = ServiceService;
     $rootScope.loggedIn = false;
 
     var ud = $cookies.userDetails;
@@ -72,16 +72,16 @@ angular.module('periApp',
                  controller: 'MainController'
                }).
                when('/status', {
-                 templateUrl: 'views/depots.html',
-                 controller: 'DepotController',
+                 templateUrl: 'views/services.html',
+                 controller: 'ServiceController',
                  resolve: {
                    'unis': function(UnisService) {
                      return UnisService.init()
                    }}
                }).
-               when('/depots/:id', {
-                 templateUrl: 'views/depot_data.html',
-                 controller: 'DepotController',
+               when('/servicess/:id', {
+                 templateUrl: 'views/service_data.html',
+                 controller: 'ServiceController',
                  resolve: {
                    'unis': function(UnisService) {
                      return UnisService.init()
@@ -104,7 +104,7 @@ angular.module('periApp',
                    }}
                }).
                when('/map/', {
-                 templateUrl: 'views/depot_map.html',
+                 templateUrl: 'views/service_map.html',
                  controller: 'MapController',
                  resolve: {
                    'unis': function(UnisService) {
@@ -112,7 +112,7 @@ angular.module('periApp',
                    }}
                }).
                when('/map/:id', {
-                 templateUrl: 'views/depot_map.html',
+                 templateUrl: 'views/service_map.html',
                  controller: 'MapController',
                  resolve: {
                    'unis': function(UnisService) {
