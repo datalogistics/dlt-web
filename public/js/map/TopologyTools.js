@@ -1,4 +1,7 @@
 var PATH_SEPARATOR = ":" //TODO: This global is a bad idea.  Needs to be factor out somehow...
+var ARROW_START = "url(" + document.URL + "#arrowStart" + ")" 
+var ARROW_END = "url(" + document.URL + "#arrowEnd" + ")"
+
 
 function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions) {
   //Main entry function for topology drawing
@@ -206,7 +209,6 @@ function addTooltip(svg, selector) {
 // TODO: Treat the parent as a child with a pre-set position so no actual child gets put there
 // TODO: Allow the nodes to come with pre-set positions that are preserved (i.e., to put them on a map)
 function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
-  var arrowURL = "url(" + document.URL + "#arrowEnd" + ")"
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
   var maxLayer = Object.keys(layout).reduce((acc, n) => Math.max(layout[n].layer, acc), 0)
   
@@ -239,7 +241,7 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
      .attr("stroke-width", 2)
      .attr("fill", "none")
      .attr("pointer-events", "visibleStroke")
-     .attr("marker-end", arrowURL)
+     .attr("marker-end", ARROW_END)
 
   addTooltip(svg, ".tree-node")
 
@@ -274,7 +276,6 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
 
 // ------------------------- Nested Circular Embedding -------------------------
 function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
-  var arrowURL = "url(" + document.URL + "#arrowEnd" + ")"
   svg.selectAll("*").remove()
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
  
@@ -302,7 +303,7 @@ function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
      .attr("stroke-width", 2)
      .attr("stroke", d => markedForDelete(d,edits) ? "red" : "black")
      .attr("fill", "none")
-     .attr("marker-end", arrowURL)
+     .attr("marker-end", ARROW_END)
      .attr("pointer-events", "visibleStroke")
 
   addTooltip(svg, ".tree-node")
@@ -376,7 +377,6 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
     return targets 
   }
 
-  var arrowURL = "url(" + document.URL + "#arrowEnd" + ")"
   var radius = Math.min(width, height) / 2
  
   var partition = d3.layout.partition()
@@ -468,7 +468,12 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
 
     function line(d) {
       var p = toCartesian(d[0].centroid.r, d[0].centroid.t)
-      if (d.length == 1) {return self_arc(p, 10)}
+      if (d.length == 1) {
+        console.log(self_arc(p, 10))
+        
+        return self_arc(p, 10)
+      
+      }
       else {
         var anchors = d.map(e => toCartesian(e.center))
         anchors[0] = directedAnchorPoint(d[0]) 
@@ -497,7 +502,8 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
        .attr("stroke-width", (d,i) => graphLinks[i].selected ? 3 : 2)
        .attr("stroke", (d,i) => markedForDelete(graphLinks[i], edits) ? "red" : "gray")
        .attr("pointer-events", "visibleStroke")
-			 .attr("marker-end", arrowURL)
+			 .attr("marker-end", ARROW_END)
+       .attr("marker-start", d => d.directed ? undefined : ARROW_START)
        .on("mouseenter", highlightLinks(true))
        .on("mouseleave.link", highlightLinks(false))
       
@@ -661,6 +667,20 @@ function basicSetup(svg, width, height) {
 				})
 			.append("path")
 					.attr("d", "M0,-5L10,0L0,5")
+          .attr("fill", "context-stroke")
+
+  defs.append("marker")
+			.attr({
+					"id":"arrowStart",
+					"viewBox":"0 0 10 10",
+					"refX":5,
+					"refY":5,
+					"markerWidth":4,
+					"markerHeight":3,
+					"orient":"auto"
+				})
+			.append("path")
+					.attr("d", "M -2 5 L 8 0 L 8 10 z") 
 
   var group = svg.select("#map")
   if (group.empty()) {

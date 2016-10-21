@@ -32,25 +32,24 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
 
   function unisGraph(UnisService, rootFilter) {
-    var ports = UnisService.ports 
+    var ports = UnisService.getMostRecent(UnisService.ports)
                   .map(port => {return {id: port.id, selfRef: port.selfRef, name: port.name}})
                   .filter(Boolean)  // Filters out 'falsy' values, undefined is one of them
 
-    var nodes = UnisService.nodes
+    var nodes = UnisService.getMostRecent(UnisService.nodes)
                     .map(e => {return {id: e.id, name: e.name, location: e.location, selfRef: e.selfRef, children: e.ports ? e.ports.map(p => cannonicalURL(p.href)) : []}})
                     .map(e => {e.children = ports.filter(p => e.children.indexOf(cannonicalURL(p.selfRef)) >= 0); return e})
 
-    var domains = UnisService.domains
+    var domains = UnisService.getMostRecent(UnisService.domains)
                     .map(e => {return {id: e.id, name: e.name, selfRef: e.selfRef, children: e.nodes ? e.nodes.map(n => n.href) : []}})
                     .map(e => {e.children = nodes.filter(n => e.children.indexOf(n.selfRef) >= 0); return e})
 
-    var topologies = UnisService.topologies
+    var topologies = UnisService.getMostRecent(UnisService.topologies)
                     .map(e => {return {id: e.id, name: e.name, selfRef: e.selfRef, children: e.domains ? e.domains.map(n => n.href) : []}})
                     .map(e => {e.children = domains.filter(d => e.children.indexOf(d.selfRef) >= 0); return e})
     
     var root = {id: "root", name: "root", children: topologies}
-    addPaths(root, "") //Touches everything reachable from a topology so the un-named one can be built properly
-    var unnamed=buildUnnamedTopology(domains, nodes, ports)
+    var unnamed=buildUnnamedTopology(root, domains, nodes, ports)
     if (unnamed) {topologies.push(unnamed)}
 
     if (rootFilter) {
@@ -62,14 +61,16 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
     addPaths(root, "")
 
     var links
-    links = UnisService.links
+    links = UnisService.getMostRecent(UnisService.links)
                    .map(link => {
                      if (link.directed) {
                        return {source: link.endpoints.source.href, 
-                               sink: link.endpoints.sink.href}
+                               sink: link.endpoints.sink.href,
+                               directed: false}
                      } else {
                        return {source: link.endpoints[0].href, 
-                               sink: link.endpoints[1].href}
+                               sink: link.endpoints[1].href,
+                               directed: true}
                      }})
     
     var badlinks = links.filter(l => !validLinks(l))
@@ -85,7 +86,8 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
 
     var pathMapping = HREF2Path(topologies)
     links = links.map(link => {return {source: pathMapping[cannonicalURL(link.source)], 
-                                       sink: pathMapping[cannonicalURL(link.sink)]}})
+                                       sink: pathMapping[cannonicalURL(link.sink)],
+                                       directed: link.directed}})
 
     var badlinks = links.filter(l => !l.source || !l.sink)
     links = links.filter(l => l.source && l.sink)
@@ -114,14 +116,33 @@ function topologyMapController($scope, $routeParams, $http, UnisService) {
       }
     }
 
-    function buildUnnamedTopology(domains, node, ports) {
+    function clearPaths(root) {
+      //remove all path attributes seen in the tree
+      root["path"] = undefined 
+      root["__top__"] = undefined 
+      if (root.children) {root.children.forEach(clearPaths)}
+    }
+
+    function buildUnnamedTopology(root, domains, node, ports) {
+      //If there are things that are not under a topology, bring them into the tree!
+      
       var unnamed_topo = {id: -1, name: "Other", selfRef: "##unnamed_topology##"}
-      var unnamed_domain = {id: -1, name: "Other", selfRef: "##unnamed_domain##"}
-      var unnamed_node = {id: -1, name: "Other", selfRef: "##unnamed_node##"}
+      var unnamed_domain = {id: -1, name: "Other-Domain", selfRef: "##unnamed_domain##"}
+      var unnamed_node = {id: -1, name: "Other-Node", selfRef: "##unnamed_node##"}
+      
+      addPaths(root, "") //Touches everything reachable from a topology so the un-named one can be built properly
 
       unnamed_topo["children"] = domains.filter(d => d.path === undefined)
+      clearPaths(unnamed_topo)
+      
+      addPaths(unnamed_topo, "")
       unnamed_domain["children"] = nodes.filter(d => d.path === undefined)
+      clearPaths(unnamed_topo)
+
+      addPaths(unnamed_topo, "")
       unnamed_node["children"] = ports.filter(d => d.path === undefined)
+
+      clearPaths(root)
 
       if (unnamed_node.children.length >0) {unnamed_domain.children.push(unnamed_node)}
       if (unnamed_domain.children.length >0) {unnamed_topo.children.push(unnamed_domain)}
