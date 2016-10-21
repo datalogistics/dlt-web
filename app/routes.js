@@ -43,6 +43,16 @@ function getJarFromReq(name,req) {
   var jar = request.jar(st); //
   return jar;
 }
+function getMostRecent(items) {
+  var recent = {}
+  items.forEach(function(e) {
+    var prev = recent[e.id] || e
+    if (prev.ts && e.ts && e.ts > prev.ts) {prev = e}
+    recent[e.id] = e
+  })
+  return Object.keys(recent).map(k => recent[k])
+}
+  
 // var slice_info = [];
 // var filePath = '/usr/local/etc/node.info';
 // var slice_uuid = '';
@@ -335,16 +345,16 @@ module.exports = function(app) {
     var arr = [];
     var options = _.extend({
       req : req , res : res ,
-      path : '/exnodes?fields=name,selfRef,parent,mode,size,created,modified&'+paramString,
+      path : '/exnodes?fields=id,name,selfRef,parent,mode,size,created,modified&'+paramString,
       name : 'exnodes'
     },getHttpOptions({
       name : 'exnodes'
     }));
 
-    registerGenericHandler(options, function(obj){
+    registerGenericHandler(options, function(obj) {
       var exjson =  obj[0].value;
       // Return matching id children
-      arr = exjson.map(function(x){            
+      arr = getMostRecent(exjson).map(function(x) {
         return {
           "id" : x.selfRef,
           "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
@@ -457,7 +467,7 @@ module.exports = function(app) {
   app.get('/popup/*', function(req,res) {
     res.render('../views/popup.html');
   });
-  var viewsFolder = "../views";  
+  var viewsFolder = "../views";
   app.get('*.html',function(req,res) {    
     res.render(path.join(viewsFolder,req.url));
   });
