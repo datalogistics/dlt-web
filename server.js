@@ -3,6 +3,15 @@
  * server.js
  */
 
+var fs = require('fs');
+
+// Setup a files and directories if missing so node don't complain/crash
+var logdir = './logs';
+if (!fs.existsSync(logdir)){fs.mkdirSync(logdir)}
+var local_config = 'config.js'
+if (!fs.existsSync(local_config)){fs.closeSync(fs.openSync(local_config, 'w'))}
+
+
 // include modules
 var express = require('express')
   , http = require('http')
@@ -19,7 +28,6 @@ var session = require('express-session');
 var ejs = require('ejs');
 var cfg = require('./properties');
 var multer = require('multer');
-var fs = require('fs');
 // create app, server, sockets
 var app = module.exports = express();
 var methodOverride = require('method-override');
@@ -145,4 +153,5 @@ server.listen(app.get('port'), function(){
 // setup socket.io communication
 io.sockets.on('connection', require('./app/sockets'));
 io.sockets.on('connection', require('./app/downloadSockets'));
+
 
