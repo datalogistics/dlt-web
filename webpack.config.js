@@ -18,7 +18,7 @@ module.exports = {
     ]
   },
   resolve: {
-    modules: ['public/libs', 'node_modules'],
+    modules: ['public/libs', 'node_modules']
   },
   plugins: [
     new webpack.ProvidePlugin({

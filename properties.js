@@ -50,14 +50,17 @@ var self = {
   authArr : [],
   routeMap : {
     // Aggregate from the following by default
-    'default'  : ['dev', 'dlt', 'monitor'],
+    //'default'  : ['dev', 'dlt', 'monitor'],
+    'default': ['dev'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : [],
     'nodes': [],
     'nodes_id' : [],
-    'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
-    'services_id' : ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'],
+    //'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
+    'services': ['dev'],
+    //'services_id' : ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'],
+    'services_id': ['dev'],
     'measurements': [],
     'measurements_id' : [],
     'metadata': [],

@@ -24,19 +24,19 @@
     </div>
     
     <ul class="nav navbar-nav">
-      <li class="nav-item"><a class="nav-link" href="/status">Services</a></li>
-      <li><a href="/browser">Browser</a></li>
-      <li><a href="/downloads">Downloads</a></li>
-      <li><a href="/map">Map</a></li>
-      <li><a href="/topology">Topology</a></li>
+      <li><a class="header" href="/status">Services</a></li>
+      <li><a class="header" href="/browser">Browser</a></li>
+      <li><a class="header" href="/downloads">Downloads</a></li>
+      <li><a class="header" href="/map">Map</a></li>
+      <li><a class="header" href="/topology">Topology</a></li>
     </ul>
     <ul class="nav navbar-nav pull-right">
-      <li ng-if="!loggedIn"><a ng-click="openLogin()">Login</a></li>
+      <li ng-if="!loggedIn"><a class="header" ng-click="openLogin()">Login</a></li>
       <li ng-if="loggedIn" class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
           {{userData.email}} <span class="caret"></span></a>
         <ul class="dropdown-menu">
-          <li><a ng-click="userLogout()">Logout</a></li>
+          <li><a class="header" ng-click="userLogout()">Logout</a></li>
         </ul>
       </li>
     </ul>
@@ -58,6 +58,7 @@
 
   <!-- JS Libs -->
   <script src="libs/socket.io-client/dist/socket.io.js"></script>
+  <script src="libs/topojson/topojson.min.js"></script>
   <script src="bundle.js"></script>
 
   <!-- Custom Angular -->
