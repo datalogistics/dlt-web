@@ -2,31 +2,6 @@
   "name": "peri-js",
   "version": "0.0.1",
   "dependencies": {
-    "angular": "1.2.16",
-    "angular-animate": "1.2.16",
-    "angular-bootstrap": "0.11.0",
-    "angular-bootstrap-slider": "~0.1.1",
-    "angular-cookies": "1.2.16",
-    "angular-loading-bar": "~0.6.0",
-    "angular-mocks": "1.2.16",
-    "angular-route": "1.2.16",
-    "angular-schema-form": "~0.7.3",
-    "angular-ui-utils": "~0.1.1",
-    "angularjs-nvd3-directives": "~0.0.7",
-    "animate.css": "3.1.1",
-    "bootstrap": "3.1.1",
-    "d3": "~3.4.8",
-    "d3-tip": "~0.6.4",
-    "ekko-lightbox": "~3.2.2",
-    "font-awesome": "4.1.0",
-    "jstree": "~3.0.9",
-    "jstree-directive": "~0.1.4",
-    "nvd3": "~1.1.15-beta",
-    "socket.io-client": "~1.3.5",
-    "topojson": "~1.6.19"
-  },
-  "resolutions": {
-    "angular": "1.2.16",
-    "d3": "~3.3.13"
+    "socket.io-client": "^1.7.2"
   }
 }

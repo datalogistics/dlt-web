@@ -4,6 +4,6 @@
  * MainController.js
  */
 
-function MainController($scope) {
+function mainController($scope) {
   
 }

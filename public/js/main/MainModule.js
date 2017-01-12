@@ -8,4 +8,4 @@ angular.module('main', ['avDirective'])
   .factory('mainService', ['$http', function($http) {
     return new MainService($http);
   }])
-  .controller('mainController', ['$scope'], MainController);
+  .controller('MainController', mainController);

@@ -2,8 +2,8 @@ var WebSocket = require('ws');
 var fs = require('fs');
 var socket = new WebSocket("ws://192.168.0.9:8888/subscribeAgg/data");
 // var socket = new WebSocket("wss://dlt.incntre.iu.edu:9001/subscribeAgg/data", {
-//   'cert': fs.readFileSync('../dlt-client.pem'),
-//   'key': fs.readFileSync('../dlt-client.pem'),
+//   'cert': fs.readFileSync('../ssl/dlt-client.pem'),
+//   'key': fs.readFileSync('../ssl/dlt-client.pem'),
 //   requestCert: true,
 //   rejectUnauthorized: false
 // });

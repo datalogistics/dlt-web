@@ -116,8 +116,8 @@ var self = {
     dlt : {
       url : "dlt.crest.iu.edu",
       port : "9000",
-      key : "./dlt-client.pem",
-      cert: "./dlt-client.pem",
+      key : "./ssl/dlt-client.pem",
+      cert: "./ssl/dlt-client.pem",
       use_ssl: true
     },
     monitor : {
@@ -130,8 +130,8 @@ var self = {
     dlt_ms : {
       url : "dlt.crest.iu.edu",
       port : "9001",
-      key : "./dlt-client.pem",
-      cert : "./dlt-client.pem",
+      key : "./ssl/dlt-client.pem",
+      cert : "./ssl/dlt-client.pem",
       use_ssl : true
     },
     monitor_ms : {

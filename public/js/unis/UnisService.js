@@ -86,7 +86,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     if (!hasLocationInfo(item)) {
       var url = DLT_PROPS.FreeGeoIpUrl + getServiceName(item);
       $http.get(url).
-	success(function(data, status, headers, config) {
+	then(function(data, status, headers, config) {
 	  item.location = {
 	    'latitude': data.latitude,
 	    'longitude': data.longitude,
@@ -97,8 +97,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	  };
 	  getInstitutionName(item);
           d.resolve();
-	}).
-	error(function(data, status, headers, config) {
+	},
+	function(data, status, headers, config) {
 	  console.log("Error: ", status);
           d.resolve();
 	});
@@ -111,11 +111,11 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 
   service.getMetadataId = function(id, cb) {
     $http.get('/api/metadata/' + id)
-      .success(function(data) {
+      .then(function(data) {
         //console.log('Metadata Request: ' + data);
         cb(data);
-      })
-      .error(function(data) {
+      },
+      function(data) {
         console.log('Metadata Error: ' + data);
       });
   };
@@ -127,11 +127,12 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       n = 300;
     }
     qstr += '?limit=' + n;
-    $http.get(qstr).success(function(data) {
+    $http.get(qstr).then(function(data) {
       //console.log('HTTP Data Response: ' + data);
       cb(data);
       service.subDataId(id, cb, uname);
-    }).error(function(data) {
+    },
+    function(data) {
       console.log('HTTP Data Error: ' + data);
     });
   };
