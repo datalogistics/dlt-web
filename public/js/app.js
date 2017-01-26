@@ -63,7 +63,7 @@ angular.module('periApp',
     }
   })
   .config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
-         function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
+           function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
              cfpLoadingBarProvider.includeSpinner = false;
              
              $routeProvider.
@@ -95,9 +95,10 @@ angular.module('periApp',
                      return UnisService.init()
                    }}
                }).
-               when('/topology/', {
+               when('/topology/:id?', {
                  templateUrl: 'views/topology_map.html',
                  controller: 'TopologyMapController',
+		 reloadOnSearch: false,
                  resolve: {
                    'unis': function(UnisService) {
                      return UnisService.init()

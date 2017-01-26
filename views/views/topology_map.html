@@ -1,2 +1,20 @@
-<h2 class="lead text-center">Network Topology</h2>
-<div id='topologyMap'></div>
+<style type="text/css">
+  #topologyMap {
+    width: 100%;
+    height: 800px;
+    border: 1px solid lightgray;
+  }
+</style>
+
+<div class="dropdown">
+  <button onclick="topoSelect()" class="dropbtn">Select Topology</button>
+  <div id="topoDropdown" class="dropdown-content" ng-model="data.model">
+    <input type="text" placeholder="Search.." id="topoInput" onkeyup="topofilterFunction()">
+    <a ng-repeat="option in data.topoOptions" href="topology/{{option.id}}">{{option.name}}</a>
+  </div>
+  <button ng-click="clusterByDomain()" class="btn btn-info" align="right">Cluster</div>
+</div>
+
+<div id="topologyMap">
+  <topology-map></topology-map>
+</div>

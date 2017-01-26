@@ -1,36 +1,84 @@
-function topologyMapController($scope, $routeParams, $http, UnisService) {
-  var PATH_SEPARATOR = ":"
+function topoMapDirective() {
+  return {
+    restrict: 'E',
+    link: function(scope, element, attr) {
+      scope.network = new vis.Network(element[0], scope.topodata, scope.topoopts);
+      scope.network.stabilize();
+      
+      scope.network.on("selectNode", function(params) {
+	if (params.nodes.length == 1) {
+	  if (scope.network.isCluster(params.nodes[0]) == true) {
+	    scope.network.openCluster(params.nodes[0]);
+	  }
+	}
+      });
+    }
+  }
+}
 
-  var rootFilter = $routeParams.root ? $routeParams.root : undefined
-  var paths = $routeParams.paths ? [].concat($routeParams.paths) : ["root"] //Pass multiple paths multiple path-entries in the query string 
-  paths = paths.map(p => p.startsWith("root:") ? p : "root:" + p)
+function topologyMapController($scope, $route, $routeParams, $http, UnisService) {
+  // XXX: testing vis.js  
+  var topolist = UnisService.getMostRecent(UnisService.topologies)
+      .map(e => {return {id: e.id, name: e.name}});
 
-  var width = 1200
-  var height = 500
-    
-  var svg = d3.select("#topologyMap").append("svg")
-               .attr("width", width)
-               .attr("height", height)
-
-  var layout = $routeParams.layout ? $routeParams.layout.toLowerCase() : ""
-  var baseGraph = setOrder(unisGraph(UnisService, rootFilter))
-  //baseGraph = fakeLinks(baseGraph, 3)
-
-  draw(baseGraph, "__top__", paths, svg, layout, width, height)
-
-  var selection = []
+  var ccnt = 0;
+  $scope.colors = ['red', 'DarkViolet', 'lime', 'lightblue', 'pink', 'yellow'];
   
-  //Cleanup functions here!
-  //TODO: Move into topology tools...
-  $scope.$on("$destroy", function() {d3.selectAll("#map-tool-tip").each(function() {this.remove()})})  //Cleanup the tooltip object when you navigate away
+  $scope.data = {
+    model: null,
+    topoOptions: topolist
+  };
 
+  // controller is done if no ID is given
+  $scope.topoId = $routeParams.id
+  if (typeof $scope.topoId == 'undefined') {
+    return
+  }
 
+  $scope.topodata = {
+    nodes: new vis.DataSet(),
+    edges: new vis.DataSet()
+  };
+  $scope.topoopts = {};
+  
+  $http.get('/api/topologies/'+$scope.topoId+'?inline')
+    .then(function(res) {
+      var domains = res.data[0].domains;
+      var nodes = [];
+      domains.forEach(function(d) {
+	var color = $scope.colors[ccnt];
+	ccnt += 1;
+	nodes.push.apply(nodes, d.nodes.map(e => {return {id: e.id, label: e.name, domain: d.name, color: color}}));
+      });
+      $scope.topodata.nodes.add(nodes);
+      $scope.domlist = domains.map(e => {return e.name});
+    });
+
+  $scope.clusterByDomain = function() {
+    var clusterOptionsByData;
+    $scope.domlist.forEach(function(d) {
+      clusterOptionsByData = {
+	joinCondition: function (childOptions) {
+	  return childOptions.domain == d;
+	},
+	processProperties: function (clusterOptions, childNodes, childEdges) {
+	  var totalMass = 0;
+	  for (var i = 0; i < childNodes.length; i++) {
+	    totalMass += childNodes[i].mass;
+	  }
+	  clusterOptions.mass = totalMass;
+	  return clusterOptions;
+	},
+	clusterNodeProperties: {id: 'cluster:' + d, borderWidth: 3, shape: 'database', color: 'orange', label:'domain: ' + d}
+      };
+      $scope.network.cluster(clusterOptionsByData);
+    });
+  }
+	  
   // --------------- Utilities to load domain data from UNIS ---------------
   // Graph is pair of nodes and links
   // Nodes is a tree
   // links is a list of pairs of paths in the tree
-
-
   function unisGraph(UnisService, rootFilter) {
     var ports = UnisService.getMostRecent(UnisService.ports)
                   .map(port => {return {id: port.id, selfRef: port.selfRef, name: port.name}})

@@ -2,6 +2,24 @@ var PATH_SEPARATOR = ":" //TODO: This global is a bad idea.  Needs to be factor 
 var ARROW_START = "url(" + document.URL + "#arrowStart" + ")" 
 var ARROW_END = "url(" + document.URL + "#arrowEnd" + ")"
 
+function topoSelect() {
+  document.getElementById("topoDropdown").classList.toggle("show");
+}
+
+function topofilterFunction() {
+  var input, filter, ul, li, a, i;
+  input = document.getElementById("topoInput");
+  filter = input.value.toUpperCase();
+  div = document.getElementById("topoDropdown");
+  a = div.getElementsByTagName("a");
+  for (i = 0; i < a.length; i++) {
+    if (a[i].innerHTML.toUpperCase().indexOf(filter) > -1) {
+      a[i].style.display = "";
+    } else {
+      a[i].style.display = "none";
+    }
+  }
+}
 
 function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions) {
   //Main entry function for topology drawing
