@@ -48,7 +48,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
       domains.forEach(function(d) {
 	var color = $scope.colors[ccnt];
 	ccnt += 1;
-	nodes.push.apply(nodes, d.nodes.map(e => {return {id: e.id, label: e.name, domain: d.name, color: color}}));
+	nodes.push.apply(nodes, d.nodes.map(e => {return {id: e.id, label: e.name, domain: d.name, color: color, title: e.description || ""}}));
       });
       $scope.topodata.nodes.add(nodes);
       $scope.domlist = domains.map(e => {return e.name});
