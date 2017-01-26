@@ -50,14 +50,17 @@ var self = {
   authArr : [],
   routeMap : {
     // Aggregate from the following by default
-    'default'  : ['dev', 'dlt', 'monitor'],
+    //'default'  : ['dev', 'dlt', 'monitor'],
+    'default': ['dev'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : [],
     'nodes': [],
     'nodes_id' : [],
-    'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
-    'services_id' : ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'],
+    //'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
+    'services': ['dev'],
+    //'services_id' : ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'],
+    'services_id': ['dev'],
     'measurements': [],
     'measurements_id' : [],
     'metadata': [],
@@ -116,8 +119,8 @@ var self = {
     dlt : {
       url : "dlt.crest.iu.edu",
       port : "9000",
-      key : "./dlt-client.pem",
-      cert: "./dlt-client.pem",
+      key : "./ssl/dlt-client.pem",
+      cert: "./ssl/dlt-client.pem",
       use_ssl: true
     },
     monitor : {
@@ -130,8 +133,8 @@ var self = {
     dlt_ms : {
       url : "dlt.crest.iu.edu",
       port : "9001",
-      key : "./dlt-client.pem",
-      cert : "./dlt-client.pem",
+      key : "./ssl/dlt-client.pem",
+      cert : "./ssl/dlt-client.pem",
       use_ssl : true
     },
     monitor_ms : {
@@ -158,7 +161,13 @@ var self = {
     collection_name : "userDetails"
   },
   GITHUB_CLIENT: "",
-  GITHUB_SECRET: ""
+  GITHUB_SECRET: "",
+  recurse_map: {
+    "http://unis.crest.iu.edu/schema/20160630/topology#": ["domains", "networks", "paths", "nodes", "ports", "links"],
+    "http://unis.crest.iu.edu/schema/20160630/domain#": ["domains", "networks", "paths", "nodes", "ports", "links"],
+    "http://unis.crest.iu.edu/schema/20160630/network#": ["nodes", "links"],
+    "http://unis.crest.iu.edu/schema/20160630/node#": ["ports"]
+  }
 };
 
 var deepObjectExtend = function(target, source) {

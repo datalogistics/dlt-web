@@ -88,7 +88,7 @@ module.exports = function(app) {
     routes.push('https://' + hostname + pathname + 'topologies');
     res.json(routes);
   });
-  
+
   function getHostOpt(name) {
     if (!name)
       return null;
@@ -110,8 +110,91 @@ module.exports = function(app) {
     }
     return ret;
   };
+
+  function reduceValues(data) {
+    var json = data.reduce(function(x,y){
+      return x.concat(y.value || {});
+    },[]);
+    return json;
+  }
   
-  function registerGenericHandler (options,cb) {
+  function getInlineObjects(obj) {
+    function getObject(o) {
+      // base case
+      if (! (o.$schema in cfg.recurse_map)) {
+	return q.resolve(o)
+      }
+      var rlist = cfg.recurse_map[o.$schema];
+      // query each recursable element
+      var rgets = [];
+      rlist.forEach(function(r) {
+	if (r in o) {
+	  o[r].forEach(function(e) {
+	    if ("href" in e && "rel" in e && e.rel == "full") {
+	      // TODO: aggregate queries based on endpoint
+	      //var u = url.parse(e.href);
+	      var op = {url: e.href}
+	      rgets.push(doGET(op,r));
+	    }
+	  })
+	}
+      })
+      // resolve our promises and process
+      return q.allSettled(rgets).then(function(data) {
+	var ndata = {};
+	data.forEach(function(x) {
+	  if (x.value.header in ndata) {
+	    ndata[x.value.header].push(x.value.data);
+	  }
+	  else {
+	    ndata[x.value.header] = [x.value.data];
+	  }
+	})
+	var proms = [];
+	for (var k in ndata) {
+	  o[k] = ndata[k];
+	  proms.push(stepObjects(ndata[k]));
+	}
+	return q.allSettled(proms).then(function() {
+	  return q.resolve(o);
+	});
+      });
+    }
+
+    function stepObjects(data) {
+      var promises = [];
+      data.forEach(function(o) {
+	promises.push(getObject(o));
+      });
+      return q.allSettled(promises).then(function(data) {
+	return q.resolve(reduceValues(data));
+      });
+    }
+    return stepObjects(obj);
+  }
+  
+  function doGET(op,key) {
+    var defer = q.defer();
+    var fdata = "";
+    request.get(op).on('data',function(data) {
+      data = data.toString();
+      fdata = fdata + data;          
+    }).on('end',function() {
+      try {
+        var obj = {"header": key,
+		   "data": JSON.parse(fdata)};
+        return defer.resolve(obj);
+      } catch (e) {            
+        console.log("Error parsing JSON from socket: ",e);
+        return defer.reject(e);
+      }
+    }).on('error',function() {          
+      defer.reject(false);
+    });
+    return defer.promise;
+  }
+  
+  function registerGenericHandler(options,cb) {
     var method = https;
     var res = options.res, req = options.req;
     options.req = options.res = undefined;
@@ -154,7 +237,6 @@ module.exports = function(app) {
       }
       return function() {
         var j = getJarFromReq(nameArr[index],req);
-        var defer = q.defer();
         var prot = "http://";
         if (opt.use_ssl) {
           prot = "https://";
@@ -171,65 +253,42 @@ module.exports = function(app) {
             rejectUnauthorized : false            
           };
         }
-        var fdata = "";
-        request.get(op).on('data',function(data) {
-          data = data.toString();
-          fdata = fdata + data;          
-        }).on('end',function() {
-          try {
-            var obj = JSON.parse(fdata);
-            return defer.resolve(obj);
-          } catch (e) {            
-            console.log("Error parsing JSON from socket: ",e);
-            return defer.reject(e);
-          }
-        }).on('error',function() {          
-          defer.reject(false);
-        });
-        // , function(http_res,err) {
-        //   var data = '';
-        //   http_res.on('data', function (chunk) {
-        //     data += chunk;
-        //   });
-        //   http_res.on('end',function() {
-        //   });
-        //   http_res.on('error',function(e) {
-        //     res.send( 404 );
-        //     return defer.reject(false);
-        //   });
-        // }).on('error', function(){
-        //   defer.reject(false);
-        // });
-        return defer.promise;
+	return doGET(op);
       };
     });
-    if (cb) {
-      q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj) {
-        applyRouteCbs(options.name,obj).then(function() {
-          if (obj)
-            cb(obj);
-        });        
-      });
-    } else {
-      q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj){
-        var isErr = true ;
-        var json = obj.reduce(function(x,y){
-          isErr = isErr && y.state =='rejected';
-          return x.concat(y.value || {});
-        },[]);
-        
-        if (!isErr) {        
-          // Now process this object and apply any CBs if set in cfg
-          applyRouteCbs(options.name,json).then(function() {            
-            res.json(json);
-          });
-        } else {
-          res.sendStatus(404);
-        }
 
-      });
-      
-    }
+    q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj) {
+      var isErr = true ;
+      var json = obj.reduce(function(x,y){
+        isErr = isErr && y.state =='rejected';
+        return x.concat(y.value.data || {});
+      },[]);
+
+      function finish(ret) {
+        // Now process this return object and apply any CBs if set in cfg
+        applyRouteCbs(options.name,ret).then(function() {
+	  if (cb) {
+	    cb(ret);
+	  }
+          res.json(ret);
+        });
+      }
+
+      if (!isErr) {
+	if (options.inline) {
+	  getInlineObjects(json).then(function(inl) {
+	    //console.log(JSON.stringify(inl, null, 2));
+	    finish(inl);
+	  });
+	}
+	else{
+	  finish(json);
+	}
+      }
+      else {
+        res.sendStatus(404);
+      }
+    });
   };
   
   function getGenericHandler(opt) {
@@ -286,11 +345,13 @@ module.exports = function(app) {
       //console.log('HEADERS: ' + JSON.stringify(res.headers));
       //console.log('BODY: ' + JSON.stringify(res.body));
       var node_id = req.params.id;
+      var inline = ('inline' in req.query) ? true : false;
       var fullpath = "/" + path + '/' + node_id + '?' + paramString
       var options = _.extend({
         req : req , res : res ,
         name: name+"Id"+ "?" + paramString,
-        path: fullpath 
+        path: fullpath,
+	inline: inline
       },getHttpOptions({
         name : name + "_id"
       }));
@@ -352,9 +413,8 @@ module.exports = function(app) {
     }));
 
     registerGenericHandler(options, function(obj) {
-      var exjson =  obj[0].value;
       // Return matching id children
-      arr = getMostRecent(exjson).map(function(x) {
+      arr = getMostRecent(obj).map(function(x) {
         return {
           "id" : x.selfRef,
           "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
