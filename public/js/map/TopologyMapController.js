@@ -35,31 +35,96 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
     return
   }
 
+  var domains = new vis.DataSet();
+  var nodes = new vis.DataSet();
+  var ports = new vis.DataSet();
+  var links = new vis.DataSet();
+
+  $scope.domains = domains;
   $scope.topodata = {
-    nodes: new vis.DataSet(),
-    edges: new vis.DataSet()
+    nodes: nodes,
+    edges: links
   };
   $scope.topoopts = {};
   
   $http.get('/api/topologies/'+$scope.topoId+'?inline')
     .then(function(res) {
-      var domains = res.data[0].domains;
-      var nodes = [];
-      domains.forEach(function(d) {
+      
+      function createNodeLinks(data, dset) {
+	data.reduce((acc, link) => {
+	  if (link.endpoints[0].href.startsWith("http") &&
+	      link.endpoints[1].href.startsWith("http")) {
+	    acc.push({a: link.endpoints[0].href,
+		      b: link.endpoints[1].href,
+		      id: link.id})
+	  } return acc}, [])
+	  .forEach(function(e) {
+	    var a = dset.get(e.a.split('/').pop());
+	    var b = dset.get(e.b.split('/').pop());
+	    if (a && b) {
+	      links.add({id: e.id, from: a.node, to: b.node, color: 'black'})
+	    }
+	  });
+      }
+      
+      var topo = res.data[0];
+      domains.add(topo.domains.map(e => {return {id: e.id,
+						 name: e.name,
+						 node: e.id}
+					}));
+      
+      topo.domains.forEach(function(d) {
 	var color = $scope.colors[ccnt];
 	ccnt += 1;
-	nodes.push.apply(nodes, d.nodes.map(e => {return {id: e.id, label: e.name, domain: d.name, color: color, title: e.description || ""}}));
-      });
-      $scope.topodata.nodes.add(nodes);
-      $scope.domlist = domains.map(e => {return e.name});
-    });
+	if ("nodes" in d) {
+	  // find domain nodes
+	  nodes.add(d.nodes
+		    .map(e => {return {id: e.id,
+				       label: e.name,
+				       domain: d.id,
+				       color: color,
+				       title: e.description || ""}
+			      }));
+	  d.nodes.forEach(function(n) {
+	    // build port DB
+	    if ("ports" in n) {
+	      ports.add(n.ports
+			.map(e => {return {id: e.id,
+					   label: e.name,
+					   node: n.id,
+					   selfRef: e.selfRef,
+					   title: e.description || ""}
+				  }));
+	    }
+	  });
+	}
+	else {
+	  // add domain placeholder nodes
+	  nodes.add({id: d.id,
+		     label: d.name,
+		     domain: d.name,
+		     color: color,
+		     title: d.name+" placeholder"})
+	}
 
+	// links connecting nodes
+	if ("links" in d) {
+	  createNodeLinks(d.links, ports);
+	}
+      });
+
+      // links connecting domains
+      if ("links" in topo) {
+	createNodeLinks(topo.links, domains);
+      }
+    });
+  
   $scope.clusterByDomain = function() {
     var clusterOptionsByData;
-    $scope.domlist.forEach(function(d) {
+    $scope.domains.forEach(function(d) {
       clusterOptionsByData = {
 	joinCondition: function (childOptions) {
-	  return childOptions.domain == d;
+	  return childOptions.domain == d.id;
 	},
 	processProperties: function (clusterOptions, childNodes, childEdges) {
 	  var totalMass = 0;
@@ -69,7 +134,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 	  clusterOptions.mass = totalMass;
 	  return clusterOptions;
 	},
-	clusterNodeProperties: {id: 'cluster:' + d, borderWidth: 3, shape: 'database', color: 'orange', label:'domain: ' + d}
+	clusterNodeProperties: {id: d.id, borderWidth: 3, shape: 'database', color: 'orange', label:'domain: ' + d.name}
       };
       $scope.network.cluster(clusterOptionsByData);
     });
