@@ -119,48 +119,84 @@ module.exports = function(app) {
   }
   
   function getInlineObjects(obj) {
-    function getObject(o) {
-      // base case
-      if (! (o.$schema in cfg.recurse_map)) {
-	return q.resolve(o)
+    var base_schemas = Object.keys(cfg.SCHEMAS).reduce(function(obj,key) {
+      obj[ cfg.SCHEMAS[key] ] = key;
+      return obj;
+    }, {});
+    
+    function getBaseSchema(so) {
+      // process object if we're already a base type
+      if (so.$schema in base_schemas) {
+	return q.resolve(so.$schema);
       }
-      var rlist = cfg.recurse_map[o.$schema];
-      // query each recursable element
-      var rgets = [];
-      rlist.forEach(function(r) {
-	if (r in o) {
-	  o[r].forEach(function(e) {
-	    if ("href" in e && "rel" in e && e.rel == "full") {
-	      // TODO: aggregate queries based on endpoint
-	      //var u = url.parse(e.href);
-	      var op = {url: e.href}
-	      rgets.push(doGET(op,r));
+
+      function recurseOnSchema(s) {
+	return doGET({url: s}).then(function(data) {
+	  if ("allOf" in data.data) {
+	    var inherited = data.data.allOf[0].$ref;
+	    if (inherited in base_schemas) {
+	      return q.resolve(inherited);
 	    }
-	  })
-	}
-      })
-      // resolve our promises and process
-      return q.allSettled(rgets).then(function(data) {
-	var ndata = {};
-	data.forEach(function(x) {
-	  if (x.value.header in ndata) {
-	    ndata[x.value.header].push(x.value.data);
+	    else {
+	      return recurseOnSchema(inherited);
+	    }
 	  }
 	  else {
-	    ndata[x.value.header] = [x.value.data];
+	    return q.resolve('undefined');
+	  }
+	});
+      }
+      return recurseOnSchema(so.$schema);
+    }
+    
+    function getObject(o) {
+      return getBaseSchema(o).then(function(btype) {
+	// base case
+	if (! (btype in cfg.recurse_map)) {
+	  return q.resolve(o)
+	}
+	var rlist = cfg.recurse_map[btype];
+	// query each recursable element
+	var rgets = [];
+	rlist.forEach(function(r) {
+	  if (r in o) {
+	    o[r].forEach(function(e) {
+	      if ("href" in e && "rel" in e && e.rel == "full") {
+		// TODO: aggregate queries based on endpoint
+		//var u = url.parse(e.href);
+		var op = {url: e.href}
+		rgets.push(doGET(op,r));
+	      }
+	    })
 	  }
 	})
-	var proms = [];
-	for (var k in ndata) {
-	  o[k] = ndata[k];
-	  proms.push(stepObjects(ndata[k]));
-	}
-	return q.allSettled(proms).then(function() {
-	  return q.resolve(o);
+	// resolve our promises and process
+	return q.allSettled(rgets).then(function(data) {
+	  var ndata = {};
+	  data.forEach(function(x) {
+	    // skip hrefs that resolve to empty arrays, meaning object no longer exists
+	    if (Array.isArray(x.value.data)) {
+	      return;
+	    }
+	    if (x.value.header in ndata) {
+	      ndata[x.value.header].push(x.value.data);
+	    }
+	    else {
+	      ndata[x.value.header] = [x.value.data];
+	    }
+	  })
+	  var proms = [];
+	  for (var k in ndata) {
+	    o[k] = ndata[k];
+	    proms.push(stepObjects(ndata[k]));
+	  }
+	  return q.allSettled(proms).then(function() {
+	    return q.resolve(o);
+	  });
 	});
       });
     }
-
+    
     function stepObjects(data) {
       var promises = [];
       data.forEach(function(o) {

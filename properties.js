@@ -1,7 +1,7 @@
 /* Configuration file - Configure all source info here .. remove all URL related info from other files */
 var fs = require('fs'),
 _ = require('underscore');
-// var bunyan = require('bunyan');
+
 var self = {
   port : process.env.PORT || 42424,
   ENABLE_HTTPS : false,
@@ -162,12 +162,29 @@ var self = {
   },
   GITHUB_CLIENT: "",
   GITHUB_SECRET: "",
-  recurse_map: {
-    "http://unis.crest.iu.edu/schema/20160630/topology#": ["domains", "networks", "paths", "nodes", "ports", "links"],
-    "http://unis.crest.iu.edu/schema/20160630/domain#": ["domains", "networks", "paths", "nodes", "ports", "links"],
-    "http://unis.crest.iu.edu/schema/20160630/network#": ["nodes", "links"],
-    "http://unis.crest.iu.edu/schema/20160630/node#": ["ports"]
+  SCHEMAS: {
+  'networkresources': 'http://unis.crest.iu.edu/schema/20160630/networkresource#',
+  'nodes': 'http://unis.crest.iu.edu/schema/20160630/node#',
+  'domains': 'http://unis.crest.iu.edu/schema/20160630/domain#',
+  'ports': 'http://unis.crest.iu.edu/schema/20160630/port#',
+  'links': 'http://unis.crest.iu.edu/schema/20160630/link#',
+  'paths': 'http://unis.crest.iu.edu/schema/20160630/path#',
+  'networks': 'http://unis.crest.iu.edu/schema/20160630/network#',
+  'topologies': 'http://unis.crest.iu.edu/schema/20160630/topology#',
+  'services': 'http://unis.crest.iu.edu/schema/20160630/service#',
+  'blipp': 'http://unis.crest.iu.edu/schema/20160630/blipp#',
+  'metadata': 'http://unis.crest.iu.edu/schema/20160630/metadata#',
+  'datum': 'http://unis.crest.iu.edu/schema/20160630/datum#',
+  'data': 'http://unis.crest.iu.edu/schema/20160630/data#',
+  'measurement': 'http://unis.crest.iu.edu/schema/20160630/measurement#'
   }
+};
+
+self.recurse_map = {
+  [self.SCHEMAS.topologies]: ["domains", "networks", "paths", "nodes", "ports", "links"],
+  [self.SCHEMAS.domains]: ["domains", "networks", "paths", "nodes", "ports", "links"],
+  [self.SCHEMAS.networks]: ["nodes", "links"],
+  [self.SCHEMAS.nodes]: ["ports"]
 };
 
 var deepObjectExtend = function(target, source) {
