@@ -52,7 +52,8 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
       
       function createNodeLinks(data, dset) {
 	data.reduce((acc, link) => {
-	  if (link.endpoints[0].href.startsWith("http") &&
+	  if (link.endpoints &&
+	      link.endpoints[0].href.startsWith("http") &&
 	      link.endpoints[1].href.startsWith("http")) {
 	    acc.push({a: link.endpoints[0].href,
 		      b: link.endpoints[1].href,
