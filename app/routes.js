@@ -60,6 +60,7 @@ function getMostRecent(items) {
 // var distro = ''; 
 
 module.exports = function(app) {
+
   console.log("UNIS Default Instances: " + cfg.routeMap.default);
   //console.log("Measurement Store Host: " + ms_host);
   //console.log("Measurement Store Port: " + ms_port);
@@ -174,6 +175,10 @@ module.exports = function(app) {
 	return q.allSettled(rgets).then(function(data) {
 	  var ndata = {};
 	  data.forEach(function(x) {
+	    // skip any failed promises (i.e., bad doGETs)
+	    if (x.state != "fulfilled") {
+	      return;
+	    }
 	    // skip hrefs that resolve to empty arrays, meaning object no longer exists
 	    if (Array.isArray(x.value.data)) {
 	      return;
@@ -212,21 +217,26 @@ module.exports = function(app) {
   function doGET(op,key) {
     var defer = q.defer();
     var fdata = "";
-    request.get(op).on('data',function(data) {
-      data = data.toString();
-      fdata = fdata + data;          
-    }).on('end',function() {
-      try {
-        var obj = {"header": key,
-		   "data": JSON.parse(fdata)};
-        return defer.resolve(obj);
-      } catch (e) {            
-        console.log("Error parsing JSON from socket: ",e);
-        return defer.reject(e);
-      }
-    }).on('error',function() {          
-      defer.reject(false);
-    });
+    try {
+      request.get(op).on('data',function(data) {
+	data = data.toString();
+	fdata = fdata + data;
+      }).on('end',function() {
+	try {
+          var obj = {"header": key,
+		     "data": JSON.parse(fdata)};
+          return defer.resolve(obj);
+	} catch (e) {
+          console.log("Error parsing JSON from socket: ",e);
+          return defer.reject(e);
+	}
+      }).on('error',function() {
+	defer.reject(false);
+      });
+    } catch(e) {
+      console.log("request.get error for \""+op.url+"\": ",e);
+      defer.reject(e);
+    }
     return defer.promise;
   }
   
