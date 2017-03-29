@@ -11,10 +11,26 @@ function topoMapDirective() {
 	    scope.network.openCluster(params.nodes[0]);
 	  }
 	}
+	scope.toggle(params);
       });
+
+      scope.network.on("deselectNode", function(params) {
+      	scope.toggle(params);
+      });
+      
+      scope.network.on("selectEdge", function(params) {
+	scope.toggle(params);
+      });
+
+      scope.network.on("deselectEdge", function(params) {
+      	scope.toggle(params);
+      });
+
     }
   }
 }
+
+var OFSW = "http://unis.crest.iu.edu/schema/ext/ofswitch/1/ofswitch#";
 
 function topologyMapController($scope, $route, $routeParams, $http, UnisService) {
   // XXX: testing vis.js  
@@ -23,7 +39,33 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 
   var ccnt = 0;
   $scope.colors = ['red', 'DarkViolet', 'lime', 'lightblue', 'pink', 'yellow'];
-  
+
+  // page slider control
+  $scope.checked = false;
+  $scope.size = '100px';
+
+  $scope.toggle = function(p) {
+    $scope.cobj = undefined;
+    if (p) {
+      if (p.nodes.length) {
+	$scope.cobj = nodes.get(p.nodes[0]);
+      }
+      else if (p.edges.length) {
+	$scope.cobj = edges.get(p.edges[0]);
+      }
+    }
+    $scope.checked = !$scope.checked
+  }
+
+  $scope.onopen = function () {
+    alert('Open');
+  }
+
+  $scope.onclose = function () {
+    alert('Close');
+  }
+
+  // scope data
   $scope.data = {
     model: null,
     topoOptions: topolist
@@ -49,6 +91,26 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
   
   $http.get('/api/topologies/'+$scope.topoId+'?inline')
     .then(function(res) {
+
+      function createNode(d, e, color) {
+	var n = {id: e.id,
+		 label: e.name,
+		 domain: d.id,
+		 color: color,
+		 objRef: e,
+		 title: e.description || ""}
+
+	if (e.$schema == OFSW) {
+	  n.image = '/images/switch-icon.png';
+	  n.shape = 'image';
+	}
+	else {
+	  n.image = '/images/server-icon.jpg';
+	  n.shape = 'image';
+	}
+
+	return n;
+      }
       
       function createNodeLinks(data, dset) {
 	data.reduce((acc, link) => {
@@ -79,13 +141,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 	ccnt += 1;
 	if ("nodes" in d) {
 	  // find domain nodes
-	  nodes.add(d.nodes
-		    .map(e => {return {id: e.id,
-				       label: e.name,
-				       domain: d.id,
-				       color: color,
-				       title: e.description || ""}
-			      }));
+	  nodes.add(d.nodes.map(e => {return createNode(d, e, color)}));
 	  d.nodes.forEach(function(n) {
 	    // build port DB
 	    if ("ports" in n) {
