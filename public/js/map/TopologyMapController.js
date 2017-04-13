@@ -51,7 +51,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 	$scope.cobj = nodes.get(p.nodes[0]);
       }
       else if (p.edges.length) {
-	$scope.cobj = edges.get(p.edges[0]);
+	$scope.cobj = links.get(p.edges[0]);
       }
     }
     $scope.checked = !$scope.checked
@@ -77,6 +77,16 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
     return
   }
 
+  // url param to specify resource history view
+  var t_hist = $routeParams.t || 60; // default to last hour
+  var now_usec = new Date().getTime() * 1e3;
+  if (t_hist == "all") {
+    t_hist = 0;
+  }
+  else {
+    t_hist = (now_usec-(t_hist*60*1e6));
+  }
+  
   var domains = new vis.DataSet();
   var nodes = new vis.DataSet();
   var ports = new vis.DataSet();
@@ -88,10 +98,17 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
     edges: links
   };
   $scope.topoopts = {};
-  
+
   $http.get('/api/topologies/'+$scope.topoId+'?inline')
     .then(function(res) {
 
+      // generic filter function 
+      function ffunc(e) {
+	if (e.ts >= (t_hist)) {
+	  return true;
+	}
+      }
+      
       function createNode(d, e, color) {
 	var n = {id: e.id,
 		 label: e.name,
@@ -119,13 +136,18 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 	      link.endpoints[1].href.startsWith("http")) {
 	    acc.push({a: link.endpoints[0].href,
 		      b: link.endpoints[1].href,
-		      id: link.id})
+		      id: link.id,
+		      ref: link})
 	  } return acc}, [])
 	  .forEach(function(e) {
 	    var a = dset.get(e.a.split('/').pop());
 	    var b = dset.get(e.b.split('/').pop());
 	    if (a && b) {
-	      links.add({id: e.id, from: a.node, to: b.node, color: 'black'})
+	      links.add({id: e.id,
+			 objRef: e.ref,
+			 from: a.node,
+			 to: b.node,
+			 color: 'black'})
 	    }
 	  });
       }
@@ -141,11 +163,11 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 	ccnt += 1;
 	if ("nodes" in d) {
 	  // find domain nodes
-	  nodes.add(d.nodes.map(e => {return createNode(d, e, color)}));
+	  nodes.add(d.nodes.filter(ffunc).map(e => {return createNode(d, e, color)}));
 	  d.nodes.forEach(function(n) {
 	    // build port DB
 	    if ("ports" in n) {
-	      ports.add(n.ports
+	      ports.add(n.ports.filter(ffunc)
 			.map(e => {return {id: e.id,
 					   label: e.name,
 					   node: n.id,
@@ -166,7 +188,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 
 	// links connecting nodes
 	if ("links" in d) {
-	  createNodeLinks(d.links, ports);
+	  createNodeLinks(d.links.filter(ffunc), ports);
 	}
       });
 
