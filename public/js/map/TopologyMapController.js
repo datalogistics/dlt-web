@@ -335,8 +335,6 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 
             }
 
-          })};
-
             $scope.showNetpath = true
           })};
 

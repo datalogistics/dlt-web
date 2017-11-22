@@ -61,9 +61,6 @@
 </div>
 
 <div class="dropdown pull-right">
-  <button onclick="pathSelect()" class="btn btn-info">Show Path</button>
-  <div id="pathDropdown" class="dropdown-content dropdown-menu dropdown-menu-right" ng-model="data.model">
-    <input type="text" placeholder="Search" id="topoInput" onkeyup="topofilterFunction()">
   <button onclick="pathSelect()" class="btn btn-info" ng-show="showPathButtons" >Show Path</button>
   <div id="pathDropdown" class="dropdown-content dropdown-menu dropdown-menu-right" ng-model="data.model">
     <input type="text" placeholder="Search" id="pathInput" onkeyup="pathfilterFunction()">
@@ -71,10 +68,10 @@
   </div>
 </div>
 
-<div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="false" ps-speed="0.5" ps-size="500px">
+
 
 <div class="pull-right check-element" style="padding-right:10px; transition: all linear 0.5s;" ng-show="showNetpath">
-  <button ng-click="getNetPath()" class="btn btn-warning" data-toggle="modal" data-target="netPathModal">Show Netpath</button>
+  <button ng-click="getNetPath()" class="btn btn-warning" data-toggle="modal" data-target="#netPathModal">Show Netpath</button>
 </div>
 
 <!-- Netpath Modal -->
@@ -100,6 +97,7 @@
 <div class="pull-right" style="padding-right:10px">
   <button ng-click="clearPaths()" class="btn btn-danger">Clear</button>
 </div>
+
 
 <div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="false" ps-speed="0.5" ps-size="500px" >
   <div style="padding:10px" id="slide-right">
