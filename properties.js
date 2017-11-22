@@ -5,7 +5,7 @@ _ = require('underscore');
 var self = {
   port : process.env.PORT || 42424,
   ENABLE_HTTPS : false,
-  // Defaulting to self-signed certs 
+  // Defaulting to self-signed certs
   ssl : {
     key : './cert/server.key',
     cert : './cert/server.crt',
@@ -15,10 +15,10 @@ var self = {
     // Example of domain
     'dlt.incntre.iu.edu' : {
       key : './cert/server.key',
-      cert : './cert/server.crt' 
+      cert : './cert/server.crt'
       // ca : "./ssl/dlt-client.csr"
     }
-  },  
+  },
   nat_map_file : './misc/idms_nat_map',
   freegeoipUrl : "http://dlt.incntre.iu.edu:8080",
   jnlpMap : {
@@ -33,7 +33,7 @@ var self = {
       'jarfile' : 'lib/dlt-publisher.jar'
     }
   },
-  // shoppingCart_logger : (function() {    
+  // shoppingCart_logger : (function() {
   //   var log = bunyan.createLogger({
   //     name: "dlt-web cart",
   //     streams : [
@@ -51,22 +51,22 @@ var self = {
   routeMap : {
     // Aggregate from the following by default
     //'default'  : ['dev', 'dlt', 'monitor'],
-    'default': ['dev'],
+    'default': ['iu'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : [],
     'nodes': [],
     'nodes_id' : [],
     //'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
-    'services': ['dev'],
+    'services': [],
     //'services_id' : ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'],
-    'services_id': ['dev'],
+    'services_id': [],
     'measurements': [],
     'measurements_id' : [],
     'metadata': [],
     'metadata_id' : [],
-    'data': ['dev', 'dlt_ms', 'monitor_ms'],
-    'data_id': ['dev', 'dlt_ms', 'monitor_ms'],
+    'data': [],
+    'data_id': [],
     'ports': [],
     'ports_id' : []
   },
@@ -89,20 +89,25 @@ var self = {
       port : "8888",
       use_ssl : false
     },
+    iu: {
+      url: "iu-ps01.osris.org",
+      port: "8888",
+      use_ssl: false
+    },
     msu: {
-	url : "msu-ps01.osris.org",
-	port : "8888",
-	use_ssl : false,
+    	url : "msu-ps01.osris.org",
+    	port : "8888",
+    	use_ssl : false,
     },
     wsu: {
-	url : "wsu-ps01.osris.org",
-	port : "8888",
-	use_ssl : false,
+    	url : "wsu-ps01.osris.org",
+    	port : "8888",
+    	use_ssl : false,
     },
     um: {
-	url : "um-ps01.osris.org",
-	port : "8888",
-	use_ssl : false,
+    	url : "um-ps01.osris.org",
+    	port : "8888",
+    	use_ssl : false,
     },
     unis : {
       url : "unis.crest.iu.edu",
@@ -193,13 +198,13 @@ var deepObjectExtend = function(target, source) {
       deepObjectExtend(target[prop], source[prop]);
     else
       target[prop] = source[prop];
-  } 
+  }
   return target;
 };
 
 try {
   fs.accessSync("config.js",fs.R_OK);
-  var config = require("./config");  
+  var config = require("./config");
   self = deepObjectExtend(self,config);
 } catch(e) {
   console.error("No config file exists - Create a config.js and do module.exports with JSON obj to override server properties",e);

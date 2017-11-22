@@ -1,9 +1,12 @@
 var PATH_SEPARATOR = ":" //TODO: This global is a bad idea.  Needs to be factor out somehow...
-var ARROW_START = "url(" + document.URL + "#arrowStart" + ")" 
+var ARROW_START = "url(" + document.URL + "#arrowStart" + ")"
 var ARROW_END = "url(" + document.URL + "#arrowEnd" + ")"
 
 function topoSelect() {
   document.getElementById("topoDropdown").classList.toggle("show");
+}
+function pathSelect() {
+  document.getElementById("pathDropdown").classList.toggle("show");
 }
 
 function topofilterFunction() {
@@ -23,14 +26,14 @@ function topofilterFunction() {
 
 function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions) {
   //Main entry function for topology drawing
-  
+
   if (layout == "circle") {drawWith = circleDraw}
   else if (layout == "spoke") {drawWith = spokeDraw}
   else if (layout == "blackhole") {drawWith = blackholeDraw}
   else {drawWith = blackholeDraw}
-  
+
   var group = basicSetup(svg, width, height)
-  var edits = {insert:[], "delete":[]} 
+  var edits = {insert:[], "delete":[]}
   var graph = subsetGraph(baseGraph, paths)
 
   if (!actions) {actions = {}}
@@ -43,12 +46,12 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
   function expandNode(d, i) {
     //TODO: Burn things to the ground is not the best strategy...go for animated transitions (eventaully) with ._children/.children
     //TODO: Add an alt-click to expand all?
-   
-    if (!d._children) {return} 
+
+    if (!d._children) {return}
     var targetParts = d.path.split(PATH_SEPARATOR)
     var newPaths = paths.filter(path => !(path == d.path
       || (pathMatch(path, d.path) == targetParts.length)))
-      
+
       if (newPaths.length == paths.length) {
         newPaths = paths
         newPaths.push(d.path)
@@ -66,7 +69,7 @@ function draw(baseGraph, groupLabel, paths, svg, layout, width, height, actions)
 
 function setOrder(graph) {
   //Set an order for children
-  
+
   function linkCount(node) {
     var pathLen = node.path.split(PATH_SEPARATOR).length
     var ins = graph.links ? graph.links.map(l => l.source).filter(l => pathMatch(l, node.path)==pathLen).length : 0
@@ -90,11 +93,11 @@ function setOrder(graph) {
 
 function pathMatch(a,b) {
   //How many segments between A and B match?
-  
+
   var aParts = a.split(PATH_SEPARATOR)
   var bParts = b.split(PATH_SEPARATOR)
   for(i=0; i<aParts.length && i<bParts.length; i++) {
-    if (aParts[i] != bParts[i]) {return i} 
+    if (aParts[i] != bParts[i]) {return i}
   }
   return Math.min(aParts.length, bParts.length)
 }
@@ -102,7 +105,7 @@ function pathMatch(a,b) {
 
 function subsetGraph(graph, paths) {
   //Retain just items in the selected paths and their immediate children
-                        
+
   function findEndpoint(expansion, target) {
     var bestMatch = expansion.reduce(
       function (acc, node, i) {
@@ -163,14 +166,14 @@ function subsetGraph(graph, paths) {
 
 
 
-  var subTree = trimTree(graph.tree, paths) 
+  var subTree = trimTree(graph.tree, paths)
   var leaves = gatherLeaves(subTree)
 
   function includesLink(ls, link) {
     for (var i=0; i<ls.length; i++) {
      var l = ls[i]
      if (l == link ||
-         (l.source == link.source && l.sink == link.sink && l.directed == link.directed)) 
+         (l.source == link.source && l.sink == link.sink && l.directed == link.directed))
        {
          return true
        }
@@ -247,12 +250,12 @@ function addTooltip(svg, selector) {
 function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
   var maxLayer = Object.keys(layout).reduce((acc, n) => Math.max(layout[n].layer, acc), 0)
-  
+
   svg.selectAll("*").remove()
 
   var nodes = Object.keys(layout).map(k => layout[k].node)
   var colors = groupColors(groupLabel, nodes, svg, 10, 15)
-  
+
   var node = svg.selectAll(".tree-node").data(nodes)
   node.enter().append("circle")
     .attr("class", "tree-node")
@@ -266,7 +269,7 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
     .attr("r",  d => 10)//+Math.max(0, 2-layout[d.path].layer)*5)
     .attr("depth", d=> d.path.split(":").length -1)
     .on("click", actions.nodeClick)
-    
+
 
   //Topology/graph links
   var graphLink = svg.selectAll(".link").data(graph.links)
@@ -294,7 +297,7 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
       .selectAll(".tree-link").data(treeLinks)
       .enter().append("line")
         .attr("class", "tree-link")
-        .attr("stroke-width", 1) 
+        .attr("stroke-width", 1)
         .attr("stroke", "gray")
         .attr("x1", d => layout[d[0]].x)
         .attr("y1", d => layout[d[0]].y)
@@ -304,7 +307,7 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
 
 
   var redraw = function() {drawWith(graph, groupLabel, edits, svg, width, height, actions)}
-  enableEditing(svg, nodes, graph.links, actions, edits, redraw, 
+  enableEditing(svg, nodes, graph.links, actions, edits, redraw,
                 undefined, d=>layout[d.path])
 
   return map
@@ -314,7 +317,7 @@ function spokeDraw(graph, groupLabel, edits,  svg, width, height, actions) {
 function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
   svg.selectAll("*").remove()
   var layout = layoutTree(0, graph.tree, {x: width/2, y: height/2+20}, width/4, {})
- 
+
   var nodes = Object.keys(layout).map(k => layout[k].node)
   var colors = groupColors(groupLabel, nodes, svg, 10, 15)
 
@@ -331,7 +334,7 @@ function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
     .attr("stroke-width", 1)
     .attr("r",  d => layout[d.path].r)
     .on("click", actions.nodeClick)
-    
+
   var link = svg.selectAll(".link").data(graph.links)
   link.enter().append("path")
      .attr("class", "graph-link")
@@ -345,12 +348,12 @@ function circleDraw(graph, groupLabel, edits,  svg, width, height, actions) {
   addTooltip(svg, ".tree-node")
 
   var redraw = function() {drawWith(graph, groupLabel, edits, svg, width, height, actions)}
-  enableEditing(svg, nodes, graph.links, actions, edits, redraw, 
+  enableEditing(svg, nodes, graph.links, actions, edits, redraw,
                 undefined, d=>layout[d.path])
 
   return map
 }
-  
+
 
 // ------------------ Black Hole --------------
 // Like a sunburst, but inward instead of outward
@@ -361,8 +364,8 @@ function circularMean(items) {
       var polar = toPolar(c[0], c[1])
       return {r: acc.r + polar.r, ts: acc.ts+Math.sin(polar.t), tc: acc.tc+Math.cos(polar.t)}
     }, {r:0, ts:0, tc: 0})
-  
-  var avg = {r: sums.r/items.length, 
+
+  var avg = {r: sums.r/items.length,
              t: Math.atan2(sums.ts/items.length, sums.tc/items.length)}
   return avg;
 }
@@ -388,7 +391,7 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
           pathToLink(item).forEach(l => l.selected = true)
         } else {
           var targetParts = item.path.split(PATH_SEPARATOR).length
-          var target = graphLinks.filter(l => pathMatch(l.source.path, item.path) == targetParts 
+          var target = graphLinks.filter(l => pathMatch(l.source.path, item.path) == targetParts
                                                || pathMatch(l.target.path, item.path) == targetParts)
           target.forEach(l => l.selected = true)
         }
@@ -410,22 +413,22 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
 
     if (targets.length ==0) {console.error("Could not find link for", item)}
 
-    return targets 
+    return targets
   }
 
   var radius = Math.min(width, height) / 2
- 
+
   var partition = d3.layout.partition()
       .sort((a,b) => a.sort-b.sort)
       .size([2 * Math.PI, radius])
       .value(d => d._children ? d._children.length + 1 : 1) //Children+1 in case there is a children array BUT it has no items
-  
+
   rootSvg.selectAll("*").remove()
   var nodes = partition.nodes(graph.tree)
   var colors = groupColors(groupLabel, nodes, rootSvg, 10, 15)
 
   var maxDepth = nodes.reduce((acc, n) => Math.max(n.depth, acc), 0)
- 
+
   var svg = rootSvg.append("g").attr("transform", "translate(" + width / 2 + "," + height * .52 + ")")
 
   var arc = d3.svg.arc()
@@ -464,7 +467,7 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
     if (n.children) {
       n["center"] = {t: n.centroid.t, r: (minR/maxDepth)*n.depth} //Move to a level
     } else {
-      n["center"] = n.centroid 
+      n["center"] = n.centroid
     }
     return  n
   }).map(n => {
@@ -481,14 +484,14 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
 
   var linkRoot = svg.append("g").attr("id", "links")
   drawLinks()
-  
+
   function drawLinks() {
     function directedAnchorPoint(d) {
-      var theta = -Math.PI/30 
+      var theta = -Math.PI/30
       var pt = toCartesian(d.center)
       var x = Math.cos(theta) * pt.x - Math.sin(theta)*pt.y
       var y = Math.sin(theta) * pt.x + Math.cos(theta)*pt.y
-      return {x:x, y:y} 
+      return {x:x, y:y}
     }
 
     //A separate function to support the mouse-over-highlights-links behavior
@@ -506,13 +509,13 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
       var p = toCartesian(d[0].centroid.r, d[0].centroid.t)
       if (d.length == 1) {
         console.log(self_arc(p, 10))
-        
+
         return self_arc(p, 10)
-      
+
       }
       else {
         var anchors = d.map(e => toCartesian(e.center))
-        anchors[0] = directedAnchorPoint(d[0]) 
+        anchors[0] = directedAnchorPoint(d[0])
         anchors[anchors.lenght-1] = directedAnchorPoint(d[d.length-1])
         return basicLine(anchors)
       }
@@ -526,14 +529,14 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
      }
      return ""
     }
-    
+
     link.enter().append("path")
        .attr("class", "graph-link")
        .attr("d", line)
        .attr("transform", rotate)
 
 
-    link 
+    link
        .attr("fill-opacity", "0")
        .attr("stroke-width", (d,i) => graphLinks[i].selected ? 3 : 2)
        .attr("stroke", (d,i) => markedForDelete(graphLinks[i], edits) ? "red" : "gray")
@@ -542,13 +545,13 @@ function blackholeDraw(graph, groupLabel, edits, rootSvg, width, height, actions
        .attr("marker-start", d => d.directed ? undefined : ARROW_START)
        .on("mouseenter", highlightLinks(true))
        .on("mouseleave.link", highlightLinks(false))
-      
+
 
     link.exit().remove()
   }
 
   var redraw = function() {drawWith(graph, groupLabel, edits, rootSvg, width, height, actions)}
-  enableEditing(svg, nodes, graph.links, actions, edits, redraw, 
+  enableEditing(svg, nodes, graph.links, actions, edits, redraw,
                 pathToLink, d => toCartesian(d.centroid))
 }
 
@@ -604,7 +607,7 @@ function enableEditing(svg, nodes, links, actions, edits, redraw, dataToLink, da
       actions.linkClick.call(links, d3.event, edits)
     }
   }
-  
+
   dragline = svg.insert("line")
      .attr("id", "__DRAGLINE__")
      .attr("x1", 0)
@@ -615,7 +618,7 @@ function enableEditing(svg, nodes, links, actions, edits, redraw, dataToLink, da
      .attr("stroke-width", 2)
      .attr("stroke", "blue")
      .attr("pointer-events", "none")
-  
+
   svg.selectAll(".graph-link").on("click", d => editExistingLink(dataToLink(d)))
 
   var drag = d3.behavior.drag()
@@ -646,7 +649,7 @@ function enableEditing(svg, nodes, links, actions, edits, redraw, dataToLink, da
             }
           }
         })
-  
+
   var mouseCurrentlyOver
   function rememberTarget(enter) {
     if (enter) {return function(item) {mouseCurrentlyOver = item}}
@@ -657,7 +660,7 @@ function enableEditing(svg, nodes, links, actions, edits, redraw, dataToLink, da
        .call(drag)
        .on("mouseenter.drag", rememberTarget(true))
        .on("mouseleave.drag", rememberTarget(false))
- 
+
 
   var  linkEndpoints = function(link) {
     var p1 = dataToLayout(nodes[pathToIndex(link[0], nodes)])
@@ -687,7 +690,7 @@ function basicSetup(svg, width, height) {
     svg = d3.select("html").append("svg")
                .attr("width", width)
                .attr("height", height)
-  
+
   }
 
 	var defs = svg.append("defs")
@@ -716,7 +719,7 @@ function basicSetup(svg, width, height) {
 					"orient":"auto"
 				})
 			.append("path")
-					.attr("d", "M -2 5 L 8 0 L 8 10 z") 
+					.attr("d", "M -2 5 L 8 0 L 8 10 z")
 
   var group = svg.select("#map")
   if (group.empty()) {
@@ -725,19 +728,19 @@ function basicSetup(svg, width, height) {
                .attr("width", width)
                .attr("height", height)
   }
-  return group 
+  return group
 }
 
 function groupColors(groupLabel, nodes, svg, x,y) {
   //Adds a "group" field to each node
-  //Returns a function that colors by group 
+  //Returns a function that colors by group
   //TODO: Pass a group accessor function instead of adding it as an annotation here. (Thus eliminate the copy to grouplabel)
 
   function entryDict(val) {
     var d = {}
     d[groupLabel] = val
     return d
-  } 
+  }
 
   function removeGray(colors) {
     return colors.filter(c => c.substring(1,3) != c.substring(3,5) || c.substring(1,3) != c.substring(5,7))
@@ -787,7 +790,7 @@ function groupColors(groupLabel, nodes, svg, x,y) {
 }
 
 function selectionOverlay(groupLabel, selection, base) {
-  // Modify coloring based on selection.  
+  // Modify coloring based on selection.
   // Assumes there is a "group" and "path" attribute in the argument
 
   selection = selection.map(node => node.path)
@@ -840,7 +843,7 @@ function self_arc(point, r) {
   //Makes a self-pointing loop
   //r -- radius of the loop
   //Based on: https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths
-  r = r ? r :10 
+  r = r ? r :10
 
   var angle =0
   return `M ${point.x} ${point.y}`
@@ -850,13 +853,13 @@ function self_arc(point, r) {
 }
 
 function link_arc(source, target, pct_w, pct_h) {
-  //pct_w and pct_h are used as percent offsets (defaulting to 0) 
+  //pct_w and pct_h are used as percent offsets (defaulting to 0)
   //"r" is the radius of a self-loop, defaulting to 10
   //Return a path between (source.x, source.y) and (target.x, target.y)
   //Based on http://stackoverflow.com/questions/17156283/d3-js-drawing-arcs-between-two-points-on-map-from-file
   pct_w = pct_w ? pct_w : 0
   pct_h = pct_h ? pct_h : 0
- 
+
   if (source.x != target.x || source.y != target.y) {
     //Different source and target
     var sx = source.x + (pct_w * (source.dx ? source.dx : 0)),
@@ -867,7 +870,7 @@ function link_arc(source, target, pct_w, pct_h) {
     var dx = tx - sx,
         dy = ty - sy,
         dr = Math.sqrt(dx * dx + dy * dy);
-    
+
 
     return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,0 " + tx + "," + ty
   } else {return self_arc(source)}
@@ -877,22 +880,22 @@ function layoutTree(layer, root, center, radius, layout) {
   function layoutGroup(layer, group, center, outer_radius, layout) {
     //Per: http://www.had2know.com/academics/inner-circular-ring-radii-formulas-calculator.html
     //Alternative if this prooves too wasteful: https://en.wikipedia.org/wiki/Circle_packing_in_a_circle
-    var slots = Math.max(group.length, 2) 
+    var slots = Math.max(group.length, 2)
     var member_radius = outer_radius*Math.sin(Math.PI/slots)/(1+Math.sin(Math.PI/slots))
     var inner_radius = outer_radius - member_radius
 
     var angularSpacing = (Math.PI*2)/slots
     var layoutX = (r, i) => (r*Math.cos(i * angularSpacing + Math.PI/2 * layer) + center.x)
     var layoutY = (r, i) => (r*Math.sin(i * angularSpacing + Math.PI/2 * layer) + center.y)
-    group.forEach((e,i) => 
+    group.forEach((e,i) =>
                   layout[e.path] = {
-                    x: layoutX(inner_radius, i), 
-                    y: layoutY(inner_radius,i), 
+                    x: layoutX(inner_radius, i),
+                    y: layoutY(inner_radius,i),
                     r: member_radius*.9,
                     layer: layer,
                     node: e
                   })
-                  return layout 
+                  return layout
   }
 
   if (root.children) {
@@ -901,8 +904,8 @@ function layoutTree(layer, root, center, radius, layout) {
     root.children.forEach(n => {
       var c = {x: layout[n.path].x, y:layout[n.path].y}
       var r = layout[n.path].r
-      layoutTree(layer+1, n, c, r, layout) 
-    }) 
+      layoutTree(layer+1, n, c, r, layout)
+    })
   }
   return layout
 }

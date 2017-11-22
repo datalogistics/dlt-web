@@ -43,6 +43,10 @@
       z-index: 1;
       opacity: 0;
       pointer-events: none;
+
+    .pathdrop {
+      border-radius: 10px;
+    }
   }
 </style>
 
@@ -53,6 +57,14 @@
     <a ng-repeat="option in data.topoOptions" href="topology/{{option.id}}">{{option.name}}</a>
   </div>
   <button ng-click="clusterByDomain()" class="btn btn-info" align="right">Cluster</div>
+</div>
+
+<div class="dropdown pull-right">
+  <button onclick="pathSelect()" class="btn btn-info">Show Path</button>
+  <div id="pathDropdown" class="dropdown-content dropdown-menu dropdown-menu-right" ng-model="data.model">
+    <input type="text" placeholder="Search.." id="topoInput" onkeyup="topofilterFunction()">
+    <a ng-repeat="path in paths" ng-click="displayPath(path)">{{path}}</a>
+  </div>
 </div>
 
 <div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="false" ps-speed="0.5" ps-size="500px">
