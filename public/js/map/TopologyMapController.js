@@ -3,7 +3,13 @@ function topoMapDirective() {
     restrict: 'E',
     link: function(scope, element, attr) {
       scope.network = new vis.Network(element[0], scope.topodata, scope.topoopts);
+
       scope.network.stabilize();
+
+      scope.network.on("stabilized", function(){
+        scope.showPathButtons = true;
+        console.log("DONE")
+      });
 
       scope.network.on("selectNode", function(params) {
       	if (params.nodes.length == 1) {
@@ -43,6 +49,8 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
   // page slider control
   $scope.checked = false;
   $scope.size = '100px';
+  $scope.showNetpath = false;
+  $scope.showPathButtons = false;
 
   $scope.toggle = function(p) {
     $scope.cobj = undefined;
@@ -101,7 +109,9 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 
   $http.get('/api/topologies/'+$scope.topoId+'?inline')
     .then(function(res) {
+
       console.log("RESULT", res)
+
       // generic filter function
       function ffunc(e) {
   	if (e.ts >= (t_hist)) {
@@ -126,7 +136,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
       	  n.shape = 'image';
       	}
 
-	return n;
+	      return n;
       }
 
       function createNodeLinks(data, dset) {
@@ -225,6 +235,11 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 
   }
 
+  $scope.stringify = function(json){
+    return JSON.stringify(json)
+  }
+
+
   //
   //
   // Grab paths from the host Unis Instance.
@@ -254,10 +269,46 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
         console.log("THIRD VIS EDGE: ", $scope.topodata.edges.update({id: thirdHopId, width: 5, color:'ff5a00', shadow:{size:40, enabled:true, color:"#ff5a00" } }))
       })};
 
+      // Helper function, simply reset how the edge looks to 'reset' the current shown path.
+      $scope.clearPaths = function(){
+        for(edge in $scope.topodata.edges._data){
+          $scope.topodata.edges.update({id: edge, width: 1,
+                                        shadow:{size:40, enabled:false, color:"#ff5a00" }})
+        }
+        $scope.showNetpath = false
+      }
+
+      $scope.getNetPath = function(){
+
+        $http.get('/api/paths/')
+          .then(function(res) {
+
+            // generic filter function
+            function ffunc(e) {
+              if (e.ts >= (t_hist)) {
+                return true;
+              }
+            }
+
+            for(path in res.data){
+
+              if(res.data[path].id == $scope.currentPathId){
+                var currentPath = res.data[path];
+                console.log(currentPath);
+              }
+            }
+
+          })};
+
       //
       //
       // Grab paths from the host Unis Instance.
       var displayPathById = function(id){
+
+        $scope.clearPaths()
+
+        $scope.currentPathId = id
+
         $http.get('/api/paths')
           .then(function(res) {
 
@@ -267,6 +318,8 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
                 return true;
               }
             }
+
+            $scope.currentPathDetails = res
 
             for(path in res.data){
 
@@ -282,6 +335,9 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 
             }
 
+          })};
+
+            $scope.showNetpath = true
           })};
 
           $scope.displayPath = function(id){
@@ -304,10 +360,6 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
             });
 
           console.log("PATH IDS: ", $scope.paths)
-
-
-
-
 
   // --------------- Utilities to load domain data from UNIS ---------------
   // Graph is pair of nodes and links
