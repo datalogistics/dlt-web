@@ -8,7 +8,6 @@ function topoMapDirective() {
 
       scope.network.on("stabilized", function(){
         scope.showPathButtons = true;
-        console.log("DONE")
       });
 
       scope.network.on("selectNode", function(params) {
@@ -32,6 +31,41 @@ function topoMapDirective() {
       	scope.toggle(params);
       });
 
+      // animation nation
+      //
+      // it is probably more difficult than it needs to be to animate things in Vis, that or I am lazy, probably the latter.
+      var currentRadius = 0; var animateRadius = true // can disable or enable animation
+      var updateFrameVar = setInterval(function() { updateFrameTimer(); }, 60);
+      var animatePath = true
+      function updateFrameTimer() {
+          if (scope.animatePath) {
+              scope.network.redraw();
+              currentRadius += 1;
+          }
+      }
+
+      scope.network.on("afterDrawing", function(ctx) {
+
+          if (scope.animatePath) {
+            var inode;
+            var nodePosition = scope.network.getPositions(scope.nodesInPath);
+        	  var arrayLength = scope.topodata.nodes.length;
+
+        	  for (node in nodePosition) {
+        		  var colorCircle = 'rgba(255, 165, 0, 0.8)';
+        		  var colorBorder = 'rgba(255, 165, 0, 0.2)';
+        		  ctx.strokeStyle = colorCircle;
+        		  ctx.fillStyle = colorBorder;
+        		  var radius = Math.abs(35 * Math.sin(currentRadius / 10));
+        		  ctx.circle(nodePosition[node].x, nodePosition[node].y, radius);
+        		  ctx.fill();
+        		  ctx.stroke();
+        	  }
+
+          };
+        });
+
+
     }
   }
 }
@@ -46,11 +80,13 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
   var ccnt = 0;
   $scope.colors = ['red', 'DarkViolet', 'lime', 'lightblue', 'pink', 'yellow'];
 
-  // page slider control
+  // scope flow controllers
   $scope.checked = false;
   $scope.size = '100px';
   $scope.showNetpath = false;
   $scope.showPathButtons = false;
+  $scope.nodesInPath = [];
+  $scope.animatePath = false;
 
   $scope.toggle = function(p) {
     $scope.cobj = undefined;
@@ -213,6 +249,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
     });
 
   $scope.clusterByDomain = function() {
+    $scope.clearPaths()
     var clusterOptionsByData;
     $scope.domains.forEach(function(d) {
       clusterOptionsByData = {
@@ -241,7 +278,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 
 
   //
-  //
+  // Really just a debug function to spit out a bunch of JSON objects to console.
   // Grab paths from the host Unis Instance.
   var getPaths = function(){
     $http.get('/api/paths')
@@ -253,24 +290,23 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
             return true;
           }
         }
-
-
-
-        console.log("PATHS", res)
-        console.log("FIRST EDGE?: ", $scope.topodata)
-        console.log("FIRST HOP?: ", res.data[0].hops[0])
-        console.log("FIRST HOP ID?: ", res.data[0].hops[0].href.split("links/")[1])
-        console.log("SECOND HOP ID?: ", res.data[0].hops[1].href.split("links/")[1])
-        firstHopId = res.data[0].hops[0].href.split("links/")[1]
-        secondHopId = res.data[0].hops[1].href.split("links/")[1]
-        thirdHopId = res.data[0].hops[2].href.split("links/")[1]
-        console.log("FIRST VIS EDGE: ", $scope.topodata.edges.update({id: firstHopId, width: 5, color:'ff5a00', shadow:{size:40, enabled:true, color:"#ff5a00" } }))
-        console.log("SECOND VIS EDGE: ", $scope.topodata.edges.update({id: secondHopId, width: 5, color:'ff5a00', shadow:{size:40, enabled:true, color:"#ff5a00" } }))
-        console.log("THIRD VIS EDGE: ", $scope.topodata.edges.update({id: thirdHopId, width: 5, color:'ff5a00', shadow:{size:40, enabled:true, color:"#ff5a00" } }))
+        //console.log("PATHS", res)
+        //console.log("FIRST EDGE?: ", $scope.topodata)
+        //console.log("FIRST HOP?: ", res.data[0].hops[0])
+        //console.log("FIRST HOP ID?: ", res.data[0].hops[0].href.split("links/")[1])
+        //console.log("SECOND HOP ID?: ", res.data[0].hops[1].href.split("links/")[1])
+        //firstHopId = res.data[0].hops[0].href.split("links/")[1]
+        //secondHopId = res.data[0].hops[1].href.split("links/")[1]
+        //thirdHopId = res.data[0].hops[2].href.split("links/")[1]
+        //console.log("FIRST VIS EDGE: ", $scope.topodata.edges.update({id: firstHopId, width: 5, color:'ff5a00', shadow:{size:40, enabled:true, color:"#ff5a00" } }))
+        //console.log("SECOND VIS EDGE: ", $scope.topodata.edges.update({id: secondHopId, width: 5, color:'ff5a00', shadow:{size:40, enabled:true, color:"#ff5a00" } }))
+        //console.log("THIRD VIS EDGE: ", $scope.topodata.edges.update({id: thirdHopId, width: 5, color:'ff5a00', shadow:{size:40, enabled:true, color:"#ff5a00" } }))
       })};
 
       // Helper function, simply reset how the edge looks to 'reset' the current shown path.
       $scope.clearPaths = function(){
+        $scope.animatePath = false
+        $scope.nodesInPath = []
         for(edge in $scope.topodata.edges._data){
           $scope.topodata.edges.update({id: edge, width: 1,
                                         shadow:{size:40, enabled:false, color:"#ff5a00" }})
@@ -294,6 +330,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 
               if(res.data[path].id == $scope.currentPathId){
                 var currentPath = res.data[path];
+                return currentPath;
                 console.log(currentPath);
               }
             }
@@ -306,8 +343,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
       var displayPathById = function(id){
 
         $scope.clearPaths()
-
-        $scope.currentPathId = id
+        $scope.currentPathId = id;
 
         $http.get('/api/paths')
           .then(function(res) {
@@ -319,23 +355,28 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
               }
             }
 
-            $scope.currentPathDetails = res
+
 
             for(path in res.data){
 
               if(res.data[path].id == id){
+                $scope.currentPathDetails = res.data[path]
                 var hops = res.data[path].hops
                 for(i in hops){
                   hopId =  res.data[path].hops[i].href.split("links/")[1]
                   $scope.topodata.edges.update({id: hopId, width: 5, color:'ff5a00',
                                                 shadow:{size:40, enabled:true, color:"#ff5a00" }})
-                  console.log(i, path)
+
+                  edge = $scope.topodata.edges._data[hopId]
+                  $scope.nodesInPath.push(edge.to)
+                  $scope.nodesInPath.push(edge.from)
                 }
               }
 
             }
 
-            $scope.showNetpath = true
+            $scope.showNetpath = true;
+            $scope.animatePath = true;
           })};
 
           $scope.displayPath = function(id){

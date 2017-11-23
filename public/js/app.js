@@ -8,7 +8,7 @@ var DLT_PROPS = {
   FreeGeoIpUrl :"http://dlt.incntre.iu.edu:8080/json/"
   // FreeGeoIpUrl :"https://www.freegeoip.net/json/"
 };
-angular.module('periApp', 
+angular.module('periApp',
                ['ngRoute',
 		'ngCookies',
 		'ngPrettyJson',
@@ -17,7 +17,7 @@ angular.module('periApp',
 		'pageslide-directive',
 		'ngAnimate',
 		'schemaForm',
-		'ui.utils', 
+		'ui.utils',
 		'ui.bootstrap',
 		'ui.bootstrap-slider',
 		'nvd3ChartDirectives',
@@ -53,7 +53,7 @@ angular.module('periApp',
         templateUrl: 'loginModal.ejs',
         controller: 'LoginModalCtrl',
         // size: size,
-        resolve: {          
+        resolve: {
         }
       });
 
@@ -67,7 +67,7 @@ angular.module('periApp',
   .config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
            function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
              cfpLoadingBarProvider.includeSpinner = false;
-             
+
              $routeProvider.
                when('/', {
                  templateUrl: 'views/main.html',
@@ -100,7 +100,7 @@ angular.module('periApp',
                when('/topology/:id?', {
                  templateUrl: 'views/topology_map.html',
                  controller: 'TopologyMapController',
-		 reloadOnSearch: false,
+		               reloadOnSearch: false,
                  resolve: {
                    'unis': function(UnisService) {
                      return UnisService.init()

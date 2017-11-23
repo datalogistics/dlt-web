@@ -52,16 +52,16 @@
 </style>
 
 <div class="dropdown">
-  <button onclick="topoSelect()" class="dropbtn">Select Topology</button>
+  <button onclick="topoSelect()" class="btn btn-success" style="margin-bottom: 10px; border-radius: 0px">Select Topology</button>
   <div id="topoDropdown" class="dropdown-content" ng-model="data.model">
     <input type="text" placeholder="Search." id="topoInput" onkeyup="topofilterFunction()">
     <a ng-repeat="option in data.topoOptions" href="topology/{{option.id}}">{{option.name}}</a>
   </div>
-  <button ng-click="clusterByDomain()" class="btn btn-info" align="right">Cluster</div>
+  <button ng-click="clusterByDomain()" class="btn btn-info" align="right" style="border-radius: 0px; margin-bottom: 10px">Cluster</div>
 </div>
 
-<div class="dropdown pull-right">
-  <button onclick="pathSelect()" class="btn btn-info" ng-show="showPathButtons" >Show Path</button>
+<div class="dropdown pull-right" style="padding-bottom: 10px;">
+  <button onclick="pathSelect()" class="btn btn-info" ng-show="showPathButtons" style="border-radius: 0px">Show Path</button>
   <div id="pathDropdown" class="dropdown-content dropdown-menu dropdown-menu-right" ng-model="data.model">
     <input type="text" placeholder="Search" id="pathInput" onkeyup="pathfilterFunction()">
     <a ng-repeat="path in paths" ng-click="displayPath(path)">{{path}}</a>
@@ -71,13 +71,13 @@
 
 
 <div class="pull-right check-element" style="padding-right:10px; transition: all linear 0.5s;" ng-show="showNetpath">
-  <button ng-click="getNetPath()" class="btn btn-warning" data-toggle="modal" data-target="#netPathModal">Show Netpath</button>
+  <button ng-click="getNetPath()" class="btn btn-warning" data-toggle="modal" data-target="#netPathModal" style="border-radius: 0px">Show Netpath</button>
 </div>
 
 <!-- Netpath Modal -->
 <div class="modal fade" id="netPathModal" tabindex="-1" role="dialog" aria-labelledby="netPathModal" aria-hidden="true">
-  <div class="modal-dialog" role="document" style="width: 80%">
-    <div class="modal-content">
+  <div class="modal-dialog" role="document" style="width: 85%">
+    <div class="modal-content" style="border-radius: 0px !important;">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Current Netpath</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -95,7 +95,7 @@
 </div>
 
 <div class="pull-right" style="padding-right:10px">
-  <button ng-click="clearPaths()" class="btn btn-danger">Clear</button>
+  <button ng-click="clearPaths()" class="btn btn-danger" style=" border-radius: 0px">Clear</button>
 </div>
 
 
