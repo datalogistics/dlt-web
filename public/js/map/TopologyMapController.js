@@ -252,21 +252,21 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
     $scope.clearPaths()
     var clusterOptionsByData;
     $scope.domains.forEach(function(d) {
-      clusterOptionsByData = {
-	joinCondition: function (childOptions) {
-	  return childOptions.domain == d.id;
-	},
-	processProperties: function (clusterOptions, childNodes, childEdges) {
-	  var totalMass = 0;
-	  for (var i = 0; i < childNodes.length; i++) {
-	    totalMass += childNodes[i].mass;
-	  }
-	  clusterOptions.mass = totalMass;
-	  return clusterOptions;
-	},
-	clusterNodeProperties: {id: d.id, borderWidth: 3, shape: 'database', color: 'orange', label:'domain: ' + d.name}
-      };
-      $scope.network.cluster(clusterOptionsByData);
+        clusterOptionsByData = {
+        	joinCondition: function (childOptions) {
+          	  return childOptions.domain == d.id;
+          	},
+          	processProperties: function (clusterOptions, childNodes, childEdges) {
+          	  var totalMass = 0;
+          	  for (var i = 0; i < childNodes.length; i++) {
+          	    totalMass += childNodes[i].mass;
+          	  }
+          	  clusterOptions.mass = totalMass;
+          	  return clusterOptions;
+          	},
+          	clusterNodeProperties: {id: d.id, borderWidth: 3, shape: 'database', color: 'orange', label:'domain: ' + d.name}
+          };
+        $scope.network.cluster(clusterOptionsByData);
     });
 
 
