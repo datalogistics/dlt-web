@@ -1,26 +1,29 @@
-<h2 class="lead text-center">EODN/IDMS Exnode Browser</h2>
-<div class="table-responsive" style="max-width: 1024px; margin-left: auto; margin-right: auto";>
+<div class="page-header" style="margin-bottom:45px;">
+  <h1 class="lead text-center">EODN/IDMS Exnode Browser</h1>
+</div>
+
+<div class="table-responsive" style="max-width: 1024px; min-height:100%; margin-left: auto; margin-right: auto; border-radius:0px;">
     <div>
-        <tabset>
+        <tabset class="browser-tabs">
             <tab heading="Exnode Browser" ng-controller="ExnodeController">
-                <div class="row top5">
-                    <div class="col-md-5 tree-browser">
+                <div class="row">
+                    <div class="col-md-3 tree-browser">
                         <!-- <js-tree tree-events="select_node:nodeSelected" tree-data="json" tree-src="/views/filetree.json"  tree-plugins="checkbox"></js-tree> -->
-                        <js-tree tree-events="after_open:invalidateLoad;after_close:saveTreeState;check_node:nodeSelected;uncheck_node:nodeUnselected;uncheck_all:uncheckAll;check_all:checkAll"   
+                        <js-tree tree-events="after_open:invalidateLoad;after_close:saveTreeState;check_node:nodeSelected;uncheck_node:nodeUnselected;uncheck_all:uncheckAll;check_all:checkAll"
                                  tree-ajax="/api/fileTree"
                                  tree-plugins="checkbox,state"
                                  tree-checkbox="{ tie_selection : false , three_state: false}"
                                  tree-state="{key: 'exnode-browser', ttl: 1440000}">
                         </js-tree>
                     </div>
-                    <div class="col-md-7 file-viewer">
+                    <div class="col-md-9 file-viewer" style="overflow: visible;">
                         <div>
                           <table class="table-striped table exnodeFileList">
                             <thead>
                               <tr>
-                                <th> Name </th>
-                                <th> Size (MB) </th>
-                                <th> Select <input type="checkbox" ng-click="selectToggle()" "value="false"/></th>
+                                <th> <button class="btn btn-default select-all" value=""false>Name</button></th>
+                                <th><button class="btn btn-default select-all" value=""false>Size (MB)</button></th>
+                                <th> <button class="btn btn-default select-all" ng-click="selectToggle()" value=""false>All</button></th>
                                 <th> </th>
                                 <th> </th>
                               </tr>
@@ -28,15 +31,41 @@
                                 <tbody>
                                     <tr ng-repeat="(key,val) in selectedIds">
                                         <td>{{val.name || val.text}}</td>
-                                        <td>{{(val.size/(1024*1024)).toFixed(1)}}</td> 
+                                        <td>{{(val.size/(1024*1024)).toFixed(1)}}</td>
                                         <td><input type="checkbox" value="{{val.selfRef}}"/></td>
-                                        <td><button ng-click="downloadOne(val.selfRef)" class="btn btn-info">Download</button></td>
-                                        <td><button ng-click="showExnodeMap(val.selfRef)" class="btn btn-info">Map</button></td>
-                                    </tr>                                       
+                                        <td>
+                                          <button ng-click="downloadOne(val.selfRef)" class="btn btn-info sharp">Download</button>
+                                          <button ng-click="showExnodeMap(val.selfRef)" class="btn btn-warning sharp">Map</button>
+                                        </td>
+
+                                    </tr>
                                 </tbody>
                           </table>
-                          
-                            <button ng-click="downloadAll()" class="btn btn-info">Download Selected</button>                            
+
+                            <button ng-click="downloadAll()" class="btn btn-info sharp pull-right">Download Selected</button>
+                            <div class="dropdown sharp pull-right" style="margin-right:10px;">
+                              <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                                DLN Policy
+                                <span class="caret"></span>
+                              </button>
+
+                              <ul class="dropdown-menu sharp text-center" aria-labelledby="dropdownMenu1">
+                                <li ng-repeat="policy in exnodePolicySelector" style="background-color:'red';" class="policyElement">
+                                  <a class="policy-option" data-value="option1" ng-click="policySelect(policy)" id="{{policy}}" tabIndex="-1">{{policy}}</a>
+                                </li>
+
+                                <li role="separator" class="divider"></li>
+                                <li><a id="applyPolicyButton" class="btn btn-primary sharp">Apply Policy</a></li>
+                                <li><a id="selectAllPolicyButton" ng-click="selectAllPolicy()" class="btn btn-default sharp">Select All</a></li>
+
+                              </ul>
+                            </div>
+                            <!-- makes the bootstrap dropdown behave properly -->
+                            <script type="text/javascript">
+                              $(document).on('click', '.dropdown-menu', function (e) {
+                                e.stopPropagation();
+                              });
+                            </script>
                         </div>
                         <!-- <pre>
                  <code>{{fileViewer}}</code>
@@ -65,7 +94,7 @@
                                 <option ng-repeat="fld in exFields" ng-value="field.name=fld.name"
                                         value="fld.name">
                                     {{fld.name}}
-                                </option>                              
+                                </option>
                             </select>
                         </div>
                         <div class="col-sm-6">
@@ -94,7 +123,7 @@
                 <div class="row">
                     <div class="col-md-5 tree-browser">
                         <div>
-                            <js-tree tree-data="scope" 
+                            <js-tree tree-data="scope"
                                      tree-checkbox="{ tie_selection : false}"
                                      tree-plugins="checkbox"
                                      tree-events="check_node:exsearchNodeSelected;uncheck_node:exsearchNodeUnselected"
@@ -111,7 +140,7 @@
                                     <tr>
                                         <th> Name </th>
                                         <th> Select </th>
-                                        <th> Download</th>                                        
+                                        <th> Download</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -119,14 +148,14 @@
                                         <td>{{val.text}}</td>
                                         <td><input type="checkbox" value="{{val.selfRef}}"/></td>
                                         <td><button type="button" ng-click="downloadOne(val.selfRef)" class="btn btn-info">Download</button></td>
-                                    </tr>                                       
+                                    </tr>
                                 </tbody>
-                            </table>                            
-                            <button type="button" ng-click="downloadAll()" class="btn btn-info">Download Selected</button>                            
+                            </table>
+                            <button type="button" ng-click="downloadAll()" class="btn btn-info">Download Selected</button>
                         </div>
                     </div>
-                </div>               
-            </tab>     
+                </div>
+            </tab>
 
             <tab heading="Landsat Search"  ng-controller="DltFormController">
                 <form class="form-horizontal top5 usgsform" ng-submit="submitUsgsForm()">
@@ -137,13 +166,13 @@
                                 <option ng-repeat="(key, value) in sensorNames" ng-value="key"
                                         value="{{key}}">
                                     {{value}}
-                                </option>                              
+                                </option>
                             </select>
                         </div>
                         <div class="col-md-4">
                             <div>Start date </div>
                             <p class="input-group">
-                                <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="usgsform.startDate" is-open="opened" 
+                                <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="usgsform.startDate" is-open="opened"
                                        max-date="maxDate" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
                                 <span class="input-group-btn">
                                     <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
@@ -153,15 +182,15 @@
                         <div class="col-md-4">
                             <div> End date</div>
                             <p class="input-group">
-                                <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="usgsform.endDate" is-open="opened2" 
+                                <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="usgsform.endDate" is-open="opened2"
                                        max-date="maxDate" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
                                 <span class="input-group-btn">
                                     <button type="button" class="btn btn-default" ng-click="open2($event)"><i class="glyphicon glyphicon-calendar"></i></button>
                                 </span>
                             </p>
-                        </div>                    
+                        </div>
                     </div>
-                    <div class="row">                    
+                    <div class="row">
                         <div class="col-md-4">
                             <div>Cloud cover</div>
                             <div class="row">
@@ -172,7 +201,7 @@
                                     <input class="form-control" ng-model="usgsform.cloud" readonly="readonly"/>
                                 </div>
                             </div>
-                        </div>                                
+                        </div>
                         <div class="col-md-4">
                             <div class="btn-group">
                                 <label class="btn btn-primary" ng-model="usgsform.searchModel" btn-radio="'row'">Row/Path </label>
@@ -190,7 +219,7 @@
                         <div class="col-md-2 form-group">
                             <input required="true" type="number" ng-model="usgsform.latEnd" class="form-control">
                         </div>
-                        <div class="col-md-2 form-group">                        
+                        <div class="col-md-2 form-group">
                         </div>
                         <div class="col-md-1">
                             Longitude
@@ -212,7 +241,7 @@
                         <div class="col-md-2 form-group">
                             <input required="true" type="number" ng-model="usgsform.pathEnd" class="form-control">
                         </div>
-                        <div class="col-md-2 form-group">                        
+                        <div class="col-md-2 form-group">
                         </div>
                         <div class="col-md-1">
                             WRS Row
@@ -227,8 +256,8 @@
                     <div class="row">
                         <div class="col-md-4">
                             <input type="submit" class="btn btn-primary" value="Search"/>
-                        </div>                    
-                    </div>                    
+                        </div>
+                    </div>
                     <div class="row top10" ng-if="isUsgsLoading">
                         <div class="col-xs-5" style=" padding: 10px; height: 300px;background-color: rgba(200,200,200,0.3);">
                             <div class="loader"></div>
@@ -241,16 +270,16 @@
                                 <label class="btn btn-primary" ng-model="showModel" btn-radio="'exnodes'">Show in EODN</label>
                             </div>
                         </div>
-                        <div class="row top10 imageSet" >                            
+                        <div class="row top10 imageSet" >
                             <div class="col-md-4" ng-repeat="(key,val) in usgsSearchRes" ng-if="showModel != 'exnodes' || val.isExnode == true">
                                 <div>
-                                    <img src="{{val.browseURL}}" class="img-responsive cursorPointer"                                 
+                                    <img src="{{val.browseURL}}" class="img-responsive cursorPointer"
                                          href="{{val.browseURL}}"
                                          ng-click="showImage($event);$event.preventDefault();" />
 
-                                    <div class="row">                            
+                                    <div class="row">
                                         <div ng-if="val.isExnode != true && val.isExnode !=false" style=" padding: 10px; margin: 10px 0;background-color: rgba(200,200,200,0.3);">
-                                            Loading Exnode Info ... 
+                                            Loading Exnode Info ...
                                         </div>
                                     </div>
                                     <div class="row">Id : {{ val.sceneID }}</div>
@@ -259,7 +288,7 @@
                                             <div class="lfloat">
                                                 <button type="button" class="trigger btn btn-default">Choose files</button>
                                                 <div class="popover-markup">
-                                                    <div class="head hide">Select the files to download</div> 
+                                                    <div class="head hide">Select the files to download</div>
                                                     <div class="content hide">
                                                         <div role="form" class="form">
                                                             <div class="" ng-repeat="k in val.exFileArr">
@@ -272,13 +301,13 @@
                                                             </div>
                                                             <button type="button"  class="usgsDownloadSelected btn btn-default">Download selected</button>
                                                         </div>
-                                                    </div>                                  
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="lfloat">                                
+                                            <div class="lfloat">
                                                 <button type="button" class="trigger btn btn-default">Show Details</button>
                                                 <div class="popover-markup">
-                                                    <div class="head hide">Exnode Details</div> 
+                                                    <div class="head hide">Exnode Details</div>
                                                     <div class="content hide">
                                                         <table class="table table-striped">
                                                             <thead>
@@ -287,8 +316,8 @@
                                                             <tbody>
                                                                 <tr ng-repeat="k in val.exFileArr"><td>{{k.name}}</td><td>{{k.selfRef}}</td></tr>
                                                             </tbody>
-                                                        </table>                                                  
-                                                    </div>                                  
+                                                        </table>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="clear"></div>
@@ -310,7 +339,7 @@
                     <!-- <div class="row top10" ng-if="usgsSearchRes && !isUsgsLoading ">
                         <div class="col-md-5 tree-browser">
                             <div>
-                                <js-tree tree-data="scope"   
+                                <js-tree tree-data="scope"
                                          tree-checkbox="{ tie_selection : false}"
                                          tree-plugins="checkbox"
                                          tree-events="check_node:usgsNodeSelected;uncheck_node:usgsNodeUnselected"
@@ -327,7 +356,7 @@
                                         <tr>
                                             <th> Name </th>
                                             <th> Select </th>
-                                            <th> Download</th>                                        
+                                            <th> Download</th>
                                             <th> Image </th>
                                         </tr>
                                     </thead>
@@ -337,20 +366,20 @@
                                             <td><input type="checkbox" value=""/></td>
                  <td><button type="button" ng-click="downloadOne()" class="btn btn-info">Download</button></td>
                  <td><a href="{{val.browseURL}}" ng-click="showImage(val.browseURL,$event);$event.preventDefault();" class="btn btn-info">Show Image</a></td>
-                 </tr>                                       
+                 </tr>
                  </tbody>
-                 </table>                            
-                 <button type="button" ng-click="downloadAll()" class="btn btn-info">Download Selected</button>                            
+                 </table>
+                 <button type="button" ng-click="downloadAll()" class="btn btn-info">Download Selected</button>
                  </div>
                  </div>
-                 </div> -->  
+                 </div> -->
                 </form>
             </tab>
 
             <tab heading="USGS Shopping Cart" ng-controller="ShoppingCartController">
-                <div class="row">                            
+                <div class="row">
                     <div ng-if="isShoppingCartLoading" style=" padding: 10px; margin: 10px 0;background-color: rgba(200,200,200,0.3);">
-                        Loading Shopping cart ... 
+                        Loading Shopping cart ...
                     </div>
                     <div ng-if="cartErrorMsg" class="alert alert-danger">
                         {{ cartErrorMsg }}
@@ -377,20 +406,20 @@
                                 Password :
                                 <input id="password" type="password" class="form-control" name="password"/>
                             </label>
-                        </div>                    
+                        </div>
                         <div class="col-md-4">
                             <input type="submit" class="btn btn-primary" value="Login"/>
-                        </div>                    
+                        </div>
                     </form>
                     <div ng-if="hideLogin">
                         <button class="btn btn-default" ng-click="showLogin()" type="button"> Try Another </button>
                     </div>
-                </div>                                
+                </div>
                 <div class="row top10 imageSet">
                     <accordion close-others="oneAtATime">
                         <accordion-group ng-repeat="(key,idArr) in cartRes" ng-if="true || showModel != 'exnodes' || val.isExnode == true" is-open="status.open">
-                            <accordion-heading>        
-                                <div> 
+                            <accordion-heading>
+                                <div>
                                     <div class="pull-left" style="padding: 6px 12px;"> Order ID : {{key}} </div>
                                     <button class="pull-right btn btn-default" ng-click="deleteOrder(key)" type="button"> Delete Order </button>
                                     <div class="clear"></div>
@@ -398,16 +427,16 @@
                             </accordion-heading>
                             <div class="col-md-4" ng-repeat="val in idArr" ng-if="true || showModel != 'exnodes' || val.isExnode == true">
                                 <div>
-                                    <img src="{{val.browseUrl}}" class="img-responsive cursorPointer"                                 
+                                    <img src="{{val.browseUrl}}" class="img-responsive cursorPointer"
                                          href="{{val.browseUrl}}"
                                          ng-click="showImage($event);$event.preventDefault();" />
                                     <div class="row">Id : {{ val.entityId }}</div>
                                     <div ng-if="val.isExnode">
-                                        <div class="row">                                    
+                                        <div class="row">
                                             <div class="lfloat">
                                                 <button type="button" class="trigger btn btn-default">Choose files</button>
                                                 <div class="popover-markup">
-                                                    <div class="head hide">Select the files to download</div> 
+                                                    <div class="head hide">Select the files to download</div>
                                                     <div class="content hide">
                                                         <div role="form" class="form">
                                                             <div class="" ng-repeat="k in val.exFileArr">
@@ -420,13 +449,13 @@
                                                             </div>
                                                             <button type="button"  class="usgsDownloadSelected btn btn-default">Download selected</button>
                                                         </div>
-                                                    </div>                                  
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="lfloat">                                
+                                            <div class="lfloat">
                                                 <button type="button" class="trigger btn btn-default">Show Details</button>
                                                 <div class="popover-markup">
-                                                    <div class="head hide">Exnode Details</div> 
+                                                    <div class="head hide">Exnode Details</div>
                                                     <div class="content hide">
                                                         <table class="table table-striped">
                                                             <thead>
@@ -435,8 +464,8 @@
                                                             <tbody>
                                                                 <tr ng-repeat="k in val.exFileArr"><td>{{k.name}}</td><td>{{k.selfRef}}</td></tr>
                                                             </tbody>
-                                                        </table>                                                  
-                                                    </div>                                  
+                                                        </table>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="clear"></div>
@@ -454,9 +483,9 @@
                                 </div>
                             </div>
                         </accordion-group>
-                    </accordion>                    
+                    </accordion>
                 </div>
             </tab>
-        </tabset>                    
+        </tabset>
     </div>
 </div>

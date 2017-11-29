@@ -1,10 +1,47 @@
+html {
+  height:100%;
+}
 body {
   padding-top: 70px;
+  min-height: 100%;
+}
+
+a {
+  text-decoration:none !important;
+  color: #000000;
+}
+
+.browser-tabs {
+  padding-right:0;
+}
+.browser-tabs .nav li a {
+  letter-spacing: 1px;
+}
+.browser-tabs .nav li a.hover, .browser-tabs .nav li a:hover {
+  color:#000000;
+  -webkit-transition: all .3s linear 0s;
+  transition: all .3s linear 0s;
+  text-shadow: -0.06ex 0 black, 0.06ex 0 black;
+
+  text-decoration:none;
+
 }
 
 .navbar {
   font-size: 14px;
   background: #990000;
+  border-bottom-color: #ffffff;
+}
+
+.nav-tabs > li > a {
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+}
+
+.nav-tabs > li.active > a {
+  color: #3c5a78;
+  text-shadow: -0.06ex 0 black, 0.06ex 0 black;
 }
 
 a.navbar-brand {
@@ -27,6 +64,9 @@ a.header:focus,a.header:hover {
 .footer {
   font-size: 10px;
   padding: 0px;
+  height:70px;
+  margin-top:10px;
+  margin-bottom:0px;
 }
 a.footer {
   color: #990000;
@@ -232,8 +272,8 @@ text.id {
 
 
 .searchfile {
-    background-image: url('/images/file.png'); 
-    background-position: center center; 
+    background-image: url('/images/file.png');
+    background-position: center center;
     background-size: auto auto;
     width: 24px;
     height: 24px;
@@ -247,7 +287,7 @@ text.id {
     color: grey;
 }
 .avtext.avstext {
-    font-size: 42px;    
+    font-size: 42px;
 }
 
 .loader {
@@ -316,6 +356,48 @@ text.id {
   }
 }
 
+.btn {
+  border-radius: 0px !important;
+  border: 0 none;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.sharp {
+  border-radius: 0px;
+}
+
+#applyPolicyButton {
+  color: white;
+}
+
+#applyPolicyButton:hover, #applyPolicyButton.hover {
+  color: #000000;
+}
+
+.policy-select {
+  background-color: coral;
+  -webkit-transition: all .3s linear 0s;
+  transition: all .3s linear 0s;
+}
+
+.policy-option {
+  background-color:transparent !important;
+}
+
+.policy-option.focus , .policy-option:focus, .select-all.focus, .select-all:focus {
+  outline:none;
+}
+.policy-option.hover, .policy-option:hover {
+  cursor: default;
+  border-style: solid;
+  border-top: 1px #ffffff;
+  border-bottom: 1px #ffffff;
+  font-weight:bold;
+}
+
+
 .top5 { margin-top:5px; }
 .top7 { margin-top:7px; }
 .top10 { margin-top:10px; }
@@ -332,7 +414,7 @@ text.id {
     padding : 5px 0;
 }
 .tab-content .popover ,.tab-content .popover .popover-content{
-    max-width : 700px !important;    
+    max-width : 700px !important;
 }
 
 
@@ -369,4 +451,18 @@ text.id {
     height: 100%;
     top: 0;
     z-index : 1000;
+}
+
+.foot-container {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    overflow:hidden;
+    background-color: #f9f9f9;
+}
+
+.footer-hr {
+  margin:0;
+  padding:0;
 }

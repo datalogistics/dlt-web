@@ -51,7 +51,7 @@ var self = {
   routeMap : {
     // Aggregate from the following by default
     //'default'  : ['dev', 'dlt', 'monitor'],
-    'default': ['iu'],
+    'default': ['exnodedev'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : [],
@@ -88,6 +88,11 @@ var self = {
       url : "localhost",
       port : "8888",
       use_ssl : false
+    },
+    exnodedev : {
+      url: "unis.open.sice.indiana.edu",
+      port: "8890",
+      use_ssl: false
     },
     iu: {
       url: "iu-ps01.osris.org",

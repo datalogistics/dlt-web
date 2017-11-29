@@ -9,7 +9,7 @@ function getSchemaProperties(obj) {
                 desc : n[i].description
             });
         };
-    }; 
+    };
     return arr;
 };
 /*
@@ -23,35 +23,36 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
   // SocketService.on('exnode_childFiles' , function(d){
   //   console.log("***********************",d);
   // });
-  // The Exnode file browser 
+  // The Exnode file browser
   //
-  $scope.fieldArr = [];      
+  $scope.fieldArr = [];
+  $scope.exnodePolicySelector = ["wdln-ferry-00","wdln-ferry-01","wdln-ferry-02","wdln-ferry-03","wdln-ferry-04"];
   $scope.addField = function(){
     var x = {
       id : $scope.fieldArr.length,
       value : ""
     };
-    $scope.fieldArr.push(x);        
-  };  
+    $scope.fieldArr.push(x);
+  };
   $scope.addCustomField = function(){
     var x = {
       id : $scope.fieldArr.length,
       value : "",
       isCustom : true
     };
-    $scope.fieldArr.push(x);        
+    $scope.fieldArr.push(x);
   };
-  
+
   $scope.addField();
   $scope.removeField = function(ind){
     var arr = $scope.fieldArr;
-    var index ; 
+    var index ;
     for ( var i =0 ;i < arr.length ; i++) {
       if (arr[i].id == ind)
         break;
     };
 
-    // Delete        
+    // Delete
     arr.splice(i,1);
     console.log("New Arr",arr , i , ind);
   };
@@ -87,11 +88,11 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
       $scope.isExLoading = false ;
     });;
   };
-  
+
   $scope.schema = window.exnodeScheme;
-  
+
   $scope.form = window.exnodeForm;
-  
+
   $scope.model = {};
   $scope.showInfo= function(){
   };
@@ -99,22 +100,22 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
   $scope.fileViewer = 'Please select a file to view its contents';
   $scope.showDownload = false;
 
-  // Angular will use the selected Ids to display information 
+  // Angular will use the selected Ids to display information
   // The generator func
   // A map of parentNode to obj with parentId and array of child
   var parentMap = {};
   function childFileHandler(data){
     console.log("Getting child data" , data.emitId , data.arr);
     var arr = data.arr;
-    // Just for the tree in enxode Browser 
+    // Just for the tree in enxode Browser
     var prefix = "";
     var selectedIds = $scope[prefix + 'selectedIds'] = $scope[prefix + 'selectedIds'] || {} ;
     var emitP = parentMap[data.emitId+""] = parentMap[data.emitID+""] || {};
-    emitP.child = emitP.child  || []; 
+    emitP.child = emitP.child  || [];
     for (var i=0;i < arr.length; i++){
       var info = arr[i];
       selectedIds[info.id] = info;
-      // console.log(info);    
+      // console.log(info);
       $scope[prefix+'showDownload'] = info.isFile;
       $scope[prefix+'downloadId'] = info.id ;
       // Process parent and add and remove to parentMap as required
@@ -123,9 +124,9 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
       p.child.push(info);
       emitP.child.push(info);
     };
-    // Now store parent info so that selection in future may not need requests    
+    // Now store parent info so that selection in future may not need requests
   };
-  
+
   SocketService.on('exnode_childFiles', childFileHandler);
 
   $scope.invalidateLoaded = function(a,b){
@@ -154,22 +155,22 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
         return;
         // Lets get all the child files and add it
         // Also create a map to store info and use to remove
-        // If it exists in map , use that        
+        // If it exists in map , use that
         var par = parentMap[info.id];
         if (par) {
           childFileHandler({emitId : info.id , arr : par.child});
         } else {
-          SocketService.emit('exnode_getAllChildren',{id : info.id});       
+          SocketService.emit('exnode_getAllChildren',{id : info.id});
         };
       } else {
         selectedIds[info.id] = info;
-        // console.log(info);    
+        // console.log(info);
         $scope[prefix+'showDownload'] = info.isFile;
-        $scope[prefix+'downloadId'] = info.id ;     
+        $scope[prefix+'downloadId'] = info.id ;
       }
     };
   };
-  
+
   function unselectNodeGen(prefix){
     return function(a,b){
       var jstr = jQuery.jstree.reference(this);
@@ -187,11 +188,11 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
             delete ($scope[prefix+'selectedIds'] || {})[it.id];
           }
         }
-      } else 
+      } else
         delete ($scope[prefix+'selectedIds'] || {})[info.id];
     };
   };
-  
+
   $scope.nodeSelected = selectNodeGen("");
   $scope.nodeUnselected = unselectNodeGen("");
 
@@ -202,12 +203,12 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
   $scope.usgsNodeUnselected = unselectNodeGen("usgs");
 
   $scope.selectToggle = function() {
-    var flag = true; 
+    var flag = true;
     $(".exnodeFileList tbody input").each(function(x) {
       flag = flag && $(this).prop("checked");
       // Break if flag true
       return flag;
-    });    
+    });
     if (!flag) {
       $(".exnodeFileList input").prop("checked",true);
     } else {
@@ -221,8 +222,15 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
     client_action([id], 'download');
   };
 
+  $scope.policySelect = function(htmlID){
+    $('#' + htmlID).parent().toggleClass('policy-select');
+    console.log('toggled');
+  };
 
-
+  $scope.selectAllPolicy = function(){
+    $('.policyElement').removeClass('policy-select');
+    $('.policyElement').addClass('policy-select');
+  };
 
   $scope.downloadAll = function(){
     var arr = [];
@@ -239,7 +247,7 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
   $scope.downloadAllUsgsEx = function(arr) {
     client_action(arr.map(function(x) { return x.url || x.selfRef;}),'download');
   };
-  function client_action(arr, app) {    
+  function client_action(arr, app) {
     var csv = (arr || []).join(",");
     var k = "<form action='/api/download' method='post'>"
     k += "<input type='text' name='refList' value='"+csv+"'/>"
@@ -259,4 +267,3 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
     $location.path("/exnode/"+id, true)
   }
 }
-
