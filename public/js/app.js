@@ -18,6 +18,7 @@ angular.module('periApp',
 		'ngAnimate',
 		'schemaForm',
 		'ui.utils',
+    'ivh.treeview',
 		'ui.bootstrap',
 		'ui.bootstrap-slider',
 		'nvd3ChartDirectives',
@@ -153,4 +154,17 @@ angular.module('periApp',
                .otherwise({redirectTo: '/'});
 
              $locationProvider.html5Mode(true);
-           }]);
+
+           }])
+
+           .config(function(ivhTreeviewOptionsProvider) {
+
+             ivhTreeviewOptionsProvider.set({
+
+               twistieCollapsedTpl: '<span style="margin-right:4px; margin-left:4px;" class="glyphicon glyphicon-folder-close"></span>',
+               twistieExpandedTpl: '<span style="margin-right:4px; margin-left:4px;" class="glyphicon glyphicon-folder-open"></span>',
+               twistieLeafTpl: '<span style="margin-right:4px; margin-left:4px;" class="glyphicon glyphicon-file"></span>',
+               defaultSelectedState: false,
+               validate: true
+             });
+            });

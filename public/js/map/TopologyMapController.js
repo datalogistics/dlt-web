@@ -214,13 +214,18 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
       	  d.nodes.forEach(function(n) {
       	    // build port DB
       	    if ("ports" in n) {
-      	      ports.add(n.ports.filter(ffunc)
-      			.map(e => {return {id: e.id,
-      					   label: e.name,
-      					   node: n.id,
-      					   selfRef: e.selfRef,
-      					   title: e.description || ""}
-      				  }));
+              try {
+              ports.add(n.ports.filter(ffunc)
+        			.map(e => {return {id: e.id,
+        					   label: e.name,
+        					   node: n.id,
+        					   selfRef: e.selfRef,
+        					   title: e.description || ""}
+        				  }));
+              } catch (err){
+                console.log(err);
+              }
+
       	    }
       	  });
 	       }

@@ -8,58 +8,88 @@
             <tab heading="Exnode Browser" ng-controller="ExnodeController">
                 <div class="row">
                     <div class="col-md-3 tree-browser">
-                        <!-- <js-tree tree-events="select_node:nodeSelected" tree-data="json" tree-src="/views/filetree.json"  tree-plugins="checkbox"></js-tree> -->
+                      <h3 class="page-header" style="margin-bottom:20px; margin-left:20px;">Files</h4>
+
+                      <!-- better tree -->
+                      <div ivh-treeview="tree"
+                            ivh-treeview-default-selected-state="false"
+                            ivh-treeview-node-tpl="treetpl"
+                            ivh-treeview-on-cb-change="getNode(ivhNode, ivhIsSelected, ivhTree)"
+                            ></div> <!-- end better tree -->
+
+                        <!-- <js-tree tree-events="select_node:nodeSelected" tree-data="json" tree-src="/views/filetree.json"  tree-plugins="checkbox"></js-tree>
                         <js-tree tree-events="after_open:invalidateLoad;after_close:saveTreeState;check_node:nodeSelected;uncheck_node:nodeUnselected;uncheck_all:uncheckAll;check_all:checkAll"
                                  tree-ajax="/api/fileTree"
                                  tree-plugins="checkbox,state"
                                  tree-checkbox="{ tie_selection : false , three_state: false}"
                                  tree-state="{key: 'exnode-browser', ttl: 1440000}">
-                        </js-tree>
+                        </js-tree> -->
                     </div>
                     <div class="col-md-9 file-viewer" style="overflow: visible;">
-                        <div>
-                          <table class="table-striped table exnodeFileList">
-                            <thead>
-                              <tr>
-                                <th> <button class="btn btn-default select-all" value=""false>Name</button></th>
-                                <th><button class="btn btn-default select-all" value=""false>Size (MB)</button></th>
-                                <th> <button class="btn btn-default select-all" ng-click="selectToggle()" value=""false>All</button></th>
-                                <th> </th>
-                                <th> </th>
-                              </tr>
-                                </thead>
-                                <tbody>
-                                    <tr ng-repeat="(key,val) in selectedIds">
-                                        <td>{{val.name || val.text}}</td>
-                                        <td>{{(val.size/(1024*1024)).toFixed(1)}}</td>
-                                        <td><input type="checkbox" value="{{val.selfRef}}"/></td>
-                                        <td>
-                                          <button ng-click="downloadOne(val.selfRef)" class="btn btn-info sharp">Download</button>
-                                          <button ng-click="showExnodeMap(val.selfRef)" class="btn btn-warning sharp">Map</button>
-                                        </td>
+                        <div style="margin-top:26px;">
+                          <div style="height:300px; overflow-y:auto;">
 
-                                    </tr>
-                                </tbody>
-                          </table>
-
-                            <button ng-click="downloadAll()" class="btn btn-info sharp pull-right">Download Selected</button>
-                            <div class="dropdown sharp pull-right" style="margin-right:10px;">
+                            <div class="dropup sharp pull-right" style="margin-right:10px;" position:"absolute">
                               <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                                 DLN Policy
                                 <span class="caret"></span>
                               </button>
 
-                              <ul class="dropdown-menu sharp text-center" aria-labelledby="dropdownMenu1">
+                              <ul class="dropdown-menu sharp text-center" aria-labelledby="dropdownMenu1" style="width:200px;right:-10px;">
                                 <li ng-repeat="policy in exnodePolicySelector" style="background-color:'red';" class="policyElement">
-                                  <a class="policy-option" data-value="option1" ng-click="policySelect(policy)" id="{{policy}}" tabIndex="-1">{{policy}}</a>
+                                  <a class="policy-option" data-value="option1" ng-click="policySelect(policy.label)" id="{{policy.label}}" tabIndex="-1">{{policy.label}}</a>
                                 </li>
 
                                 <li role="separator" class="divider"></li>
-                                <li><a id="applyPolicyButton" class="btn btn-primary sharp">Apply Policy</a></li>
+                                <li><a id="applyPolicyButton" style="font-weight: bold;" class="btn btn-primary sharp">Apply Policy</a></li>
                                 <li><a id="selectAllPolicyButton" ng-click="selectAllPolicy()" class="btn btn-default sharp">Select All</a></li>
 
                               </ul>
                             </div>
+
+                          <table class="table-striped table exnodeFileList">
+                            <thead>
+                              <tr>
+                                <th> <button class="btn btn-default select-all" value=""false>Name</button></th>
+                                <th><button class="btn btn-default select-all" value=""false>Size (MB)</button></th>
+                                <th> <button class="btn btn-default select-all" ng-click="selectToggle()" value=""false>Select</button></th>
+                                <th></th>
+                                <!--<th><button class="btn btn-default select-all" ng-click="selectToggle()" value=""false>Map</button></th>-->
+                              </tr>
+                            </thead>
+                                <tbody>
+
+                                    <tr ng-repeat="(key,val) in selectedIds">
+
+                                        <td>{{val.name || val.text}}</td>
+                                        <td class="text-center">{{(val.size/(1024*1024)).toFixed(1)}}</td>
+                                        <td><input type="checkbox" value="{{val.selfRef}}"/></td>
+                                        <td>
+                                          <!-- DOWNLOAD button btw, icon is smaller :D -->
+                                          <button ng-click="downloadOne(val.selfRef)" class="btn btn-info sharp" style="margin-right:5px;">
+                                            <span class="glyphicon glyphicon-download-alt"></span>
+                                          </button>
+                                          <!-- MAP button btw, same reason :D -->
+                                          <button ng-click="showExnodeMap(val.selfRef)" class="btn btn-warning sharp">
+                                            <span class="glyphicon glyphicon-map-marker"></span>
+                                          </button>
+
+                                        </td>
+                                        <!--<td>
+                                        </td>-->
+
+                                    </tr>
+                                </tbody>
+
+
+
+                          </table>
+                          <div ng-if="selectedIds.length == 0" style="width:100%; font-weight:bold;" class="text-center">
+                            No Files Selected
+                          </div>
+                          </div>
+                            <button ng-click="downloadAll()" class="btn btn-info sharp pull-right">Download Selected<span class="glyphicon glyphicon-chevron-right"></span></button>
+
                             <!-- makes the bootstrap dropdown behave properly -->
                             <script type="text/javascript">
                               $(document).on('click', '.dropdown-menu', function (e) {

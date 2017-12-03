@@ -27,7 +27,7 @@ var getHttpOptions = resourceHelper.getHttpOptions;
 var sslOptions = cfg.sslOptions;
 var filterMap = cfg.filterMap;
 
-function applyRouteCbs(name,json) {  
+function applyRouteCbs(name,json) {
   var rcb = routeCb[cfg.routeCb[name]];
   if (typeof rcb == "function") {
     return rcb(json);
@@ -36,7 +36,7 @@ function applyRouteCbs(name,json) {
 }
 function getJarFromReq(name,req) {
   if (!req.session || !req.session.jar || !req.session.jar[name])
-    return null;  
+    return null;
   var storeJson = JSON.parse(JSON.stringify(req.session.jar[name]));
   var st = new tough.MemoryCookieStore();
   tough.CookieJar.deserializeSync(storeJson,st);
@@ -52,28 +52,28 @@ function getMostRecent(items) {
   })
   return Object.keys(recent).map(k => recent[k])
 }
-  
+
 // var slice_info = [];
 // var filePath = '/usr/local/etc/node.info';
 // var slice_uuid = '';
 // var os_name = '';
-// var distro = ''; 
+// var distro = '';
 
 module.exports = function(app) {
 
   console.log("UNIS Default Instances: " + cfg.routeMap.default);
   //console.log("Measurement Store Host: " + ms_host);
   //console.log("Measurement Store Port: " + ms_port);
-  
+
   app.get('/api', function(req, res) {
     // console.log('STATUS: ' + res.statusCode);
     // console.log('HEADERS: ' + JSON.stringify(res.headers));
     // console.log('BODY: ' + JSON.stringify(res.body));
-    
+
     var routes = [];
     var hostname = req.headers.host;
     var pathname = url.parse(req.url).pathname;
-    
+
     // routes.push('http://' + hostname + pathname + '/slice');
     routes.push('https://' + hostname + pathname + 'nodes');
     routes.push('https://' + hostname + pathname + 'domains');
@@ -87,6 +87,7 @@ module.exports = function(app) {
     routes.push('https://' + hostname + pathname + 'fileTree');
     routes.push('https://' + hostname + pathname + 'getVersion');
     routes.push('https://' + hostname + pathname + 'topologies');
+    routes.push('https://' + hostname + pathname + 'wildfire');
     res.json(routes);
   });
 
@@ -98,16 +99,16 @@ module.exports = function(app) {
     var u = url.parse(name);
     var ret;
     for (var i in prop) {
-      var it = prop[i];          
+      var it = prop[i];
       var uH = u.host || u.href ;
-      var iA = (it.url || "").split(uH || "") ;            
+      var iA = (it.url || "").split(uH || "") ;
       if(((it.url + "").indexOf(uH + "")) != -1) {
         ret = it;
-        var propUrl = url.parse(it.url || "");                
+        var propUrl = url.parse(it.url || "");
         if (propUrl.host == it.host && it.protocol == propUrl.protocol) {
           return ret;
         } // Else look for a better match
-      }                         
+      }
     }
     return ret;
   };
@@ -118,13 +119,13 @@ module.exports = function(app) {
     },[]);
     return json;
   }
-  
+
   function getInlineObjects(obj) {
     var base_schemas = Object.keys(cfg.SCHEMAS).reduce(function(obj,key) {
       obj[ cfg.SCHEMAS[key] ] = key;
       return obj;
     }, {});
-    
+
     function getBaseSchema(so) {
       // process object if we're already a base type
       if (so.$schema in base_schemas) {
@@ -149,7 +150,7 @@ module.exports = function(app) {
       }
       return recurseOnSchema(so.$schema);
     }
-    
+
     function getObject(o) {
       return getBaseSchema(o).then(function(btype) {
 	// base case
@@ -201,7 +202,7 @@ module.exports = function(app) {
 	});
       });
     }
-    
+
     function stepObjects(data) {
       var promises = [];
       data.forEach(function(o) {
@@ -213,7 +214,7 @@ module.exports = function(app) {
     }
     return stepObjects(obj);
   }
-  
+
   function doGET(op,key) {
     var defer = q.defer();
     var fdata = "";
@@ -239,7 +240,7 @@ module.exports = function(app) {
     }
     return defer.promise;
   }
-  
+
   function registerGenericHandler(options,cb) {
     var method = https;
     var res = options.res, req = options.req;
@@ -251,7 +252,7 @@ module.exports = function(app) {
     , portArr = [].concat(options.portArr)
     , nameArr = [].concat(options.nameArr);
 
-    // Select host to be queried 
+    // Select host to be queried
     var host = req.query.hostname;
     var opt = getHostOpt(host);
     if (opt) {
@@ -260,18 +261,18 @@ module.exports = function(app) {
       keyArr = [opt.key]
       , certArr = [opt.cert]
       , doSSLArr = [opt.use_ssl]
-      , portArr = [opt.port];        
+      , portArr = [opt.port];
     };
     //console.log("**" , hostArr , keyArr , certArr , doSSLArr , portArr );
-    // Loop over all options path 
+    // Loop over all options path
     //console.log("Requesting from ", hostArr, certArr);
     var handlerArr = hostArr.map(function(x,index) {
-      // Return handler function for each 
+      // Return handler function for each
       if (doSSLArr[index]) {
         options = _.extend(options, sslOptions);
       }
       var opt = _.extend({}, options);
-      // Adding parameters got 
+      // Adding parameters got
       opt.hostname = hostArr[index];
       opt.port = portArr[index];
       opt.use_ssl = doSSLArr[index];
@@ -288,7 +289,7 @@ module.exports = function(app) {
           prot = "https://";
         }
         var op = {
-          url : prot + opt.hostname+":"+opt.port+opt.path,          
+          url : prot + opt.hostname+":"+opt.port+opt.path,
           jar : j
         };
         if (opt.cert) {
@@ -296,7 +297,7 @@ module.exports = function(app) {
             cert : opt.cert,
             key : opt.key,
             requestCert : true,
-            rejectUnauthorized : false            
+            rejectUnauthorized : false
           };
         }
 	return doGET(op);
@@ -336,14 +337,14 @@ module.exports = function(app) {
       }
     });
   };
-  
+
   function getGenericHandler(opt) {
     var path = opt.path;
     var name = opt.name;
     var handler = opt.handler;
-    
+
     return function(req, res) {
-      // Get all parameters and just forward it to UNIS 
+      // Get all parameters and just forward it to UNIS
       var paramString = querystring.stringify(req.query);
       if (path in filterMap) {
 	paramString += "&"+filterMap[path]
@@ -384,7 +385,7 @@ module.exports = function(app) {
     var name = opt.name;
     var handler = opt.handler;
     return function(req, res) {
-      // Get all parameters and just forward it to UNIS 
+      // Get all parameters and just forward it to UNIS
       var paramString = querystring.stringify(req.query);
       //console.log("node id: " + req.params.id);
       //console.log('STATUS: ' + res.statusCode);
@@ -434,8 +435,8 @@ module.exports = function(app) {
       res.json({
 	error : true,
 	data : x
-      });      
-    });	     
+      });
+    });
   });
   app.get('/api/fileTree',function(req, res) {
     var id = req.query.id;
@@ -466,22 +467,52 @@ module.exports = function(app) {
           "icon" :  x.mode == "file" ? "/images/file.png" : "/images/folder.png",
           "isFile": x.mode == "file" ? true: false,
           "parent" : x.parent == null? "#" : x.parent.href,
+          "real_parent" : x.parent == null? "#" : (x.parent.href),
           "children" :  x.mode != "file",
           "undetermined" : true,
           "state" : {
             "opened" : false ,
             "disabled" : false,
-            "selected" : false 
+            "selected" : false
           },
           "selfRef" : x.selfRef,
           "text" : x.name ,
-          "size" : x.size , 
+          "size" : x.size ,
           "created" : x.created,
           "modified" : x.modified
         };
       });
+
       res.json(arr);
-    });     
+    });
+  });
+
+  app.get('/api/wildfire',function(req, res) {
+    var id = req.query.id;
+    delete req.query.id ;
+    if(id ==1) {
+      req.query.parent = "null=";
+    } else if(id) {
+      req.query['parent.href'] = id;
+    }
+    // Ascending sort by name
+    // Since all path and rows have 0 appened to them, so an ordinary string sort will work even though they are numbers
+    req.query.sort= "name:1";
+    var paramString = querystring.stringify(req.query);
+    var arr = [];
+    var options = _.extend({
+      req : req , res : res ,
+      path : '',
+      name : 'wildfire'
+    },getHttpOptions({
+      name : 'wildfire'
+    }));
+
+    registerGenericHandler(options, function(obj) {
+      // Return matching id children
+      arr = getMostRecent(obj);
+      res.json(arr);
+    });
   });
 
 
@@ -494,10 +525,10 @@ module.exports = function(app) {
     console.log(url);
     request(url,function(err,r,resp){
       xmlparse(resp, function(err , result){
-        console.dir(result);                
+        console.dir(result);
         res.json(result);
       });
-    });        
+    });
   });
 
   app.get('/api/usgslatsearch',function(req, res) {
@@ -508,12 +539,12 @@ module.exports = function(app) {
     console.log(url);
     request(url,function(err,r,resp){
       xmlparse(resp, function(err , result){
-        console.dir(result);                
+        console.dir(result);
         res.json(result);
       });
     });
   });
-  
+
   app.post('/api/download',function(req, res){
     var sessionId = req.sessionID;
     var arr = req.body.refList.split(",");
@@ -567,14 +598,14 @@ module.exports = function(app) {
       }
     });
   });
-  
+
   auth.addRoutes('/',app);
-  usgsapi.addRoutes('/usgsapi/',app);  
+  usgsapi.addRoutes('/usgsapi/',app);
   app.get('/popup/*', function(req,res) {
     res.render('../views/popup.html');
   });
   var viewsFolder = "../views";
-  app.get('*.html',function(req,res) {    
+  app.get('*.html',function(req,res) {
     res.render(path.join(viewsFolder,req.url));
   });
   app.get('*.ejs',function(req,res) {

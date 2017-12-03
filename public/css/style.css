@@ -26,6 +26,44 @@ a {
   text-decoration:none;
 
 }
+.ivh-treeview-node-label:hover {
+  cursor: pointer;
+}
+.glyphicon-file:hover {
+  color:orange;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all .3s linear 0s;
+}
+
+.file-inactive span .ivh-treeview-twistie-leaf{
+  color:#d0d5dd;
+}
+
+.active-file span .ivh-treeview-twistie-leaf {
+  color:orange;
+  cursor: pointer;
+  font-size: 16px;
+  transition: none !important;
+}
+
+.active-folder span .ivh-treeview-twistie-collapsed ,
+.active-folder span .ivh-treeview-twistie-expanded  {
+  color:blue;
+  cursor: pointer;
+  font-size: 16px;
+  transition: none !important;
+}
+
+.glyphicon {
+  width:20px;
+}
+
+.glyphicon-folder-close:hover, .glyphicon-folder-open:hover  {
+  color:blue;
+  cursor: pointer;
+  font-size: 16px;
+}
 
 .navbar {
   font-size: 14px;

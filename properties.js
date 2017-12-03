@@ -51,10 +51,10 @@ var self = {
   routeMap : {
     // Aggregate from the following by default
     //'default'  : ['dev', 'dlt', 'monitor'],
-    'default': ['exnodedev'],
+    'default': ['iu'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
-    'exnodes' : [],
+    'exnodes' : ['exnodedev',],
     'nodes': [],
     'nodes_id' : [],
     //'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
@@ -68,7 +68,8 @@ var self = {
     'data': [],
     'data_id': [],
     'ports': [],
-    'ports_id' : []
+    'ports_id' : [],
+    'wildfire' : ['fuego']
   },
   // Add a callback to process data for various routes
   routeCb : {
@@ -93,6 +94,11 @@ var self = {
       url: "unis.open.sice.indiana.edu",
       port: "8890",
       use_ssl: false
+    },
+    fuego : {
+      url : "dlt.open.sice.indiana.edu",
+      port : "8000",
+      use_ssl : false
     },
     iu: {
       url: "iu-ps01.osris.org",
@@ -161,6 +167,7 @@ var self = {
   },
   usgs_row_searchurl : "http://earthexplorer.usgs.gov/EE/InventoryStream/pathrow",
   usgs_lat_searchurl : "http://earthexplorer.usgs.gov/EE/InventoryStream/latlong",
+  wildfire_policies_url : "http://dlt.open.sice.indiana.edu:8000",
   usgs_api_credentials : {
     username : "indianadlt",
     password : "indiana2014"

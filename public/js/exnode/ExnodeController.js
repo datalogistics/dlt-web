@@ -17,7 +17,7 @@ function getSchemaProperties(obj) {
  * public/js/exnode/
  * ExnodeController.js
  */
-function exnodeController($scope, $routeParams, $location, ExnodeService,$log,SocketService) {
+function exnodeController($scope, $routeParams, $location, $http, ExnodeService,$log,SocketService,ivhTreeviewMgr) {
   // Dangerous code
   // SocketService.emit('exnode_getAllChildren', {id : null});
   // SocketService.on('exnode_childFiles' , function(d){
@@ -25,8 +25,54 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
   // });
   // The Exnode file browser
   //
+
   $scope.fieldArr = [];
-  $scope.exnodePolicySelector = ["wdln-ferry-00","wdln-ferry-01","wdln-ferry-02","wdln-ferry-03","wdln-ferry-04"];
+  $scope.files = [];
+  $scope.exnodePolicySelector = [];
+  $scope.selectedIds = [];
+
+  // tree setup
+  $scope.treetpl = [
+    '<div id="{{node.id}}" style="min-height:25px;">',
+    '- <span ng-if="trvw.useCheckboxes()" ivh-treeview-checkbox style="display:none;">',
+      '</span>',
+      '<span ivh-treeview-toggle>',
+        '<span ivh-treeview-twistie ng-if="node.isFile && !node.selected" class="file-inactive" ng-click="trvw.toggleSelected(node)"></span>',
+        '<span ivh-treeview-twistie ng-if="node.isFile && node.selected" class="active-file" ng-click="trvw.toggleSelected(node)"></span>',
+        '<span ivh-treeview-twistie ng-if="!node.isFile && !node.selected"></span>',
+        '<span ivh-treeview-twistie ng-if="!node.isFile && node.selected" class="active-folder"></span>',
+      '</span>',
+      '<span class="ivh-treeview-node-label" ng-click="trvw.toggleSelected(node)" title="{{node.text}}">',
+       '{{trvw.label(node)}}',
+      '</span>',
+      '<div ivh-treeview-children style="margin-top:5px"></div>',
+    '</div>'
+  ].join('\n');
+
+  // ur gonna want to console.log this part.
+  $scope.getNode = function(node, selected, tree){
+    if(node.isFile == false){
+      // if folder, search through it and do the deed
+      ivhTreeviewMgr.expand(tree, node);
+      selectChildren(node, selected);
+    } else { // just a file
+      selected ? $scope.selectedIds.push(node) : removeById($scope.selectedIds, node);
+    }
+    ivhTreeviewMgr.validate(tree);
+  };
+
+  var selectChildren = function(node, selected){
+    node.children.forEach(function(child){
+        if(child.isFile == false){
+          selectChildren(child);
+        } else {
+          selected == false ? removeById($scope.selectedIds, child) : $scope.selectedIds.push(child);
+        }
+    });
+  };
+
+  // end tree setup
+
   $scope.addField = function(){
     var x = {
       id : $scope.fieldArr.length,
@@ -171,6 +217,111 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
     };
   };
 
+    // Gross, I know, I should spend the time to clean this up into a map / filter operation later.
+    // This block filters files from api/fileTree down to most recent and preserves directory duplicates.
+     $http.get('/api/fileTree')
+      .then(function(res) {
+        buildTree(res);
+      });
+
+  // underscore.js is for noobs
+  function removeById(arr, item) {
+    for(var i = arr.length; i--;) {
+        if(arr[i].id === item.id && arr[i].isFile == true) {
+            arr.splice(i, 1);
+        }
+      }
+    }
+
+  // GIGANTIC REMINDER TO SELF THAT THIS WILL NEED TO CHANGE WHEN API RETURNS AN ARRAY OF OBJECTS
+  // RATHER THAN AN OBJECT OR OBJECTS AND WHEN PROPERTIES NO LONGER TRY TO RESOLVE AS MATH.
+  $http.get('/api/wildfire')
+    .then(function(res) {
+       var result = [];
+       console.log("DATA: ", res.data[0]);
+       for(var prop in res.data[0]){
+         obj = res.data[0][prop];
+         obj.label = prop;
+         $scope.exnodePolicySelector.push(obj);
+       }
+      console.log('RESULT:', $scope.exnodePolicySelector);
+
+  });
+
+  var buildTree = function(res){
+
+             // init all files into the scope to hold them for a second
+            $scope.files = res.data;
+
+            // filter through everything, remove dupes, preserve directory hierarchy
+            for(o in res.data){
+              var obj = res.data[o];
+              console.log(obj);
+              for(t in res.data){
+                test = res.data[t];
+                if(obj.text == test.text && obj.parent == test.parent){
+                  if(obj.created > test.created){
+                    removeById($scope.files,test);
+                  } else {
+                    removeById($scope.files,obj);
+                  }
+                }
+                if(test.parent != '#'){
+                  var p = test.parent;
+                  // this is the critical line of code, wierd right...
+                  $scope.files[t].parent = test.parent;
+                  console.log("SCOPE WHY? D:", $scope.files[t]);
+                }
+              }
+            }
+            console.log("FILES: ", $scope.files)
+            var temp_struct = $scope.files;
+            temp_struct.forEach(function(obj){obj.under = obj.parent});
+
+            $scope.tree = [];
+
+            // push files into the tree yo
+            for(i in $scope.files){
+              file = $scope.files[i];
+              console.log("LE FILE: ", file);
+              var node = file;
+              if(file.children){
+                node.label = file.text;
+                node.children = [];
+                for(f in $scope.files){
+                  test = $scope.files[f];
+
+                  if( file.id == $scope.files[f].parent && test.isFile == true){
+                    var childNode = test;
+                    if(test.text.length > 10){
+                      // Cut the label length so it fits correctly on most resolutions.
+                      childNode.label = test.text.substring(0,10) + '...';
+                    }
+                    node.children.push(childNode);
+                  }
+                }
+                if(node.label.length > 14){
+                  node.label = node.label.substring(0,14) + '...';;
+                }
+                $scope.tree.push(node);
+              } else {
+                if(file.parent == '#'){
+                  node.label = file.text;
+                  if(node.label.length > 14){
+                    node.label = node.label.substring(0,14) + '...';
+                  }
+                  $scope.tree.push(node);
+                }
+              }
+            }
+
+            console.log("GUTS ", $scope.tree);
+            console.log("FILES", $scope.files);
+
+  }
+
+
+
   function unselectNodeGen(prefix){
     return function(a,b){
       var jstr = jQuery.jstree.reference(this);
@@ -223,7 +374,8 @@ function exnodeController($scope, $routeParams, $location, ExnodeService,$log,So
   };
 
   $scope.policySelect = function(htmlID){
-    $('#' + htmlID).parent().toggleClass('policy-select');
+    console.log(htmlID);
+    $('#' + htmlID.toString()).parent().toggleClass('policy-select');
     console.log('toggled');
   };
 
