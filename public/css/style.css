@@ -39,7 +39,11 @@ a {
 .file-inactive span .ivh-treeview-twistie-leaf{
   color:#d0d5dd;
 }
-
+.glyphicon-remove:hover {
+  color:red;
+  font-size: 15px;
+  transition: all .3s linear 0s;
+}
 .active-file span .ivh-treeview-twistie-leaf {
   color:orange;
   cursor: pointer;
@@ -492,7 +496,7 @@ text.id {
 }
 
 .foot-container {
-    position: fixed;
+    position: relative;
     left: 0;
     bottom: 0;
     width: 100%;

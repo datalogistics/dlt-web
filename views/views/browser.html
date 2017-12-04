@@ -6,7 +6,7 @@
     <div>
         <tabset class="browser-tabs">
             <tab heading="Exnode Browser" ng-controller="ExnodeController">
-                <div class="row">
+                <div class="row" style="min-height:400px;">
                     <div class="col-md-3 tree-browser">
                       <h3 class="page-header" style="margin-bottom:20px; margin-left:20px;">Files</h4>
 
@@ -27,7 +27,7 @@
                     </div>
                     <div class="col-md-9 file-viewer" style="overflow: visible;">
                         <div style="margin-top:26px;">
-                          <div style="height:300px; overflow-y:auto;">
+                          <div style="height:300px; overflow-y:auto;"> <!-- this is a wrapper -->
 
                             <div class="dropup sharp pull-right" style="margin-right:10px;" position:"absolute">
                               <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -107,20 +107,30 @@
                 </div>
             </tab>
 
-            <tab heading="Exnode Search"  ng-controller="DltFormController">
-                <form class="form-horizontal top5" id="searchForm" ng-submit="searchExnodes()">
+            <tab heading="Exnode Search"  ng-controller="DltFormController" >
+                <form class="form-horizontal top5" id="searchForm" ng-submit="searchExnodes()" style="margin-top:40px;">
+
+                  <div class="form-group">
+                      <div class="col-sm-6">
+                        <button ng-click="addField()"
+                                type="button" class="btn btn-default">Add Field</button>
+                        <button ng-click="addCustomField()"
+                                type="button" class="btn btn-default">Add Custom Field</button>
+                      </div>
+                      <div class="col-sm-6">
+                          <button type="submit" class="btn btn-default pull-right">Search</button>
+
+                      </div>
+                  </div>
+
                     <div class="form-group"  ng-repeat="field in fieldArr">
-                        <div class="col-sm-1">
-                            <center>
-                                <button ng-click="removeField(field.id)"
-                                        type="button" class="btn btn-default">X</button>
-                            </center>
-                        </div>
-                        <div class="col-sm-5">
+                        <div class="col-sm-6">
+                          <span ng-click="removeField(field.id)"
+                                  class="glyphicon glyphicon-remove" style="float:left; margin-top:8px; margin-left:12px"></span>
                             <div ng-if="field.isCustom">
                                 <input type="text"  class="form-control custom" />
                             </div>
-                            <select class="form-control searchField" ng-model="selected" ng-if="!field.isCustom">
+                            <select class="form-control searchField" ng-model="selected" ng-if="!field.isCustom" style="float:right; width:90%">
                                 <option ng-repeat="fld in exFields" ng-value="field.name=fld.name"
                                         value="fld.name">
                                     {{fld.name}}
@@ -128,43 +138,42 @@
                             </select>
                         </div>
                         <div class="col-sm-6">
-                            <input type="text" class="form-control" name="searchValue"
+                            <input type="text" class="form-control pull-left" name="searchValue"
                                    ng-value="field.value"
                                    placeholder="Enter a search query">
+
                         </div>
                     </div>
-                    <div class="form-group">
-                        <div class="col-sm-6">
-                        </div>
-                        <div class="col-sm-6">
-                            <button ng-click="addField()"
-                                    type="button" class="btn btn-default">Add Field</button>
-                            <button ng-click="addCustomField()"
-                                    type="button" class="btn btn-default">Add Custom Field</button>
-                            <button type="submit" class="btn btn-default">Search</button>
-                        </div>
-                    </div>
+
                 </form>
                 <div class="row top10" ng-if="isExLoading">
                     <div class="col-xs-5" style=" padding: 10px; height: 300px;background-color: rgba(200,200,200,0.3);">
                         <div class="loader"></div>
                     </div>
                 </div>
-                <div class="row">
+                <div class="row" style="min-height:400px;">
                     <div class="col-md-5 tree-browser">
+                        <h2 class="page-header">
+                          Files
+                        </h2>
                         <div>
-                            <js-tree tree-data="scope"
+                          <div  ivh-treeview="tree"
+                                ivh-treeview-default-selected-state="false"
+                                ivh-treeview-node-tpl="treetpl"
+                                ivh-treeview-on-cb-change="getNode(ivhNode, ivhIsSelected, ivhTree)"
+                                ></div> <!-- end better tree -->
+                            <!---<js-tree tree-data="scope"
                                      tree-checkbox="{ tie_selection : false}"
                                      tree-plugins="checkbox"
                                      tree-events="check_node:exsearchNodeSelected;uncheck_node:exsearchNodeUnselected"
-                                     tree-model="exSearchResAsArr"></js-tree>
+                                     tree-model="exSearchResAsArr"></js-tree>-->
                         </div>
                         <div ng-if="!searchRes && isSearched">
                             No Results
                         </div>
                     </div>
                     <div class="col-md-7 file-viewer">
-                        <div>
+                        <div style="min-height:200px;">
                             <table class="table-striped table exnodeFileList">
                                 <thead>
                                     <tr>
@@ -173,22 +182,23 @@
                                         <th> Download</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr ng-repeat="(key,val) in exsearchselectedIds">
+                                <tbody style="overflow:auto">
+                                    <tr ng-repeat="(key,val) in selectedIds">
                                         <td>{{val.text}}</td>
                                         <td><input type="checkbox" value="{{val.selfRef}}"/></td>
                                         <td><button type="button" ng-click="downloadOne(val.selfRef)" class="btn btn-info">Download</button></td>
                                     </tr>
                                 </tbody>
                             </table>
-                            <button type="button" ng-click="downloadAll()" class="btn btn-info">Download Selected</button>
+
                         </div>
+                        <button type="button" ng-click="downloadAll()" class="btn btn-info pull-right">Download Selected</button>
                     </div>
                 </div>
             </tab>
 
             <tab heading="Landsat Search"  ng-controller="DltFormController">
-                <form class="form-horizontal top5 usgsform" ng-submit="submitUsgsForm()">
+                <form class="form-horizontal top5 usgsform" ng-submit="submitUsgsForm()" style="margin-top:20px; min-height:400px;">
                     <div class="row">
                         <div class="col-md-4">
                             <div> Sensor name </div>
@@ -269,7 +279,7 @@
                             <input required="true" type="number" ng-model="usgsform.pathStart" class="form-control">
                         </div>
                         <div class="col-md-2 form-group">
-                            <input required="true" type="number" ng-model="usgsform.pathEnd" class="form-control">
+                            <input required="true" type="number" ng-model="usgsform.pathEnd" class="form-control" >
                         </div>
                         <div class="col-md-2 form-group">
                         </div>
@@ -288,6 +298,7 @@
                             <input type="submit" class="btn btn-primary" value="Search"/>
                         </div>
                     </div>
+                    <hr>
                     <div class="row top10" ng-if="isUsgsLoading">
                         <div class="col-xs-5" style=" padding: 10px; height: 300px;background-color: rgba(200,200,200,0.3);">
                             <div class="loader"></div>
@@ -418,8 +429,8 @@
                         No Data present in shopping cart
                     </div>
                 </div>
-                <div class="row">
-                    <form  ng-submit="loginAndPopulateCart($event)" ng-if="!hideLogin">
+                <div class="row"  style="min-height:350px">
+                    <form  ng-submit="loginAndPopulateCart($event)" ng-if="!hideLogin" style="margin-top:30px;">
                         <div class="alert alert-danger" role="alert" ng-if="loginFailed">
                             <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
                             <span class="sr-only">Error:</span>
@@ -429,16 +440,19 @@
                             <label>
                                 Username :
                                 <input id="username" type="text" class="form-control" name="username"/>
+                                Password :
+                                <input id="password" type="password" class="form-control" name="password"/>
+                                <input type="submit" class="btn btn-primary" value="Login" style="margin-top:18px;"/>
                             </label>
                         </div>
                         <div class="col-md-4">
                             <label>
-                                Password :
-                                <input id="password" type="password" class="form-control" name="password"/>
+
+
                             </label>
                         </div>
                         <div class="col-md-4">
-                            <input type="submit" class="btn btn-primary" value="Login"/>
+
                         </div>
                     </form>
                     <div ng-if="hideLogin">

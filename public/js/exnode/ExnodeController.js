@@ -30,6 +30,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
   $scope.files = [];
   $scope.exnodePolicySelector = [];
   $scope.selectedIds = [];
+  $scope.treeSearch = [];
 
   // tree setup
   $scope.treetpl = [
@@ -121,10 +122,13 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     sarr.map(function (name , i) {
       params[name] = varr[i];
     });
+
     $scope.isExLoading = true;
+
     ExnodeService.search(params, function(res){
+      $scope.selectedIds = [];
       $scope.isSearched = true;
-      console.log(res);
+      buildTree(res);
       $scope.searchRes = res;
       $scope.exSearchResAsArr = res.map(function(x) {
         x.parent = "#";
@@ -132,7 +136,10 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
         return x ;
       });
       $scope.isExLoading = false ;
-    });;
+      console.log("RES", res);
+      console.log("TREE S: ", $scope.tree);
+
+    });
   };
 
   $scope.schema = window.exnodeScheme;
@@ -221,7 +228,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     // This block filters files from api/fileTree down to most recent and preserves directory duplicates.
      $http.get('/api/fileTree')
       .then(function(res) {
-        buildTree(res);
+        buildTree(res.data);
       });
 
   // underscore.js is for noobs
@@ -248,17 +255,17 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
 
   });
 
-  var buildTree = function(res){
+  var buildTree = function(data){
 
              // init all files into the scope to hold them for a second
-            $scope.files = res.data;
+            $scope.files = data;
 
             // filter through everything, remove dupes, preserve directory hierarchy
-            for(o in res.data){
-              var obj = res.data[o];
+            for(o in data){
+              var obj = data[o];
               console.log(obj);
-              for(t in res.data){
-                test = res.data[t];
+              for(t in data){
+                test = data[t];
                 if(obj.text == test.text && obj.parent == test.parent){
                   if(obj.created > test.created){
                     removeById($scope.files,test);
@@ -274,51 +281,68 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
                 }
               }
             }
-            console.log("FILES: ", $scope.files)
-            var temp_struct = $scope.files;
-            temp_struct.forEach(function(obj){obj.under = obj.parent});
 
-            $scope.tree = [];
-
-            // push files into the tree yo
-            for(i in $scope.files){
-              file = $scope.files[i];
-              console.log("LE FILE: ", file);
-              var node = file;
-              if(file.children){
-                node.label = file.text;
-                node.children = [];
-                for(f in $scope.files){
-                  test = $scope.files[f];
-
-                  if( file.id == $scope.files[f].parent && test.isFile == true){
-                    var childNode = test;
-                    if(test.text.length > 10){
-                      // Cut the label length so it fits correctly on most resolutions.
-                      childNode.label = test.text.substring(0,10) + '...';
-                    }
-                    node.children.push(childNode);
-                  }
-                }
-                if(node.label.length > 14){
-                  node.label = node.label.substring(0,14) + '...';;
-                }
-                $scope.tree.push(node);
-              } else {
-                if(file.parent == '#'){
-                  node.label = file.text;
-                  if(node.label.length > 14){
-                    node.label = node.label.substring(0,14) + '...';
-                  }
-                  $scope.tree.push(node);
-                }
-              }
-            }
+            construct_tree();
 
             console.log("GUTS ", $scope.tree);
             console.log("FILES", $scope.files);
 
   }
+
+  var construct_tree = function(){
+
+    console.log("FILES: ", $scope.files)
+    var temp_struct = $scope.files;
+    temp_struct.forEach(function(obj){obj.under = obj.parent});
+
+    $scope.tree = [];
+
+    // if only a singular result returns, handle it right away.
+    if($scope.files.length == 1){
+      node = $scope.files[0];
+      node.label = $scope.files[0].text;
+      if(node.label.length > 14){
+        node.label = node.label.substring(0,14) + '...';;
+      }
+      $scope.tree.push(node);
+    }
+
+    // push files into the tree yo
+    for(i in $scope.files){
+      file = $scope.files[i];
+      console.log("LE FILE: ", file);
+      var node = file;
+      if(file.children){
+        node.label = file.text;
+        node.children = [];
+        for(f in $scope.files){
+          test = $scope.files[f];
+
+          if( file.id == $scope.files[f].parent && test.isFile == true){
+            var childNode = test;
+            if(test.text.length > 10){
+              // Cut the label length so it fits correctly on most resolutions.
+              childNode.label = test.text.substring(0,10) + '...';
+            }
+            node.children.push(childNode);
+          }
+        }
+        if(node.label.length > 14){
+          node.label = node.label.substring(0,14) + '...';;
+        }
+        $scope.tree.push(node);
+      } else {
+        if(file.parent == '#'){
+          node.label = file.text;
+          if(node.label.length > 14){
+            node.label = node.label.substring(0,14) + '...';
+          }
+          $scope.tree.push(node);
+        }
+      }
+    }
+
+  };
 
 
 
