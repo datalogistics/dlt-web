@@ -118,6 +118,23 @@
                                 type="button" class="btn btn-default">Add Custom Field</button>
                       </div>
                       <div class="col-sm-6">
+                        <div class="dropup sharp pull-right" style="margin-right:10px;" position:"absolute">
+                          <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                            DLN Policy
+                            <span class="caret"></span>
+                          </button>
+
+                          <ul class="dropdown-menu sharp text-center" aria-labelledby="dropdownMenu1" style="width:200px;right:-10px;">
+                            <li ng-repeat="policy in exnodePolicySelector" style="background-color:'red';" class="policyElement">
+                              <a class="policy-option" data-value="option1" ng-click="policySelect(policy.label)" id="{{policy.label}}" tabIndex="-1">{{policy.label}}</a>
+                            </li>
+
+                            <li role="separator" class="divider"></li>
+                            <li><a id="applyPolicyButton" style="font-weight: bold;" class="btn btn-primary sharp">Apply Policy</a></li>
+                            <li><a id="selectAllPolicyButton" ng-click="selectAllPolicy()" class="btn btn-default sharp">Select All</a></li>
+
+                          </ul>
+                        </div>
                           <button type="submit" class="btn btn-default pull-right">Search</button>
 
                       </div>

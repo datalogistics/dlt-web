@@ -1,9 +1,9 @@
 <h2 class="lead text-center">Service Status</h2>
 
-<div class="table-responsive">  
+<div class="table-responsive">
   <accordion close-others="oneAtATime">
     <accordion-group ng-repeat="(name,services) in groupedServiceMap" is-open="status.open">
-        <accordion-heading>        
+        <accordion-heading>
         <div> {{name}} - On : {{ services | serviceOnCount:'status' }} / {{ services.length }}  <i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': status.open, 'glyphicon-chevron-right': !status.open}"></i></div>
       </accordion-heading>
       <table class="table table-hover table-condensed">
@@ -24,20 +24,23 @@
             <button ng-show="service.status === 'New'" class="btn btn-info disabled">New</button>
             <button ng-show="service.status === undefined || service.status === 'OFF'" class="btn btn-danger disabled">OFF</button>
           </td>
-          <td><div>
-		  <button ng-click="runGetVersion(service,$event)"
-			  class="btn glyphicon glyphicon-refresh"></button>
-		  <button ng-click="showGetVersionRes(service,$event)"
-			  class="btn glyphicon">Status</button>
-		  <span>{{ service.accessPoint || service.serviceType }}</span>
-	  </div></td>
-          <td>{{ service.ttl }}</td>
-          <td>{{ service.ts / 1000 | date:'yyyy-MM-dd HH:mm:ss' }}</td>
-          <td>{{service.location.institution}}</td>
-          <td><button ng-click="showMap(service.id)" class="btn btn-info">{{service.location.city}} {{service.location.state}}</button></td>
-          <td ng-repeat="metadata in getServiceMetadata(service)">
-		  <button ng-click="showData(metadata,service.location.institution || service.accessPoint,getButtonName(metadata,service))"
-                    class="btn btn-info">{{getMetadataShortET(metadata,service)}}</button></td>
+          <td>
+            <div>
+        		  <button ng-click="runGetVersion(service,$event)"
+        			  class="btn glyphicon glyphicon-refresh"></button>
+        		  <button ng-click="showGetVersionRes(service,$event)"
+        			  class="btn glyphicon">Status</button>
+
+        	  </div>
+          </td>
+              <td><span>{{ service.accessPoint || service.serviceType }}</span></td>
+              <td>{{ service.ttl }}</td>
+              <td>{{ service.ts / 1000 | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+              <td>{{service.location.institution}}</td>
+              <td><button ng-click="showMap(service.id)" class="btn btn-info">{{service.location.city}} {{service.location.state}}</button></td>
+              <td ng-repeat="metadata in getServiceMetadata(service)">
+    		  <button ng-click="showData(metadata,service.location.institution || service.accessPoint,getButtonName(metadata,service))"
+                        class="btn btn-info">{{getMetadataShortET(metadata,service)}}</button></td>
         </tbody>
       </table>
     </accordion-group>
@@ -54,7 +57,7 @@
 	<div ng-if="isLoading" class="modal-body">
 		Loading ...
 	</div>
-	
+
 	<div ng-if="!isLoading" class="modal-body">
 		<pre>{{getVersionRaw}}</pre>
 	</div>

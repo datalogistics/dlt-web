@@ -55,10 +55,11 @@ var self = {
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : ['exnodedev',],
+    'idms_url' : [],
     'nodes': [],
     'nodes_id' : [],
     //'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
-    'services': [],
+    'services': ['dlt'],
     //'services_id' : ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'],
     'services_id': [],
     'measurements': [],
@@ -89,6 +90,11 @@ var self = {
       url : "localhost",
       port : "8888",
       use_ssl : false
+    },
+    idms_url_000 : {
+      url: "TBA",
+      port: "TBA",
+      use_ssl: false
     },
     exnodedev : {
       url: "unis.open.sice.indiana.edu",
