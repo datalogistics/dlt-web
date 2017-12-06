@@ -4,6 +4,8 @@ html {
 body {
   padding-top: 70px;
   min-height: 100%;
+  position: relative;
+  padding-bottom: 6rem;
 }
 
 a {
@@ -496,9 +498,10 @@ text.id {
 }
 
 .foot-container {
-    position: relative;
-    left: 0;
+    position: absolute;
+    right: 0;
     bottom: 0;
+    left: 0;
     width: 100%;
     overflow:hidden;
     background-color: #f9f9f9;
