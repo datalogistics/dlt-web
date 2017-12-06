@@ -430,11 +430,12 @@ module.exports = function(app) {
       port = urlData.port;
     }
     getVersion(host,port).then(function(data) {
-      res.json(data);
+      console.log("API RESONSE: ", res.json(data));
+      return res.json(data);
     }).catch(function(x) {
-      res.json({
-	error : true,
-	data : x
+      return res.json( {
+      	error : true,
+      	data : x
       });
     });
   });

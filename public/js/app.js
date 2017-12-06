@@ -82,7 +82,7 @@ angular.module('periApp',
                      return UnisService.init()
                    }}
                }).
-               when('/servicess/:id', {
+               when('/services/:id', {
                  templateUrl: 'views/service_data.html',
                  controller: 'ServiceController',
                  resolve: {

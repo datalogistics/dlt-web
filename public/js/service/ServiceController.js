@@ -8,8 +8,8 @@ function getRate(x,y,oldx,oldy) {
   if (oldx >= x || timeD == 0) {
     console.log("No Change");
     return [];
-  }  
-  // Now use this old value to calculate rate 
+  }
+  // Now use this old value to calculate rate
   var yVal = (y - oldy) / timeD;
   var xVal = x;
   var newArr = [xVal,yVal];
@@ -24,9 +24,9 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
 	          'ps:tools:blipp:ibp_server:resource:usage:free',
 	          'ps:tools:blipp:linux:cpu:utilization:user',
 	          'ps:tools:blipp:linux:cpu:utilization:system'];
-  
+
   var metadata_id = $scope.metadataId || $routeParams.id; //
-  
+
   // place inital UnisService data into scope for view
   $scope.services = UnisService.services || [];
   $scope.measurements = UnisService.measurements || [];
@@ -53,8 +53,8 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
       y[key].push(x);
       return y;
     },{});
-  });  
-  
+  });
+
   if (metadata_id != null) {
     $scope.eventType = [];
     /** Seems to be used only for graph **/
@@ -62,14 +62,14 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
       var eventType = metadata.eventType;
       var arrayData = [];
       arrayData.max = 0;
-      
+
       // Select last eventType of metadata
       var chartconfig = getETSChartConfig(eventType);
       d3.select(chartconfig.selector).attr("style", "");
-      
+
       UnisService.getDataId(metadata_id, null, function(data) {
         if (typeof data =='string') {
-	  data = JSON.parse(data);          
+	  data = JSON.parse(data);
 	}
         var isAbsolute = true , isRate = false ;
         if (/network:/.test(eventType)) {
@@ -92,7 +92,7 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
             };
           });
         };
-        
+
         if (isRate){
           $scope.yAxisLabel= "Bytes per second";
         }
@@ -103,7 +103,7 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
           var y = Number(key.value);
           if (isAbsolute) {
             arrayData.push([x,y]);
-          } else if (isRate) {            
+          } else if (isRate) {
             if (!oldx) {
               oldx = x , oldy = y;
             } else {
@@ -127,7 +127,7 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
         if (isRate) {
           // Use arraydata max to scale graph
           var max = arrayData.max;
-          var label = "Bytes "; 
+          var label = "Bytes ";
           var divValue = 1 ;
           if (max > 1e3 && max < 1e6) {
             // Make it kb
@@ -147,13 +147,13 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
             }
           }
         }
-	
+
 	// should not rely on the scope here or above
 	$scope.graphData = [
           {
           "key": "Data Point",
           "values": arrayData
-        }];	 
+        }];
       },"dialog");
     });
     $scope.metadataId = undefined;
@@ -168,9 +168,9 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
     var arr = md.eventType.split(':');
     if (MY_ETS.indexOf(md.eventType) >= 0) {
       var ss = 0 ;
-      if (/network:/.test(md.eventType)) {        
+      if (/network:/.test(md.eventType)) {
         try{ ss = ((s.sref[md.eventType] || ss)/1).toFixed(0);} catch(e){};
-        var divValue,label; 
+        var divValue,label;
         if (ss > 1e3 && ss < 1e6) {
           // Make it kb
           label = "K";
@@ -199,11 +199,11 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
     }
     return arr.pop();
   };
-  
+
   $scope.getServiceMetadata = function(service) {
     return ServiceService.services[service.id].metadata;
   };
-  
+
   $scope.showData = function(metadata , name , buttonName) {
     // TODO add a way to configure which labels or event types open up in a dialog and which open in a new window
     // Maybe give a button which can be used to toggle behavior
@@ -235,7 +235,7 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
       });
     }
   };
-  
+
   $scope.showMap = function(service_id) {
     $location.path('/map/' + service_id);
   };
@@ -264,7 +264,7 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
 	$(target).removeClass("alert-warning alert-success alert-danger");
 	$(target).addClass("alert-success");
       })
-      .catch(function() {	
+      .catch(function() {
 	$(target).removeClass("alert-warning alert-success alert-danger");
 	$(target).addClass("alert-danger");
       });
@@ -272,23 +272,30 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
 
   $scope.showGetVersionRes = function(ser,ev) {
     var url = ser.accessPoint;
-    var modScope ;
+    console.log("SER: ", ser);
+    var modScope;
     var prom = $q.defer();
     var modalInstance = $modal.open({
       templateUrl: "getVersionModal.html",
-      controller: function($scope) {	  
+      controller: function($scope) {
         $scope.cancel = function() {
           modalInstance.dismiss();
         };
-	modScope = $scope;
-	prom.resolve($scope);
-	$scope.isLoading = true;
+    	modScope = $scope;
+    	prom.resolve($scope, function(res){
+        console.log(res);
+      });
+    	$scope.isLoading = true;
       }
     });
     UnisService.getVersionByUrl(url,true).then(function(data) {
-      prom.promise.then(function(modScope){ 
-	modScope.isLoading = false;
-	modScope.getVersionRaw = data.data.rawData;
+      console.log(data);
+      prom.promise.then(function(modScope){
+    	$scope.isLoading = false;
+      console.log(data);
+    	$scope.getVersionRaw = data.data.rawData;
+      $scope.getVersionRaw = data.data.rawData;
+      console.log("GOT TO HERE");
       });
     });
     var tmpl = $("#getVersionModal.html");

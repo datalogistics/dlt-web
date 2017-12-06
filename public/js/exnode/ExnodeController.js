@@ -55,8 +55,10 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     if(node.isFile == false){
       // if folder, search through it and do the deed
       ivhTreeviewMgr.expand(tree, node);
+      node.checked = false;
       selectChildren(node, selected);
     } else { // just a file
+      node.checked = false;
       selected ? $scope.selectedIds.push(node) : removeById($scope.selectedIds, node);
     }
     ivhTreeviewMgr.validate(tree);
@@ -247,8 +249,10 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
        var result = [];
        console.log("DATA: ", res.data[0]);
        for(var prop in res.data[0]){
-         obj = res.data[0][prop];
+         var obj = {};
          obj.label = prop;
+         obj.selected = false;
+         obj.ferry_name = prop;
          $scope.exnodePolicySelector.push(obj);
        }
       console.log('RESULT:', $scope.exnodePolicySelector);
@@ -397,10 +401,34 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     client_action([id], 'download');
   };
 
-  $scope.policySelect = function(htmlID){
-    console.log(htmlID);
-    $('#' + htmlID.toString()).parent().toggleClass('policy-select');
+  $scope.policySelect = function(policy){
+
+    var htmlID = policy.label;
+    policy.selected = !policy.selected;
+    console.log(policy);
+    $('.' + htmlID.toString()).parent().toggleClass('policy-select');
     console.log('toggled');
+  };
+
+  $scope.clearSelected = function(){
+    $scope.selectedIds = [];
+    $scope.exnodePolicySelector.forEach(function(p){p.selected = false});
+    $('.policy-option').parent().removeClass('policy-select');
+    ivhTreeviewMgr.deselectAll($scope.tree);
+  }
+
+  $scope.applyPolicies = function(){
+    // Gathers selected policies and exnodes to be POSTED
+    var policies = $scope.exnodePolicySelector;
+    var selectedPolicies = policies.filter(function(p){if(p.selected){return p}  });
+    console.log("SELECTED POLICIES: ", selectedPolicies);
+    var exNodes = $scope.selectedIds.filter(function(e){if(e.checked){return e}  });
+    console.log("SELECTED EXNODES: ", exNodes);
+
+    data = {policies: selectedPolicies,
+            nodes: exNodes};
+    console.log(JSON.stringify(data));
+    // POST TO URL HERE;
   };
 
   $scope.selectAllPolicy = function(){

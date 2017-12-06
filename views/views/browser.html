@@ -5,7 +5,7 @@
 <div class="table-responsive" style="max-width: 1024px; min-height:100%; margin-left: auto; margin-right: auto; border-radius:0px;">
     <div>
         <tabset class="browser-tabs">
-            <tab heading="Exnode Browser" ng-controller="ExnodeController">
+            <tab heading="Exnode Browser" ng-controller="ExnodeController" ng-click="clearSelected()">
                 <div class="row" style="min-height:400px;">
                     <div class="col-md-3 tree-browser">
                       <h3 class="page-header" style="margin-bottom:20px; margin-left:20px;">Files</h4>
@@ -37,11 +37,11 @@
 
                               <ul class="dropdown-menu sharp text-center" aria-labelledby="dropdownMenu1" style="width:200px;right:-10px;">
                                 <li ng-repeat="policy in exnodePolicySelector" style="background-color:'red';" class="policyElement">
-                                  <a class="policy-option" data-value="option1" ng-click="policySelect(policy.label)" id="{{policy.label}}" tabIndex="-1">{{policy.label}}</a>
+                                  <a class="policy-option" ng-class="policy.label" data-value="option1" ng-click="policySelect(policy)"  tabIndex="-1">{{policy.label}}</a>
                                 </li>
 
                                 <li role="separator" class="divider"></li>
-                                <li><a id="applyPolicyButton" style="font-weight: bold;" class="btn btn-primary sharp">Apply Policy</a></li>
+                                <li><a id="applyPolicyButton" ng-click="applyPolicies()" style="font-weight: bold;" class="btn btn-primary sharp">Apply Policy</a></li>
                                 <li><a id="selectAllPolicyButton" ng-click="selectAllPolicy()" class="btn btn-default sharp">Select All</a></li>
 
                               </ul>
@@ -63,7 +63,7 @@
 
                                         <td>{{val.name || val.text}}</td>
                                         <td class="text-center">{{(val.size/(1024*1024)).toFixed(1)}}</td>
-                                        <td><input type="checkbox" value="{{val.selfRef}}"/></td>
+                                        <td><input type="checkbox" ng-model="val.checked" value="{{val.selfRef}}"/></td>
                                         <td>
                                           <!-- DOWNLOAD button btw, icon is smaller :D -->
                                           <button ng-click="downloadOne(val.selfRef)" class="btn btn-info sharp" style="margin-right:5px;">
@@ -107,7 +107,7 @@
                 </div>
             </tab>
 
-            <tab heading="Exnode Search"  ng-controller="DltFormController" >
+            <tab heading="Exnode Search"  ng-controller="DltFormController" ng-click=clearSelected()>
                 <form class="form-horizontal top5" id="searchForm" ng-submit="searchExnodes()" style="margin-top:40px;">
 
                   <div class="form-group">
@@ -126,11 +126,11 @@
 
                           <ul class="dropdown-menu sharp text-center" aria-labelledby="dropdownMenu1" style="width:200px;right:-10px;">
                             <li ng-repeat="policy in exnodePolicySelector" style="background-color:'red';" class="policyElement">
-                              <a class="policy-option" data-value="option1" ng-click="policySelect(policy.label)" id="{{policy.label}}" tabIndex="-1">{{policy.label}}</a>
+                              <a class="policy-option" ng-class="policy.label" data-value="option1" ng-click="policySelect(policy)"  tabIndex="-1">{{policy.label}}</a>
                             </li>
 
                             <li role="separator" class="divider"></li>
-                            <li><a id="applyPolicyButton" style="font-weight: bold;" class="btn btn-primary sharp">Apply Policy</a></li>
+                            <li><a id="applyPolicyButton" ng-click="applyPolicies()" style="font-weight: bold;" class="btn btn-primary sharp">Apply Policy</a></li>
                             <li><a id="selectAllPolicyButton" ng-click="selectAllPolicy()" class="btn btn-default sharp">Select All</a></li>
 
                           </ul>
@@ -202,7 +202,7 @@
                                 <tbody style="overflow:auto">
                                     <tr ng-repeat="(key,val) in selectedIds">
                                         <td>{{val.text}}</td>
-                                        <td><input type="checkbox" value="{{val.selfRef}}"/></td>
+                                        <td><input type="checkbox" ng-model="val.checked" value="{{val.selfRef}}"/></td>
                                         <td><button type="button" ng-click="downloadOne(val.selfRef)" class="btn btn-info">Download</button></td>
                                     </tr>
                                 </tbody>

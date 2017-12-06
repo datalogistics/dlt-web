@@ -1,8 +1,8 @@
-function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService, $rootScope) {  
+function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService, $rootScope) {
   var usf = $scope.usgsform = loadForm()
-  
- 
-  
+
+
+
   function loadForm() {
     var stateTimeOut = 1440000  //about a day
     var now = new Date().valueOf()
@@ -21,7 +21,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
       cloud : 100 ,
       isSeasonal : false,
       latStart : "" , latEnd : "" ,
-      longStart : "" , longEnd: "",    
+      longStart : "" , longEnd: "",
       rowStart : "" , rowEnd : "",
       pathStart : "", pathEnd : ""
     }
@@ -41,7 +41,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
   $scope.maxDate = today;
   $scope.isUsgsLoading = false;
   $scope.submitUsgsForm = function(){
-    console.log(usf);    
+    console.log(usf);
     $scope.isUsgsLoading = true;
     if (usf.searchModel == 'row'){
       SocketService.emit('usgs_row_search', {
@@ -68,10 +68,10 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
         'north': usf.latEnd,
         'west': usf.longStart,
         'east': usf.longEnd
-      });        
+      });
     }
   };
-  
+
   function handleUsgsData(data){
     $scope.isUsgsLoading = false;
     var r = {};
@@ -80,16 +80,16 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     var dataAsTreeArr = data.map(function(x,i) {
       x.name = x.sceneID;
       x._treeIndex = i ;
-      r[x.name] = x;                 
+      r[x.name] = x;
       return  $.extend(x, {
         "id" : x.name ,
         "text" : x.name,
         "icon" :   "/images/file.png" ,
         "parent" :  "#" ,
         "children" : false
-      });   
+      });
     });
-    
+
     $scope.isUsgsSearched = true;
     console.log("Search Results ",r , data);
     if (!r) {
@@ -97,17 +97,17 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     };
 
     var sceneIdArr = data.map(function(x){return x.name;});
-    SocketService.emit('exnode_request',{sceneId : sceneIdArr});    
-    
-    // Convert the data into e/api/usgssearch?xpected form 
-    $scope.usgsSearchRes = r;      
+    SocketService.emit('exnode_request',{sceneId : sceneIdArr});
+
+    // Convert the data into e/api/usgssearch?xpected form
+    $scope.usgsSearchRes = r;
     $scope.usgsSearchResAsArr = dataAsTreeArr;
   };
   SocketService.on('usgs_lat_res',handleUsgsData);
   SocketService.on('usgs_row_res',handleUsgsData);
-  
+
   SocketService.on('exnode_nodata',function(data){
-    // Bunch of ids with no data 
+    // Bunch of ids with no data
     var arr = data.data;
     var res = $scope.usgsSearchRes;
     arr.map(function(x) {
@@ -128,7 +128,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
       return $(this).parent().find('.content').html();
     }
   });
- 
+
   $('body').on('click', '.usgsDownloadSelected', function(ev){
     var t = ev.target ;
     var arr = [];
@@ -137,13 +137,13 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     });
     $scope.downloadSelectedImage(arr);
   });
-  
+
   SocketService.on('exnode_data',function(data){
     var map = data.data ;
     var res = $scope.usgsSearchRes;
     for ( var i in map) {
       var exArr = map[i];
-      for (var j = 0; j < exArr.length ; j++){        
+      for (var j = 0; j < exArr.length ; j++){
         var it = exArr[j];
         var obj = res[i];
         if (obj) {
@@ -155,7 +155,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
             obj.exMap[it.name] = true;
           }
           obj._exnodeData = it;
-        }      
+        }
       };
     }
   });
@@ -204,10 +204,10 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
   // Inlining the schema - Testing
   $scope.selectedExnode = false;
   $scope.setField = (function(x){
-    $scope.selectedExnode = x;        
-  });  
+    $scope.selectedExnode = x;
+  });
 
-  // Slider 
+  // Slider
   $scope.testOptions = {
     min: 5,
     max: 100,
@@ -225,7 +225,7 @@ function dltFormController($scope, $routeParams, $location, $rootScope, ExnodeSe
     ngDisabled: false,
     reversed: false
   };
-  
+
   $scope.showImage = function(ev){
     $(ev.target).ekkoLightbox();
   };
@@ -246,12 +246,12 @@ var USGS_KEY_TIME = 'usgsApiKeyTime';
 // Valid for 10 hours
 var USGS_TIME_DIFF = 3600 * 10;
 function shoppingCartController($scope, $routeParams, $location, $rootScope, ExnodeService,$log,$filter,SocketService) {
-  $scope.usgs = {}; 
+  $scope.usgs = {};
   $scope.cartRes = {};
   $scope.isShoppingCartLoading = false;
   var existing_key = localStorage.getItem(USGS_KEY_NAME);
   var existing_time = localStorage.getItem(USGS_KEY_TIME);
-  var timeDiff = new Date().getTime() - existing_time;  
+  var timeDiff = new Date().getTime() - existing_time;
   if (timeDiff > 0 && (timeDiff / 1000) < USGS_TIME_DIFF) {
     console.log("Key Still valid ");
     $scope.hideLogin = true;
@@ -267,7 +267,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     $scope.isShoppingCartLoading = true;
     $scope.hideLogin = true;
   }
-  function populate_cart(uname , pwd) {    
+  function populate_cart(uname , pwd) {
     SocketService.emit('getShoppingCart',{username : uname, password : pwd});
     $scope.cartRes = {};
     $scope.isShoppingCartLoading = true;
@@ -283,7 +283,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     SocketService.emit('deleteOrderGroup',{token : existing_key,isToken: true,orderId : orderId});
     populate_cart_with_key(existing_key);
   };
-  
+
   $scope.loginAndPopulateCart = function(e) {
     var username = $(e.target).find("input[name=username]").val();
     var password = $(e.target).find("input[name=password]").val();
@@ -298,7 +298,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
       localStorage.setItem(USGS_KEY_NAME,x.token);
       localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
       existing_key = x.token;
-    }    
+    }
     // var map = {};
     // x.data.map(function(x) {
     //   map[x.entityId] = x;
@@ -306,7 +306,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     $scope.isShoppingCartLoading = false;
     $scope.cartRes = x.data;
   });
-  
+
   $scope.showImage = function(ev){
     $(ev.target).ekkoLightbox();
   };
@@ -316,9 +316,9 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
       localStorage.setItem(USGS_KEY_TIME,new Date().getTime());
       existing_key = data.token;
     }
-    if (data.size == 0) 
+    if (data.size == 0)
       $scope.usgsShoppingNoData = true;
-    // Bunch of ids with no data 
+    // Bunch of ids with no data
     var arr = data.data;
     var res = $scope.cartRes;
     $scope.isShoppingCartLoading = false;
@@ -328,7 +328,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
         obj.isExnode = false;
     });
   });
-  
+
   SocketService.on('cart_data',function(data){
     if(data.token) {
       localStorage.setItem(USGS_KEY_NAME,data.token);
@@ -341,7 +341,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
       res.forEach(function(x) {
 	if (map[x.entityId]) {
 	  x.isExnode = true;
-	  x.exFileArr = x.exFileArr || [];	  
+	  x.exFileArr = x.exFileArr || [];
 	  x.exFileArr.push.apply(x.exFileArr,map[x.entityId]);
 	  x.exMap = x.exMap || {} ;
 	}
@@ -350,7 +350,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     return;
     // for ( var i in map) {
     //   var exArr = map[i];
-    //   for (var j = 0; j < exArr.length ; j++){        
+    //   for (var j = 0; j < exArr.length ; j++){
     //     var it = exArr[j];
     //     var obj = res[i];
     //     if (obj) {
@@ -359,10 +359,10 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
     //       obj.exMap = obj.exMap || {} ;
     //       if (!obj.exMap[it.name]) {
     //         arr.push(it);
-    //         obj.exMap[it.name] = true;  
+    //         obj.exMap[it.name] = true;
     //       }
-    //       obj._exnodeData = it;          
-    //     }      
+    //       obj._exnodeData = it;
+    //     }
     //   };
     // }
   });
@@ -377,5 +377,7 @@ function shoppingCartController($scope, $routeParams, $location, $rootScope, Exn
       $scope.cartErrorMsg = "Unknown error - This is probably an issue with the EarthExplorer ";
     }
   });
+
+  
 
 }
