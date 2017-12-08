@@ -72,16 +72,23 @@ function topoMapDirective() {
 
 var OFSW = "http://unis.crest.iu.edu/schema/ext/ofswitch/1/ofswitch#";
 
-function topologyMapController($scope, $route, $routeParams, $http, UnisService) {
+function topologyMapController($scope, $route, $routeParams, $http, UnisService, EsmondService) {
   // XXX: testing vis.js
   var topolist = UnisService.getMostRecent(UnisService.topologies)
       .map(e => {return {id: e.id, name: e.name}});
+
+  //EsmondService.grabPerfsonarUrls();
+  //EsmondService.getAllStats();
+  //EsmondService.pointToSpread('http://um-ps01.osris.org', EsmondService.grabPerfsonarUrls(), function(res){
+  //  console.log(res);
+  //});
 
   var ccnt = 0;
   $scope.colors = ['red', 'DarkViolet', 'lime', 'lightblue', 'pink', 'yellow'];
 
   // scope flow controllers
   $scope.checked = false;
+  $scope.stats_slide = false;
   $scope.size = '100px';
   $scope.showNetpath = false;
   $scope.showPathButtons = false;
@@ -92,10 +99,10 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
     $scope.cobj = undefined;
     if (p) {
       if (p.nodes.length) {
-	$scope.cobj = nodes.get(p.nodes[0]);
+	       $scope.cobj = nodes.get(p.nodes[0]);
       }
       else if (p.edges.length) {
-	$scope.cobj = links.get(p.edges[0]);
+	       $scope.cobj = links.get(p.edges[0]);
       }
     }
     $scope.checked = !$scope.checked
@@ -103,11 +110,11 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
 
   $scope.onopen = function () {
     alert('Open');
-  }
+  }; 
 
   $scope.onclose = function () {
     alert('Close');
-  }
+  };
 
   // scope data
   $scope.data = {
@@ -280,6 +287,10 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService)
   $scope.stringify = function(json){
     return JSON.stringify(json)
   }
+
+  $scope.toggleStats = function(){
+    $scope.stats_slide = !$scope.stats_slide;
+  };
 
 
   //

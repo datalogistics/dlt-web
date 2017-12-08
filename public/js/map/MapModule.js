@@ -5,6 +5,9 @@
  */
 
 angular.module('map', [])
+  .factory('EsmondService', ['$http', function($http) {
+    return new esmondService($http);
+  }])
   .controller('MapController', mapController)
   .controller("DownloadMapController", downloadMapController)
   .controller("ExnodeMapController", exnodeMapController)

@@ -51,13 +51,23 @@
   }
 </style>
 
+<!--
+<div pageslide ps-auto-close="false" ps-open="stats_slide" ps-click-outside="false" ps-speed="0.5" ps-size="500px" ps-side="top">
+  <div style="padding:10px">
+    <div><p><br/></p></div> 
+    <h2>Esmonndddddddd</h2>
+    <a ng-click="toggleStats()" class="btn btn-info" >Close</a>
+  </div>
+</div>-->
+
 <div class="dropdown">
   <button onclick="topoSelect()" class="btn btn-success" style="margin-bottom: 10px; border-radius: 0px">Select Topology</button>
   <div id="topoDropdown" class="dropdown-content" ng-model="data.model">
     <input type="text" placeholder="Search." id="topoInput" onkeyup="topofilterFunction()">
     <a ng-repeat="option in data.topoOptions" href="topology/{{option.id}}">{{option.name}}</a>
   </div>
-  <button ng-click="clusterByDomain()" class="btn btn-info" align="right" style="border-radius: 0px; margin-bottom: 10px">Cluster</div>
+  <button ng-click="clusterByDomain()" class="btn btn-info" align="right" style="border-radius: 0px; margin-bottom: 10px">Cluster</button>
+  <a ng-click="toggleStats()" class="menu-link" class="btn btn-default">&#9776;</a>
 </div>
 
 <div class="dropdown pull-right" style="padding-bottom: 10px;">
@@ -67,8 +77,6 @@
     <a ng-repeat="path in paths" ng-click="displayPath(path)">{{path}}</a>
   </div>
 </div>
-
-
 
 <div class="pull-right check-element" style="padding-right:10px; transition: all linear 0.5s;" ng-show="showNetpath">
   <button ng-click="getNetPath()" class="btn btn-warning" data-toggle="modal" data-target="#netPathModal" style="border-radius: 0px">Show Netpath</button>
@@ -109,5 +117,6 @@
 </div>
 
 <div id="topologyMap">
+
   <topology-map></topology-map>
 </div>

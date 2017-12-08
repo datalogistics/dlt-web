@@ -74,7 +74,7 @@ a {
 .navbar {
   font-size: 14px;
   background: #990000;
-  border-bottom-color: #ffffff;
+  border-bottom-color: rgb(153, 0, 0);
 }
 
 .nav-tabs > li > a {
@@ -486,6 +486,11 @@ text.id {
 
 .panel-title {
     cursor: pointer;
+}
+
+.panel {
+  border-radius: 0px;
+  color:#ccc;
 }
 
 .loaderContainer {
