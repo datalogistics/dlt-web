@@ -28,7 +28,8 @@ angular.module('periApp',
 		'exnode',
 		'service',
 		'auth',
-		'map'])
+		'map',
+    'ngSanitize'])
   .run(function($rootScope,UnisService,ServiceService,CommChannel,$modal,$cookies,$http) {
     $rootScope.unis = UnisService;
     $rootScope.service = ServiceService;
@@ -65,9 +66,11 @@ angular.module('periApp',
       });
     }
   })
-  .config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider',
+  .config(['$routeProvider', '$locationProvider', 'cfpLoadingBarProvider','$sceProvider',
            function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
              cfpLoadingBarProvider.includeSpinner = false;
+
+            
 
              $routeProvider.
                when('/', {

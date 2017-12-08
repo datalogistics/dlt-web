@@ -16,19 +16,41 @@ function topoMapDirective() {
       	    scope.network.openCluster(params.nodes[0]);
       	  }
       	}
-	      scope.toggle(params);
+	      //scope.toggle(params);
+      });
+
+      scope.network.on('select', function(ev){
+
+        if(ev.nodes[0]){
+          var nodeId = ev.nodes[0];
+          var node = scope.topodata.nodes._data[nodeId];
+          var name = node.objRef.name;
+          console.log(name);
+          scope.institutions.forEach(function(n){
+
+            var test = n.split('//')[1];
+            console.log(test, ' - ', name);
+            // if the node you selected matches on of the PS nodes, bring up the dashboard.
+            if(test == name && !scope.stat_slide){
+              console.log("TOPODATA: ", scope.topodata);
+              // open the dashboard, pass name into scope.
+              scope.currentInstitution = 'http://' + name;
+              scope.toggleStats();
+            }
+          });
+        }
       });
 
       scope.network.on("deselectNode", function(params) {
-      	scope.toggle(params);
+      	//scope.toggle(params);
       });
 
       scope.network.on("selectEdge", function(params) {
-	       scope.toggle(params);
+	       //scope.toggle(params);
       });
 
       scope.network.on("deselectEdge", function(params) {
-      	scope.toggle(params);
+      	//scope.toggle(params);
       });
 
       // animation nation
@@ -72,12 +94,12 @@ function topoMapDirective() {
 
 var OFSW = "http://unis.crest.iu.edu/schema/ext/ofswitch/1/ofswitch#";
 
-function topologyMapController($scope, $route, $routeParams, $http, UnisService, EsmondService) {
+function topologyMapController($scope, $route, $routeParams, $http, UnisService, EsmondService, $sce) {
   // XXX: testing vis.js
   var topolist = UnisService.getMostRecent(UnisService.topologies)
       .map(e => {return {id: e.id, name: e.name}});
 
-  EsmondService.grabPerfsonarUrls(function(res){$scope.insitutions = res});
+  EsmondService.grabPerfsonarUrls(function(res){$scope.institutions = res});
   //EsmondService.getAllStats();
   //EsmondService.pointToSpread('http://um-ps01.osris.org', EsmondService.grabPerfsonarUrls(), function(res){
   //  console.log(res);
@@ -95,6 +117,15 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   $scope.nodesInPath = [];
   $scope.animatePath = false;
   $scope.p2s = [];
+  $scope.institutions = [];
+  $scope.esmondGraphRefs = [];
+  $scope.currentInstitution = '';
+  $scope.currentGraph = {
+    "source": '',
+    "destination": '',
+    "ref": ''
+  };
+
 
   $scope.toggle = function(p) {
     $scope.cobj = undefined;
@@ -111,11 +142,33 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
 
   $scope.onopen = function () {
     //EsmondService.point
-    EsmondService.pointToSpread('http://um-ps01.osris.org', $scope.insitutions, function(res){$scope.p2s.push(res)});
+    EsmondService.grabPerfsonarUrls(function(res){
+      $scope.institutions = res;
+    });
+    EsmondService.pointToSpread('http://um-ps01.osris.org', $scope.institutions, function(res){$scope.p2s.push(res)});
   };
 
-  $scope.onclose = function () {
+  $scope.close = function () {
+    $scope.stats_slider = false;
+  };
 
+  $scope.graphRef = function(src,dst){
+    src = src.split('//')[1];
+    dst = dst.split('//')[1];
+    return "http://" + src + "/perfsonar-graphs/?source=" + src + "&dest=" + dst;
+  };
+
+  $scope.trust = function(r){
+    return $sce.trustAsResourceUrl(src);
+  };
+
+  $scope.buildGraphModal = function(src, dst){
+    $scope.currentGraph.src = src;
+    $scope.currentGraph.dst = dst;
+    var url = $scope.graphRef(src, dst)
+    $scope.currentGraph.ref = url;
+    $scope.currentGraph.ref = $sce.trustAsResourceUrl($scope.currentGraph.ref);
+    console.log($scope.currentGraph.ref);
   };
 
   // scope data
@@ -175,7 +228,10 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       	if (e.$schema == OFSW) {
       	  n.image = '/images/switch-icon.png';
       	  n.shape = 'image';
-      	}
+      	} else if(e.name.includes('ps')){
+          n.image = '/images/database.png';
+          n.shape = 'image';
+        }
       	else {
       	  n.image = '/images/server-icon.jpg';
       	  n.shape = 'image';

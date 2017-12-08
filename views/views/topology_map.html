@@ -52,15 +52,55 @@
 </style>
 
 
-<div pageslide ps-auto-close="false" ps-open="stats_slide" ps-click-outside="false" ps-speed="0.5" ps-size="500px" ps-side="top" onopen="onopen()" onclose="onclose()">
+<div pageslide ps-auto-close="false" ps-open="stats_slide" ps-click-outside="false" ps-speed="0.5" ps-size="400px" ps-side="top"  ps-click-outside="true" style="padding-bottom:20px;">
   <div style="padding:20px; overflow:auto; height: 100%" >
     <div><p><br/></p></div>
-    <h2>Esmonndddddddd</h2>
-    <p><b>Perfsonar Nodes</b></p>
-    <pre>{{insitutions | json}}<pre>
-    <pre>{{p2s | json}}</pre>
-    <a ng-click="toggleStats()" class="btn btn-info" >Close</a>
+    <div class="row">
+      <div class="col-md-12">
+        <h2>Esmond Monitor<a ng-click="toggleStats()" class="btn btn-info pull-right" >Close</a></h2>
+
+        <p><b>Perfsonar Node: {{currentInstitution}}</b></p>
+      </div>
+    </div>
+
+    <table class="table table-hover graph-slide-table">
+
+      <thead>
+        <tr>
+          <th>SOURCE</th>
+          <th>DESTINATION</th>
+          <th class="text-center">VIEW</th>
+          <th class="text-center">THROUGHPUT</th>
+          <th class="text-center">LATENCY(ms)</th>
+          <th class="text-center">LOSS</th>
+        <tr>
+      </thead>
+
+      <tbody class="graph-table">
+        <tr ng-repeat="dst in institutions track by dst" ng-if="dst != currentInstitution" class="graph-row">
+          <td>{{currentInstitution}}</td>
+          <td>{{dst}}</td>
+          <td class="text-center">
+              <button
+              ng-click="buildGraphModal(currentInstitution, dst)"
+              class="btn btn-warning"
+              data-toggle="modal"
+              data-target="#graphPathModal"
+              style="border-radius: 0px">
+              Show
+            </button>
+          </td>
+          <td class="text-center">10000</td>
+          <td class="text-center">10000</td>
+          <td class="text-center">10000</td>
+        </tr>
+      </tbody>
+
+    </table>
+    <hr style="border-top: 1px solid #fff;">
+    <div class="text-center" style="height:30px"><span class="glyphicon glyphicon-menu-up text-center" style="color:#fff; font-size:20px"></span></div>
   </div>
+
 </div>
 
 
@@ -71,7 +111,6 @@
     <a ng-repeat="option in data.topoOptions" href="topology/{{option.id}}">{{option.name}}</a>
   </div>
   <button ng-click="clusterByDomain()" class="btn btn-info" align="right" style="border-radius: 0px; margin-bottom: 10px">Cluster</button>
-  <a ng-click="toggleStats()" class="menu-link" class="btn btn-default">&#9776;</a>
 </div>
 
 <div class="dropdown pull-right" style="padding-bottom: 10px;">
@@ -106,12 +145,29 @@
   </div>
 </div>
 
+<!-- Graph Modal -->
+<div class="modal fade" id="graphPathModal" tabindex="-1" role="dialog" aria-labelledby="graphPathModal" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-fs" role="document" style="width: 85%">
+    <div class="modal-content modal-content-fs" style="border-radius: 0px !important;">
+      <div class="modal-header">
+        <h5 class="modal-title" id="graphModalLabel">{{currentGraph.src}} -> {{currentGraph.dst}}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" style="height:100%">
+        <iframe ng-src="{{currentGraph.ref}}" frameborder="0" style="width:100%; height:95%"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="pull-right" style="padding-right:10px">
   <button ng-click="clearPaths()" class="btn btn-danger" style=" border-radius: 0px">Clear</button>
 </div>
 
 
-<div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="false" ps-speed="0.5" ps-size="500px" >
+<div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="true" ps-speed="0.5" ps-size="500px" >
   <div style="padding:10px" id="slide-right">
     <div><p><br/></p></div>
     <h2>Resource Details</h2>
@@ -121,6 +177,5 @@
 </div>
 
 <div id="topologyMap">
-
   <topology-map></topology-map>
 </div>

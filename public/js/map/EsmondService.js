@@ -23,8 +23,9 @@ function esmondService($http) {
         url.pop();
         url = url.join(":");
         console.log(url);
-        service.institutions.push(url);
-      })
+        jQuery.inArray(url, service.institutions) ? service.institutions.push(url) : console.log("Dupe");
+
+      });
 
       return cb(service.institutions);
     });
