@@ -10,7 +10,7 @@ function esmondService($http) {
   service.institutions = [];
   service.stats = [];
 
-  service.grabPerfsonarUrls = function(){
+  service.grabPerfsonarUrls = function(cb){
 
     $http.get('/api/topologies').success(function(res) {
 
@@ -26,10 +26,12 @@ function esmondService($http) {
         service.institutions.push(url);
       })
 
-      return service.institutions;
-    }).then(function(res){
-      service.pointToSpread('http://um-ps01.osris.org', service.institutions, function(res){console.log(res)});
-    });;
+      return cb(service.institutions);
+    });
+
+    //.then(function(res){
+    //  service.pointToSpread('http://um-ps01.osris.org', service.institutions, function(res){console.log(res)});
+    //});
   };
 
   service.pointToPoint = function(src, dst, cb){

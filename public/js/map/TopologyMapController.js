@@ -77,7 +77,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   var topolist = UnisService.getMostRecent(UnisService.topologies)
       .map(e => {return {id: e.id, name: e.name}});
 
-  //EsmondService.grabPerfsonarUrls();
+  EsmondService.grabPerfsonarUrls(function(res){$scope.insitutions = res});
   //EsmondService.getAllStats();
   //EsmondService.pointToSpread('http://um-ps01.osris.org', EsmondService.grabPerfsonarUrls(), function(res){
   //  console.log(res);
@@ -94,6 +94,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   $scope.showPathButtons = false;
   $scope.nodesInPath = [];
   $scope.animatePath = false;
+  $scope.p2s = [];
 
   $scope.toggle = function(p) {
     $scope.cobj = undefined;
@@ -109,11 +110,12 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   }
 
   $scope.onopen = function () {
-    alert('Open');
-  }; 
+    //EsmondService.point
+    EsmondService.pointToSpread('http://um-ps01.osris.org', $scope.insitutions, function(res){$scope.p2s.push(res)});
+  };
 
   $scope.onclose = function () {
-    alert('Close');
+
   };
 
   // scope data
