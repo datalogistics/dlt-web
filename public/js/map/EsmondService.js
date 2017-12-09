@@ -72,5 +72,107 @@ function esmondService($http) {
     return service.stats;
   };
 
+  service.getThroughputTests = function(url, cb){
+
+    var pruneName = function(arr, val){
+      if(arr.length == 0){
+        arr.push(val);
+      } else {
+        let found = false;
+        arr.forEach(function(v){
+          if(v.input_source == val.input_source && v.uri != val.uri){
+            found = true;
+          }
+        });
+        if(found == false){
+          arr.push(val);
+        }
+      }
+    };
+    $http.get(url + esmond_path + '?event-type=throughput').success(function(res) {
+        console.log(url + esmond_path);
+        res == [] ? console.log("Nothing here...") : console.log(res);
+        console.log("Response from ", url+esmond_path, res);
+        var result = [];
+
+        res.forEach(function(test){
+          var res_obj = {};
+          res_obj.input_source = test['input-source'];
+          res_obj.input_destination = test['input-destination'];
+          res_obj.source = test.source;
+          res_obj.destination = test.destination;
+          res_obj.uri = test.uri;
+          pruneName(result, res_obj);
+        });
+        return cb(result);
+    }).error(function(res){
+      console.log("COULDNT DO IT");
+    });
+  };
+
+  service.getThroughputTestsByIP = function(url,ip, cb){
+
+    $http.get(url + esmond_path + '?event-type=throughput').success(function(res) {
+        console.log(url + esmond_path);
+        res == [] ? console.log("Nothing here...") : console.log(res);
+        console.log("Response from ", url+esmond_path, res);
+        var result = [];
+
+        res.forEach(function(test){
+          var res_obj = {};
+          res_obj.input_source = test['input-source'];
+          res_obj.input_destination = test['input-destination'];
+
+          if(res_obj.input_source == ip){
+            result.push(res);
+          }
+
+        });
+        return cb(result);
+    }).error(function(res){
+      console.log("ERROR GETTING THROUGHPUT TEST");
+    });
+  };
+
+  // ugh, I guess its not a reverse look up.
+  service.reverseIPLookUp = function(host, url, cb){
+    $http.get(host + esmond_path + '?source=' + url).success(function(res){
+      console.log("URL: ", host + esmond_path + '?source=' + url);
+      var ip = res[0].source;
+      console.log("IP: ", ip);
+      return cb(ip);
+    });
+  };
+
+  service.getThroughputTestsOnInterfaces = function(url, cb){
+    var be = url.split('.');
+    be[0] = be[0] + '-be';
+    be = be.join('.');
+
+    var esmd = url + esmond_path + '?source=' + url.split('//')[1];
+    var esmd_be = be + esmond_path + '?source=' + be.split('//')[1];
+
+    var url_ip = '';
+    var be_ip = '';
+
+    let result = [];
+
+    // I hear you like nests
+    service.reverseIPLookUp(url, url.split('//')[1], function(res){
+      url_ip = res;
+      service.reverseIPLookUp(url, be.split('//')[1], function(res){
+        be_ip = res;
+        service.getThroughputTestsByIP(url, url_ip, function(res){
+          result = res;
+          service.getThroughputTestsByIP(be, be_ip, function(res){
+            result = result.concat(res);
+            return cb(res);
+          });
+        });
+      });
+    });
+  };
+
+
   return service;
 }

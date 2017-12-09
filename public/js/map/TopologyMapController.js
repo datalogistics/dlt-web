@@ -99,7 +99,20 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   var topolist = UnisService.getMostRecent(UnisService.topologies)
       .map(e => {return {id: e.id, name: e.name}});
 
-  EsmondService.grabPerfsonarUrls(function(res){$scope.institutions = res});
+  EsmondService.grabPerfsonarUrls(function(res){
+
+    $scope.institutions = res;
+
+    res.forEach(function(url){
+      EsmondService.getThroughputTestsOnInterfaces(url, function(res){
+        console.log('TESTS FROM ', url,' - ', res);
+        $scope.throughputTests[url] = res;
+        console.log("THROUGHPUT TEST OBJ: ", $scope.throughputTests);
+    });
+
+    });
+  });
+
   //EsmondService.getAllStats();
   //EsmondService.pointToSpread('http://um-ps01.osris.org', EsmondService.grabPerfsonarUrls(), function(res){
   //  console.log(res);
@@ -109,6 +122,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   $scope.colors = ['red', 'DarkViolet', 'lime', 'lightblue', 'pink', 'yellow'];
 
   // scope flow controllers
+  $scope.throughputTests = {};
   $scope.checked = false;
   $scope.stats_slide = false;
   $scope.size = '100px';
