@@ -1,16 +1,27 @@
 html {
   height:100%;
+
 }
 body {
   padding-top: 70px;
   min-height: 100%;
   position: relative;
   padding-bottom: 6rem;
+  font-family: 'Roboto', sans-serif;
+}
+
+.navbar {
+  border: 0;
 }
 
 a {
   text-decoration:none !important;
   color: #000000;
+}
+
+a:hover{
+  text-decoration:none !important;
+  cursor:default;
 }
 
 .browser-tabs {
@@ -490,8 +501,9 @@ text.id {
 
 .panel {
   border-radius: 0px;
-  color:#ccc;
+  color:#000;
 }
+
 
 .modal-dialog-fs {
   width: 98% !important;

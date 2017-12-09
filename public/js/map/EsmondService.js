@@ -110,9 +110,9 @@ function esmondService($http) {
     });
   };
 
-  service.getThroughputTestsByIP = function(url,ip, cb){
-
-    $http.get(url + esmond_path + '?event-type=throughput').success(function(res) {
+  service.getTestByIP = function(url, ip, test, days, cb){
+    var days = 86400 * days;
+    $http.get(url + esmond_path + '?event-type=' + test + "&time-range=" + days).success(function(res) {
         console.log(url + esmond_path);
         res == [] ? console.log("Nothing here...") : console.log(res);
         console.log("Response from ", url+esmond_path, res);
@@ -124,10 +124,11 @@ function esmondService($http) {
           res_obj.input_destination = test['input-destination'];
 
           if(res_obj.input_source == ip){
-            result.push(res);
+            result.push(test);
           }
 
         });
+        console.log("RESULT FROM IP: ", ip, result);
         return cb(result);
     }).error(function(res){
       console.log("ERROR GETTING THROUGHPUT TEST");
@@ -138,40 +139,66 @@ function esmondService($http) {
   service.reverseIPLookUp = function(host, url, cb){
     $http.get(host + esmond_path + '?source=' + url).success(function(res){
       console.log("URL: ", host + esmond_path + '?source=' + url);
-      var ip = res[0].source;
-      console.log("IP: ", ip);
-      return cb(ip);
+      try{
+        var ip = res[0].source;
+        console.log("IP: ", ip);
+        return cb(ip);
+      }
+      catch(err){
+        return cb('error');
+      }
+    }).error(function(res){
+      return cb('error');
     });
   };
 
-  service.getThroughputTestsOnInterfaces = function(url, cb){
+  // returns the last day's worth of throughput tests for a given Interface
+
+  service.getTestsOnInterface = function(url, cb){
     var be = url.split('.');
-    be[0] = be[0] + '-be';
-    be = be.join('.');
 
     var esmd = url + esmond_path + '?source=' + url.split('//')[1];
-    var esmd_be = be + esmond_path + '?source=' + be.split('//')[1];
-
+    console.log(esmd);
     var url_ip = '';
-    var be_ip = '';
 
-    let result = [];
-
-    // I hear you like nests
     service.reverseIPLookUp(url, url.split('//')[1], function(res){
       url_ip = res;
-      service.reverseIPLookUp(url, be.split('//')[1], function(res){
-        be_ip = res;
-        service.getThroughputTestsByIP(url, url_ip, function(res){
-          result = res;
-          service.getThroughputTestsByIP(be, be_ip, function(res){
-            result = result.concat(res);
-            return cb(res);
-          });
+
+      // get throughput test
+      res == undefined ? cb(res) : service.getTestByIP(url, url_ip, 'throughput', 1, function(res){
+        if(res == 'error'){
+          return cb([]);
+        }
+        result = {"throughput": res};
+        res.result = "SUCCESS";
+
+        service.getTestByIP(url, url_ip, 'packet-loss-rate', 1, function(res){
+          console.log("PACKET LOSS RES: ", res);
+          result.packet_loss = res;
+          return cb(result);
         });
       });
     });
   };
+
+  service.getThroughput = function(test_obj, cb){
+    var url = test_obj.url + "throughput/base"
+    $http.get(url).success(function(res){
+      var latest_throughput = res[0].val;
+      return cb(latest_throughput);
+    });
+  };
+
+  service.getPacketLoss = function(test_obj, cb){
+    var url = test_obj.url + "packet-lose-rate/base"
+    $http.get(url).success(function(res){
+      var latest_loss = res[0].val;
+      return cb(latest_loss);
+    }).error(function(res){
+      return(cb("500 ERROR"));
+    });
+  };
+
 
 
   return service;

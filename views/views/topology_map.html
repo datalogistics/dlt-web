@@ -52,37 +52,46 @@
 </style>
 
 
-<div pageslide ps-auto-close="false" ps-open="stats_slide" ps-click-outside="false" ps-speed="0.5" ps-size="400px" ps-side="top"  ps-click-outside="true" style="padding-bottom:20px;">
+<div pageslide ps-auto-close="false" ps-open="stats_slide" ps-click-outside="true" ps-speed="0.5" ps-size="400px" ps-side="top"  ps-click-outside="true" style="padding-bottom:20px;">
   <div style="padding:20px; overflow:auto; height: 100%" >
     <div><p><br/></p></div>
     <div class="row">
       <div class="col-md-12">
-        <h2>Esmond Monitor<a ng-click="toggleStats()" class="btn btn-info pull-right" >Close</a></h2>
+        <h2>Esmond Dashboard<a ng-click="toggleStats()" class="btn btn-info pull-right" >Close</a></h2>
 
-        <p><b>Perfsonar Node: {{currentInstitution}}</b></p>
+        <p><b>Perfsonar Node: {{currentInstitution.name}}</b></p>
+        <p><small>Last throughput tests in the last 24 hours.</small></p>
       </div>
     </div>
+    <div ng-show="currentInstitution.test.throughput.length == 0 || currentInstitution.test.result != 'okay'" class="text-center">
+      <p>No tests in the last 24 hours.</p>
+      <p>Please refer to
+        <a href="{{currentInstitution.name}}/toolkit" style="color:lightblue; text-decoration:none">
+          {{currentInstitution.name}}/tookit
+        </a>
+        for more detailed information</a>
+      </p>
+    </div>
 
-    <table class="table table-hover graph-slide-table">
+    <table class="table table-hover graph-slide-table" ng-show="currentInstitution.test.throughput.length != 0">
 
       <thead>
         <tr>
           <th>SOURCE</th>
           <th>DESTINATION</th>
           <th class="text-center">VIEW</th>
-          <th class="text-center">THROUGHPUT</th>
-          <th class="text-center">LATENCY(ms)</th>
+          <th class="text-center">THROUGHPUT (avg)</th>
           <th class="text-center">LOSS</th>
         <tr>
       </thead>
 
       <tbody class="graph-table">
-        <tr ng-repeat="dst in institutions track by dst" ng-if="dst != currentInstitution" class="graph-row">
-          <td>{{currentInstitution}}</td>
-          <td>{{dst}}</td>
+        <tr ng-repeat="t in currentInstitution.test.summary track by t.tp_uri" ng-if="dst != currentInstitution" class="graph-row">
+          <td><div>{{currentInstitution.name}} - <small>{{t.source}}</small><div></td>
+          <td><div>{{t["input-destination"]}} - <small>{{t.destination}}</small><div></td>
           <td class="text-center">
               <button
-              ng-click="buildGraphModal(currentInstitution, dst)"
+              ng-click="buildGraphModal(currentInstitution.name, t.source, t.destination)"
               class="btn btn-warning"
               data-toggle="modal"
               data-target="#graphPathModal"
@@ -90,9 +99,8 @@
               Show
             </button>
           </td>
-          <td class="text-center">10000</td>
-          <td class="text-center">10000</td>
-          <td class="text-center">10000</td>
+          <td class="text-center">{{(t.throughput_val / 1000000000).toFixed(2)}} gb/s</td>
+          <td class="text-center">{{t.packet_loss_rate}}</td>
         </tr>
       </tbody>
 
@@ -167,12 +175,12 @@
 </div>
 
 
-<div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="true" ps-speed="0.5" ps-size="500px" >
-  <div style="padding:10px" id="slide-right">
+<div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="false" ps-speed="0.5" ps-size="700px" >
+  <div style="padding:30px; overflow:auto; height: 100%" id="slide-right">
     <div><p><br/></p></div>
-    <h2>Resource Details</h2>
-    <pre pretty-json="cobj.objRef"/>
-    <a ng-click="toggle()" class="btn btn-info" >Close</a>
+    <h2>Resource Details <a ng-click="toggle()" class="btn btn-info pull-right" >Close</a></h2>
+    <hr>
+    <json-formatter json="cobj.objRef" open="1"></json-formatter>
   </div>
 </div>
 

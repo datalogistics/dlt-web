@@ -20,7 +20,7 @@ function topoMapDirective() {
       });
 
       scope.network.on('select', function(ev){
-
+        var open = true;
         if(ev.nodes[0]){
           var nodeId = ev.nodes[0];
           var node = scope.topodata.nodes._data[nodeId];
@@ -34,11 +34,19 @@ function topoMapDirective() {
             if(test == name && !scope.stat_slide){
               console.log("TOPODATA: ", scope.topodata);
               // open the dashboard, pass name into scope.
-              scope.currentInstitution = 'http://' + name;
+              var url = 'http://' + name;
+              scope.currentInstitution = {
+                'name': url,
+                'test': scope.throughputTests[url]
+              };
+              open = false;
+              console.log("CURRENT INSTITUTION: ", scope.currentInstitution);
               scope.toggleStats();
             }
           });
+
         }
+        if(open){scope.toggle(ev)};
       });
 
       scope.network.on("deselectNode", function(params) {
@@ -99,17 +107,62 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   var topolist = UnisService.getMostRecent(UnisService.topologies)
       .map(e => {return {id: e.id, name: e.name}});
 
+
+  // Get Esmond Data for dash board.
   EsmondService.grabPerfsonarUrls(function(res){
 
     $scope.institutions = res;
 
     res.forEach(function(url){
-      EsmondService.getThroughputTestsOnInterfaces(url, function(res){
-        console.log('TESTS FROM ', url,' - ', res);
-        $scope.throughputTests[url] = res;
-        console.log("THROUGHPUT TEST OBJ: ", $scope.throughputTests);
-    });
 
+      try{
+        EsmondService.getTestsOnInterface(url,function(res){
+
+          console.log('TESTS FROM ', url,' - ', res);
+
+          if(res.length == 0){
+
+            $scope.throughputTests[url] = { "result":"No Test Results"};
+
+          } else {
+
+            $scope.throughputTests[url] = {"result": "okay", "throughput": res.throughput, "packet_loss": res.packet_loss, "summary": {} };
+            console.log("THROUGHPUT TEST OBJ: ", $scope.throughputTests);
+
+            $scope.throughputTests[url].throughput.forEach(function(t, index){
+              var dst = t.destination;
+              console.log("T: ",t);
+              EsmondService.getThroughput(t, function(res){
+                $scope.throughputTests[url].throughput[index].throughput_val = res;
+                if(!$scope.throughputTests[url].summary[dst]) {$scope.throughputTests[url].summary[dst] = {}};
+                $scope.throughputTests[url].summary[dst].throughput_val = res;
+                $scope.throughputTests[url].summary[dst].destination = t.destination;
+                $scope.throughputTests[url].summary[dst]["input-destination"] = t["input-destination"];
+                $scope.throughputTests[url].summary[dst].tp_uri = t.uri;
+                $scope.throughputTests[url].summary[dst].source = t.source;
+                console.log($scope.throughputTests);
+              });
+            });
+
+            $scope.throughputTests[url].packet_loss.forEach(function(t, index){
+              var dst = t.destination;
+              EsmondService.getPacketLoss(t, function(res){
+                if(!$scope.throughputTests[url].summary[dst]) {$scope.throughputTests[url].summary[dst] = {}};
+                $scope.throughputTests[url].throughput[index].packet_loss = res;
+                $scope.throughputTests[url].summary[dst].packet_loss_rate = res;
+                console.log($scope.throughputTests);
+              });
+            });
+
+          }
+        });
+
+      }
+      catch(err){
+
+        $scope.throughputTests[url] = { "result":"No Test Results"};
+
+      }
     });
   });
 
@@ -166,20 +219,19 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     $scope.stats_slider = false;
   };
 
-  $scope.graphRef = function(src,dst){
-    src = src.split('//')[1];
-    dst = dst.split('//')[1];
-    return "http://" + src + "/perfsonar-graphs/?source=" + src + "&dest=" + dst;
+  $scope.graphRef = function(url,src,dst){
+    return url + "/perfsonar-graphs/?source=" + src + "&dest=" + dst;
   };
 
   $scope.trust = function(r){
     return $sce.trustAsResourceUrl(src);
   };
 
-  $scope.buildGraphModal = function(src, dst){
+  $scope.buildGraphModal = function(url, src, dst){
     $scope.currentGraph.src = src;
     $scope.currentGraph.dst = dst;
-    var url = $scope.graphRef(src, dst)
+    $scope.currentGraph.url = url;
+    var url = $scope.graphRef(url, src, dst)
     $scope.currentGraph.ref = url;
     $scope.currentGraph.ref = $sce.trustAsResourceUrl($scope.currentGraph.ref);
     console.log($scope.currentGraph.ref);

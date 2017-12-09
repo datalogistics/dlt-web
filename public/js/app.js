@@ -19,6 +19,7 @@ angular.module('periApp',
 		'schemaForm',
 		'ui.utils',
     'ivh.treeview',
+    'jsonFormatter',
 		'ui.bootstrap',
 		'ui.bootstrap-slider',
 		'nvd3ChartDirectives',
@@ -70,7 +71,7 @@ angular.module('periApp',
            function($routeProvider, $locationProvider, cfpLoadingBarProvider) {
              cfpLoadingBarProvider.includeSpinner = false;
 
-            
+
 
              $routeProvider.
                when('/', {
