@@ -17,6 +17,7 @@ function getSchemaProperties(obj) {
  * public/js/exnode/
  * ExnodeController.js
  */
+
 function exnodeController($scope, $routeParams, $location, $http, ExnodeService,$log,SocketService,ivhTreeviewMgr) {
   // Dangerous code
   // SocketService.emit('exnode_getAllChildren', {id : null});
@@ -429,6 +430,12 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
             nodes: exNodes};
     console.log(JSON.stringify(data));
     // POST TO URL HERE;
+    // @Jeremy hard code in the url here for now until I can get around to configuring the api call.
+    $http.post(url, data).success(function(res){
+      console.log("SUCCESSFULLY POSTED TO ", url);
+    }).error(function(res){
+      console.log("ERROR POSTING TO URL: ", url, res);
+    });
   };
 
   $scope.selectAllPolicy = function(){

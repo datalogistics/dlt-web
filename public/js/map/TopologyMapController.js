@@ -3,8 +3,15 @@ function topoMapDirective() {
     restrict: 'E',
     link: function(scope, element, attr) {
       scope.network = new vis.Network(element[0], scope.topodata, scope.topoopts);
-
+      console.log(element);
       scope.network.stabilize();
+
+      canvas = scope.network.canvas.frame.canvas;
+    	ctx = canvas.getContext('2d');
+
+    	scope.network.on("beforeDrawing", function(ctx) {
+    			ctx.drawImage(document.getElementById("mapImage"), -1000, -1000, 2000,1500);
+    	});
 
       scope.network.on("stabilized", function(){
         scope.showPathButtons = true;
@@ -299,7 +306,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
           n.shape = 'image';
         }
       	else {
-      	  n.image = '/images/server-icon.jpg';
+      	  n.image = '/images/server_icon.png';
       	  n.shape = 'image';
       	}
 
