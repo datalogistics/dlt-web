@@ -491,8 +491,10 @@ module.exports = function(app) {
   });
 
 
-    app.post('api/wildfire', function(req, res){
+    app.post('api/wildfire/post', function(req, res){
       var url = req.idms;
+      var data = req.data;
+      console.log("POST to", url, data);
       var options = {
           host: url,
           method: 'POST',

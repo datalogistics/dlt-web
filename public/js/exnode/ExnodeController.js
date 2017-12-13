@@ -434,7 +434,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     console.log(JSON.stringify(data));
     // POST TO URL HERE;
     // @Jeremy hard code in the url here for now until I can get around to configuring the api call.
-    $http.post('/api/wildire?idms=' + idms_url, data).success(function(res){
+    $http.get('/api/wildire/post?idms=' + idms_url + '&data' + JSON.stringify(data)).success(function(res){
       console.log("SUCCESSFULLY POSTED TO ", url);
     }).error(function(res){
       console.log("ERROR POSTING TO URL: ", url, res);
