@@ -6,16 +6,47 @@ function topoMapDirective() {
       console.log(element);
       scope.network.stabilize();
 
+
       canvas = scope.network.canvas.frame.canvas;
     	ctx = canvas.getContext('2d');
 
+
     	scope.network.on("beforeDrawing", function(ctx) {
-    			ctx.drawImage(document.getElementById("mapImage"), -1000, -1000, 2000,1500);
+          //ctx.drawImage(document.getElementById("mapImage"), -1000, -1000, 2000,1500);
+          ctx.fillStyle = "rgb(211,211,211)";
+          ctx.fillRect(-window.innerWidth * 50, -window.innerHeight * 100, window.innerWidth * 100, window.innerHeight * 200);
+          for(var n in scope.network.body.nodes){
+            var node = scope.network.body.nodes[n];
+            // destroys heap, TODO: implement some nutty WebGL for rendering.
+            //var color = scope.network.body.data.nodes._data[n].color;
+            drawCircle(node.x, node.y, 'rgb(255,255,255)', 75);
+
+          }
+          //ctx.globalCompositeOperation = 'source-out';
+          //for(var n in scope.network.body.nodes){
+          //  var node = scope.network.body.nodes[n];
+          //  drawArc(node.x, node.y, 100, 0, 2*Math.PI);
+          //}
+          //ctx.globalCompositeOperation = 'source-over';
     	});
 
       scope.network.on("stabilized", function(){
         scope.showPathButtons = true;
       });
+
+      var drawArc = function(x,y,size, degrees, radians){
+
+        ctx.beginPath();
+        ctx.arc(x, y, size, degrees, radians);
+        ctx.stroke();
+
+      };
+
+      var drawCircle = function(x, y, fillColor, radius){
+        ctx.fillStyle = fillColor;
+        ctx.circle(x, y, radius);
+        ctx.fill();
+      }
 
       scope.network.on("selectNode", function(params) {
       	if (params.nodes.length == 1) {
@@ -27,6 +58,7 @@ function topoMapDirective() {
       });
 
       scope.network.on('select', function(ev){
+        console.log(scope.network);
         var open = true;
         if(ev.nodes[0]){
           var nodeId = ev.nodes[0];
@@ -42,10 +74,12 @@ function topoMapDirective() {
               console.log("TOPODATA: ", scope.topodata);
               // open the dashboard, pass name into scope.
               var url = 'http://' + name;
+
               scope.currentInstitution = {
                 'name': url,
                 'test': scope.throughputTests[url]
               };
+
               open = false;
               console.log("CURRENT INSTITUTION: ", scope.currentInstitution);
               scope.toggleStats();
@@ -53,7 +87,10 @@ function topoMapDirective() {
           });
 
         }
-        if(open){scope.toggle(ev)};
+        // fixes bug when you click a cluster and resource info slider shows.
+        if (ev.nodes.length == 0) {
+          return;
+        } else if(open){scope.toggle(ev)};
       });
 
       scope.network.on("deselectNode", function(params) {
@@ -100,6 +137,7 @@ function topoMapDirective() {
         	  }
 
           };
+
         });
 
 
@@ -116,67 +154,72 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
 
 
   // Get Esmond Data for dash board.
+  // First -> grab the instances urls.
   EsmondService.grabPerfsonarUrls(function(res){
 
     $scope.institutions = res;
 
-    res.forEach(function(url){
+    // Second -> get all Interfaces on each instance.
+    $scope.institutions.forEach(function(url){
+      // get interfaces on each instance
+      EsmondService.getAllInterfaces(url, function(res){
+        var interfaces = res.interfaces;
+        $scope.throughputTests[url] = {"interfaces": {}};
+        res.interfaces.forEach(function(inter){
 
-      try{
-        EsmondService.getTestsOnInterface(url,function(res){
+            var iface = inter;
+            EsmondService.getTestsOnInterface(url, iface, function(res){
 
-          console.log('TESTS FROM ', url,' - ', res);
+              var i = iface.hostname;
 
-          if(res.length == 0){
+              if(res.length == 0){
+                $scope.throughputTests[url] = { "result":"No Test Results"};
+              } else {
+                $scope.throughputTests[url].interfaces[i] = {"result": "okay",
+                  "throughput": res.throughput,
+                  "packet_loss": res.packet_loss,
+                  "summary": {},
+                  "interface_name": i,
+                  "interface": iface,
+                  "collapse": false
+                };
 
-            $scope.throughputTests[url] = { "result":"No Test Results"};
+                console.log("LOGLOGLOGLOG: ", url, iface, res.throughput, $scope.throughputTests[url].interfaces[i]);
 
-          } else {
+                var inter = $scope.throughputTests[url].interfaces[i];
+                inter.throughput.forEach(function(t, index){
+                  EsmondService.getThroughput(t, function(res){
+                    var dst = t.destination;
+                    $scope.throughputTests[url].interfaces[i].throughput[index].throughput_val = res;
+                    if(!$scope.throughputTests[url].interfaces[i].summary[dst]) {$scope.throughputTests[url].interfaces[i].summary[dst] = {}};
+                    $scope.throughputTests[url].interfaces[i].summary[dst] = {
+                      "throughput_val": res,
+                      "destination": t.destination,
+                      "input-destination": t["input-destination"],
+                      "tp_uri": t.uri,
+                      "source": t.source
+                    };
+                    console.log($scope.throughputTests);
+                  });
+                });
 
-            $scope.throughputTests[url] = {"result": "okay", "throughput": res.throughput, "packet_loss": res.packet_loss, "summary": {} };
-            console.log("THROUGHPUT TEST OBJ: ", $scope.throughputTests);
-
-            $scope.throughputTests[url].throughput.forEach(function(t, index){
-              var dst = t.destination;
-              console.log("T: ",t);
-              EsmondService.getThroughput(t, function(res){
-                $scope.throughputTests[url].throughput[index].throughput_val = res;
-                if(!$scope.throughputTests[url].summary[dst]) {$scope.throughputTests[url].summary[dst] = {}};
-                $scope.throughputTests[url].summary[dst].throughput_val = res;
-                $scope.throughputTests[url].summary[dst].destination = t.destination;
-                $scope.throughputTests[url].summary[dst]["input-destination"] = t["input-destination"];
-                $scope.throughputTests[url].summary[dst].tp_uri = t.uri;
-                $scope.throughputTests[url].summary[dst].source = t.source;
-                console.log($scope.throughputTests);
-              });
+                //inter.packet_loss.forEach(function(p, index){
+                //  var dst = p.destination;
+                //  EsmondService.getPacketLoss(p, function(res){
+                //    if(!$scope.throughputTests[url].interfaces[i].summary[dst]) {$scope.throughputTests[url].interfaces[i].summary[dst] = {}};
+                //    $scope.throughputTests[url].interfaces[i].summary[dst].packet_loss_rate = res;
+                //    console.log($scope.throughputTests);
+                //  });
+                //});
+              }
             });
+          });
 
-            $scope.throughputTests[url].packet_loss.forEach(function(t, index){
-              var dst = t.destination;
-              EsmondService.getPacketLoss(t, function(res){
-                if(!$scope.throughputTests[url].summary[dst]) {$scope.throughputTests[url].summary[dst] = {}};
-                $scope.throughputTests[url].throughput[index].packet_loss = res;
-                $scope.throughputTests[url].summary[dst].packet_loss_rate = res;
-                console.log($scope.throughputTests);
-              });
-            });
-
-          }
         });
+      });
 
-      }
-      catch(err){
+  }); // End Esmond scope work, seeing as how long this chain is I probably need to fit this into one service call later when I get some feedback.
 
-        $scope.throughputTests[url] = { "result":"No Test Results"};
-
-      }
-    });
-  });
-
-  //EsmondService.getAllStats();
-  //EsmondService.pointToSpread('http://um-ps01.osris.org', EsmondService.grabPerfsonarUrls(), function(res){
-  //  console.log(res);
-  //});
 
   var ccnt = 0;
   $scope.colors = ['red', 'DarkViolet', 'lime', 'lightblue', 'pink', 'yellow'];
@@ -410,6 +453,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
           	clusterNodeProperties: {id: d.id, borderWidth: 3, shape: 'database', color: 'orange', label:'domain: ' + d.name}
           };
         $scope.network.cluster(clusterOptionsByData);
+
     });
 
 

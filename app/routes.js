@@ -75,19 +75,20 @@ module.exports = function(app) {
     var pathname = url.parse(req.url).pathname;
 
     // routes.push('http://' + hostname + pathname + '/slice');
-    routes.push('https://' + hostname + pathname + 'nodes');
-    routes.push('https://' + hostname + pathname + 'domains');
-    routes.push('https://' + hostname + pathname + 'services');
-    routes.push('https://' + hostname + pathname + 'measurements');
-    routes.push('https://' + hostname + pathname + 'metadata');
-    routes.push('https://' + hostname + pathname + 'data');
-    routes.push('https://' + hostname + pathname + 'links');
-    routes.push('https://' + hostname + pathname + 'ports');
-    routes.push('https://' + hostname + pathname + 'exnodes');
-    routes.push('https://' + hostname + pathname + 'fileTree');
-    routes.push('https://' + hostname + pathname + 'getVersion');
-    routes.push('https://' + hostname + pathname + 'topologies');
-    routes.push('https://' + hostname + pathname + 'wildfire');
+    routes.push('https://' + hostname + pathname + '/nodes');
+    routes.push('https://' + hostname + pathname + '/domains');
+    routes.push('https://' + hostname + pathname + '/services');
+    routes.push('https://' + hostname + pathname + '/measurements');
+    routes.push('https://' + hostname + pathname + '/metadata');
+    routes.push('https://' + hostname + pathname + '/data');
+    routes.push('https://' + hostname + pathname + '/links');
+    routes.push('https://' + hostname + pathname + '/ports');
+    routes.push('https://' + hostname + pathname + '/exnodes');
+    routes.push('https://' + hostname + pathname + '/fileTree');
+    routes.push('https://' + hostname + pathname + '/getVersion');
+    routes.push('https://' + hostname + pathname + '/topologies');
+    routes.push('https://' + hostname + pathname + '/wildfire');
+    routes.push('https://' + hostname + pathname + '/host.cgi');
     res.json(routes);
   });
 
@@ -509,10 +510,24 @@ module.exports = function(app) {
       name : 'wildfire'
     }));
 
+
+
+
     registerGenericHandler(options, function(obj) {
       // Return matching id children
       arr = getMostRecent(obj);
       res.json(arr);
+    });
+  });
+
+  // example API call to host.cgi -> /host.cgi?method=get_summary&host=http://um-ps01.osris.org
+  app.get('/api/host.cgi', function(req, res){
+    var host = req.query.host;
+    var method = req.query.method;
+    // http://um-ps01.osris.org/toolkit/services/host.cgi <-- list of possible methods to query for.
+    var url = host + '/toolkit/services/host.cgi?method=' + method;
+    request(url, function(err, r, response){
+      res.json(JSON.parse(response));
     });
   });
 

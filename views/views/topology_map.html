@@ -60,51 +60,70 @@
         <h2>Esmond Dashboard<a ng-click="toggleStats()" class="btn btn-info pull-right" >Close</a></h2>
 
         <p><b>Perfsonar Node: {{currentInstitution.name}}</b></p>
-        <p><small>Last throughput tests in the last 24 hours.</small></p>
+        <p><small>Showing tests on all interfaces for the last 7 days.</small></p>
       </div>
     </div>
-    <div ng-show="currentInstitution.test.throughput.length == 0 || currentInstitution.test.result != 'okay'" class="text-center">
-      <p>No tests in the last 24 hours.</p>
-      <p>Please refer to
-        <a href="{{currentInstitution.name}}/toolkit" style="color:lightblue; text-decoration:none">
-          {{currentInstitution.name}}/tookit
-        </a>
-        for more detailed information</a>
+
+    <!-- Interface Collapsables -->
+    <div ng-repeat="interface in currentInstitution.test.interfaces">
+      <p>
+        <button class="btn btn-primary" type="button" ng-click="interface.collapse = !interface.collapse" ng-init="interface.collapse = false">
+          {{interface.interface_name}}
+        </button>
       </p>
-    </div>
+      <div collapse="!interface.collapse">
+    		<div class="well well-lg" style="border-radius:0px;">
 
-    <table class="table table-hover graph-slide-table" ng-show="currentInstitution.test.throughput.length != 0">
 
-      <thead>
-        <tr>
-          <th>SOURCE</th>
-          <th>DESTINATION</th>
-          <th class="text-center">VIEW</th>
-          <th class="text-center">THROUGHPUT (avg)</th>
-          <th class="text-center">LOSS</th>
-        <tr>
-      </thead>
+          <div ng-show="interface.throughput.length == 0" class="text-center" style="color:#000;">
+            <p>No tests in the last 24 hours.</p>
+            <p>Please refer to
+              <a href="{{currentInstitution.name}}/toolkit" style="color:lightblue; text-decoration:none">
+                {{currentInstitution.name}}/tookit
+              </a>
+              for more detailed information</a>
+            </p>
+          </div>
 
-      <tbody class="graph-table">
-        <tr ng-repeat="t in currentInstitution.test.summary track by t.tp_uri" ng-if="dst != currentInstitution" class="graph-row">
-          <td><div>{{currentInstitution.name}} - <small>{{t.source}}</small><div></td>
-          <td><div>{{t["input-destination"]}} - <small>{{t.destination}}</small><div></td>
-          <td class="text-center">
-              <button
-              ng-click="buildGraphModal(currentInstitution.name, t.source, t.destination)"
-              class="btn btn-warning"
-              data-toggle="modal"
-              data-target="#graphPathModal"
-              style="border-radius: 0px">
-              Show
-            </button>
-          </td>
-          <td class="text-center">{{(t.throughput_val / 1000000000).toFixed(2)}} gb/s</td>
-          <td class="text-center">{{t.packet_loss_rate}}</td>
-        </tr>
-      </tbody>
+          <!-- BEGIN TABLE -->
+            <table class="table table-hover graph-slide-table" ng-show="interface.throughput.length != 0">
 
-    </table>
+              <thead>
+                <tr style="color:#000;!important">
+                  <th>SOURCE</th>
+                  <th>DESTINATION</th>
+                  <th class="text-center">VIEW</th>
+                  <th class="text-center">THROUGHPUT (avg)</th>
+                  <th class="text-center">LOSS</th>
+                <tr>
+              </thead>
+
+              <tbody class="graph-table" style="color:#000;!important">
+                <tr ng-repeat="test in interface.throughput" ng-if="dst != currentInstitution" class="graph-row">
+                  <td><div>{{interface.interface_name}} - <small>{{test.source}}</small><div></td>
+                  <td><div>{{test["input-destination"]}} - <small>{{test.destination}}</small><div></td>
+                  <td class="text-center">
+                      <button
+                      ng-click="buildGraphModal(currentInstitution.name, test.source, test.destination)"
+                      class="btn btn-warning"
+                      data-toggle="modal"
+                      data-target="#graphPathModal"
+                      style="border-radius: 0px">
+                      Show
+                    </button>
+                  </td>
+                  <td class="text-center">{{(test.throughput_val / 1000000000).toFixed(2)}} gb/s</td>
+                  <td class="text-center">500 ERROR</td>
+                </tr>
+              </tbody>
+
+            </table> <!-- END TABLE -->
+
+        </div>
+    	</div>
+    </div> <!-- end interface collapsables -->
+
+
     <hr style="border-top: 1px solid #fff;">
     <div class="text-center" style="height:30px"><span class="glyphicon glyphicon-menu-up text-center" style="color:#fff; font-size:20px"></span></div>
   </div>
@@ -186,6 +205,6 @@
 
 <div id="topologyMap">
   <topology-map></topology-map>
-  
-  <img id="mapImage" style="visibility:hidden;" src="images/us.gif"/>
+
+  <!--<img id="mapImage" style="visibility:hidden;" src="images/us.gif"/>-->
 </div>

@@ -63,7 +63,6 @@ function esmondService($http) {
       $http.get(inst + esmond_path + '?source=' + inst.split('//')[1] + '&limit=1').success(function(res) {
           console.log(inst + esmond_path);
           res == [] ? console.log("Nothing here...") : service.stats.pop({"institution" : inst, "stats" : res[0]});
-          console.log("Response from ", inst+esmond_path, res);
       }).error(function(res){
         console.log("COULDNT DO IT");
       })
@@ -84,7 +83,7 @@ function esmondService($http) {
             found = true;
           }
         });
-        if(found == false){
+        if(found != false){
           arr.push(val);
         }
       }
@@ -110,26 +109,14 @@ function esmondService($http) {
     });
   };
 
-  service.getTestByIP = function(url, ip, test, days, cb){
+  service.getTestBySource = function(url, source, test, days, cb){
     var days = 86400 * days;
-    $http.get(url + esmond_path + '?event-type=' + test + "&time-range=" + days).success(function(res) {
-        console.log(url + esmond_path);
+    var esmd_path = url + esmond_path + '?event-type=' + test + "&time-range=" + days + "&source=" + source;
+    $http.get(esmd_path).success(function(res) {
+        console.log("LOGLOGLOG:", esmd_path);
         res == [] ? console.log("Nothing here...") : console.log(res);
-        console.log("Response from ", url+esmond_path, res);
-        var result = [];
-
-        res.forEach(function(test){
-          var res_obj = {};
-          res_obj.input_source = test['input-source'];
-          res_obj.input_destination = test['input-destination'];
-
-          if(res_obj.input_source == ip){
-            result.push(test);
-          }
-
-        });
-        console.log("RESULT FROM IP: ", ip, result);
-        return cb(result);
+        console.log("Response from ", esmd_path, res);
+        return cb(res);
     }).error(function(res){
       console.log("ERROR GETTING THROUGHPUT TEST");
     });
@@ -154,31 +141,25 @@ function esmondService($http) {
 
   // returns the last day's worth of throughput tests for a given Interface
 
-  service.getTestsOnInterface = function(url, cb){
-    var be = url.split('.');
+  service.getTestsOnInterface = function(url, inter, cb){
 
-    var esmd = url + esmond_path + '?source=' + url.split('//')[1];
-    console.log(esmd);
-    var url_ip = '';
-
-    service.reverseIPLookUp(url, url.split('//')[1], function(res){
-      url_ip = res;
-
-      // get throughput test
-      res == undefined ? cb(res) : service.getTestByIP(url, url_ip, 'throughput', 1, function(res){
-        if(res == 'error'){
-          return cb([]);
-        }
-        result = {"throughput": res};
-        res.result = "SUCCESS";
-
-        service.getTestByIP(url, url_ip, 'packet-loss-rate', 1, function(res){
-          console.log("PACKET LOSS RES: ", res);
-          result.packet_loss = res;
-          return cb(result);
-        });
+    var interface_ip = '';
+    var i_name = inter.hostname;
+    result = {};
+    service.getTestBySource(url, i_name, 'throughput', 7, function(res){
+      if(res == 'error'){
+        return cb([]);
+      }
+      var throughput = res;
+      service.getTestBySource(url, i_name, 'packet-loss-rate', 1, function(res){
+        result.throughput = throughput;
+        result.packet_loss = res;
+        result.result = "SUCCESS";
+        console.log("IN ESERVICE GET TEST: ", res, result);
+        return cb(result);
       });
     });
+
   };
 
   service.getThroughput = function(test_obj, cb){
@@ -196,6 +177,30 @@ function esmondService($http) {
       return cb(latest_loss);
     }).error(function(res){
       return(cb("500 ERROR"));
+    });
+  };
+
+  service.getAllInterfaces = function(host, cb){
+    var method = "get_summary";
+    var url = "/api/host.cgi?method=" + method + "&host=" + host;
+
+    $http.get(url).success(function(res, other){
+      var result = {"interfaces": []};
+      res.interfaces.forEach(function(i){
+        try{
+          var key = Object.keys(i.hostnames)[0];
+          var hostname = i.hostnames[key][0];
+          if(hostname != undefined){
+            var interface_obj = {"hostname": hostname, "ipv4": i.ipv4_address};
+            result.interfaces.push(interface_obj);
+          }
+        } catch(err) {
+          console.log(err);
+        }
+      });
+      return cb(result);
+    }).error(function(res){
+      cb('ERROR');
     });
   };
 
