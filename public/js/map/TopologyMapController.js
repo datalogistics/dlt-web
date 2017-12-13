@@ -89,7 +89,9 @@ function topoMapDirective() {
         }
         // fixes bug when you click a cluster and resource info slider shows.
         if (ev.nodes.length == 0) {
+          console.log(ev);
           return;
+
         } else if(open){scope.toggle(ev)};
       });
 
@@ -184,14 +186,17 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
                   "collapse": false
                 };
 
-                console.log("LOGLOGLOGLOG: ", url, iface, res.throughput, $scope.throughputTests[url].interfaces[i]);
+                /* Init Summaries to avoid race condition messiness */
+                $scope.throughputTests[url].interfaces[i].throughput.forEach(function(t, index){
+                  $scope.throughputTests[url].interfaces[i].summary[t.destination] = {};
+                });
 
                 var inter = $scope.throughputTests[url].interfaces[i];
                 inter.throughput.forEach(function(t, index){
                   EsmondService.getThroughput(t, function(res){
                     var dst = t.destination;
                     $scope.throughputTests[url].interfaces[i].throughput[index].throughput_val = res;
-                    if(!$scope.throughputTests[url].interfaces[i].summary[dst]) {$scope.throughputTests[url].interfaces[i].summary[dst] = {}};
+                    //if(!$scope.throughputTests[url].interfaces[i].summary[dst]) {$scope.throughputTests[url].interfaces[i].summary[dst] = {}};
                     $scope.throughputTests[url].interfaces[i].summary[dst] = {
                       "throughput_val": res,
                       "destination": t.destination,
@@ -199,18 +204,16 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
                       "tp_uri": t.uri,
                       "source": t.source
                     };
-                    console.log($scope.throughputTests);
                   });
                 });
 
-                //inter.packet_loss.forEach(function(p, index){
-                //  var dst = p.destination;
-                //  EsmondService.getPacketLoss(p, function(res){
-                //    if(!$scope.throughputTests[url].interfaces[i].summary[dst]) {$scope.throughputTests[url].interfaces[i].summary[dst] = {}};
-                //    $scope.throughputTests[url].interfaces[i].summary[dst].packet_loss_rate = res;
-                //    console.log($scope.throughputTests);
-                //  });
-                //});
+                inter.packet_loss.forEach(function(p, index){
+                  var dst = p.destination;
+                  EsmondService.getPacketLoss(p, function(res){
+                    //if(!$scope.throughputTests[url].interfaces[i].summary[dst]) {$scope.throughputTests[url].interfaces[i].summary[dst] = {}};
+                    $scope.throughputTests[url].interfaces[i].summary[dst].packet_loss_rate = res;
+                  });
+                });
               }
             });
           });

@@ -132,6 +132,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
       $scope.selectedIds = [];
       $scope.isSearched = true;
       buildTree(res);
+      console.log(res);
       $scope.searchRes = res;
       $scope.exSearchResAsArr = res.map(function(x) {
         x.parent = "#";
@@ -232,6 +233,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
      $http.get('/api/fileTree')
       .then(function(res) {
         buildTree(res.data);
+
       });
 
   // underscore.js is for noobs
@@ -271,6 +273,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
               console.log(obj);
               for(t in data){
                 test = data[t];
+                if(o == t){continue};
                 if(obj.text == test.text && obj.parent == test.parent){
                   if(obj.created > test.created){
                     removeById($scope.files,test);
@@ -431,7 +434,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     console.log(JSON.stringify(data));
     // POST TO URL HERE;
     // @Jeremy hard code in the url here for now until I can get around to configuring the api call.
-    $http.post(url, data).success(function(res){
+    $http.post('/api/wildire?idms=' + idms_url, data).success(function(res){
       console.log("SUCCESSFULLY POSTED TO ", url);
     }).error(function(res){
       console.log("ERROR POSTING TO URL: ", url, res);

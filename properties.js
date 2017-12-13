@@ -54,7 +54,7 @@ var self = {
     'default': ['iu'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
-    'exnodes' : ['exnodedev',],
+    'exnodes' : ['exnodedev'],
     'idms_url' : [],
     'nodes': [],
     'nodes_id' : [],

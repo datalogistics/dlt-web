@@ -486,7 +486,29 @@ module.exports = function(app) {
       });
 
       res.json(arr);
+
     });
+  });
+
+
+    app.post('api/wildfire', function(req, res){
+      var url = req.idms;
+      var options = {
+          host: url,
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(data)
+          }
+      };
+      var req = http.request(options, function(res)
+      {
+          res.on('data', function (chunk) {
+              console.log("body: " + chunk);
+          });
+      });
+      req.write(data);
+      req.end();
   });
 
   app.get('/api/wildfire',function(req, res) {

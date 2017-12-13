@@ -162,18 +162,24 @@ function esmondService($http) {
 
   };
 
+  Array.prototype.last = function() {
+    return this[this.length-1];
+  };
+
   service.getThroughput = function(test_obj, cb){
     var url = test_obj.url + "throughput/base"
     $http.get(url).success(function(res){
-      var latest_throughput = res[0].val;
+      var latest_throughput = res[res.length - 1].val;
       return cb(latest_throughput);
     });
   };
 
   service.getPacketLoss = function(test_obj, cb){
-    var url = test_obj.url + "packet-lose-rate/base"
+    var url = test_obj.url + "packet-loss-rate/aggregations/300"
     $http.get(url).success(function(res){
-      var latest_loss = res[0].val;
+      // gets very latest packet loss %
+      console.log("PACKET LOSS OBJ", res);
+      var latest_loss = res[res.length - 1].val;
       return cb(latest_loss);
     }).error(function(res){
       return(cb("500 ERROR"));
