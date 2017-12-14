@@ -495,7 +495,7 @@ module.exports = function(app) {
       var url = req.query.idms;
       var data = req.query.data;
 
-      requests.post(url, data=data);
+      request.post(url, data=data);
       res.json('ok');
   });
 
