@@ -505,12 +505,17 @@ module.exports = function(app) {
       };
       var req = http.request(options, function(res)
       {
-          res.on('data', function (chunk) {
-              console.log("body: " + chunk);
-          });
+        response.setEncoding('utf8');
+        response.on('data', function (chunk) {
+          console.log("body: " + chunk);
+        });
+        response.on('end', function() {
+          res.send('ok');
+        });
       });
       req.write(data);
       req.end();
+      res.json('ok');
   });
 
   app.get('/api/wildfire',function(req, res) {
