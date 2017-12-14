@@ -494,12 +494,14 @@ module.exports = function(app) {
     app.post('api/wildfire/post', function(req, res){
       var url = req.idms;
       var data = req.data;
+      var port = req.port;
       console.log("POST to", url, data);
       var options = {
           host: url,
           method: 'POST',
+          port: port,
           headers: {
-              'Content-Type': 'application/json',
+              'Content-Type': 'application/x-www-form-urlencoded',
               'Content-Length': Buffer.byteLength(data)
           }
       };
