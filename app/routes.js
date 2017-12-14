@@ -492,31 +492,10 @@ module.exports = function(app) {
 
 
     app.post('api/wildfire/post', function(req, res){
-      var url = req.idms;
-      var data = req.data;
-      var port = req.port;
-      console.log("POST to", url, data);
-      var options = {
-          host: url,
-          method: 'POST',
-          port: port,
-          headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'Content-Length': Buffer.byteLength(data)
-          }
-      };
-      var req = http.request(options, function(res)
-      {
-        response.setEncoding('utf8');
-        response.on('data', function (chunk) {
-          console.log("body: " + chunk);
-        });
-        response.on('end', function() {
-          res.send('ok');
-        });
-      });
-      req.write(data);
-      req.end();
+      var url = req.query.idms;
+      var data = req.query.data;
+
+      requests.post(url, data=data);
       res.json('ok');
   });
 
