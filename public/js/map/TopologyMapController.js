@@ -58,6 +58,7 @@ function topoMapDirective() {
       });
 
       scope.network.on('select', function(ev){
+        scope.$apply();
         console.log(scope.network);
         var open = true;
         if(ev.nodes[0]){
@@ -154,7 +155,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   var topolist = UnisService.getMostRecent(UnisService.topologies)
       .map(e => {return {id: e.id, name: e.name}});
 
-
+  EsmondService.closeAllPolls();
   // Get Esmond Data for dash board.
   // First -> grab the instances urls.
   EsmondService.grabPerfsonarUrls(function(res){
@@ -180,6 +181,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
                 $scope.throughputTests[url].interfaces[i] = {"result": "okay",
                   "throughput": res.throughput,
                   "packet_loss": res.packet_loss,
+                  "rtt_delay": res.latency,
                   "summary": {},
                   "interface_name": i,
                   "interface": iface,
@@ -193,18 +195,24 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
 
                 var inter = $scope.throughputTests[url].interfaces[i];
                 inter.throughput.forEach(function(t, index){
-                  EsmondService.getThroughput(t, function(res){
-                    var dst = t.destination;
-                    $scope.throughputTests[url].interfaces[i].throughput[index].throughput_val = res;
-                    //if(!$scope.throughputTests[url].interfaces[i].summary[dst]) {$scope.throughputTests[url].interfaces[i].summary[dst] = {}};
-                    $scope.throughputTests[url].interfaces[i].summary[dst] = {
-                      "throughput_val": res,
-                      "destination": t.destination,
-                      "input-destination": t["input-destination"],
-                      "tp_uri": t.uri,
-                      "source": t.source
-                    };
-                  });
+                  try {
+                    EsmondService.getThroughput(t, function(res){
+                      var dst = t.destination;
+                      $scope.throughputTests[url].interfaces[i].throughput[index].throughput_val = res;
+                      //if(!$scope.throughputTests[url].interfaces[i].summary[dst]) {$scope.throughputTests[url].interfaces[i].summary[dst] = {}};
+                      $scope.throughputTests[url].interfaces[i].summary[dst] = {
+                        "throughput_val": res,
+                        "destination": t.destination,
+                        "input-destination": t["input-destination"],
+                        "tp_uri": t.uri,
+                        "source": t.source
+                      };
+
+                    });
+                  } catch(err){
+                    console.log("COULDNT GET TPUT TEST FOR ", t.destination);
+                  }
+
                 });
 
                 inter.packet_loss.forEach(function(p, index){
@@ -214,6 +222,47 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
                     $scope.throughputTests[url].interfaces[i].summary[dst].packet_loss_rate = res;
                   });
                 });
+
+                inter.rtt_delay.forEach(function(r, index){
+
+                  var dst = r.destination;
+                  var rtt_url = r.url + 'histogram-owdelay/base?time-range=' + 150;
+                  $scope.throughputTests[url].interfaces[i].summary[dst].latency = {};
+                  console.log("GOT IN: ", url, r.source, dst);
+
+
+                  $scope.throughputTests[url].interfaces[i].summary[dst].latency = {};
+                  EsmondService.trackLatency(iface + ':' + r.uri, rtt_url, 5000, function(res){
+
+                    var data = res.data[res.data.length - 1];
+                    var mean = 0; var total = 0;
+
+                    if(!data){
+                      $scope.throughputTests[url].interfaces[i].summary[dst].latency = {};
+                      $scope.throughputTests[url].interfaces[i].summary[dst].latency.mean = "Nothing to Monitor";
+                      $scope.throughputTests[url].interfaces[i].summary[dst].latency.median = "No Connection";
+                      $scope.throughputTests[url].interfaces[i].summary[dst].latency.error = true;
+                      return;
+                    }
+
+                    // here we get the median, should clean this up later.
+                    var arraydata = [];
+                    for(key in data.val){arraydata.push(data.val[key])}
+                    var data2 = arraydata.sort( function(a,b) {return a - b;} );
+                    var half = Math.floor(data2.length/2)
+                    var median = data2[half];
+
+                    for(key in data.val){ mean = mean + data.val[key]; total = total + 1;}
+                    $scope.throughputTests[url].interfaces[i].summary[dst].latency = data;
+                    $scope.throughputTests[url].interfaces[i].summary[dst].latency.mean = (mean / total);
+                    $scope.throughputTests[url].interfaces[i].summary[dst].latency.median = median;
+                    $scope.throughputTests[url].interfaces[i].summary[dst].latency.uri = rtt_url;
+                    $scope.throughputTests[url].interfaces[i].summary[dst].latency.error = false;
+                    //console.log(url, i, r.destination, $scope.throughputTests[url].interfaces[i].summary[dst].latency);
+                  });
+
+                });
+
               }
             });
           });
@@ -222,6 +271,16 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       });
 
   }); // End Esmond scope work, seeing as how long this chain is I probably need to fit this into one service call later when I get some feedback.
+
+  $scope.changed_latency = function(id){
+    console.log('changed');
+    var tag = '#' + id;
+    jQuery(tag).toggleClass('latency-changed');
+     setTimeout(function(){
+       // toggle back after 1 second
+       $(tag).toggleClass('latency-changed');
+     },1000);
+  };
 
 
   var ccnt = 0;
@@ -460,7 +519,9 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     });
 
 
-  }
+  };
+
+
 
   $scope.stringify = function(json){
     return JSON.stringify(json)
@@ -757,5 +818,6 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       return listing.reduce((acc, pair) => {acc[cannonicalURL(pair.ref)] = pair.path; return acc}, {})
     }
   }
+
 
 }

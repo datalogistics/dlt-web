@@ -24,6 +24,11 @@ a:hover{
   cursor:default;
 }
 
+.latency-changed {
+  font-weight:bold;
+  color:'red';
+}
+
 
 .browser-tabs {
   padding-right:0;

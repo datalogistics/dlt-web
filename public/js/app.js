@@ -30,8 +30,10 @@ angular.module('periApp',
 		'service',
 		'auth',
 		'map',
-    'ngSanitize'])
-  .run(function($rootScope,UnisService,ServiceService,CommChannel,$modal,$cookies,$http) {
+    'ngSanitize',
+    'services.polling'
+  ])
+  .run(function($rootScope,UnisService,ServiceService,CommChannel,$modal,$cookies) {
     $rootScope.unis = UnisService;
     $rootScope.service = ServiceService;
     $rootScope.loggedIn = false;

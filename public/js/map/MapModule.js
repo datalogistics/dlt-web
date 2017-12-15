@@ -5,8 +5,8 @@
  */
 
 angular.module('map', [])
-  .factory('EsmondService', ['$http', function($http) {
-    return new esmondService($http);
+  .factory('EsmondService', ['$http', '$polling',  function($http, $polling) {
+    return new esmondService($http, $polling);
   }])
   .controller('MapController', mapController)
   .controller("DownloadMapController", downloadMapController)

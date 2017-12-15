@@ -4,7 +4,7 @@
  * EsmondService.js
  */
 
-function esmondService($http) {
+function esmondService($http, $polling) {
   var service = {};
   var esmond_path = '/esmond/perfsonar/archive/';
   service.institutions = [];
@@ -116,9 +116,12 @@ function esmondService($http) {
         console.log("LOGLOGLOG:", esmd_path);
         res == [] ? console.log("Nothing here...") : console.log(res);
         console.log("Response from ", esmd_path, res);
+        if(test == 'histogram-rtt'){
+          console.log("HISTOGRAM RTT: ", url, source, res, esmd_path);
+        }
         return cb(res);
     }).error(function(res){
-      console.log("ERROR GETTING THROUGHPUT TEST");
+      console.log("ERROR GETTING TEST", test, url, source);
     });
   };
 
@@ -139,6 +142,17 @@ function esmondService($http) {
     });
   };
 
+
+    var _MostRecentRTT = function(val, index, arr){
+      var found = true;
+      arr.forEach(function(test){
+        if(val.destination == test.destination && val['event-types'][4]['time-updated'] < test['event-types'][4]['time-updated']){
+          found = false;
+        }
+      });
+      return found;
+    };
+
   // returns the last day's worth of throughput tests for a given Interface
 
   service.getTestsOnInterface = function(url, inter, cb){
@@ -152,11 +166,15 @@ function esmondService($http) {
       }
       var throughput = res;
       service.getTestBySource(url, i_name, 'packet-loss-rate', 1, function(res){
-        result.throughput = throughput;
-        result.packet_loss = res;
-        result.result = "SUCCESS";
-        console.log("IN ESERVICE GET TEST: ", res, result);
-        return cb(result);
+        var packet_loss = res;
+        service.getTestBySource(url, i_name, 'histogram-owdelay', 1, function(res){
+          result.throughput = throughput;
+          result.packet_loss = packet_loss;
+          res.length > 1 ? result.latency = res.filter(_MostRecentRTT) : result.latency = res;
+          result.result = "SUCCESS";
+          console.log("IN ESMOND SERVICE GET TEST: ", res, result);
+          return cb(result);
+        });
       });
     });
 
@@ -178,8 +196,19 @@ function esmondService($http) {
     var url = test_obj.url + "packet-loss-rate/aggregations/300"
     $http.get(url).success(function(res){
       // gets very latest packet loss %
-      console.log("PACKET LOSS OBJ", res);
       var latest_loss = res[res.length - 1].val;
+      return cb(latest_loss);
+    }).error(function(res){
+      return(cb("500 ERROR"));
+    });
+  };
+
+  service.getRTT = function(test_obj, cb){
+    var url = test_obj.url + "histogram-owdelay/base"
+    $http.get(url).success(function(res){
+      // gets very latest packet loss %
+      console.log("RTT OBJ", res);
+      var latest_loss = res[res.length - 1];
       return cb(latest_loss);
     }).error(function(res){
       return(cb("500 ERROR"));
@@ -209,6 +238,15 @@ function esmondService($http) {
       cb('ERROR');
     });
   };
+
+  service.trackLatency = function(name, url, interval, cb){
+    return $polling.startPolling(name, url, interval, cb);
+  };
+
+  service.closeAllPolls = function(){
+    $polling.clearAll();
+  }
+
 
 
 

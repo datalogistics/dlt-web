@@ -65,7 +65,7 @@
     </div>
 
     <!-- Interface Collapsables -->
-    <div ng-repeat="interface in currentInstitution.test.interfaces">
+    <div ng-repeat="interface in currentInstitution.test.interfaces" ng-model="currentInstitution.test">
       <p>
         <button class="btn btn-primary" type="button" ng-click="interface.collapse = !interface.collapse" ng-init="interface.collapse = false">
           {{interface.interface_name}}
@@ -95,16 +95,17 @@
                   <th class="text-center">VIEW</th>
                   <th class="text-center">THROUGHPUT (avg)</th>
                   <th class="text-center">LOSS</th>
+                  <th class="text-center">OW-LATENCY (ms)</th>
                 <tr>
               </thead>
 
               <tbody class="graph-table" style="color:#000;!important">
-                <tr ng-repeat="test in interface.throughput" ng-if="dst != currentInstitution" class="graph-row">
-                  <td><div>{{interface.interface_name}} - <small>{{test.source}}</small><div></td>
-                  <td><div>{{test["input-destination"]}} - <small>{{test.destination}}</small><div></td>
+                <tr ng-repeat="summary in interface.summary" ng-if="dst != currentInstitution" class="graph-row">
+                  <td><div>{{interface.interface_name}} - <small>{{interface.interface.ipv4[0]}}</small><div></td>
+                  <td><div>{{summary["input-destination"]}} - <small>{{summary.destination}}</small><div></td>
                   <td class="text-center">
                       <button
-                      ng-click="buildGraphModal(currentInstitution.name, test.source, test.destination)"
+                      ng-click="buildGraphModal(currentInstitution.name, interface.interface_name, summary.destination)"
                       class="btn btn-warning"
                       data-toggle="modal"
                       data-target="#graphPathModal"
@@ -112,8 +113,11 @@
                       Show
                     </button>
                   </td>
-                  <td class="text-center">{{(test.throughput_val / 1000000000).toFixed(2)}} gb/s</td>
-                  <td class="text-center">{{interface.summary[test.destination].packet_loss_rate.toFixed(5)}} %</td>
+                  <td class="text-center">{{(summary.throughput_val / 1000000000).toFixed(2)}} gb/s</td>
+                  <td class="text-center">{{summary.packet_loss_rate.toFixed(5)}} %</td>
+                  <td class="text-center latency-value"
+                    id="{{summary['input-destination'] + '-' + summary.destination}}"
+                  >{{summary.latency ? summary.latency.median : "Nothing Here"}}</td>
                 </tr>
               </tbody>
 
