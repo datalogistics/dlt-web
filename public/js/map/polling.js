@@ -31,6 +31,7 @@
             for(name in polls){
               clearInterval(polls[name]);
               delete polls[name];
+              console.log("Polls Cleared");
             }
           }
         }

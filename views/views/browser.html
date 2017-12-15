@@ -29,6 +29,8 @@
                         <div style="margin-top:26px;">
                           <div style="height:300px; overflow-y:auto;"> <!-- this is a wrapper -->
 
+
+
                             <div class="dropup sharp pull-right" style="margin-right:10px;" position:"absolute">
                               <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                                 DLN Policy
@@ -47,10 +49,13 @@
                               </ul>
                             </div>
 
+                            <button ng-click="downloadAll()" class="btn btn-info sharp pull-left" style="margin-top=40px;">
+                              Download Selected<span class="glyphicon glyphicon-chevron-down"></span></button>
+
                           <table class="table-striped table exnodeFileList">
                             <thead>
                               <tr>
-                                <th> <button class="btn btn-default select-all" value=""false>Name</button></th>
+                                <th><button class="btn btn-default select-all" value=""false>Name</button></th>
                                 <th><button class="btn btn-default select-all" value=""false>Size (MB)</button></th>
                                 <th> <button class="btn btn-default select-all" ng-click="selectToggle()" value=""false>Select</button></th>
                                 <th></th>
@@ -59,12 +64,12 @@
                             </thead>
                                 <tbody>
 
-                                    <tr ng-repeat="(key,val) in selectedIds">
+                                    <tr ng-repeat="(key,val) in selectedIds track by $index">
 
-                                        <td>{{val.name || val.text}}</td>
+                                        <td style="max-width:40%;">{{val.name || val.text}}</td>
                                         <td class="text-center">{{(val.size/(1024*1024)).toFixed(1)}}</td>
                                         <td><input type="checkbox" ng-model="val.checked" value="{{val.selfRef}}"/></td>
-                                        <td>
+                                        <td style="width=20% !important">
                                           <!-- DOWNLOAD button btw, icon is smaller :D -->
                                           <button ng-click="downloadOne(val.selfRef)" class="btn btn-info sharp" style="margin-right:5px;">
                                             <span class="glyphicon glyphicon-download-alt"></span>
@@ -88,7 +93,6 @@
                             No Files Selected
                           </div>
                           </div>
-                            <button ng-click="downloadAll()" class="btn btn-info sharp pull-right">Download Selected<span class="glyphicon glyphicon-chevron-right"></span></button>
 
                             <!-- makes the bootstrap dropdown behave properly -->
                             <script type="text/javascript">
@@ -97,6 +101,7 @@
                               });
                             </script>
                         </div>
+
                         <!-- <pre>
                  <code>{{fileViewer}}</code>
                  </pre> -->
@@ -104,6 +109,7 @@
                  <button ng-click="downloadFile()" class="btn btn-info">Download</button>
                  </span> -->
                     </div>
+
                 </div>
             </tab>
 

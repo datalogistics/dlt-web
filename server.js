@@ -36,7 +36,7 @@ var errorhandler = require('errorhandler');
 // app configuration
 app.set('port', cfg.port);
 app.use(express.static(__dirname + '/public'));
-app.use(favicon(__dirname + '/public/images/favicon.ico'));
+app.use(favicon(__dirname + '/public/images/osiris_icon.ico'));
 app.use(cookieParser("iei122ei12!@&#*(!@#ansdajsdnajs213"));
 app.use(session({
   cookie : {maxAge : 60001 },
@@ -57,7 +57,7 @@ app.use(compression());
 app.use(multer()); // for parsing multipart/form-data
 
 // configure enviroments
-if ('development' == app.get('env')) {  
+if ('development' == app.get('env')) {
   app.use(errorhandler({ dumpExceptions: true, showStack: true }));
 } else if ('production' == app.get('env')) {
   app.use(errorhandler());
@@ -81,7 +81,7 @@ require('./app/routes')(app);
 // }
 var server;
 var tls = require('tls');
-function getSecureContext (domain) {    
+function getSecureContext (domain) {
   if (!cfg.sslOpt[domain])
     return tls.createSecureContext({
       key: fs.readFileSync(cfg.ssl.key),
@@ -92,12 +92,12 @@ function getSecureContext (domain) {
   var key = cfg.sslOpt[domain].key,
       cert = cfg.sslOpt[domain].cert,
       ca = cfg.sslOpt[domain].ca;
-  
+
   return   tls.createSecureContext({
     key:  fs.readFileSync(key),
     cert: fs.readFileSync(cert)
     // ca:  [fs.readFileSync(ca),]
-  }).context; 
+  }).context;
 };
 // http://stackoverflow.com/questions/12219639/is-it-possible-to-dynamically-return-an-ssl-certificate-in-nodejs#answer-20285934
 if (cfg.ENABLE_HTTPS) {
@@ -130,7 +130,7 @@ if (cfg.ENABLE_HTTPS) {
     }).listen(80);
     server = https.createServer(httpsOptions,app);
   } else {
-    server = httpolyglot.createServer(httpsOptions, function(req,res) {    
+    server = httpolyglot.createServer(httpsOptions, function(req,res) {
       if (!req.socket.encrypted) {
 	// Redirect to https
 	console.log(req.url,req.headers['host']);
@@ -139,8 +139,8 @@ if (cfg.ENABLE_HTTPS) {
       } else {
 	app.apply(app,arguments);
       }
-    });  
-  }  
+    });
+  }
 } else {
   server = http.createServer(app);
 }
@@ -153,5 +153,3 @@ server.listen(app.get('port'), function(){
 // setup socket.io communication
 io.sockets.on('connection', require('./app/sockets'));
 io.sockets.on('connection', require('./app/downloadSockets'));
-
-

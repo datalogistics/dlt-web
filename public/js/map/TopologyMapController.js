@@ -84,6 +84,7 @@ function topoMapDirective() {
               open = false;
               console.log("CURRENT INSTITUTION: ", scope.currentInstitution);
               scope.toggleStats();
+              scope.$apply();
             }
           });
 
@@ -272,6 +273,11 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
 
   }); // End Esmond scope work, seeing as how long this chain is I probably need to fit this into one service call later when I get some feedback.
 
+  // clean up polling threads on close
+  $scope.$on('$destroy',function(){
+      EsmondService.closeAllPolls();
+  });
+
   $scope.changed_latency = function(id){
     console.log('changed');
     var tag = '#' + id;
@@ -328,7 +334,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   };
 
   $scope.close = function () {
-    $scope.stats_slider = false;
+    $scope.stats_slide = false;
   };
 
   $scope.graphRef = function(url,src,dst){
