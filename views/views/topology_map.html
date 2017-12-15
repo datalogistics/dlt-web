@@ -100,7 +100,7 @@
               </thead>
 
               <tbody class="graph-table" style="color:#000;!important">
-                <tr ng-repeat="summary in interface.summary" ng-if="dst != currentInstitution" class="graph-row">
+                <tr highlighter="summary.latency.median" ng-repeat="summary in interface.summary track by $index" ng-if="dst != currentInstitution" class="graph-row">
                   <td><div>{{interface.interface_name}} - <small>{{interface.interface.ipv4[0]}}</small><div></td>
                   <td><div>{{summary["input-destination"]}} - <small>{{summary.destination}}</small><div></td>
                   <td class="text-center">

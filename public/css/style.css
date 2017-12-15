@@ -24,9 +24,9 @@ a:hover{
   cursor:default;
 }
 
-.latency-changed {
-  font-weight:bold;
-  color:'red';
+.highlight {
+  background-color: lightgreen;
+  transition: background 200ms;
 }
 
 

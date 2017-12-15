@@ -14,3 +14,6 @@ angular.module('map', [])
   .controller("TopologyMapController", topologyMapController)
   .controller("ExnodeMapController", exnodeMapController)
   .directive("topologyMap", topoMapDirective)
+  .directive('highlighter', ['$timeout', function($timeout) {
+    return new highlighterDirective($timeout);
+  }]);
