@@ -48,6 +48,7 @@ var self = {
   exnodeParent_UsingSelfRef : true,
   // Try to login and maintain cookie for the following UNIS instances
   authArr : [],
+  idms_server : "http://localhost:8001",
   routeMap : {
     // Aggregate from the following by default
     //'default'  : ['dev', 'dlt', 'monitor'],
@@ -55,7 +56,6 @@ var self = {
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : ['exnodedev'],
-    'idms_url' : [],
     'nodes': [],
     'nodes_id' : [],
     //'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
@@ -90,11 +90,6 @@ var self = {
       url : "localhost",
       port : "8888",
       use_ssl : false
-    },
-    idms_url_000 : {
-      url: "TBA",
-      port: "TBA",
-      use_ssl: false
     },
     exnodedev : {
       url: "unis.open.sice.indiana.edu",

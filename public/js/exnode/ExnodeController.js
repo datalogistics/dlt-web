@@ -432,9 +432,9 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     data = {policies: selectedPolicies,
             nodes: exNodes};
     console.log(JSON.stringify(data));
-    // POST TO URL HERE;
-    // @Jeremy hard code in the url here for now until I can get around to configuring the api call.
-    console.log("POST URL: ", '/api/wildire/post?idms=' + "IDMS" + '&data=' + JSON.stringify(data));
+
+    console.log("API URL: ", '/api/wildire/post?data=' + JSON.stringify(data));
+    var url = '/api/wildfire/post?data=' + JSON.stringify(data);
     $http.post(url, data).success(function(res){
       console.log("SUCCESSFULLY POSTED TO ", url);
     }).error(function(res){
