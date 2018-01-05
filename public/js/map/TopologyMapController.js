@@ -252,10 +252,12 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
                     var data2 = arraydata.sort( function(a,b) {return a - b;} );
                     var half = Math.floor(data2.length/2)
                     var median = data2[half];
-
-                    for(key in data.val){ mean = mean + data.val[key]; total = total + 1;}
+                    var val = 0;
+                    var total = 0;
+                    for(key in data.val){ val = val + parseFloat(key); total = total + 1;}
+                    mean = val / total;
                     $scope.throughputTests[url].interfaces[i].summary[dst].latency = data;
-                    $scope.throughputTests[url].interfaces[i].summary[dst].latency.mean = (mean / total);
+                    $scope.throughputTests[url].interfaces[i].summary[dst].latency.mean = mean;
                     $scope.throughputTests[url].interfaces[i].summary[dst].latency.median = median;
                     $scope.throughputTests[url].interfaces[i].summary[dst].latency.uri = rtt_url;
                     $scope.throughputTests[url].interfaces[i].summary[dst].latency.error = false;

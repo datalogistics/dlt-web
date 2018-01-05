@@ -130,6 +130,7 @@
 
         <p><b>Perfsonar Node: {{currentInstitution.name}}</b></p>
         <p><small>Showing tests on all interfaces for the last 7 days.</small></p>
+        <p><small>OW Latency Measurement is from a continually updated sample of ~150 packet. For more accurate aggregation click Show.</small></p>
       </div>
     </div>
 
@@ -169,7 +170,7 @@
               </thead>
 
               <tbody class="graph-table" style="color:#000;!important">
-                <tr highlighter="summary.latency.median" ng-repeat="summary in interface.summary track by $index" ng-if="dst != currentInstitution" class="graph-row">
+                <tr highlighter="summary.latency.mean" ng-repeat="summary in interface.summary track by $index" ng-if="dst != currentInstitution" class="graph-row">
                   <td><div>{{interface.interface_name}} - <small>{{interface.interface.ipv4[0]}}</small><div></td>
                   <td><div>{{summary["input-destination"]}} - <small>{{summary.destination}}</small><div></td>
                   <td class="text-center">
@@ -186,7 +187,7 @@
                   <td class="text-center">{{summary.packet_loss_rate.toFixed(5)}} %</td>
                   <td class="text-center latency-value"
                     id="{{summary['input-destination'] + '-' + summary.destination}}"
-                  >{{summary.latency ? summary.latency.median : "Nothing Here"}}</td>
+                  >{{summary.latency ? summary.latency.mean.toFixed(3) : "Nothing Here"}}</td>
                 </tr>
               </tbody>
 
