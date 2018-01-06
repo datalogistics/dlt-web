@@ -491,13 +491,9 @@ module.exports = function(app) {
   });
 
 
-  app.post('/api/wildfire/post', function(req, res){
+  app.get('/api/wildfire/post', function(req, res){
       var url = cfg.idms_server;
-      console.log(url);
-      var data = req.query.data;
-      console.log('POSTING to ', url, ' - ', data);
-      request.post(url, data=data);
-      res.json('ok');
+      res.json(url);
   });
 
   app.get('/api/wildfire',function(req, res) {

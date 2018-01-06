@@ -553,17 +553,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
             return true;
           }
         }
-        //console.log("PATHS", res)
-        //console.log("FIRST EDGE?: ", $scope.topodata)
-        //console.log("FIRST HOP?: ", res.data[0].hops[0])
-        //console.log("FIRST HOP ID?: ", res.data[0].hops[0].href.split("links/")[1])
-        //console.log("SECOND HOP ID?: ", res.data[0].hops[1].href.split("links/")[1])
-        //firstHopId = res.data[0].hops[0].href.split("links/")[1]
-        //secondHopId = res.data[0].hops[1].href.split("links/")[1]
-        //thirdHopId = res.data[0].hops[2].href.split("links/")[1]
-        //console.log("FIRST VIS EDGE: ", $scope.topodata.edges.update({id: firstHopId, width: 5, color:'ff5a00', shadow:{size:40, enabled:true, color:"#ff5a00" } }))
-        //console.log("SECOND VIS EDGE: ", $scope.topodata.edges.update({id: secondHopId, width: 5, color:'ff5a00', shadow:{size:40, enabled:true, color:"#ff5a00" } }))
-        //console.log("THIRD VIS EDGE: ", $scope.topodata.edges.update({id: thirdHopId, width: 5, color:'ff5a00', shadow:{size:40, enabled:true, color:"#ff5a00" } }))
+        
       })};
 
       // Helper function, simply reset how the edge looks to 'reset' the current shown path.
