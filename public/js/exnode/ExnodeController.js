@@ -435,10 +435,21 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
 
     console.log("API URL: ", '/api/wildire/post?data=' + JSON.stringify(data));
     var url = '/api/wildfire/post?data=' + JSON.stringify(data);
+
+    var send = JSON.stringify(data);
+
     $http.get('/api/wildfire/post').success(function(res){
 
       console.log("POST TO URL: ", res);
-      $http.post(url, data);
+
+      $http.post(res, send).
+        success(function(data, status, headers, config) {
+          console.log(data, status, headers, config);
+        }).
+        error(function(data, status, headers, config) {
+          console.log("ERROR");
+          console.log(data, status, headers, config);
+        });
 
     });
 
