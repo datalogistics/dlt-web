@@ -493,7 +493,7 @@ module.exports = function(app) {
 
   app.get('/api/wildfire/post', function(req, res){
       var url = cfg.idms_server;
-      res.json(url);
+      res.json({url: url});
   });
 
   app.get('/api/wildfire',function(req, res) {

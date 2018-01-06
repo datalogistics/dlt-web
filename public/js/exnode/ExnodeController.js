@@ -440,9 +440,9 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
 
     $http.get('/api/wildfire/post').success(function(res){
 
-      console.log("POST TO URL: ", res);
+      console.log("POST TO URL: ", res.url);
 
-      $http.post(res, send).
+      $http.post(res.url, send).
         success(function(data, status, headers, config) {
           console.log(data, status, headers, config);
         }).
