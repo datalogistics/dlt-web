@@ -53,14 +53,21 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
 
   // ur gonna want to console.log this part.
   $scope.getNode = function(node, selected, tree){
+    console.log("get node - ", node);
     if(node.isFile == false){
       // if folder, search through it and do the deed
-      ivhTreeviewMgr.expand(tree, node);
-      node.checked = false;
-      selectChildren(node, selected);
+      !node.checked ? ivhTreeviewMgr.expand(tree, node) : ivhTreeviewMgr.collapse(tree,node);
+      node.checked = !node.checked;
     } else { // just a file
+
+      // Crucial for child nodes to get selected, not sure why the directive isnt handling this. Need to revist if there are > 1 deep files.
+      if(node.parent != '#' || !node.selected){
+        node.selected = selected;
+      }
+
       node.checked = false;
       selected ? $scope.selectedIds.push(node) : removeById($scope.selectedIds, node);
+      console.log("Selected IDs - ", $scope.selectedIds);
     }
     ivhTreeviewMgr.validate(tree);
   };
@@ -238,7 +245,9 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
 
   // underscore.js is for noobs
   function removeById(arr, item) {
+
     for(var i = arr.length; i--;) {
+
         if(arr[i].id === item.id && arr[i].isFile == true) {
             arr.splice(i, 1);
         }
@@ -274,8 +283,9 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
               for(t in data){
                 test = data[t];
                 if(o == t){continue};
-                if(obj.text == test.text && obj.parent == test.parent){
-                  if(obj.created > test.created){
+                if(obj.label == test.label && obj.parent == test.parent){
+                  console.log(obj.text, test.test);
+                  if(obj.created >= test.created){
                     removeById($scope.files,test);
                   } else {
                     removeById($scope.files,obj);
