@@ -29,6 +29,25 @@ a:hover{
   transition: background 200ms;
 }
 
+.marker-labels {
+  color : white;
+}
+
+.green {
+  font-weight:bold;
+  color:rgb(92, 184, 92) !important;
+}
+
+.gradient-grey {
+
+  background: rgb(125,126,125);
+  background: -moz-linear-gradient(left, rgba(125,126,125,1) 0%, rgba(14,14,14,1) 100%);
+  background: -webkit-linear-gradient(left, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%);
+  background: linear-gradient(to right, rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#7d7e7d', endColorstr='#0e0e0e',GradientType=1 );
+
+}
+
 
 .browser-tabs {
   padding-right:0;

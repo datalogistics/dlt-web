@@ -20,13 +20,13 @@ function mapLocation(map, entry) {
 }
 
 // Add a highlight halo to a specified map item(s).
-// 
+//
 // svg -- Root svg element to find things in
-// selector -- An svg selector for items.  
+// selector -- An svg selector for items.
 // filter -- A predicate run on selected items
 function highlightMapLocations(svg, selector, filter, retries) {
   if (filter === undefined) {filter = function(d,i) {return true;}}
- 
+
   var items = svg.selectAll(selector).filter(filter)
 
   if (items.empty()) {
@@ -95,12 +95,12 @@ function tooltip(svg) {
 
 //Add a node with name at position latLon to svg using the projection
 //TODO: Refactor so the invisible point is always added, reduce duplciate code
-function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {		
+function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
   var lonLat = [rawLonLat[0].toFixed(1), rawLonLat[1].toFixed(1)] //Round lat/lon
-  
+
   var translate = "translate(" + projection(lonLat) + ")"
   var nodes = svg.selectAll(".depotGroup").filter(function (d, i) { return d3.select(this).attr("transform") == translate })
-  
+
   //Function to add an invisible point to each location
   var invisiblePoint = function(parentGroup) {
     var circ = parentGroup.append("circle")
@@ -109,15 +109,15 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       .attr("name", name)
       .attr("port", port)
       .attr("style", "display:none")
-    
+
     if (depot_id !== undefined) {circ.attr('depot_id', depot_id)}
   }
-  
+
   if (nodes.empty()) {
     var group = svg.append("g")
       .attr("transform", translate)
       .attr("class", "depotGroup")
-    
+
     var circ = group.append("circle")
       .attr("r",7)
       .attr('fill',"#B4635F")
@@ -126,7 +126,7 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
       .attr('class', "depotNode")
       .attr('name', name + ":" + port)
       .attr('location', lonLat)
-    
+
     invisiblePoint(group)
   } else {
     nodes.each(function(d,i) {
@@ -144,7 +144,7 @@ function addMapLocation(projection, name, port, rawLonLat, svg, depot_id) {
         val = val + 1;
         count.text(function (d) {return val})
       }
-      
+
       var super_circ = group.select(".depotNode")
       var existingName = super_circ.attr("name")
       super_circ.attr("name", name + ":" + port + "|" + existingName)
@@ -179,7 +179,7 @@ function mapPoints(projection, svg, elementId) {
          || item.location.latitude == undefined
          || item.location.longitude == undefined
          || (item.location.latitude == 0 && item.location.longitude == 0)) {
-        
+
         offmap = parseInt(svg.select("layout-data").attr("off-map-count"))
         svg.select("layout-data").attr("off-map-count", offmap+1)
         addOffMapLocation(projection, offmap, [-72, 40], item.name, item.port, svg_points, item.depot_id)
@@ -196,7 +196,7 @@ function mapPoints(projection, svg, elementId) {
 //selector -- used to grab an element of the page and append svg into into it
 //width -- how wide to make the map
 //height -- how tall to make the map
-//returns the map projection 
+//returns the map projection
 function baseMap(selector, width, height, svg) {
   projection = d3.geo.albersUsa()
       .scale(1070)
@@ -208,7 +208,7 @@ function baseMap(selector, width, height, svg) {
                .attr("width", width)
                .attr("height", height)
   }
-  
+
   var map = svg.append("g")
                .attr("id", "map")
                .attr("width", width)
@@ -240,8 +240,8 @@ function baseMap(selector, width, height, svg) {
           .attr("class", "background")
           .attr("width", width)
           .attr("height", height);
-  
-    
+
+
     console.log("Base map loaded.")
   });
   return {svg: svg, projection: projection}
@@ -256,7 +256,7 @@ function baseMap(selector, width, height, svg) {
 //Drops serviceID results if incomplete
 function allServiceData(services, match, natmap, then) {
   var uniqueServices = getUniqueById(services);
-  var unknownLoc     = {}	
+  var unknownLoc     = {}
   var serviceDetails = []
   var uniqueIds = Object.keys(uniqueServices)
   for (var i =0; i < uniqueIds.length; i++) {
@@ -282,10 +282,14 @@ function allServiceData(services, match, natmap, then) {
       unknownLoc[name] = {id: item.id};
     }
   }
-  
+
   console.log("loaded " + serviceDetails.length + " service locations")
   ipToLocation(unknownLoc, then);
-  then(serviceDetails)
+  try {
+    then(serviceDetails)
+  } catch(error){
+      return serviceDetails;
+  }
 }
 
 //Acquire gelocations for the item dictionary, if available
@@ -328,7 +332,7 @@ function backplaneLinks(map, natmap) {
     legendEntry(legend, "ion", 0, 10)
     legendEntry(legend, "al2s", 0, 25)
   })
-  
+
   function legendEntry(svg, label, x, y) {
     svg = svg.append("g").attr("transform", "translate(" + x + "," + y + ")")
 
@@ -397,7 +401,7 @@ function backplaneLinks(map, natmap) {
       return ((this.getAttribute("name") == endpoint) &&
 	      (this.getAttribute("port") == port))
     })
-    
+
     if (mapNode.empty()) {
       console.error("link endpoint not in depot map: ", endpoint, port)
       return undefined;

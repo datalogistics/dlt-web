@@ -12,12 +12,13 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       var natmap = res.data;
       allServiceData($scope.services, null, natmap,
         mapPoints(map.projection, map.svg, "depots"));
+      console.log(natmap);
       return natmap
     })
     .then(function(natmap) {backplaneLinks(map, natmap)})
     .then(() => $http.get('/api/exnodes/?id=' + nodeId))
     .then(res => displayExnode(map, nodeId, res.data[0]))
-  
+
   $scope.$on("$destroy", function() {
     d3.selectAll("#map-tool-tip").each(function() {this.remove()})  //Cleans up the tooltip object when you navigate away
   })
@@ -26,18 +27,18 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
   function displayExnode(map, nodeId, exnode) {
     if (exnode) {
       var extents = []
-      
+
       if (exnode.extents) {
         extents = exnode.extents.map(function(e) {return {id: e.id, offset: e.offset, size: e.size, depot: parseLocation(e.location)}})
                                     .map(function(e) {e["xy"] = mapLocation(map, e.depot); return e})
-                                    .sort((a,b) => a.depot.localeCompare(b.depot)) 
+                                    .sort((a,b) => a.depot.localeCompare(b.depot))
       } else if (exnode.mode == "directory") {
         errorMessage(map, "Exnode is for a directory, no extents")
-        return 
+        return
       } else {
         extents = [{id: exnode.id, offset: exnode.offset, size: exnode.size, depot: parseLocation(exnode.location)}]
       }
-      
+
       var cells = range(0, 500).map(function(e) {return {depots:new Set(), exnodes:[]}})
 
       extents.forEach(function(e) {
@@ -50,11 +51,11 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       })
 
       cells.forEach(e => {e.depots = Array.from(e.depots); e.depots.sort()}) //Ensure unique depot ids and cannonical order
-      
+
       var colors = d3.scale.category20().range()
       colors = range(0, colors.length).map(i => colors[(i*2+(i>=10?1:0))%colors.length])
       var fill = d3.scale.ordinal().range(colors)
-      
+
       spokeExtents(map, exnode.size, extents, fill)
       gridmap(map, exnode, cells, fill, 100, 550)
       exnodeStats(map, exnode, cells, 970, 100)
@@ -91,7 +92,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
 
     extents = extents.map(e => {e.order = (unique_depot_by_location[e.xy].indexOf(e.depot)); return e;})
     extents.sort((a,b) => b.order - a.order)
-    
+
     var radius = d3.scale.linear()
                            .domain(range(0, max_colocated+1))
                            .range(range(0, max_colocated+1).map(i => 14+i*5))
@@ -126,8 +127,8 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
   }
 
   function gridmap(map, exnode, cells, fill, x_position, y_position) {
-    var width = cells.length*2 
-    var height = 50 
+    var width = cells.length*2
+    var height = 50
     var overlay_height = 5    //Height of duplicate indicator bands
 
     var root = map.svg.append("g").attr("id", "gridmap").attr("transform","translate(" + x_position + ", " + y_position + ")")
@@ -190,7 +191,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("y2", 15)
         .attr("stroke-width", 3)
         .attr("stroke", "gray")
-    
+
     xaxis.selectAll(".pct").data(axisMarks)
       .enter().append("text")
         .attr("class", "pct")
@@ -198,7 +199,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
         .attr("y", 25)
         .attr("text-anchor", "middle")
         .text(d => (d*100).toFixed() + "%")
-   
+
     xaxis.selectAll(".abs").data(axisMarks)
       .enter().append("text")
         .attr("class", "abs")
@@ -222,8 +223,8 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     var avg = sum/cells.length
     var uniques = cells.reduce((acc, cell) => {cell.depots.forEach(e => acc.add(e)); return acc;}, new Set())
     uniques = Array.from(uniques)
-    
-    var data = [["Root Exnode", exnode.id], 
+
+    var data = [["Root Exnode", exnode.id],
                 ["File Size", formatSize(exnode.size)],
                 ["Avg Extent Size (mode)", formatSize(mode(exnode.extents.map(e => e.size)))],
                 ["Child Extents", exnode.extents.length || 1],
@@ -239,7 +240,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
           .attr("x", 0)
           .attr("y", (d,i) => i*15)
           .text((d) => d[0] + ": " + d[1])
-   
+
     root.append("text")
        .attr("id", "stats_label")
        .attr("class", "section_header")
@@ -270,8 +271,8 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
        .enter().append("rect")
           .attr("x", 0)
           .attr("y", (d,i) => i*spacing)
-          .attr("height", size) 
-          .attr("width" , size) 
+          .attr("height", size)
+          .attr("width" , size)
           .attr("fill", fill)
 
     root.selectAll("text").data(data)
@@ -280,7 +281,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
          .attr("y", (d,i) => i*spacing+text_offset)
          .style("white-space", "pre")
          .text(d => d + "  (" + (percents[d]/exnode.size*100).toFixed(1) + "%)")
-    
+
    root.append("text")
        .attr("id", "legend_label")
        .attr("x", 0)
@@ -296,7 +297,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
   }
 
   function improveSalience(left, middle) {
-    //Returns a new version of middle that is ordered to match left 
+    //Returns a new version of middle that is ordered to match left
     var l = left.depots
     var m = middle.depots.map(e=>e)
 
@@ -305,12 +306,12 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
       if (idx > 0 && idx != i) {swap(m, idx, i)}
     }
     middle.depots = m
-    return middle 
+    return middle
   }
 
 
 
-  function parseLocation(mapping) {return mapping.split("/")[2]}
+  function parseLocation(mapping) {console.log(mapping.split("/")[2]); return mapping.split("/")[2]}
   function range(low, high) {return Array.apply(null, Array((high-low))).map((_,i) => low+i)}
   function formatSize(size) {
     var magnitude = Math.floor(Math.log(size)/Math.log(1024))
@@ -328,7 +329,7 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
     }
     return size.toFixed(1) + suffix
   }
-  
+
   function mode(arr) {
     var numMapping = {};
     var greatestFreq = 0;
@@ -345,6 +346,4 @@ function exnodeMapController($scope, $location, $http, UnisService, SocketServic
 }
 
 
-} 
-
-
+}

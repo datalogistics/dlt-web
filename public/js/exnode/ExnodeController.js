@@ -430,7 +430,9 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     $('.policy-option').parent().removeClass('policy-select');
     ivhTreeviewMgr.deselectAll($scope.tree);
   }
-
+  // send policies to the IDMS server. TODO: put rest of http request into the api call to avoid CORS.
+  // /api/wildfire/post just grabs the url from where it needs to go and then the client posts to the IDMS server.
+  // was a temp implementation for the Boise demo sorry.
   $scope.applyPolicies = function(){
     // Gathers selected policies and exnodes to be POSTED
     var policies = $scope.exnodePolicySelector;

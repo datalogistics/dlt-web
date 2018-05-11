@@ -31,7 +31,8 @@ angular.module('periApp',
 		'auth',
 		'map',
     'ngSanitize',
-    'services.polling'
+    'services.polling',
+    'uiGmapgoogle-maps'
   ])
   .run(function($rootScope,UnisService,ServiceService,CommChannel,$modal,$cookies) {
     $rootScope.unis = UnisService;
@@ -157,12 +158,21 @@ angular.module('periApp',
                      return UnisService.init()
                    }}
                })
+               .when('/gmap', {
+                 templateUrl: 'views/exnode_gmap.html',
+                 controller: 'GMapController',
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               })
                .otherwise({redirectTo: '/'});
 
              $locationProvider.html5Mode(true);
 
            }])
 
+           // Tree config for the ivhTreeview
            .config(function(ivhTreeviewOptionsProvider) {
 
              ivhTreeviewOptionsProvider.set({
@@ -173,4 +183,14 @@ angular.module('periApp',
                defaultSelectedState: false,
                validate: true
              });
-            });
+            })
+
+            .config(function(uiGmapGoogleMapApiProvider) {
+              uiGmapGoogleMapApiProvider.configure({
+                  key: 'AIzaSyD5JDubWmzHrTd5cgzasuisz7KP5VDnGws',
+                  libraries: 'weather,geometry,visualization,places'
+              });
+            }).run(['$templateCache', function ($templateCache) {
+              $templateCache.put('searchbox.tpl.html', '<input id="pac-input" class="pac-controls" type="text" placeholder="Search">');
+              $templateCache.put('window.tpl.html', '<div ng-controller="WindowCtrl" ng-init="showPlaceDetails(parameter)">{{place.name}}</div>');
+            }]);

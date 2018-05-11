@@ -28,7 +28,10 @@
     "angular-pageslide-directive": "^2.1.4",
     "ng-prettyjson": "^0.2.1",
     "json-formatter": "^0.6.0",
-    "angular-ivh-treeview": "^1.1.0"
+    "angular-ivh-treeview": "^1.1.0",
+    "angular-simple-logger": "^0.1.7",
+    "angular-google-maps": "^2.4.1",
+    "lodash": "3.x"
   },
   "resolutions": {
     "angular": "1.2.16",

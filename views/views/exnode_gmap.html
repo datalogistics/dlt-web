@@ -1,0 +1,127 @@
+<style>
+.angular-google-map-container { height: 600px; }
+</style>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12" style="height:600px;padding-right:0px !important; margin-right:0px !important;" id='mapParent'>
+
+      <script type="text/ng-template" id="searchbox.template.html">
+        <input type="text" class="form-control" placeholder="Search" style="border-radius:3px; margin-top:10px; margin-top:11px; width: 25%; height:30px; font-weight:bold">
+      </script>
+      <div style="width:98%;" class="pull-left">
+
+        <ui-gmap-google-map events="gmap.events" center='gmap.center' zoom='gmap.zoom' styles='gmap.styles'>
+          <ui-gmap-search-box ng-if="searchbox.events" template="searchbox.template" events="searchbox.events" options="searchbox.options"></ui-gmap-search-box>
+          <ui-gmap-marker ng-repeat="marker in markers"
+          idKey='marker.id'
+          coords='marker.position'
+          options='marker.options'
+          title='marker.title'
+          events='events.markers'>
+            <ui-gmap-window options="marker.window_options" closeClick="closeClick(marker)" templateUrl="'js/map/gmap_window_tpl.html'" templateParameter="marker">
+            </ui-gmap-window>
+          </ui-gmap-marker>
+        </ui-gmap-google-map>
+
+      </div>
+      <div class="pull-right gradient-grey" style="width:2%; height:100%;" ng-click="toggleSlider()">
+      </div>
+
+
+
+    </div>
+
+
+    <pageslide ps-open="checked" ps-auto-close ps-side ps-size="50%" ps-container="mapParent" ps-push='true' style="overflow:auto;height:auto;display:flex;">
+      <div class="pull-left gradient-grey" style="width:3%; height:inherit; overflow:auto;display:inline-block;" ng-click="toggleSlider()"></div>
+
+          <div class="row pull-right" style="margin: 7px; width:90%; overflow:auto;display:flex;">
+            <div class="col-md-12" style="">
+
+                <div style="margin-bottom:10px">
+                  <h4 class="page-header"> Depot Manager </h4>
+                  <button class="btn btn-primary closeall" ng-click="collapse_all()">Close All</button>
+                </div>
+
+                <!-- Depot listings -->
+                <accordion close-others="oneAtATime">
+                  <accordion-group is-open="marker.open" ng-repeat="marker in markers" style="border-radius:0px;">
+                    <accordion-heading>
+                      {{marker.title}} <small>{{marker.service.serviceType}}</small><i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': marker.open, 'glyphicon-chevron-right': !marker.open}"></i>
+                    </accordion-heading>
+
+                    <div class="row">
+                      <div class="col-md-12" style="margin-bottom:10px">
+                        <button class="pull-left btn btn-sm btn-success" ng-click="zoom_service(marker)"><i class="glyphicon glyphicon-eye-open"></i></>
+                      </div>
+                    </div>
+
+                    <div class="row">
+                      <div class="col-md-12">
+                        <table class="table table-condensed table-hover">
+                          <tbody>
+                            <tr>
+                              <td>Service Name</td>
+                              <td>{{marker.service.name}}</td>
+                            </tr>
+                            <tr>
+                              <td>Service Type</td>
+                              <td>{{marker.service.serviceType}}</td>
+                            </tr>
+                            <tr>
+                              <td>Service Status</td>
+                              <td>
+                                <b ng-class="marker.service.status == 'ON' ? 'green' : '' ">{{marker.service.status}}</b>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td>Lat</td>
+                              <td>{{marker.position.latitude}}</td>
+                            </tr>
+                            <tr>
+                              <td>Long</td>
+                              <td>{{marker.position.longitude}}</td>
+                            </tr>
+                            <tr>
+                              <td>Depot ID</td>
+                              <td>{{marker.depot_id}}</td>
+                            </tr>
+                            <tr>
+                              <td>City</td>
+                              <td>{{marker.service.location.city}}</td>
+                            </tr>
+                            <tr>
+                              <td>Country</td>
+                              <td>{{marker.service.location.country}}</td>
+                            </tr>
+                            <tr>
+                              <td>Zip Code</td>
+                              <td>{{marker.service.location.zipcode}}</td>
+                            </tr>
+                            <tr>
+                              <td>State</td>
+                              <td>{{marker.service.location.state}}</td>
+                            </tr>
+                            <tr>
+                              <td>First Seen</td>
+                              <td>{{marker.meta.first_seen_string}}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                    </div>
+
+
+
+                  </accordion-group>
+                </accordion>
+
+          </div>
+        </div>
+      </pageslide>
+
+    </div><!-- end row -->
+
+</div><!-- end containter -->
