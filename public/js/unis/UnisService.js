@@ -54,16 +54,35 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     return name;
   };
 
-  
-  
   hasLocationInfo = function(item) {
-    return (typeof item.location != 'undefined'
-            && typeof item.location.longitude != 'undefined'
-            && typeof item.location.latitude != 'undefined'
-            && item.location.longitude != 0
-            && item.location.city
-            && item.location.latitude != 0);
-  };
+    if (typeof item.location != 'undefined'
+        && typeof item.location.longitude != 'undefined'
+        && typeof item.location.latitude != 'undefined'
+        && item.location.longitude != 0
+        && item.location.latitude != 0) {
+      return true;
+    }
+    else if (item.runningOn.href != 'undefined') {
+      // check if the node that this service is running on
+      // has location info instead (node may host many services
+      // at the same location)
+      var d = $q.defer();
+      $http.get(item.runningOn.href).
+	success(function(data, status, headers, config) {
+	  item.location = data.location;
+	  d.resolve();
+	  return true;
+	}).
+	error(function(data, status, headers, config) {
+	  console.log("Check runningOn Error: ", status);
+	  d.resolve();
+	});
+    }
+    else {
+      d.resolve();
+      return false;
+    }
+  }
   
   getInstitutionName = function(item) {
     service.ports.forEach(function(p) {
