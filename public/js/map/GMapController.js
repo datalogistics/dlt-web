@@ -149,7 +149,15 @@ function gMapController($scope, $location, $http, UnisService, SocketService, ui
              featureType: 'water',
              elementType: 'labels.text.stroke',
              stylers: [{color: '#17263c'}]
-           }
+           },
+           {
+            featureType: "poi.business",
+            stylers: [
+              {
+                visibility: "off"
+              }
+            ]
+          }
          ]
 
         }
@@ -173,10 +181,13 @@ function gMapController($scope, $location, $http, UnisService, SocketService, ui
       return natmap;
     });
 
+    var db_img = '/images/dbmarker.png'
+    var ferry_img = '/images/burn.png'
+
     var plot_services = function(data){
 
         data.forEach(function(entry, index){
-
+          console.log(entry);
           var depot = find_service_by_id(entry.depot_id)[0];
 
           first_seen = depot.firstSeen;
@@ -188,7 +199,7 @@ function gMapController($scope, $location, $http, UnisService, SocketService, ui
               depot_id: entry.depot_id,
               id: Math.round(Math.random() * 10),             // in retrospect assigning random number to ID was incredibly lazy
               options: {
-                icon:'/images/dbmarker.png',
+                icon: ferry_img,
                 labelContent: entry.name,
                 labelAnchor: "50 0",
                 labelClass: "marker-labels",
@@ -228,6 +239,7 @@ function gMapController($scope, $location, $http, UnisService, SocketService, ui
       var result = $scope.services.filter(function( obj ) {
         return obj.id == id;
       });
+      console.log("Got Service", result);
       return result;
     };
 
@@ -265,6 +277,24 @@ function gMapController($scope, $location, $http, UnisService, SocketService, ui
     jQuery('.closeall').click(function(){
       jQuery('.panel-collapse.in')
         .collapse('hide');
+    });
+
+    SocketService.on('service_data', function(data){
+
+      if (typeof data =='string') {
+        data = JSON.parse(data);
+      }
+
+      m = $scope.markers.find(m => (m.service.id == data.id));
+
+      $http.get(m.service.runningOn.href).then(function(res){
+
+        new_coords = res.data.location;
+        $scope.markers.find(m => (m.service.id == data.id)).service.location = new_coords;
+        $scope.markers.find(m => (m.service.id == data.id)).position = new_coords;
+
+      });
+
     });
 
 }

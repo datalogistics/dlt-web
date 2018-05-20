@@ -52,14 +52,14 @@ var self = {
   routeMap : {
     // Aggregate from the following by default
     //'default'  : ['dev', 'dlt', 'monitor'],
-    'default': ['iu'],
+    'default': ['local'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
-    'exnodes' : ['exnodedev'],
+    'exnodes' : ['exnodedev', 'local'],
     'nodes': [],
     'nodes_id' : [],
     //'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
-    'services': ['dlt'],
+    'services': [],
     //'services_id' : ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'],
     'services_id': [],
     'measurements': [],
@@ -70,7 +70,7 @@ var self = {
     'data_id': [],
     'ports': [],
     'ports_id' : [],
-    'wildfire' : ['fuego']
+    'wildfire' : ['policies']
   },
   // Add a callback to process data for various routes
   routeCb : {
@@ -79,16 +79,14 @@ var self = {
     'services_id' : "addLocation"
   },
   filterMap : {
-    services : "serviceType=ceph,ceph-mon,ceph-osd,ibp_server",
     exnodes : "inline"
   },
   wsfilterMap : {
-    services : '{"serviceType":{"in":["ceph","ceph-mon","ceph-osd","ibp_server"]}}'
   },
   serviceMap : {
     local : {
       url : "localhost",
-      port : "8888",
+      port : "9000",
       use_ssl : false
     },
     exnodedev : {
@@ -96,9 +94,9 @@ var self = {
       port: "8890",
       use_ssl: false
     },
-    fuego : {
-      url : "dlt.open.sice.indiana.edu",
-      port : "8000",
+    policies : {
+      url : "localhost",
+      port : "9001",
       use_ssl : false
     },
     iu: {

@@ -497,7 +497,8 @@ module.exports = function(app) {
   });
 
   app.get('/api/wildfire',function(req, res) {
-    var id = req.query.id;
+
+    /*var id = req.query.id;
     delete req.query.id ;
     if(id ==1) {
       req.query.parent = "null=";
@@ -509,9 +510,10 @@ module.exports = function(app) {
     req.query.sort= "name:1";
     var paramString = querystring.stringify(req.query);
     var arr = [];
+
     var options = _.extend({
       req : req , res : res ,
-      path : '',
+      path : '/p',
       name : 'wildfire'
     },getHttpOptions({
       name : 'wildfire'
@@ -522,8 +524,20 @@ module.exports = function(app) {
 
     registerGenericHandler(options, function(obj) {
       // Return matching id children
+
       arr = getMostRecent(obj);
-      res.json(arr);
+      return res.json(arr);
+    });*/
+    var options = {
+      url : "http://localhost:9001/p",
+      headers: {
+        'Content-Type': 'application/perfsonar+json',
+        'Accept': 'text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8, application/perfsonar+json'
+      }
+    };
+
+    request(options, function(err, r, response){
+      res.json(JSON.parse(response));
     });
   });
 

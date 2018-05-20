@@ -88,20 +88,24 @@
                               <td>{{marker.depot_id}}</td>
                             </tr>
                             <tr>
+                              <td>Running On</td>
+                              <td>{{marker.service.runningOn.href}}</td>
+                            </tr>
+                            <tr>
                               <td>City</td>
-                              <td>{{marker.service.location.city}}</td>
+                              <td>{{marker.service.location.city ? marker.service.location.city : "N/A"}}</td>
                             </tr>
                             <tr>
                               <td>Country</td>
-                              <td>{{marker.service.location.country}}</td>
+                              <td>{{marker.service.location.country ? marker.service.location.country : "N/A"}}</td>
                             </tr>
                             <tr>
                               <td>Zip Code</td>
-                              <td>{{marker.service.location.zipcode}}</td>
+                              <td>{{marker.service.location.zipcode ? marker.service.location.zipcode : "N/A"}}</td>
                             </tr>
                             <tr>
                               <td>State</td>
-                              <td>{{marker.service.location.state}}</td>
+                              <td>{{marker.service.location.state ? marker.service.location.state : "N/A"}}</td>
                             </tr>
                             <tr>
                               <td>First Seen</td>

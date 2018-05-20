@@ -259,8 +259,8 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
   $http.get('/api/wildfire')
     .then(function(res) {
        var result = [];
-       console.log("DATA: ", res.data[0]);
-       for(var prop in res.data[0]){
+       console.log("DATA: ", res.data);
+       for(var prop in res.data){
          var obj = {};
          obj.label = prop;
          obj.selected = false;
@@ -275,19 +275,21 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
 
              // init all files into the scope to hold them for a second
             $scope.files = data;
-
+            console.log("Files in scope: ", data);
             // filter through everything, remove dupes, preserve directory hierarchy
-            for(o in data){
+            /*for(o in data){
               var obj = data[o];
               console.log(obj);
               for(t in data){
                 test = data[t];
-                if(o == t){continue};
-                if(obj.label == test.label && obj.parent == test.parent){
+                if(o == t){continue}
+                if(obj.label == test.label && obj.parent == test.parent && obj.id != test.id){
                   console.log(obj.text, test.test);
-                  if(obj.created >= test.created){
+                  if(obj.created >= test.created || obj.label != test.label){
+                    console.log("Removing ", test);
                     removeById($scope.files,test);
                   } else {
+                    console.log("Removing ", obj);
                     removeById($scope.files,obj);
                   }
                 }
@@ -295,10 +297,28 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
                   var p = test.parent;
                   // this is the critical line of code, wierd right...
                   $scope.files[t].parent = test.parent;
-                  console.log("SCOPE WHY? D:", $scope.files[t]);
+                  console.log("Parent", $scope.files[t]);
                 }
               }
-            }
+            }*/
+
+            var result = [];
+            temp_fileTree = $scope.files;
+            console.log("Temp: ", temp_fileTree);
+            var label_set = [... new Set(temp_fileTree.map(item => item.text))];
+            console.log("label set: ", label_set);
+            label_set.forEach(function(label){
+
+              filt = $scope.files.filter(item => (item.text == label));
+              console.log("File: ", filt);
+              redu = filt.reduce((a,b) => (a.created > b.created ? a : b));
+              console.log(redu);
+              result.push(redu);
+
+            });
+
+            $scope.files = result;
+
 
             construct_tree();
 
@@ -328,7 +348,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     // push files into the tree yo
     for(i in $scope.files){
       file = $scope.files[i];
-      console.log("LE FILE: ", file);
+      console.log("FILE HANDLER FILE: ", file);
       var node = file;
       if(file.children){
         node.label = file.text;
