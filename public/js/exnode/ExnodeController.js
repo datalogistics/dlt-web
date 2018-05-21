@@ -18,7 +18,7 @@ function getSchemaProperties(obj) {
  * ExnodeController.js
  */
 
-function exnodeController($scope, $routeParams, $location, $http, ExnodeService,$log,SocketService,ivhTreeviewMgr) {
+function exnodeController($scope, $routeParams, $location, $http, ExnodeService,$log,SocketService,ivhTreeviewMgr, toastr, toastrConfig) {
   // Dangerous code
   // SocketService.emit('exnode_getAllChildren', {id : null});
   // SocketService.on('exnode_childFiles' , function(d){
@@ -264,7 +264,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
          var obj = {};
          obj.label = prop;
          obj.selected = false;
-         obj.ferry_name = prop;
+         obj.ferry_name = res.data[prop].ferry_name;
          $scope.exnodePolicySelector.push(obj);
        }
       console.log('RESULT:', $scope.exnodePolicySelector);
@@ -450,9 +450,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     $('.policy-option').parent().removeClass('policy-select');
     ivhTreeviewMgr.deselectAll($scope.tree);
   }
-  // send policies to the IDMS server. TODO: put rest of http request into the api call to avoid CORS.
-  // /api/wildfire/post just grabs the url from where it needs to go and then the client posts to the IDMS server.
-  // was a temp implementation for the Boise demo sorry.
+
   $scope.applyPolicies = function(){
     // Gathers selected policies and exnodes to be POSTED
     var policies = $scope.exnodePolicySelector;
@@ -470,11 +468,24 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
 
     var send = JSON.stringify(data);
 
-    $http.get('/api/wildfire/post').success(function(res){
+    $http({
+      method: 'POST',
+      url: '/api/wildfire/post',
+      data: data,
+      headers: {'Content-Type': 'application/json'}
+    }).success(function(res){
+      console.log("Success: ", res);
+      toastr.success("Policy request registered in IDMS", "Success");
+    }).error(function(res){
+      toastr.error("Error registering policies.", "Error");
+    });
 
-      console.log("POST TO URL: ", res.url);
 
-      $http.post(res.url, send).
+    /*$http.get('/api/wildfire/post').success(function(res){
+
+      console.log("POST TO URL: ", res.url + '/p');
+
+      $http.post(res.url + '/p', send).
         success(function(data, status, headers, config) {
           console.log(data, status, headers, config);
         }).
@@ -483,7 +494,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
           console.log(data, status, headers, config);
         });
 
-    });
+    });*/
 
   };
 

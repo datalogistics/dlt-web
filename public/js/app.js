@@ -32,7 +32,8 @@ angular.module('periApp',
 		'map',
     'ngSanitize',
     'services.polling',
-    'uiGmapgoogle-maps'
+    'uiGmapgoogle-maps',
+    'toastr'
   ])
   .run(function($rootScope,UnisService,ServiceService,CommChannel,$modal,$cookies) {
     $rootScope.unis = UnisService;

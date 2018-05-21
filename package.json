@@ -15,6 +15,7 @@
     "npm": "1.4.6"
   },
   "dependencies": {
+    "angular-toastr": "^2.1.1",
     "bcrypt": "^0.8.5",
     "binstring": "^0.2.1",
     "body-parser": "^1.12.4",

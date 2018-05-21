@@ -491,43 +491,25 @@ module.exports = function(app) {
   });
 
 
-  app.get('/api/wildfire/post', function(req, res){
+  app.post('/api/wildfire/post', function(req, res){
       var url = cfg.idms_server;
-      res.json({url: url});
+      console.log("POST");
+      data = req.body;
+
+      request.post({
+        headers: {'Content-Type' : 'application/perfsonar+json',
+                  'Accept': 'text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8, application/perfsonar+json'},
+        url:     url + '/p',
+        body:    JSON.stringify(data),
+      }, function(error, response, body){
+        console.log(body);
+        res.json(JSON.parse(body));
+      });
+
   });
 
   app.get('/api/wildfire',function(req, res) {
 
-    /*var id = req.query.id;
-    delete req.query.id ;
-    if(id ==1) {
-      req.query.parent = "null=";
-    } else if(id) {
-      req.query['parent.href'] = id;
-    }
-    // Ascending sort by name
-    // Since all path and rows have 0 appened to them, so an ordinary string sort will work even though they are numbers
-    req.query.sort= "name:1";
-    var paramString = querystring.stringify(req.query);
-    var arr = [];
-
-    var options = _.extend({
-      req : req , res : res ,
-      path : '/p',
-      name : 'wildfire'
-    },getHttpOptions({
-      name : 'wildfire'
-    }));
-
-
-
-
-    registerGenericHandler(options, function(obj) {
-      // Return matching id children
-
-      arr = getMostRecent(obj);
-      return res.json(arr);
-    });*/
     var options = {
       url : "http://localhost:9001/p",
       headers: {

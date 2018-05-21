@@ -31,7 +31,8 @@
     "angular-ivh-treeview": "^1.1.0",
     "angular-simple-logger": "^0.1.7",
     "angular-google-maps": "^2.4.1",
-    "lodash": "3.x"
+    "lodash": "3.x",
+    "angular-toastr": "0.4.1"
   },
   "resolutions": {
     "angular": "1.2.16",
