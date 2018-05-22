@@ -509,9 +509,9 @@ module.exports = function(app) {
   });
 
   app.get('/api/wildfire',function(req, res) {
-
+    var url = cfg.idms_server;
     var options = {
-      url : "http://localhost:9001/p",
+      url : url + '/p',
       headers: {
         'Content-Type': 'application/perfsonar+json',
         'Accept': 'text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8, application/perfsonar+json'
