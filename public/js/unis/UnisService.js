@@ -99,10 +99,11 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   };
 
   updateServiceEntry = function(item) {
+    console.log("update service entry item : ", item);
     var now = Math.round(new Date().getTime() / 1e3) // seconds
     item.ttl = Math.round(((item.ttl + (item.ts / 1e6)) - now));
     var d = $q.defer();
-    if (!hasLocationInfo(item)) {
+    if (!hasLocationInfo(item) && (item.serviceType.split(':')[0] != "datalogistics")) {
       var url = DLT_PROPS.FreeGeoIpUrl + getServiceName(item);
       $http.get(url).
 	success(function(data, status, headers, config) {
@@ -303,7 +304,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     if (typeof data =='string') {
       data = JSON.parse(data);
     }
-    //console.log('Node data: ', data);
+    console.log('Node data: ', data);
     service.nodes.push(data);
   });
 

@@ -503,7 +503,7 @@ module.exports = function(app) {
         body:    JSON.stringify(data),
       }, function(error, response, body){
         console.log(body);
-        res.json(JSON.parse(body));
+        res.json(body);
       });
 
   });

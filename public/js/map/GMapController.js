@@ -1,10 +1,11 @@
-function gMapController($scope, $location, $http, UnisService, SocketService, uiGmapGoogleMapApi) {
+function gMapController($scope, $location, $http, SocketService, UnisService, uiGmapGoogleMapApi) {
 
   $scope.services = UnisService.services
   $scope.markers = [];
   $scope.checked = false;
   $scope.services = UnisService.services;
   console.log("Unis services: ", $scope.services);
+
 
   $scope.toggleSlider = function(){
     $scope.checked = !$scope.checked;
@@ -279,11 +280,13 @@ function gMapController($scope, $location, $http, UnisService, SocketService, ui
         .collapse('hide');
     });
 
-    SocketService.on('service_data', function(data){
+    /*SocketService.on('service_data', function(data){
 
       if (typeof data =='string') {
         data = JSON.parse(data);
       }
+      console.log("NEW SOCKET EVENT", data);
+      data.log("POSITION: ", data.position);
 
       m = $scope.markers.find(m => (m.service.id == data.id));
 
@@ -293,8 +296,12 @@ function gMapController($scope, $location, $http, UnisService, SocketService, ui
         $scope.markers.find(m => (m.service.id == data.id)).service.location = new_coords;
         $scope.markers.find(m => (m.service.id == data.id)).position = new_coords;
 
+        uiGmapGoogleMapApi.then(function(maps) {
+          maps.visualRefresh = true;
+        });
+
       });
 
-    });
+    });*/
 
 }

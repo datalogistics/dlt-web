@@ -59,7 +59,7 @@ var self = {
     'nodes': [],
     'nodes_id' : [],
     //'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
-    'services': [],
+    'services': ['local'],
     //'services_id' : ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'],
     'services_id': [],
     'measurements': [],

@@ -481,21 +481,6 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     });
 
 
-    /*$http.get('/api/wildfire/post').success(function(res){
-
-      console.log("POST TO URL: ", res.url + '/p');
-
-      $http.post(res.url + '/p', send).
-        success(function(data, status, headers, config) {
-          console.log(data, status, headers, config);
-        }).
-        error(function(data, status, headers, config) {
-          console.log("ERROR");
-          console.log(data, status, headers, config);
-        });
-
-    });*/
-
   };
 
   $scope.selectAllPolicy = function(){
