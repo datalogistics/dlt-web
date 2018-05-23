@@ -198,7 +198,7 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
               position: {latitude: entry.location.latitude, longitude:entry.location.longitude},
               title: entry.name,
               depot_id: entry.depot_id,
-              id: Math.round(Math.random() * 10),             // in retrospect assigning random number to ID was incredibly lazy
+              id: index,
               options: {
                 icon: ferry_img,
                 labelContent: entry.name,
@@ -280,28 +280,53 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
         .collapse('hide');
     });
 
-    /*SocketService.on('service_data', function(data){
+
+    $scope.lines = [];
+    SocketService.on('service_data', function(data){
 
       if (typeof data =='string') {
         data = JSON.parse(data);
       }
       console.log("NEW SOCKET EVENT", data);
-      data.log("POSITION: ", data.position);
+
+
+      $http.get(data.selfRef).then(function(res){
+        console.log("RESPONSE: ", res.data);
+      });
 
       m = $scope.markers.find(m => (m.service.id == data.id));
 
       $http.get(m.service.runningOn.href).then(function(res){
-
+        console.log("Res data: ", res.data);
+        console.log("POSITION: ", res.data.location);
+        console.log("Num: ", m.id);
         new_coords = res.data.location;
+
+        line = {
+          id : m.id,
+          path : [$scope.markers.find(m => (m.service.id == data.id)).position, new_coords]
+        }
+
         $scope.markers.find(m => (m.service.id == data.id)).service.location = new_coords;
         $scope.markers.find(m => (m.service.id == data.id)).position = new_coords;
+        //$scope.markers.find(m => (m.service.id == data.id)).position.latitude = new_coords.latitude;
+        //$scope.markers.find(m => (m.service.id == data.id)).position.latitude = new_coords.longitude;
+        console.log("Markers: ", $scope.markers);
+
+        if($scope.lines.length > 0){
+          $scope.lines = $scope.lines.filter(l => (l.id != m.id));
+          $scope.lines.push(line);
+        } else {
+          $scope.lines.push(line);
+        }
+        console.log($scope.lines);
+        //$scope.$apply();
 
         uiGmapGoogleMapApi.then(function(maps) {
           maps.visualRefresh = true;
         });
-
       });
 
-    });*/
+    });
 
 }

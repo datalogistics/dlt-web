@@ -75,8 +75,8 @@ var self = {
   // Add a callback to process data for various routes
   routeCb : {
     // All functions are present in routeCb.js
-    'services' : "addLocation",
-    'services_id' : "addLocation"
+    'services' : "",
+    'services_id' : ""
   },
   filterMap : {
     exnodes : "inline"

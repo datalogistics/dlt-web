@@ -62,7 +62,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
         && item.location.latitude != 0) {
       return true;
     }
-    else if (item.runningOn.href != 'undefined') {
+    else if (item.runningOn.href) {
       // check if the node that this service is running on
       // has location info instead (node may host many services
       // at the same location)

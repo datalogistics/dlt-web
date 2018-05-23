@@ -24,6 +24,10 @@
           </ui-gmap-marker>
         </ui-gmap-google-map>
 
+        <ui-gmap-polyline ng-repeat="line in lines"
+          path='line.path'>
+        </ui-gmap-polyline>
+
       </div>
       <div class="pull-right gradient-grey" style="width:2%; height:100%;" ng-click="toggleSlider()">
       </div>
