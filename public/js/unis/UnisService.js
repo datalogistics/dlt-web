@@ -62,7 +62,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
         && item.location.latitude != 0) {
       return true;
     }
-    else if (item.runningOn.href) {
+    else if (item.runningOn && item.runningOn.href) {
       // check if the node that this service is running on
       // has location info instead (node may host many services
       // at the same location)
@@ -79,7 +79,6 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	});
     }
     else {
-      d.resolve();
       return false;
     }
   }
@@ -263,6 +262,16 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     console.log('Service data: ', data);
     var services = service.services;
 
+    // handle PUT TTL update case
+    if (typeof data.status == 'undefined') {
+      if (data.id && data.ts) {
+	srv = services.find(s => (s.id == data.id));
+	srv.ts = data.ts;
+	srv.ttl = 600;
+      }
+      return;
+    }
+    
     var found = false;
     // search for duplicate services
     for(var i = 0; i < services.length; i++) {
@@ -303,6 +312,10 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   SocketService.on('node_data', function(data) {
     if (typeof data =='string') {
       data = JSON.parse(data);
+    }
+    // handle PUT update
+    if (typeof data.status == 'undefined') {
+      return;
     }
     console.log('Node data: ', data);
     service.nodes.push(data);

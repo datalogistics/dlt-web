@@ -287,47 +287,40 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
       if (typeof data =='string') {
         data = JSON.parse(data);
       }
-      console.log("NEW SOCKET EVENT", data);
-
+      console.log("NEW SERVICE EVENT", data);
 
       var m = $scope.markers.find(m => (m.service.id == data.id));
 
       node = UnisService.getMostRecent(UnisService.nodes).find(n => (n.selfRef == m.service.runningOn.href));
       console.log("FOUND NODE: ", node);
+      console.log("POSITION: ", node.location);
+      console.log("Num: ", m.id);
+      new_coords = node.location;
 
-      $http.get('/api/nodes/' + node.id).then(function(res){
-        console.log("Res data: ", res.data);
-        console.log("POSITION: ", res.data.location);
-        console.log("Num: ", m.id);
-        new_coords = res.data[0].location;
-
-        line = {
-          id : m.id,
-          path : [$scope.markers.find(m => (m.service.id == data.id)).position, new_coords],
-          stroke : {
-            color: "#45f442"
-          }
+      line = {
+        id : m.id,
+        path : [$scope.markers.find(m => (m.service.id == data.id)).position, new_coords],
+        stroke : {
+          color: "#45f442"
         }
-
-        $scope.markers.find(m => (m.service.id == data.id)).service.location = new_coords;
-        $scope.markers.find(m => (m.service.id == data.id)).position = new_coords;
-
-        console.log("Markers: ", $scope.markers);
-
-        if($scope.lines.length > 0){
-          $scope.lines = $scope.lines.filter(l => (l.id != m.id));
-          $scope.lines.push(line);
-        } else {
-          $scope.lines.push(line);
-        }
-        console.log($scope.lines);
-        //$scope.$apply();
-
-        uiGmapGoogleMapApi.then(function(maps) {
-          maps.visualRefresh = true;
-        });
+      }
+      
+      $scope.markers.find(m => (m.service.id == data.id)).service.location = new_coords;
+      $scope.markers.find(m => (m.service.id == data.id)).position = new_coords;
+      
+      console.log("Markers: ", $scope.markers);
+      
+      if($scope.lines.length > 0){
+        $scope.lines = $scope.lines.filter(l => (l.id != m.id));
+        $scope.lines.push(line);
+      } else {
+        $scope.lines.push(line);
+      }
+      console.log($scope.lines);
+      //$scope.$apply();
+      
+      uiGmapGoogleMapApi.then(function(maps) {
+        maps.visualRefresh = true;
       });
-
     });
-
 }
