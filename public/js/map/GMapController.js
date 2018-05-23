@@ -290,17 +290,16 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
       console.log("NEW SOCKET EVENT", data);
 
 
-      $http.get(data.selfRef).then(function(res){
-        console.log("RESPONSE: ", res.data);
-      });
+      var m = $scope.markers.find(m => (m.service.id == data.id));
 
-      m = $scope.markers.find(m => (m.service.id == data.id));
+      node = UnisService.getMostRecent(UnisService.nodes).find(n => (n.selfRef == m.service.runningOn.href));
+      console.log("FOUND NODE: ", node);
 
-      $http.get(m.service.runningOn.href).then(function(res){
+      $http.get('/api/nodes/' + node.id).then(function(res){
         console.log("Res data: ", res.data);
         console.log("POSITION: ", res.data.location);
         console.log("Num: ", m.id);
-        new_coords = res.data.location;
+        new_coords = res.data[0].location;
 
         line = {
           id : m.id,
