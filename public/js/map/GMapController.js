@@ -304,13 +304,15 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
 
         line = {
           id : m.id,
-          path : [$scope.markers.find(m => (m.service.id == data.id)).position, new_coords]
+          path : [$scope.markers.find(m => (m.service.id == data.id)).position, new_coords],
+          stroke : {
+            color: "#45f442"
+          }
         }
 
         $scope.markers.find(m => (m.service.id == data.id)).service.location = new_coords;
         $scope.markers.find(m => (m.service.id == data.id)).position = new_coords;
-        //$scope.markers.find(m => (m.service.id == data.id)).position.latitude = new_coords.latitude;
-        //$scope.markers.find(m => (m.service.id == data.id)).position.latitude = new_coords.longitude;
+
         console.log("Markers: ", $scope.markers);
 
         if($scope.lines.length > 0){

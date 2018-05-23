@@ -22,11 +22,14 @@
             <ui-gmap-window options="marker.window_options" closeClick="closeClick(marker)" templateUrl="'js/map/gmap_window_tpl.html'" templateParameter="marker">
             </ui-gmap-window>
           </ui-gmap-marker>
+          <ui-gmap-polyline ng-repeat="line in lines"
+            path='line.path'
+            static="true"
+            stroke='line.stroke'>
+          </ui-gmap-polyline>
         </ui-gmap-google-map>
 
-        <ui-gmap-polyline ng-repeat="line in lines"
-          path='line.path'>
-        </ui-gmap-polyline>
+
 
       </div>
       <div class="pull-right gradient-grey" style="width:2%; height:100%;" ng-click="toggleSlider()">
