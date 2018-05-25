@@ -302,23 +302,31 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
               }
             }*/
 
+
+
             var result = [];
-            temp_fileTree = $scope.files;
-            console.log("Temp: ", temp_fileTree);
-            var label_set = [... new Set(temp_fileTree.map(item => item.text))];
-            console.log("label set: ", label_set);
-            label_set.forEach(function(label){
 
-              filt = $scope.files.filter(item => (item.text == label));
-              console.log("File: ", filt);
-              redu = filt.reduce((a,b) => (a.created > b.created ? a : b));
-              console.log(redu);
-              result.push(redu);
+            if(data.length == 1){
+              $scope.files = [data[0]];
+            } else {
 
-            });
+              temp_fileTree = $scope.files;
+              console.log("Temp: ", temp_fileTree);
+              var label_set = [... new Set(temp_fileTree.map(item => item.text))];
+              console.log("label set: ", label_set);
+              label_set.forEach(function(label){
 
-            $scope.files = result;
+                filt = $scope.files.filter(item => (item.text == label));
+                console.log("File: ", filt);
+                redu = filt.reduce((a,b) => (a.created > b.created ? a : b));
+                console.log(redu);
+                result.push(redu);
 
+                $scope.files = result;
+
+              });
+
+            }
 
             construct_tree();
 
@@ -334,15 +342,17 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
     temp_struct.forEach(function(obj){obj.under = obj.parent});
 
     $scope.tree = [];
-
+    console.log("Starting construct tree");
     // if only a singular result returns, handle it right away.
-    if($scope.files.length == 1){
+    if(temp_struct.length == 1){
       node = $scope.files[0];
       node.label = $scope.files[0].text;
       if(node.label.length > 14){
         node.label = node.label.substring(0,14) + '...';;
       }
       $scope.tree.push(node);
+      console.log("ONE FILE IN TREE");
+      return;
     }
 
     // push files into the tree yo
@@ -379,7 +389,7 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
         }
       }
     }
-
+    console.log("Finished Building Tree", $scope.tree);
   };
 
 

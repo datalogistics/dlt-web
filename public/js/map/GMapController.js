@@ -134,7 +134,7 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
            {
              featureType: 'transit.station',
              elementType: 'labels.text.fill',
-             stylers: [{color: '#d59563'}]
+             stylers: [{visibility: "off"}]
            },
            {
              featureType: 'water',
@@ -152,7 +152,7 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
              stylers: [{color: '#17263c'}]
            },
            {
-            featureType: "poi.business",
+            featureType: "poi",
             stylers: [
               {
                 visibility: "off"
@@ -163,10 +163,6 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
 
         }
       });
-
-      uiGmapGoogleMapApi.then(function(maps){
-        console.log(maps);
-      })
 
 
   $http.get('/api/natmap')
@@ -321,7 +317,6 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
           $scope.lines.push(line);
         }
         console.log($scope.lines);
-        //$scope.$apply();
 
         uiGmapGoogleMapApi.then(function(maps) {
           maps.visualRefresh = true;
