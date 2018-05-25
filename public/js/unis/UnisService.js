@@ -265,9 +265,11 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     // handle PUT TTL update case
     if (typeof data.status == 'undefined') {
       if (data.id && data.ts) {
-	srv = services.find(s => (s.id == data.id));
-	srv.ts = data.ts;
-	srv.ttl = 600;
+	  srv = services.find(s => (s.id == data.id));
+	  if (srv) {
+	      srv.ts = data.ts;
+	      srv.ttl = 600;
+	  }
       }
       return;
     }
