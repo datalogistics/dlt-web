@@ -179,13 +179,15 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
     });
 
     var db_img = '/images/dbmarker.png'
-    var ferry_img = '/images/burn.png'
+    var ferry_img = '/images/ferry-icon.svg'
 
     var plot_services = function(data){
 
         data.forEach(function(entry, index){
           console.log(entry);
           var depot = find_service_by_id(entry.depot_id)[0];
+
+          marker_img = depot.serviceType.includes(":base") ? db_img : ferry_img;
 
           first_seen = depot.firstSeen;
           fseen_date = new Date(first_seen);
@@ -194,9 +196,14 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
               position: {latitude: entry.location.latitude, longitude:entry.location.longitude},
               title: entry.name,
               depot_id: entry.depot_id,
+              active_policies: [],
               id: index,
               options: {
-                icon: ferry_img,
+                icon: marker_img,
+                scaledSize: {
+                  height: 40,
+                  width: 40
+                },
                 labelContent: entry.name,
                 labelAnchor: "50 0",
                 labelClass: "marker-labels",
@@ -314,9 +321,19 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
       }
       console.log($scope.lines);
       //$scope.$apply();
-      
+
       uiGmapGoogleMapApi.then(function(maps) {
         maps.visualRefresh = true;
       });
     });
+
+    $scope.refresh_base_policies = function(marker){
+      console.log(marker);
+      $http.get('api/wildfire/active').then(function(res){
+        console.log("Refresh: ", res.data);
+        marker.active_policies = res.data;
+        $scope.markers.find(m => (m.id == marker.id)).active_policies = res.data;
+        $scope.refresh
+      });
+    };
 }

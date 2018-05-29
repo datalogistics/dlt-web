@@ -523,6 +523,21 @@ module.exports = function(app) {
     });
   });
 
+  app.get('/api/wildfire/active',function(req, res) {
+    var url = cfg.idms_server;
+    var options = {
+      url : url + '/a',
+      headers: {
+        'Content-Type': 'application/perfsonar+json',
+        'Accept': 'text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8, application/perfsonar+json'
+      }
+    };
+
+    request(options, function(err, r, response){
+      res.json(JSON.parse(response));
+    });
+  });
+
   // example API call to host.cgi -> /host.cgi?method=get_summary&host=http://um-ps01.osris.org
   app.get('/api/host.cgi', function(req, res){
     var host = req.query.host;

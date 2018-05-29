@@ -1,8 +1,26 @@
 <div style="min-width:200px; min-height:200px;" ng-controller='GMapController'>
+
   <h4 class="page-header" style="margin-top:0">{{parameter.title}}</h4>
   <div class="row">
     <div class="col-md-12">
-      <button class="btn btn-success" ng-click="open_depot_in_dash(parameter);parameter.open_ps()"><i class="glyphicon glyphicon-new-window"></i></button>
+      <button class="btn btn-default" ng-click="open_depot_in_dash(parameter);parameter.open_ps()"><i class="glyphicon glyphicon-new-window" style="color:blue"></i></button>
+      <button class="btn btn-default" ng-click="refresh_base_policies(parameter)"><i class="glyphicon glyphicon-retweet" style="color:green"></i></button>
     </div>
   </div>
+  <div class="row" ng-if="parameter.service.serviceType.includes(':base')">
+      <div class="col-md-12">
+        <h6>Current Policies - </h6>
+          {{parameter.active_policies ? '' : "No Active Policies"}}
+          <ul>
+            <li ng-repeat="policy in parameter.active_policies">
+              Destination: {{policy.destination.$exact}} <br>
+              <p ng-repeat="ref in policy.description.selfRef.$in">
+                {{ref}}
+              </p>
+              <hr>
+            </li>
+          </ul>
+      </div>
+  </div>
+
 </div>
