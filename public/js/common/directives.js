@@ -1,5 +1,5 @@
 function formatRate(ret) {
-  var divValue,label; 
+  var divValue,label;
   if (ret > 1e3 && ret < 1e6) {
     // Make it kb
     label = "K";
@@ -20,9 +20,9 @@ angular.module('avDirective', [])
   .controller('avController', function($scope, $rootScope, $filter, UnisService, ServiceService) {
     getServiceCount = function() {
       var count = UnisService.services.length
-      // If count is 0 , its still loading 
+      // If count is 0 , its still loading
       if (count > 0)
-        return "<div class='avtext'>"+ count + "</div>";        
+        return "<div class='avtext'>"+ count + "</div>";
     };
     getNetworkUsage = function() {
       var ret = 0;
@@ -36,7 +36,7 @@ angular.module('avDirective', [])
 	if (ServiceService.services[key][ETS.in]) {
       	  inret += Number(ServiceService.services[key][ETS.in]) || 0;
 	}
-      });      
+      });
 
       return "<div>In : " + formatRate(inret) + "</div><div>" + "Out : "+ formatRate(ret)+"</div>";
     };
@@ -59,6 +59,23 @@ angular.module('avDirective', [])
       return (ret/1e12);//.toFixed(2);
     };
 
+    getNumBaseStations = function(){
+      services = UnisService.services.filter(n => (n.serviceType.includes(":base")));
+      if (services.length > 0){
+        return "<div class='avtext'>"+ services.length + "</div>";
+      }
+    };
+
+    getNumATAK = function(){
+        return "<div class='avtext'>"+ 0 + "</div>";
+    };
+
+
+
+    $scope.atakcount = {'text': 'ATAK Devices',
+		     'datafn': getNumATAK};
+    $scope.bcount = {'text': 'Base Stations',
+		     'datafn': getNumBaseStations};
     $scope.dcount = {'text': 'Service Count',
 		     'datafn': getServiceCount};
     $scope.dnet   = {'text': 'Network Usage',
@@ -75,7 +92,7 @@ angular.module('avDirective', [])
 	type: '=type'
       },
       template: '<div style="border: 2px solid lightblue; \
-                 border-radius: 15px; padding: 5px; height: 250px; \
+                 border-radius: 15px; padding:5px; height: 225px; \
                  background-color: lightblue;"><p>{{type.text}}</p> \
                  <div class="{{dclass}}" ng-bind-html="value"></div>',
       link: function(scope, element, attrs) {
@@ -96,7 +113,7 @@ angular.module('avDirective', [])
 	    }
           }
 	}
-	
+
 	timeoutId = $interval(function() {
 	  updateValue();
 	}, 1000);
