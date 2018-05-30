@@ -164,7 +164,9 @@ li.right {
 }
 
 .jumbotron {
-  word-wrap: break-word;
+    word-wrap: break-word;
+    background-image: url("/images/wdln.svg");
+    background-size: 100% 100%;
 }
 
 li {
@@ -552,7 +554,7 @@ th {
 
 .modal-content-fs {
   height: 99% !important;
-}
+
 
 .loaderContainer {
     position : absolute;

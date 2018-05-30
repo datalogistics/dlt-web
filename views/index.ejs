@@ -45,9 +45,9 @@
           <li><a class="header" href="/status">Services</a></li>
           <li><a class="header" href="/browser">Browser</a></li>
           <li><a class="header" href="/downloads">Downloads</a></li>
-          <li><a class="header" href="/map">Map</a></li>
-          <li><a class="header" href="/topology">Topology</a></li>
-          <li><a class="header" href="/gmap">Ferry</a></li>
+          <li><a class="header" href="/gmap">WDLN Map</a></li>
+          <!--<li><a class="header" href="/topology">Topology</a></li>-->
+          <!--<li><a class="header" href="/gmap">Ferry</a></li>-->
         </ul>
         <ul class="nav navbar-nav navbar-right">
           <li ng-if="!loggedIn"><a class="header" ng-click="openLogin()">Login</a></li>
@@ -67,14 +67,20 @@
   <!-- Main Page Container -->
   <div class="container-fluid" style="min-height:100%">
     <!-- Angular Views Loaded Here -->
-    <div  ng-view class="mainview-animation"></div>
+    <div ng-view class="mainview-animation"></div>
   </div>
 
   <div class="container-fluid foot-container" style="margin-top:50px">
     <hr class="footer-hr"/>
     <ul class="footer">
-      <li class="left"><a class="footer" href="http://data-logistics.org/?q=EODN"><p>EODN</p></a><br /><a class="footer" href="http://crest.iu.edu"><p class="left">CREST @ IU-Bloomington</p></a></li>
-      <li class="right"><a class="footer" href="http://www.utk.edu/"><p>UT - Knoxville</p></a><br /><a class="footer" href="http://www.vanderbilt.edu/"><p class="right">Vanderbilt University</p></a></li>
+      <li class="left">
+	<a class="footer" href="http://data-logistics.org/?q=EODN"><p>EODN</p></a><br />
+	<a class="footer" href="https://www.engineering.indiana.edu/"><p class="left">ISE @ IU-Bloomington</p></a>
+      </li>
+      <li class="right">
+	<a class="footer" href="http://www.mtri.org/"><p class="right">Michigan Tech University</p></a>
+	<a class="footer" href="http://www.utk.edu/"><p>UT - Knoxville</p></a><br />
+      </li>
     </ul>
   </div>
 
