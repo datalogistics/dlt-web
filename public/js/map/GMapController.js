@@ -332,8 +332,34 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
       $http.get('api/wildfire/active').then(function(res){
         console.log("Refresh: ", res.data);
         marker.active_policies = res.data;
-        $scope.markers.find(m => (m.id == marker.id)).active_policies = res.data;
+
+        policy_state = [];
+
+        // Grabs exnodes related  to policy and stuffs them in the directive.
+        // Can rely on Unis Service because we cannot guarentee it is in the scope.
+        // If we wanted to use the UnisService we would need to instantiate another full instance - no reason to do that.
+        res.data.forEach(function(policy, i){
+          console.log("POLICY LOOP", policy, i);
+
+          policy.description.selfRef.$in.forEach(function(ref, j){
+            console.log("KEY VALUE PAIR: ", ref, j);
+            policy_state[i] = policy;
+            policy_state[i].exnodes = [];
+
+            $http.get('/api/exnodes').then(function(res){
+               ex = res.data.find(m => (m.selfRef == ref));
+               policy_state[i].exnodes.push(ex);
+            });
+
+          });
+        });
+
+
+
+        $scope.markers.find(m => (m.id == marker.id)).active_policies = policy_state;
+        console.log(policy_state);
         $scope.refresh
       });
     };
+
 }

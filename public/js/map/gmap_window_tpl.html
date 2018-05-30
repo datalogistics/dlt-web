@@ -12,10 +12,11 @@
         <h6>Current Policies - </h6>
           {{parameter.active_policies ? '' : "No Active Policies"}}
           <ul>
+
             <li ng-repeat="policy in parameter.active_policies">
-              Destination: {{policy.destination.$exact}} <br>
-              <p ng-repeat="ref in policy.description.selfRef.$in">
-                {{ref}}
+              <p>Destination: {{policy.destination.$exact}}</p>
+              <p ng-repeat="ex in policy.exnodes">
+                - {{ex.name}}
               </p>
               <hr>
             </li>

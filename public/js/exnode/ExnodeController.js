@@ -315,17 +315,16 @@ function exnodeController($scope, $routeParams, $location, $http, ExnodeService,
               var label_set = [... new Set(temp_fileTree.map(item => item.text))];
               console.log("label set: ", label_set);
               label_set.forEach(function(label){
-
-                filt = $scope.files.filter(item => (item.text == label));
-                console.log("File: ", filt);
+                console.log(label);
+                temp = $scope.files;
+                filt = temp.filter(item => (item.text == label));
+                console.log("File: ", filt, "In scope", temp);
                 redu = filt.reduce((a,b) => (a.created > b.created ? a : b));
-                console.log(redu);
+                console.log("Redu", redu);
                 result.push(redu);
 
-                $scope.files = result;
-
               });
-
+              $scope.files = result;
             }
 
             construct_tree();
