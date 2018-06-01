@@ -1,4 +1,4 @@
-function gMapController($scope, $location, $http, SocketService, UnisService, uiGmapGoogleMapApi) {
+function gMapController($scope, $location, $http, SocketService, UnisService, uiGmapGoogleMapApi, $cookies) {
 
   $scope.services = UnisService.services
   $scope.markers = [];
@@ -6,6 +6,49 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
   $scope.services = UnisService.services;
   console.log("Unis services: ", $scope.services);
 
+  var gmap_center = {};
+  var gmap_zoom = 4;
+
+  /*
+    cookie logic for getting the map back to where it should be.
+     done this way due to race conditions with the map object loading in.
+  */
+
+  if(!$cookies.gmap_from_cookie){
+    console.log("no cookies");
+    gmap_center = { latitude: 40.267193, longitude: -86.134903 } ;  // default center, center of US.
+    gmap_zoom   = 4;
+  }
+
+  $scope.check_map_cookies = function(){
+
+    // if there are cookies..
+    if($cookies.gmap_from_cookie){
+      console.log("There is a cookie");
+
+      // read cookies in..
+      cgmap_center_lat = $cookies.gmap_lat_cookie;
+      cgmap_center_long = $cookies.gmap_long_cookie;
+      cgmap_zoom   = $cookies.gmap_zoom_cookie;
+
+      console.log("COOKIE DETAILS: ", cgmap_center_lat, cgmap_center_long, cgmap_zoom, typeof(cgmap_zoom));
+
+      // make sure cookies are good and set the params that the map will use to initialize
+      if(cgmap_center_lat != undefined && cgmap_center_long != undefined && cgmap_zoom != undefined){
+        console.log(cgmap_center_lat,cgmap_center_long);
+        gmap_center = {latitude: cgmap_center_lat, longitude: cgmap_center_long};
+        gmap_zoom = parseInt(cgmap_zoom);
+
+        console.log(gmap_center);
+      }
+    }
+  }
+
+  $scope.check_map_cookies();
+
+  /*
+    End cookie stuff
+  */
 
   $scope.toggleSlider = function(){
     $scope.checked = !$scope.checked;
@@ -58,13 +101,20 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
                 }
         },
 
-        gmap : { center: { latitude: 40.267193, longitude: -86.134903 },
-         zoom: 4,
+        gmap : { center: gmap_center,
+         zoom: gmap_zoom,
          events: {
            tilesloaded: function (map) {
              $scope.$apply(function () {
                 //console.log('this is the map instance', map);
               });
+            },
+            center_changed: function(ev){
+              // saves current center of map into a cookie.
+              $cookies.gmap_zoom_cookie = ev.zoom;
+              $cookies.gmap_lat_cookie = ev.getCenter().lat();
+              $cookies.gmap_long_cookie = ev.getCenter().lng();
+              $cookies.gmap_from_cookie = 1;
             }
           },
           styles: [
@@ -361,5 +411,6 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
         $scope.refresh
       });
     };
+
 
 }
