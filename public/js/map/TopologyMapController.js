@@ -155,12 +155,13 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   // XXX: testing vis.js
   var topolist = UnisService.getMostRecent(UnisService.topologies)
       .map(e => {return {id: e.id, name: e.name}});
+  console.log(topolist);
 
   EsmondService.closeAllPolls();
   // Get Esmond Data for dash board.
   // First -> grab the instances urls.
   EsmondService.grabPerfsonarUrls(function(res){
-
+    return;
     $scope.institutions = res;
 
     // Second -> get all Interfaces on each instance.
@@ -544,6 +545,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   // Really just a debug function to spit out a bunch of JSON objects to console.
   // Grab paths from the host Unis Instance.
   var getPaths = function(){
+    return;
     $http.get('/api/paths')
       .then(function(res) {
 
@@ -553,7 +555,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
             return true;
           }
         }
-        
+
       })};
 
       // Helper function, simply reset how the edge looks to 'reset' the current shown path.

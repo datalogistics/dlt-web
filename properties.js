@@ -52,14 +52,14 @@ var self = {
   routeMap : {
     // Aggregate from the following by default
     //'default'  : ['dev', 'dlt', 'monitor'],
-    'default': ['iu'],
+    'default': ['local'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
-    'exnodes' : ['exnodedev'],
+    'exnodes' : [],
     'nodes': [],
     'nodes_id' : [],
     //'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
-    'services': ['dlt'],
+    'services': [],
     //'services_id' : ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'],
     'services_id': [],
     'measurements': [],
@@ -70,25 +70,25 @@ var self = {
     'data_id': [],
     'ports': [],
     'ports_id' : [],
-    'wildfire' : ['fuego']
+    'wildfire' : []
   },
   // Add a callback to process data for various routes
   routeCb : {
     // All functions are present in routeCb.js
-    'services' : "addLocation",
-    'services_id' : "addLocation"
+    'services' : "",
+    'services_id' : ""
   },
   filterMap : {
-    services : "serviceType=ceph,ceph-mon,ceph-osd,ibp_server",
-    exnodes : "inline"
+    services : "",
+    exnodes : ""
   },
   wsfilterMap : {
-    services : '{"serviceType":{"in":["ceph","ceph-mon","ceph-osd","ibp_server"]}}'
+    services : ''
   },
   serviceMap : {
     local : {
-      url : "localhost",
-      port : "8888",
+      url : "172.18.0.25",
+      port : "9000",
       use_ssl : false
     },
     exnodedev : {
