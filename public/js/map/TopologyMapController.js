@@ -151,7 +151,7 @@ function topoMapDirective() {
 
 var OFSW = "http://unis.crest.iu.edu/schema/ext/ofswitch/1/ofswitch#";
 
-function topologyMapController($scope, $route, $routeParams, $http, UnisService, EsmondService, $sce) {
+function topologyMapController($scope, $route, $routeParams, $http, $timeout, UnisService, EsmondService, $sce) {
   // XXX: testing vis.js
   var topolist = UnisService.getMostRecent(UnisService.topologies)
       .map(e => {return {id: e.id, name: e.name}});
@@ -314,18 +314,58 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     "ref": ''
   };
 
+  var color = d3.scale.category20()
+  $scope.d3_options = {
+        chart: {
+            type: 'forceDirectedGraph',
+            height: 450,
+            width: (function(){ return nv.utils.windowSize().width })(),
+            margin:{top: 20, right: 20, bottom: 20, left: 20},
+            tooltip: {
+              enabled: false
+            },
+            color: function(d){
+                return color(d.group)
+            },
+            nodeExtras: function(node) {
+                node && node
+                  .append("text")
+                  .attr("dx", 8)
+                  .attr("dy", ".35em")
+                  .text(function(d) { return d.name })
+                  .style('font-size', '10px');
+            }
+        }
+    };
+
+    // D3 click handler.
+
+    jQuery(document).on("dblclick", "#chart svg", function(e) {
+     console.log (e.target.__data__);
+     var resource = e.target.__data__;
+
+     if(resource.type == 'link' || resource.type == 'node'){
+       $scope.toggle(resource);
+     }
+    });
+
 
   $scope.toggle = function(p) {
-    $scope.cobj = undefined;
-    if (p) {
+    if(p){
+      $scope.cobj = p;
+    }
+    /*if (p) {
       if (p.nodes.length) {
 	       $scope.cobj = nodes.get(p.nodes[0]);
       }
       else if (p.edges.length) {
 	       $scope.cobj = links.get(p.edges[0]);
       }
-    }
-    $scope.checked = !$scope.checked
+    }*/
+    $scope.checked = !$scope.checked;
+    $scope.$broadcast('stop');
+    $scope.$digest();
+    $scope.$broadcast('resume');
   }
 
   $scope.onopen = function () {
@@ -362,6 +402,12 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   $scope.data = {
     model: null,
     topoOptions: topolist
+  };
+
+  $scope.d3Topo = {
+    nodes : [],
+    edges: [],
+    links: []
   };
 
   // controller is done if no ID is given
@@ -500,10 +546,45 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   //displayPathById("4994b225-6e58-47a7-99f3-9e3bb8c7d3e6");
   console.log(links)
       // links connecting domains
-      if ("links" in topo) {
-	createNodeLinks(topo.links, domains);
+  if ("links" in topo) {
+	     createNodeLinks(topo.links, domains);
+  }
+
+      console.log("topo nodes", $scope.topodata.nodes);
+      console.log("topo edges", $scope.topodata.edges);
+
+      $scope.d3Topo = {
+        nodes: $scope.topodata.nodes.get(),
+        edges: $scope.topodata.edges.get(),
+        links: []
       }
-    });
+
+      $scope.d3Topo.nodes.forEach((n, i) => {n.d3_index = i; n.name = n.label; n.group = 1, n.type = "node"} );
+      console.log("D3 topo: ", $scope.d3Topo);
+
+      $scope.d3Topo.edges.forEach(function(edge){
+
+        to = $scope.d3Topo.nodes.filter(e => e.id == edge.from)[0];
+        from = $scope.d3Topo.nodes.filter(e => e.id == edge.to)[0];
+        //console.log("Link : ", edge, " from ", source, " to ", target);
+
+        link = {
+          source: to.d3_index,
+          target: from.d3_index,
+          value: 1,
+          type: "link"
+        }
+
+        $scope.d3Topo.links.push(link);
+      });
+
+
+      console.log('done linking, ', $scope.d3Topo);
+
+
+      $scope.api.refresh();
+  });
+
 
   $scope.clusterByDomain = function() {
     $scope.clearPaths()
@@ -653,7 +734,22 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
               }
             });
 
-          console.log("PATH IDS: ", $scope.paths)
+          console.log("PATH IDS: ", $scope.paths);
+
+    function cannonicalURL(url) {return decodeURIComponent(url.replace(/\+/g, ' '))}
+
+    /*var temp_topo = {
+      nodes : UnisService.getMostRecent(UnisService.nodes)
+        .map((e, i) => {return {id: e.id, name: e.name, location: e.location, selfRef: e.selfRef, children: e.ports, d3_index: i}}),
+      links : UnisService.getMostRecent(UnisService.links)
+        .map(e => {return {id: e.id, endpoints: e.endpoints name: e.name}})
+    };
+
+    temp_topo.links.forEach(function(link){
+      source =
+    };
+    console.log("temp topo", temp_topo);*/
+
 
   // --------------- Utilities to load domain data from UNIS ---------------
   // Graph is pair of nodes and links
@@ -722,7 +818,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     links = links.filter(l => l.source && l.sink)
 
     var graph = {tree: root, links: links}
-    return graph
+    return graph;
 
     function validLinks(link) {
       //TODO: Improve...this is weak link validation...but at least its something

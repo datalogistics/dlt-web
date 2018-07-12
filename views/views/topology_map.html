@@ -53,8 +53,6 @@
 
 
 
-
-
 <h1 class="page-header"><img src="images/osiris_logo.png" style="height:100px; width:100px;"/> OSiRIS Topology Monitor <small>prototype version 0.2.0</small></h1>
 
 
@@ -205,17 +203,18 @@
 </div>
 
 
-<div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="false" ps-speed="0.5" ps-size="700px" >
+<pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="false" ps-speed="0.5" ps-size="700px" >
   <div style="padding:30px; overflow:auto; height: 100%" id="slide-right">
     <div><p><br/></p></div>
     <h2>Resource Details <a ng-click="toggle()" class="btn btn-info pull-right" >Close</a></h2>
     <hr>
     <json-formatter json="cobj.objRef" open="1"></json-formatter>
   </div>
-</div>
+</pageslide>
 
-<div id="topologyMap">
+<!--<div id="topologyMap">
   <topology-map></topology-map>
 
-  <!--<img id="mapImage" style="visibility:hidden;" src="images/us.gif"/>-->
-</div>
+</div>-->
+
+<nvd3 id="chart" options="d3_options" data="d3Topo" api="api"></nvd3>
