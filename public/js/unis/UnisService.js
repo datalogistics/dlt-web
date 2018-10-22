@@ -6,10 +6,10 @@
 
 function unisService($q, $http, $timeout, SocketService, CommChannel) {
   var ttl_off_limit = 600; // 10 minutes
-  var ttl_wiggle = 5;  
+  var ttl_wiggle = 5;
   var service = {};
   var dataIdCbMap = {};
-  
+
   service.topologies   = [];
   service.domains      = [];
   service.nodes        = [];
@@ -32,6 +32,10 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     return ret;
   };
 
+  service.getNodeByHref = function(selfRef){
+    return service.nodes.find(e => {e.selfRef == selfRef});
+  };
+
   var getUniqueByField = function(ary, f) {
     var curr = [];
     var ret = [];
@@ -43,7 +47,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     }
     return ret;
   };
-  
+
   getServiceName = function(item) {
     var name;
     if (typeof item.accessPoint != 'undefined') {
@@ -54,8 +58,8 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     return name;
   };
 
-  
-  
+
+
   hasLocationInfo = function(item) {
     return (typeof item.location != 'undefined'
             && typeof item.location.longitude != 'undefined'
@@ -64,7 +68,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
             && item.location.city
             && item.location.latitude != 0);
   };
-  
+
   getInstitutionName = function(item) {
     service.ports.forEach(function(p) {
       if (typeof p.properties != 'undefined'
@@ -78,7 +82,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       };
     });
   };
-  
+
   updateServiceEntry = function(item) {
     var now = Math.round(new Date().getTime() / 1e3) // seconds
     item.ttl = Math.round(((item.ttl + (item.ts / 1e6)) - now));
@@ -119,7 +123,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
         console.log('Metadata Error: ' + data);
       });
   };
-  
+
   // Note: getting also invokes subscription
   service.getDataId = function(id, n, cb, uname) {
     var qstr = '/api/data/' + id;
@@ -139,17 +143,17 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   service.subDataId = function(id, cb, uname) {
     uname = uname || "__nvrDelete"+ Math.random();
     if (id in dataIdCbMap) {
-      dataIdCbMap[id][uname] = cb;      
+      dataIdCbMap[id][uname] = cb;
     }
     else {
       //console.log("emitting data request for: ", id, cb);
       SocketService.emit('data_request', {'id': id});
       var obj = {};
       obj[uname] = cb;
-      dataIdCbMap[id] = obj;      
+      dataIdCbMap[id] = obj;
     }
   };
-  
+
   service.unsubDataId = function(id,uname) {
     if (uname) {
       var map = dataIdCbMap[id];
@@ -191,7 +195,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     //   }
     // }
   });
-  
+
   finish = function() {
     var services = service.services;
     // TODO: sanitize further
@@ -201,14 +205,14 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 	services.splice(i, 1);
       }
     }
-    
+
     var prom = [] ;
     services.forEach(function(s) {
       prom.push(updateServiceEntry(s));
       // save the initial ts
       s.firstSeen = s.ts;
     });
-    
+
     // set timer value
     onTimeout = function() {
       for(var i = services.length-1; i >= 0; i--) {
@@ -228,13 +232,13 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       //continue timer
       timeout = $timeout(onTimeout, 1000);
     }
-        
+
     return $q.all(prom).then(function() {
       // start timer
       var timeout = $timeout(onTimeout, 1000);
     });
   };
-    
+
   // socket handlers...
   SocketService.on('service_data', function(data) {
     if (typeof data =='string') {
@@ -245,7 +249,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
 
     var found = false;
     // search for duplicate services
-    for(var i = 0; i < services.length; i++) {      
+    for(var i = 0; i < services.length; i++) {
       if(services[i].accessPoint == data.accessPoint) {
         // just update the ttl and ts with the new value, saving our stored info
         services[i].ttl = data.ttl;
@@ -296,7 +300,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     service.ports.push(data);
     CommChannel.newData('new_port', data);
   });
-  
+
   SocketService.on('path_data', function(data) {
     if (typeof data =='string') {data = JSON.parse(data);}
 
@@ -306,7 +310,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     CommChannel.newData('path_data', data);
   });
 
-  
+
   // We start here when the service is instantiated
   function makeMap(arr,key,isUnescape) {
     var get = function (model, path, def) {
@@ -334,18 +338,19 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   var ptime_usec = 3600*1e6;
   var now_usec = Math.round(new Date().getTime() * 1e3);
   var init_filter = '?ts=gt='+(now_usec-ptime_usec);
+  service.init_filter = '?ts=gt='+(now_usec-ptime_usec)
   var initServicePromise;
-  service.init = function() {
+  service.init = function(filter) {
     initServicePromise = initServicePromise || $q.all([
       $http.get('/api/topologies', { cache: true}),
       $http.get('/api/domains', { cache: true}),
-      $http.get('/api/nodes'+init_filter, { cache: true}),
-      $http.get('/api/ports'+init_filter, { cache: true}),
-      $http.get('/api/links'+init_filter, { cache: true}),
-      $http.get('/api/paths'+init_filter, { cache: true}),
-      $http.get('/api/measurements'+init_filter, { cache: true}),
-      $http.get('/api/metadata'+init_filter, { cache: true}),
-      $http.get('/api/services'+init_filter, { cache: true})
+      $http.get('/api/nodes'+service.init_filter, { cache: true}),
+      $http.get('/api/ports'+service.init_filter, { cache: true}),
+      $http.get('/api/links'+service.init_filter, { cache: true}),
+      $http.get('/api/paths'+service.init_filter, { cache: true}),
+      $http.get('/api/measurements'+service.init_filter, { cache: true}),
+      $http.get('/api/metadata'+service.init_filter, { cache: true}),
+      $http.get('/api/services'+service.init_filter, { cache: true})
     ]).then(function(res) {
       service.topologies = getUniqueById(res[0].data);
       service.domains = getUniqueById(res[1].data);
@@ -364,7 +369,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       service.servicesRunonMap = makeMap(service.services,"runningOn.href",true);
       service.measServMap = makeMap(service.measurements,"service",true);
       service.metaMap = makeMap(service.metadata,"parameters.measurement.href",true);
-      
+
       SocketService.emit('service_request', {});
       SocketService.emit('domain_request', {});
       SocketService.emit('node_request', {});
@@ -381,7 +386,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   service.getVersionByUrl = function(url,fromCache) {
     if (fromCache && url in getVersionUrlMap) {
       return $q.when(getVersionUrlMap[url]);
-    } 
+    }
     return $http({
       method : 'get',
       url : '/api/getVersion',

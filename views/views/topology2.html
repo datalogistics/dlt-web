@@ -1,0 +1,28 @@
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <h1 class="page-header"><img src="images/osiris_logo.png" style="height:100px; width:100px;"/> OSiRIS Topology Monitor</h1>
+      <div class="dropdown">
+        <button onclick="topoSelect()" class="btn btn-success" style="margin-bottom: 10px; border-radius: 0px">Select Topology</button>
+        <div id="topoDropdown" class="dropdown-content" ng-model="data.model">
+          <input type="text" placeholder="Search." id="topoInput" onkeyup="topofilterFunction()">
+          <a ng-repeat="option in topolist" href="map2/{{option.id}}">{{option.name}}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="false" ps-speed="0.5" ps-size="700px" >
+    <div style="padding:30px; overflow:auto; height: 100%" id="slide-right">
+      <div><p><br/></p></div>
+      <h2>Resource Details <a ng-click="toggle()" class="btn btn-info pull-right" >Close</a></h2>
+      <hr>
+      <json-formatter json="cobj.objRef" open="1"></json-formatter>
+    </div>
+  </div>
+
+
+  <div class="row">
+    <div id="graphDiv" class="col-md-12" style="height:500px"></div>
+  </div>
+</div>

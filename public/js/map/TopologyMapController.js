@@ -390,6 +390,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     nodes: nodes,
     edges: links
   };
+  console.log(nodes , links);
   $scope.topoopts = {};
 
   $http.get('/api/topologies/'+$scope.topoId+'?inline')
@@ -399,9 +400,9 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
 
       // generic filter function
       function ffunc(e) {
-  	if (e.ts >= (t_hist)) {
-  	  return true;
-  	}
+      	if (e.ts >= (t_hist)) {
+      	  return true;
+      	}
       }
 
       function createNode(d, e, color) {
@@ -460,6 +461,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       topo.domains.forEach(function(d) {
       	var color = $scope.colors[ccnt];
       	ccnt += 1;
+        console.log("DOMAIN", d);
       	if ("nodes" in d) {
       	  // find domain nodes
       	  nodes.add(d.nodes.filter(ffunc).map(e => {return createNode(d, e, color)}));
@@ -481,19 +483,19 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       	    }
       	  });
 	       }
-	else {
-	  // add domain placeholder nodes
-	  nodes.add({id: d.id,
-		     label: d.name,
-		     domain: d.name,
-		     color: color,
-		     title: d.name+" placeholder"})
-	}
+    	else {
+    	  // add domain placeholder nodes
+    	  nodes.add({id: d.id,
+    		     label: d.name,
+    		     domain: d.name,
+    		     color: color,
+    		     title: d.name+" placeholder"})
+    	}
 
-	// links connecting nodes
-	if ("links" in d) {
-	  createNodeLinks(d.links.filter(ffunc), ports);
-	}
+    	// links connecting nodes
+    	if ("links" in d) {
+    	  createNodeLinks(d.links.filter(ffunc), ports);
+    	}
 
 
   });
