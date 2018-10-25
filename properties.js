@@ -52,7 +52,7 @@ var self = {
   routeMap : {
     // Aggregate from the following by default
     //'default'  : ['dev', 'dlt', 'monitor'],
-    'default': ['iu'],
+    'default': ['local'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : [],
@@ -87,8 +87,13 @@ var self = {
   },
   serviceMap : {
     local : {
-      url : "172.18.0.25",
-      port : "9000",
+      url : "localhost",
+      port : "8888",
+      use_ssl : false
+    },
+    slate : {
+      url : "155.101.6.236",
+      port : "8888",
       use_ssl : false
     },
     exnodedev : {

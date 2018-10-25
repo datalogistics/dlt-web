@@ -1,27 +1,66 @@
-function topology2MapController($scope, $route, $routeParams, $http, UnisService, $sce, $window, TopologyService) {
+function topology2MapController($scope, $route, $routeParams, $http, UnisService, SocketService, $sce, $window, TopologyService, $websocket) {
 
   /* INIT */
+  /*
+      Scope vars.
+  */
+
+  // topology list GUI
+  $scope.topolist = UnisService.getMostRecent(UnisService.topologies)
+      .map(e => {return {id: e.id, name: e.name}});
+
   topoId = $routeParams.id
   if (typeof topoId == 'undefined') {
-    return
+    return;
   }
   console.log(topoId);
 
-  $scope.topolist = UnisService.getMostRecent(UnisService.topologies)
-      .map(e => {return {id: e.id, name: e.name}});
   $scope.checked = false;
 
   $scope.toggle = function(){
     $scope.checked = !$scope.checked;
   };
 
+  $scope.graphRef = function(url,src,dst){
+    return url + "/perfsonar-graphs/?source=" + src + "&dest=" + dst;
+  };
 
+  $scope.buildGraphModal = function(archive_url, src, dst){
+    perfsonarUrl = archive_url.split('/esmond')[0];
+    console.log(perfsonarUrl);
+    graphUrl = $scope.graphRef(perfsonarUrl, src, dst)
+    $scope.modal = {'source': src, 'destination': dst};
+    $scope.graphUrl = $sce.trustAsResourceUrl(graphUrl);
+  };
 
   /*
-      Create the graph.
+        On graph start up, get the latest values for a tests.
+
+        Called AFTER graph renders.
   */
-  var createVivaGraph = function(){
-    var ccnt = 0;
+  var init = function(){
+    /* After UnisServie loads make links that have tests show more clearly */
+    setTimeout(function(){
+        UnisService.metadata.forEach(function(m){
+            graph.forEachLink(function(l){
+              if(l.data.objRef.selfRef == m.subject.href){
+                $('#'+l.data.objRef.id).attr('stroke-width','8px');
+                renderer.rerender();
+              }
+            });
+        });
+
+        TopologyService.initializeGraph(graph, UnisService.metadata);
+
+      }, 5000);
+  };
+
+
+  /* * * * * *
+
+      Create the graph.
+
+  * * * * * * */
 
     var net = TopologyService.createNetwork(topoId).then(function(network){
       // add nodes to graph
@@ -31,7 +70,7 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
       });
 
       network.links.forEach(function(l){
-        graph.addLink(l.from, l.to);
+        graph.addLink(l.from, l.to, l);
       });
     })
 
@@ -55,13 +94,12 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
                 ui.append(svgText);
                 ui.append(img);
         $(ui).hover(function() { // mouse over
-            console.log(node);
               highlightRelatedNodes(node.id, true);
         }, function() { // mouse out
               highlightRelatedNodes(node.id, false);
         });
 
-        $(ui).click(function() { // mouse over
+        $(ui).dblclick(function() { // mouse over
             $scope.cobj = node.data;
             $scope.checked = true;
         });
@@ -77,6 +115,54 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
                             ')');
     });
 
+
+    /*
+      Link SVG stuff.
+    */
+    var geom = Viva.Graph.geom();
+    graphics.link(function(link){
+
+                var ui = Viva.Graph.svg('path')
+                           .attr('stroke', 'grey')
+                           .attr('id', link.data.objRef.id);
+
+                $(ui).dblclick(function() {
+                    $scope.cobj = link.data;
+                    $scope.checked = true;
+                });
+
+                return ui;
+
+            }).placeLink(function(linkUI, fromPos, toPos) {
+                // Here we should take care about
+                //  "Links should start/stop at node's bounding box, not at the node center."
+                // For rectangular nodes Viva.Graph.geom() provides efficient way to find
+                // an intersection point between segment and rectangle
+                var toNodeSize = 24,
+                    fromNodeSize = 24;
+                var from = geom.intersectRect(
+                        // rectangle:
+                                fromPos.x - fromNodeSize / 4, // left
+                                fromPos.y - fromNodeSize / 4, // top
+                                fromPos.x + fromNodeSize / 4, // right
+                                fromPos.y + fromNodeSize / 4, // bottom
+                        // segment:
+                                fromPos.x, fromPos.y, toPos.x, toPos.y)
+                           || fromPos; // if no intersection found - return center of the node
+                var to = geom.intersectRect(
+                        // rectangle:
+                                toPos.x - toNodeSize / 4, // left
+                                toPos.y - toNodeSize / 4, // top
+                                toPos.x + toNodeSize / 4, // right
+                                toPos.y + toNodeSize / 4, // bottom
+                        // segment:
+                                toPos.x, toPos.y, fromPos.x, fromPos.y)
+                            || toPos; // if no intersection found - return center of the node
+                var data = 'M' + from.x + ',' + from.y +
+                           'L' + to.x + ',' + to.y;
+                linkUI.attr("d", data);
+            });
+
     // we use this method to highlight all realted links
     // when user hovers mouse over a node:
     highlightRelatedNodes = function(nodeId, isOn) {
@@ -85,19 +171,82 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
       var linkUI = graphics.getLinkUI(link.id);
         if (linkUI) {
           // linkUI is a UI object created by graphics below
-            linkUI.attr('stroke', isOn ? 'yellow' : 'gray');
+            linkUI.attr('stroke-dasharray', isOn ? 5 : 0);
         }
       });
     };
 
+    var layout = Viva.Graph.Layout.forceDirected(graph, {
+        springLength : 100,
+        springCoeff : 0.0005,
+        dragCoeff : 0.02,
+        gravity : -1.2
+    });
+
     var renderer = Viva.Graph.View.renderer(graph, {
       container: document.getElementById('graphDiv'),
-      graphics: graphics
+      graphics: graphics,
+      layout: layout
     });
     renderer.run();
     console.log(graph);
+    init();
+
+
+
+  /*
+      Listen to Esmond Data
+
+      Use topology service to handle incoming measurements.
+  */
+  var handle_measurement_data = function(rcv){
+      // in case the data cannot get parsed correctly.
+      dataId = JSON.parse(rcv).headers.id;
+
+
+      console.log("Rcv socket data: ", rcv);
+      console.log("Metadata: ", UnisService.metadata);
+
+      metadata_match = UnisService.metadata.find(m => m.id == dataId);
+      console.log(dataId, metadata_match);
+      graph.forEachLink(function(l){
+        if(l.data.objRef.selfRef == metadata_match.subject.href){
+          TopologyService.measurementHandler(metadata_match, JSON.parse(rcv).data[dataId][0], l);
+        }
+      });
   };
 
-  createVivaGraph();
+  var ws = $websocket.$new('ws://127.0.0.1:8888/subscribe/data')
+      .$on('$open', function(){
+            console.log("Web Socket open.");
+      })
+      .$on('$message',function(data){
+            handle_measurement_data(data);
+      });
+
+
+
 
 };
+
+function highlighterDirective($timeout){
+  return {
+    restrict: 'A',
+    scope: {
+      model: '=highlighter'
+    },
+    link: function(scope, element) {
+      scope.$watch('model', function (nv, ov) {
+        if (nv !== ov) {
+          // apply class
+          element.addClass('highlight');
+
+          // auto remove after some delay
+          $timeout(function () {
+            element.removeClass('highlight');
+          }, 2000);
+        }
+      });
+    }
+  };
+}

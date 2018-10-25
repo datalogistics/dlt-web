@@ -176,11 +176,11 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     for (var id in data) {
       //console.log('Incoming data for ' + id + ' : ', data[id]);
       if (id in dataIdCbMap) {
-	var map = dataIdCbMap[id];
-	for (var i in map) {
-          var cb = map[i];
-          cb(data[id]);
-	}
+    	var map = dataIdCbMap[id];
+    	for (var i in map) {
+              var cb = map[i];
+              cb(data[id]);
+    	}
       }
     };
     // if ("id" in data) {
@@ -301,6 +301,16 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     CommChannel.newData('new_port', data);
   });
 
+  SocketService.on('data_data', function(data) {
+    if (typeof data =='string') {
+      data = JSON.parse(data);
+    }
+    console.log('Data data: ', data);
+    service.data.push(data);
+    CommChannel.newData('new_port', data);
+  });
+
+
   SocketService.on('path_data', function(data) {
     if (typeof data =='string') {data = JSON.parse(data);}
 
@@ -349,7 +359,7 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
       $http.get('/api/links'+service.init_filter, { cache: true}),
       $http.get('/api/paths'+service.init_filter, { cache: true}),
       $http.get('/api/measurements'+service.init_filter, { cache: true}),
-      $http.get('/api/metadata'+service.init_filter, { cache: true}),
+      $http.get('/api/metadata', { cache: true}),
       $http.get('/api/services'+service.init_filter, { cache: true})
     ]).then(function(res) {
       service.topologies = getUniqueById(res[0].data);

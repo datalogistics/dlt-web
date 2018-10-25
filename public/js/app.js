@@ -30,7 +30,8 @@ angular.module('periApp',
 		'auth',
 		'map',
     'ngSanitize',
-    'services.polling'
+    'services.polling',
+    'ngWebsocket'
   ])
   .run(function($rootScope,UnisService,ServiceService,CommChannel,$modal,$cookies) {
     $rootScope.unis = UnisService;
@@ -151,14 +152,6 @@ angular.module('periApp',
                .when('/exnode/:id', {
                  templateUrl: 'views/exnode_map.html',
                  controller: 'ExnodeMapController',
-                 resolve: {
-                   'unis': function(UnisService) {
-                     return UnisService.init()
-                   }}
-               })
-               .when('/map2/', {
-                 templateUrl: 'views/topology2.html',
-                 controller: 'Topology2MapController',
                  resolve: {
                    'unis': function(UnisService) {
                      return UnisService.init()

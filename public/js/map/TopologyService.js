@@ -6,12 +6,86 @@ function topologyService($http, $q){
   service.ports = [];
   service.links = [];
 
+  /*
+    Initialize Graph Data Values.
+  */
+  service.initializeGraph = function(graph, metadata){
+    metadata.forEach(function(m){
+      graph.forEachLink(function(l){
 
+        dataId = m.id;
+
+        if(!l.data.meta){
+          l.data.meta = {};
+        }
+
+        // if match metadata with resource, get resource data
+        if(l.data.objRef.selfRef == m.subject.href){
+          l.data.meta[dataId] = m;
+          $http.get('api/data/' + dataId + '?limit=5').then(function(res){
+              service.measurementHandler(m, res.data[0], l);
+          });
+
+        }
+
+      });
+    });
+  };
+
+  /*
+    Generic Measurement Handler.
+
+    TODO: change esmonduploader to pass archive uri and potentially pass expected 'good' values.
+  */
+  service.measurementHandler = function(metadata, data, resource){
+      console.log(metadata);
+      var value;
+      if(metadata.eventType == 'throughput'){
+        value = handleThroughput(metadata, data, resource);
+        attachValue(metadata, value, resource);
+      };
+
+  };
+
+  var handleThroughput = function(metadata, data, resource){
+      id  = metadata.id;
+      resourceId = resource.data.objRef.id;
+
+      console.log("DATA", data);
+      val = data.value
+      console.log("VALUE", val);
+      if(val > 500000000){
+        console.log("GREEN");
+        $('#' + resourceId).attr('stroke','green');
+      }
+      else if( val > 200000000){
+        $('#' + resourceId).attr('stroke', 'yellow');
+      }
+      else {
+        console.log("RED");
+        $('#' + resourceId).attr('stroke', 'red');
+      }
+
+      return (val/1000000) + " Mbits/s";
+    };
+
+
+  var attachValue = function(metadata, value, resource){
+    console.log(metadata.id);
+    try {
+      resource.data.meta[metadata.id].value = value;
+    } catch(err) {
+      console.log("Unable to attach value to metadata", err);
+    }
+
+  };
+
+  /*
+      Pass to the controller everything it needs to create a graph.
+  */
   service.createNetwork = function(topoId){
 
-
-
-  return $http.get('/api/topologies/'+topoId+'?inline')
+    return $http.get('/api/topologies/'+topoId+'?inline')
     .then(function(res) {
 
       /* I am so sorry for this abomination, but VisDatasets make finding edges so easy. */
