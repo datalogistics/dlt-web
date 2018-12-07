@@ -32,6 +32,7 @@
             <th>Source</th>
             <th>Destination</th>
             <th>Value</th>
+            <th>Last Updated</th>
             <th></th>
             <!--
             <th class="text-center">THROUGHPUT (avg)</th>
@@ -46,6 +47,7 @@
             <td><div>{{meta.parameters.source}}<div></td>
             <td><div>{{meta.parameters.destination}}<div></td>
             <td highlighter="meta.value" class="text-center"><div>{{meta.value}}<div></td>
+            <td highlighter="meta.value" class="text-center"><div>{{meta.last_updated}}<div></td>
             <td class="text-center">
                 <button
                 ng-click="buildGraphModal(meta.parameters.archive, meta.parameters.source, meta.parameters.destination)"

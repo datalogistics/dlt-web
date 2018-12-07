@@ -41,9 +41,12 @@ function topologyService($http, $q){
       console.log(metadata);
       var value;
       if(metadata.eventType == 'throughput'){
-        value = handleThroughput(metadata, data, resource);
-        attachValue(metadata, value, resource);
-      };
+        data.value = handleThroughput(metadata, data, resource);
+      } else{
+        data.value = Math.round(data.value, 2);
+      }
+
+      attachValue(metadata, data, resource);
 
   };
 
@@ -70,10 +73,14 @@ function topologyService($http, $q){
     };
 
 
-  var attachValue = function(metadata, value, resource){
+  var attachValue = function(metadata, data, resource){
     console.log(metadata.id);
     try {
-      resource.data.meta[metadata.id].value = value;
+      resource.data.meta[metadata.id].value       = data.value;
+
+      timestamp = timeConverter(data.ts)
+
+      resource.data.meta[metadata.id].last_updated = timestamp;
     } catch(err) {
       console.log("Unable to attach value to metadata", err);
     }
@@ -124,6 +131,7 @@ function topologyService($http, $q){
       }
 
       function createNodeLinks(data, dset) {
+        console.log(data, dset);
       	data.reduce((acc, link) => {
       	  if (link.endpoints &&
       	      link.endpoints[0].href.startsWith("http") &&
@@ -134,9 +142,12 @@ function topologyService($http, $q){
       		      ref: link})
       	  } return acc}, [])
       	  .forEach(function(e) {
+
       	    var a = dset.get(e.a.split('/').pop());
       	    var b = dset.get(e.b.split('/').pop());
+            console.log(a, b);
       	    if (a && b) {
+
       	      links.add({id: e.id,
           			 objRef: e.ref,
           			 from: a.node,
@@ -209,11 +220,24 @@ function topologyService($http, $q){
         links: service.links,
         domains: service.domains
       };
-
+      console.log(service.links);
       return service.network;
 
     });
   };
+
+  function timeConverter(UNIX_timestamp){
+    var a = new Date(UNIX_timestamp * 1000);
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var year = a.getFullYear();
+    var month = months[a.getMonth()];
+    var date = a.getDate();
+    var hour = a.getHours();
+    var min = a.getMinutes();
+    var sec = a.getSeconds();
+    var time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
+    return time;
+  }
 
   return service;
 }

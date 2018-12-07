@@ -70,6 +70,7 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
       });
 
       network.links.forEach(function(l){
+        console.log('adding link', l);
         graph.addLink(l.from, l.to, l);
       });
     })
@@ -177,8 +178,8 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
     };
 
     var layout = Viva.Graph.Layout.forceDirected(graph, {
-        springLength : 100,
-        springCoeff : 0.0005,
+        springLength : 200,
+        springCoeff : 0.00005,
         dragCoeff : 0.02,
         gravity : -1.2
     });
@@ -216,7 +217,7 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
       });
   };
 
-  var ws = $websocket.$new('ws://127.0.0.1:8888/subscribe/data')
+  var ws = $websocket.$new('ws://um-ps01.osris.org:8888/subscribe/data')
       .$on('$open', function(){
             console.log("Web Socket open.");
       })

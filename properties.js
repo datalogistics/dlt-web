@@ -48,7 +48,7 @@ var self = {
   exnodeParent_UsingSelfRef : true,
   // Try to login and maintain cookie for the following UNIS instances
   authArr : [],
-  idms_server : "http://localhost:8001",
+  idms_server : "",
   routeMap : {
     // Aggregate from the following by default
     //'default'  : ['dev', 'dlt', 'monitor'],
