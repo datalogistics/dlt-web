@@ -508,6 +508,24 @@ module.exports = function(app) {
 
   });
 
+  app.post('/api/wildfire/post_policy', function(req, res){
+      var url = cfg.idms_server;
+      console.log("Posting to URL: ", url + '/r');
+      console.log("POST");
+      data = req.body;
+      console.log(req.body);
+      request.post({
+        headers: {'Content-Type' : 'application/perfsonar+json',
+                  'Accept': 'text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8, application/perfsonar+json'},
+        url:     url + '/r',
+        body:    JSON.stringify(data),
+      }, function(error, response, body){
+        console.log(body);
+        res.json(body);
+      });
+
+  });
+
   app.get('/api/wildfire',function(req, res) {
     var url = cfg.idms_server;
     var options = {

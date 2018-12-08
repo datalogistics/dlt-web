@@ -1,4 +1,4 @@
-function gMapController($scope, $location, $http, SocketService, UnisService, uiGmapGoogleMapApi, $cookies) {
+function gMapController($scope, $location, $http, SocketService, UnisService, uiGmapGoogleMapApi, $cookies, toastr, toastrConfig) {
 
   $scope.services = UnisService.services
   $scope.markers = [];
@@ -411,6 +411,35 @@ function gMapController($scope, $location, $http, SocketService, UnisService, ui
         $scope.refresh
       });
     };
+
+    $scope.post_policy = function(){
+      var input = jQuery('#policy-input');
+      try {
+        var json_input = JSON.parse(input.val());
+        console.log(json_input);
+        $http({
+          method: 'POST',
+          url: '/api/wildfire/post_policy',
+          data: JSON.stringify(json_input),
+          headers: {'Content-Type': 'application/json'}
+        }).success(function(res){
+          console.log(res);
+          if(res == "A server error occurred.  Please contact the administrator.") {
+            toastr.error("A server error occurred.  Please contact the administrator.");
+          } else {
+            toastr.success("Policy request registered in IDMS", "Success");
+          }
+        }).error(function(res){
+          toastr.error("Error registering policies.", "Error");
+        });
+
+      }
+     catch {
+        console.log('could not parse input');
+        toastr.error("Could not parse input. Please use correcly formatted JSON.", "Error");
+      }
+
+    }
 
 
 }

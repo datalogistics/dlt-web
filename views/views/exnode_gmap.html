@@ -4,6 +4,29 @@
 
 <div class="container">
   <div class="row">
+    <div class="col-md-12">
+      <button class="btn btn-primary closeall" ng-click="" data-toggle="modal" data-target="#policyModal">Apply Policies</button>
+
+      <!-- Modal -->
+      <div class="modal fade" id="policyModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="myModalLabel">Apply Policy</h4>
+            </div>
+            <div class="modal-body">
+              <textarea id="policy-input" class="form-control" rows="30" stype="border-radius:0px; !important;"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" ng-click="post_policy()">Post</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
     <div class="col-md-12" style="height:600px;padding-right:0px !important; margin-right:0px !important;" id='mapParent'>
 
       <script type="text/ng-template" id="searchbox.template.html">
