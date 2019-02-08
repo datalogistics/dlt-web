@@ -61,7 +61,6 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
             && typeof item.location.longitude != 'undefined'
             && typeof item.location.latitude != 'undefined'
             && item.location.longitude != 0
-            && item.location.city
             && item.location.latitude != 0);
   };
   
