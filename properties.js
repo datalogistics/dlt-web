@@ -7,15 +7,15 @@ var self = {
   ENABLE_HTTPS : false,
   // Defaulting to self-signed certs
   ssl : {
-    key : './cert/server.key',
-    cert : './cert/server.crt',
-    ca :  './cert/ca.crt'
+    key : './ssl/server.key',
+    cert : './ssl/server.crt',
+    ca :  './ssl/ca.crt'
   },
   sslOpt : {
     // Example of domain
     'dlt.incntre.iu.edu' : {
-      key : './cert/server.key',
-      cert : './cert/server.crt'
+      key : './ssl/server.key',
+      cert : './ssl/server.crt'
       // ca : "./ssl/dlt-client.csr"
     }
   },
@@ -48,14 +48,14 @@ var self = {
   exnodeParent_UsingSelfRef : true,
   // Try to login and maintain cookie for the following UNIS instances
   authArr : [],
-  idms_server : "http://localhost:8001",
   routeMap : {
     // Aggregate from the following by default
     //'default'  : ['dev', 'dlt', 'monitor'],
-    'default': ['local'],
+    'default': ['dlt'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
-    'exnodes' : [],
+    'exnodes' : ['exnodedev',],
+    'idms_url' : [],
     'nodes': [],
     'nodes_id' : [],
     //'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
@@ -91,6 +91,11 @@ var self = {
       port : "9000",
       use_ssl : false
     },
+    idms_url_000 : {
+      url: "TBA",
+      port: "TBA",
+      use_ssl: false
+    },
     exnodedev : {
       url: "unis.open.sice.indiana.edu",
       port: "8890",
@@ -98,7 +103,7 @@ var self = {
     },
     fuego : {
       url : "dlt.open.sice.indiana.edu",
-      port : "8000",
+      port : "8000/test.json",
       use_ssl : false
     },
     iu: {
@@ -134,7 +139,7 @@ var self = {
       use_ssl : false
     },
     dlt : {
-      url : "dlt.crest.iu.edu",
+      url : "dlt.open.sice.indiana.edu",
       port : "9000",
       key : "./ssl/dlt-client.pem",
       cert: "./ssl/dlt-client.pem",
@@ -148,7 +153,7 @@ var self = {
       use_ssl : false
     },
     dlt_ms : {
-      url : "dlt.crest.iu.edu",
+      url : "dlt.open.sice.indiana.edu",
       port : "9001",
       key : "./ssl/dlt-client.pem",
       cert : "./ssl/dlt-client.pem",
