@@ -13,23 +13,23 @@ var self = {
   },
   sslOpt : {
     // Example of domain
-    'dlt.incntre.iu.edu' : {
+    'dlt.open.sice.indiana.edu' : {
       key : './ssl/server.key',
       cert : './ssl/server.crt'
       // ca : "./ssl/dlt-client.csr"
     }
   },
   nat_map_file : './misc/idms_nat_map',
-  freegeoipUrl : "http://dlt.incntre.iu.edu:8080",
+  freegeoipUrl : "http://dlt.open.sice.indiana.edu:8080",
   jnlpMap : {
     'download': {
       'template': './misc/dlt-client.jnlp.tmpl',
-      'codebase': 'http://dlt.incntre.iu.edu/webstart',
+      'codebase': 'http://dlt.open.sice.indiana.edu/webstart',
       'jarfile' : 'lib/dlt-client.jar'
     },
     'publish' : {
       'template': './misc/dlt-publisher.jnlp.tmpl',
-      'codebase': 'http://dlt.incntre.iu.edu/webstart',
+      'codebase': 'http://dlt.open.sice.indiana.edu/webstart',
       'jarfile' : 'lib/dlt-publisher.jar'
     }
   },
@@ -127,12 +127,12 @@ var self = {
     	use_ssl : false,
     },
     unis : {
-      url : "unis.crest.iu.edu",
+      url : "unis.open.sice.indiana.edu",
       port : "8888",
       use_ssl : false,
     },
     dev : {
-      url : "dev.crest.iu.edu",
+      url : "dev.open.sice.indiana.edu",
       port : "8888",
       key : null,
       cert : null,
@@ -146,7 +146,7 @@ var self = {
       use_ssl: true
     },
     monitor : {
-      url : "monitor.crest.iu.edu",
+      url : "monitor.open.sice.indiana.edu",
       port : "9000",
       key : null,
       cert : null,
@@ -160,7 +160,7 @@ var self = {
       use_ssl : true
     },
     monitor_ms : {
-      url : "monitor.crest.iu.edu",
+      url : "monitor.open.sice.indiana.edu",
       port : "9001",
       key : null,
       cert : null,
@@ -186,20 +186,20 @@ var self = {
   GITHUB_CLIENT: "",
   GITHUB_SECRET: "",
   SCHEMAS: {
-  'networkresources': 'http://unis.crest.iu.edu/schema/20160630/networkresource#',
-  'nodes': 'http://unis.crest.iu.edu/schema/20160630/node#',
-  'domains': 'http://unis.crest.iu.edu/schema/20160630/domain#',
-  'ports': 'http://unis.crest.iu.edu/schema/20160630/port#',
-  'links': 'http://unis.crest.iu.edu/schema/20160630/link#',
-  'paths': 'http://unis.crest.iu.edu/schema/20160630/path#',
-  'networks': 'http://unis.crest.iu.edu/schema/20160630/network#',
-  'topologies': 'http://unis.crest.iu.edu/schema/20160630/topology#',
-  'services': 'http://unis.crest.iu.edu/schema/20160630/service#',
-  'blipp': 'http://unis.crest.iu.edu/schema/20160630/blipp#',
-  'metadata': 'http://unis.crest.iu.edu/schema/20160630/metadata#',
-  'datum': 'http://unis.crest.iu.edu/schema/20160630/datum#',
-  'data': 'http://unis.crest.iu.edu/schema/20160630/data#',
-  'measurement': 'http://unis.crest.iu.edu/schema/20160630/measurement#'
+  'networkresources': 'http://unis.open.sice.indiana.edu/schema/20160630/networkresource#',
+  'nodes': 'http://unis.open.sice.indiana.edu/schema/20160630/node#',
+  'domains': 'http://unis.open.sice.indiana.edu/schema/20160630/domain#',
+  'ports': 'http://unis.open.sice.indiana.edu/schema/20160630/port#',
+  'links': 'http://unis.open.sice.indiana.edu/schema/20160630/link#',
+  'paths': 'http://unis.open.sice.indiana.edu/schema/20160630/path#',
+  'networks': 'http://unis.open.sice.indiana.edu/schema/20160630/network#',
+  'topologies': 'http://unis.open.sice.indiana.edu/schema/20160630/topology#',
+  'services': 'http://unis.open.sice.indiana.edu/schema/20160630/service#',
+  'blipp': 'http://unis.open.sice.indiana.edu/schema/20160630/blipp#',
+  'metadata': 'http://unis.open.sice.indiana.edu/schema/20160630/metadata#',
+  'datum': 'http://unis.open.sice.indiana.edu/schema/20160630/datum#',
+  'data': 'http://unis.open.sice.indiana.edu/schema/20160630/data#',
+  'measurement': 'http://unis.open.sice.indiana.edu/schema/20160630/measurement#'
   }
 };
 
