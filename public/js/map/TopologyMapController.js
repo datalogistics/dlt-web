@@ -4,7 +4,7 @@ function topoMapDirective() {
     link: function(scope, element, attr) {
       scope.network = new vis.Network(element[0], scope.topodata, scope.topoopts);
       console.log(element);
-      scope.network.stabilize();
+      //scope.network.stabilize();
 
 
       canvas = scope.network.canvas.frame.canvas;
@@ -65,7 +65,7 @@ function topoMapDirective() {
           var nodeId = ev.nodes[0];
           var node = scope.topodata.nodes._data[nodeId];
           var name = node.objRef.name;
-          console.log(name);
+          console.log(node);
           scope.institutions.forEach(function(n){
 
             var test = n.split('//')[1];
@@ -151,134 +151,16 @@ function topoMapDirective() {
 
 var OFSW = "http://unis.crest.iu.edu/schema/ext/ofswitch/1/ofswitch#";
 
-function topologyMapController($scope, $route, $routeParams, $http, UnisService, EsmondService, $sce) {
+function topologyMapController($scope, $route, $routeParams, $http, UnisService, $sce, $websocket) {
   // XXX: testing vis.js
   var topolist = UnisService.getMostRecent(UnisService.topologies)
       .map(e => {return {id: e.id, name: e.name}});
   console.log(topolist);
 
-  EsmondService.closeAllPolls();
-  // Get Esmond Data for dash board.
-  // First -> grab the instances urls.
-  EsmondService.grabPerfsonarUrls(function(res){
-    return;
-    $scope.institutions = res;
-
-    // Second -> get all Interfaces on each instance.
-    $scope.institutions.forEach(function(url){
-      // get interfaces on each instance
-      EsmondService.getAllInterfaces(url, function(res){
-        var interfaces = res.interfaces;
-        $scope.throughputTests[url] = {"interfaces": {}};
-        res.interfaces.forEach(function(inter){
-
-            var iface = inter;
-            EsmondService.getTestsOnInterface(url, iface, function(res){
-
-              var i = iface.hostname;
-
-              if(res.length == 0){
-                $scope.throughputTests[url] = { "result":"No Test Results"};
-              } else {
-                $scope.throughputTests[url].interfaces[i] = {"result": "okay",
-                  "throughput": res.throughput,
-                  "packet_loss": res.packet_loss,
-                  "rtt_delay": res.latency,
-                  "summary": {},
-                  "interface_name": i,
-                  "interface": iface,
-                  "collapse": false
-                };
-
-                /* Init Summaries to avoid race condition messiness */
-                $scope.throughputTests[url].interfaces[i].throughput.forEach(function(t, index){
-                  $scope.throughputTests[url].interfaces[i].summary[t.destination] = {};
-                });
-
-                var inter = $scope.throughputTests[url].interfaces[i];
-                inter.throughput.forEach(function(t, index){
-                  try {
-                    EsmondService.getThroughput(t, function(res){
-                      var dst = t.destination;
-                      $scope.throughputTests[url].interfaces[i].throughput[index].throughput_val = res;
-                      //if(!$scope.throughputTests[url].interfaces[i].summary[dst]) {$scope.throughputTests[url].interfaces[i].summary[dst] = {}};
-                      $scope.throughputTests[url].interfaces[i].summary[dst] = {
-                        "throughput_val": res,
-                        "destination": t.destination,
-                        "input-destination": t["input-destination"],
-                        "tp_uri": t.uri,
-                        "source": t.source
-                      };
-
-                    });
-                  } catch(err){
-                    console.log("COULDNT GET TPUT TEST FOR ", t.destination);
-                  }
-
-                });
-
-                inter.packet_loss.forEach(function(p, index){
-                  var dst = p.destination;
-                  EsmondService.getPacketLoss(p, function(res){
-                    //if(!$scope.throughputTests[url].interfaces[i].summary[dst]) {$scope.throughputTests[url].interfaces[i].summary[dst] = {}};
-                    $scope.throughputTests[url].interfaces[i].summary[dst].packet_loss_rate = res;
-                  });
-                });
-
-                inter.rtt_delay.forEach(function(r, index){
-
-                  var dst = r.destination;
-                  var rtt_url = r.url + 'histogram-owdelay/base?time-range=' + 150;
-                  $scope.throughputTests[url].interfaces[i].summary[dst].latency = {};
-                  console.log("GOT IN: ", url, r.source, dst);
-
-
-                  $scope.throughputTests[url].interfaces[i].summary[dst].latency = {};
-                  EsmondService.trackLatency(iface + ':' + r.uri, rtt_url, 5000, function(res){
-
-                    var data = res.data[res.data.length - 1];
-                    var mean = 0; var total = 0;
-
-                    if(!data){
-                      $scope.throughputTests[url].interfaces[i].summary[dst].latency = {};
-                      $scope.throughputTests[url].interfaces[i].summary[dst].latency.mean = "Nothing to Monitor";
-                      $scope.throughputTests[url].interfaces[i].summary[dst].latency.median = "No Connection";
-                      $scope.throughputTests[url].interfaces[i].summary[dst].latency.error = true;
-                      return;
-                    }
-
-                    // here we get the median, should clean this up later.
-                    var arraydata = [];
-                    for(key in data.val){arraydata.push(data.val[key])}
-                    var data2 = arraydata.sort( function(a,b) {return a - b;} );
-                    var half = Math.floor(data2.length/2)
-                    var median = data2[half];
-                    var val = 0;
-                    var total = 0;
-                    for(key in data.val){ val = val + parseFloat(key); total = total + 1;}
-                    mean = val / total;
-                    $scope.throughputTests[url].interfaces[i].summary[dst].latency = data;
-                    $scope.throughputTests[url].interfaces[i].summary[dst].latency.mean = mean;
-                    $scope.throughputTests[url].interfaces[i].summary[dst].latency.median = median;
-                    $scope.throughputTests[url].interfaces[i].summary[dst].latency.uri = rtt_url;
-                    $scope.throughputTests[url].interfaces[i].summary[dst].latency.error = false;
-                    //console.log(url, i, r.destination, $scope.throughputTests[url].interfaces[i].summary[dst].latency);
-                  });
-
-                });
-
-              }
-            });
-          });
-
-        });
-      });
-
-  }); // End Esmond scope work, seeing as how long this chain is I probably need to fit this into one service call later when I get some feedback.
 
   // clean up polling threads on close
   $scope.$on('$destroy',function(){
-      EsmondService.closeAllPolls();
+
   });
 
   $scope.changed_latency = function(id){
@@ -306,7 +188,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   $scope.animatePath = false;
   $scope.p2s = [];
   $scope.institutions = [];
-  $scope.esmondGraphRefs = [];
+  $scope.EsmondGraphRefs = [];
   $scope.currentInstitution = '';
   $scope.currentGraph = {
     "source": '',
@@ -316,10 +198,12 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
 
 
   $scope.toggle = function(p) {
+
     $scope.cobj = undefined;
     if (p) {
       if (p.nodes.length) {
 	       $scope.cobj = nodes.get(p.nodes[0]);
+         console.log($scope.cobj.objRef.testNode);
       }
       else if (p.edges.length) {
 	       $scope.cobj = links.get(p.edges[0]);
@@ -329,11 +213,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   }
 
   $scope.onopen = function () {
-    //EsmondService.point
-    EsmondService.grabPerfsonarUrls(function(res){
-      $scope.institutions = res;
-    });
-    EsmondService.pointToSpread('http://um-ps01.osris.org', $scope.institutions, function(res){$scope.p2s.push(res)});
+
   };
 
   $scope.close = function () {
@@ -348,14 +228,12 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     return $sce.trustAsResourceUrl(src);
   };
 
-  $scope.buildGraphModal = function(url, src, dst){
-    $scope.currentGraph.src = src;
-    $scope.currentGraph.dst = dst;
-    $scope.currentGraph.url = url;
-    var url = $scope.graphRef(url, src, dst)
-    $scope.currentGraph.ref = url;
-    $scope.currentGraph.ref = $sce.trustAsResourceUrl($scope.currentGraph.ref);
-    console.log($scope.currentGraph.ref);
+  $scope.buildGraphModal = function(archive_url, src, dst){
+    perfsonarUrl = archive_url.split('/esmond')[0];
+    console.log(perfsonarUrl);
+    graphUrl = $scope.graphRef(perfsonarUrl, src, dst)
+    $scope.modal = {'source': src, 'destination': dst};
+    $scope.graphUrl = $sce.trustAsResourceUrl(graphUrl);
   };
 
   // scope data
@@ -391,7 +269,12 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     edges: links
   };
   console.log(nodes , links);
-  $scope.topoopts = {};
+  $scope.topoopts = {
+    physics: { //stabilization: { enabled: false},
+               //repulsion: {springConstant: 0.01, nodeDistance: 50},
+               solver: "forceAtlas2Based"
+             }
+  };
 
   $http.get('/api/topologies/'+$scope.topoId+'?inline')
     .then(function(res) {
@@ -532,7 +415,125 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
 
   };
 
+  var attachValue = function(metadata, data, resource){
+    console.log("meta",metadata);
+    console.log("data", data);
+    console.log("resource", resource);
+    try {
+      resource.objRef.meta[metadata.id] = metadata;
+      resource.objRef.meta[metadata.id].value = data.value;
 
+      timestamp = timeConverter(data.ts)
+
+      resource.objRef.meta[metadata.id].last_updated = timestamp;
+      console.log("After attach", resource);
+    } catch(err) {
+      console.log("Unable to attach value to metadata", err);
+    }
+
+  };
+
+  var handleThroughput = function(metadata, data, resource){
+      id  = metadata.id;
+      resourceId = resource.objRef.id;
+
+      console.log("DATA", data);
+      val = data.value
+      console.log("VALUE", val);
+
+      return (val/1000000).toFixed(2) + " Mbits/s";
+    };
+
+  var measurementHandler = function(metadata, data, resource){
+      console.log(metadata);
+      var value;
+      if(metadata.eventType == 'throughput'){
+        data.value = handleThroughput(metadata, data, resource);
+      } else{
+        data.value = Math.round(data.value, 2);
+      }
+
+      attachValue(metadata, data, resource);
+
+  };
+
+  var init = function(){
+    console.log(UnisService);
+    /* After UnisService loads make links that have tests show more clearly */
+    setTimeout(function(){
+
+        initializeGraph();
+      }, 3500);
+  }; init();
+
+  var initializeGraph = function(){
+
+    for(n in $scope.topodata.nodes._data){
+
+        node = $scope.topodata.nodes._data[n].objRef.meta = {};
+    }
+
+    UnisService.metadata.forEach(function(m){
+        ref = m;
+        dataId = m.id;
+        l = UnisService.links.filter(l => l.selfRef == m.subject.href)[0];
+        targetNodes = UnisService.nodes.filter(n => n.selfRef == l.properties.sourceRef || n.selfRef == l.properties.destRef);
+        for(node in $scope.topodata.nodes._data){
+          n = $scope.topodata.nodes._data[node];
+          if(n.objRef.selfRef == targetNodes[0].selfRef || n.objRef.selfRef == targetNodes[1].selfRef){
+            n.objRef.meta[dataId] = m;
+            n.objRef.testNode = true;
+            $http.get('api/data/' + dataId + '?limit=5').then(function(res){
+              console.log('n', n);
+              measurementHandler(m, res.data[0], n);
+            });
+          }
+        }
+    });
+
+  };
+
+
+
+
+
+  var handle_measurement_data = function(rcv){
+      // in case the data cannot get parsed correctly.
+      dataId = JSON.parse(rcv).headers.id;
+
+      console.log("Scope Network", $scope.network);
+      console.log("Rcv socket data: ", rcv);
+      console.log("Metadata: ", UnisService.metadata);
+
+      m = UnisService.metadata.find(m => m.id == dataId);
+      l = UnisService.links.filter(l => l.selfRef == m.subject.href)[0];
+      console.log("l", l);
+      node_a = UnisService.nodes.forEach(n => n.selfRef == l.properties.sourceRef)[0];
+      node_b = UnisService.nodes.filter(n => n.selfRef == l.properties.destRef)[0];
+      vis_nodes = $scope.network.selectNodes([node_a.id, node_b.id]);
+      console.log($scope.topodata.nodes._data[node_a.id]);
+      /*console.log(dataId, metadata_match);
+      graph.forEachLink(function(l){
+        if(l.data.objRef.selfRef == metadata_match.subject.href){
+          TopologyService.measurementHandler(metadata_match, JSON.parse(rcv).data[dataId][0], l);
+        }
+      });*/
+  };
+
+  var ws = $websocket('ws://iu-ps01.osris.org:8888/subscribe/data')
+      .onOpen(function(){
+            console.log("Web Socket open.")
+      })
+      .onMessage(function(data){
+            console.log("New data", data.data);
+            handle_measurement_data(data.data);
+      })
+      .onError(function(e){
+        console.log("WS ERROR:", e);
+      })
+      .onClose(function(e){
+        console.log("WS CLOSE:",e);
+      });
 
   $scope.stringify = function(json){
     return JSON.stringify(json)
@@ -823,6 +824,20 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
 
 
 }
+
+function timeConverter(UNIX_timestamp){
+  var a = new Date(UNIX_timestamp * 1000);
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var year = a.getFullYear();
+  var month = months[a.getMonth()];
+  var date = a.getDate();
+  var hour = a.getHours();
+  var min = a.getMinutes();
+  var sec = a.getSeconds();
+  var time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
+  return time;
+}
+
 function highlighterDirective($timeout){
   return {
     restrict: 'A',

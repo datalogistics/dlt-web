@@ -31,7 +31,7 @@ angular.module('periApp',
 		'map',
     'ngSanitize',
     'services.polling',
-    'ngWebsocket'
+    'ngWebSocket'
   ])
   .run(function($rootScope,UnisService,ServiceService,CommChannel,$modal,$cookies) {
     $rootScope.unis = UnisService;
@@ -76,9 +76,14 @@ angular.module('periApp',
 
 
              $routeProvider.
-               when('/', {
-                 templateUrl: 'views/main.html',
-                 controller: 'MainController'
+               when('/:id?', {
+                 templateUrl: 'views/topology_map.html',
+                 controller: 'TopologyMapController',
+		             reloadOnSearch: false,
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
                }).
                when('/status', {
                  templateUrl: 'views/services.html',

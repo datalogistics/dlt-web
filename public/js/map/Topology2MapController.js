@@ -13,7 +13,7 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
   if (typeof topoId == 'undefined') {
     return;
   }
-  console.log(topoId);
+;
 
   $scope.checked = false;
 
@@ -39,6 +39,7 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
         Called AFTER graph renders.
   */
   var init = function(){
+    console.log(UnisService);
     /* After UnisServie loads make links that have tests show more clearly */
     setTimeout(function(){
         UnisService.metadata.forEach(function(m){
@@ -49,10 +50,36 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
               }
             });
         });
+        TopologyService.initializeGraph(graph, UnisService);
+        createMetaDataLinks();
+      }, 3500);
 
-        TopologyService.initializeGraph(graph, UnisService.metadata);
 
-      }, 5000);
+  };
+
+  var createMetaDataLinks = function(){
+
+
+    UnisService.metadata.forEach(function(m){
+      link = UnisService.links.filter(l => l.selfRef == m.subject.href)[0];
+      node_a = UnisService.nodes.filter(n => n.selfRef == link.properties.sourceRef)[0];
+      node_b = UnisService.nodes.filter(n => n.selfRef == link.properties.destRef)[0];
+      graph_nodes = [];
+      console.log("Graph", graph);
+      graph.forEachNode(function(n){
+        if(n.data.objRef.selfRef == node_a.selfRef) {graph_nodes.push(n);}
+        else if(n.data.objRef.selfRef == node_b.selfRef) {graph_nodes.push(n);}
+      });
+      console.log("graph_nodes", graph_nodes);
+      l = {id: link.id,
+         objRef: link,
+         from: graph_nodes[0],
+         to: graph_nodes[1],
+         color: 'black'}
+      graph.addLink(l.from.data.id, l.to.data.id, l);
+      renderer.rerender()
+    });
+
   };
 
 
@@ -125,7 +152,8 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
 
                 var ui = Viva.Graph.svg('path')
                            .attr('stroke', 'grey')
-                           .attr('id', link.data.objRef.id);
+                           .attr('id', link.data.objRef.id)
+                           .attr('fill', 'none');
 
                 $(ui).dblclick(function() {
                     $scope.cobj = link.data;
@@ -161,6 +189,7 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
                             || toPos; // if no intersection found - return center of the node
                 var data = 'M' + from.x + ',' + from.y +
                            'L' + to.x + ',' + to.y;
+
                 linkUI.attr("d", data);
             });
 
@@ -190,8 +219,8 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
       layout: layout
     });
     renderer.run();
-    console.log(graph);
     init();
+
 
 
 
@@ -217,17 +246,20 @@ function topology2MapController($scope, $route, $routeParams, $http, UnisService
       });
   };
 
-  var ws = $websocket.$new('ws://um-ps01.osris.org:8888/subscribe/data')
-      .$on('$open', function(){
-            console.log("Web Socket open.");
+  var ws = $websocket('ws://iu-ps01.osris.org:8888/subscribe/data')
+      .onOpen(function(){
+            console.log("Web Socket open.")
       })
-      .$on('$message',function(data){
-            handle_measurement_data(data);
+      .onMessage(function(data){
+            console.log("New data", data.data);
+            handle_measurement_data(data.data);
+      })
+      .onError(function(e){
+        console.log("WS ERROR:", e);
+      })
+      .onClose(function(e){
+        console.log("WS CLOSE:",e);
       });
-
-
-
-
 };
 
 function highlighterDirective($timeout){

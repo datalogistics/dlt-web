@@ -349,14 +349,15 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
   var now_usec = Math.round(new Date().getTime() * 1e3);
   var init_filter = '?ts=gt='+(now_usec-ptime_usec);
   service.init_filter = '?ts=gt='+(now_usec-ptime_usec)
+  //service.init_filter = '?t=all';
   var initServicePromise;
   service.init = function(filter) {
     initServicePromise = initServicePromise || $q.all([
       $http.get('/api/topologies', { cache: true}),
       $http.get('/api/domains', { cache: true}),
-      $http.get('/api/nodes'+service.init_filter, { cache: true}),
-      $http.get('/api/ports'+service.init_filter, { cache: true}),
-      $http.get('/api/links'+service.init_filter, { cache: true}),
+      $http.get('/api/nodes'/*+service.init_filter*/, { cache: true}),
+      $http.get('/api/ports'/*+service.init_filter*/, { cache: true}),
+      $http.get('/api/links'/*+service.init_filter*/, { cache: true}),
       $http.get('/api/paths'+service.init_filter, { cache: true}),
       $http.get('/api/measurements'+service.init_filter, { cache: true}),
       $http.get('/api/metadata', { cache: true}),

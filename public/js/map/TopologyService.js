@@ -9,27 +9,32 @@ function topologyService($http, $q){
   /*
     Initialize Graph Data Values.
   */
-  service.initializeGraph = function(graph, metadata){
-    metadata.forEach(function(m){
-      graph.forEachLink(function(l){
+  service.initializeGraph = function(graph, UnisService){
 
-        dataId = m.id;
-
-        if(!l.data.meta){
-          l.data.meta = {};
-        }
-
-        // if match metadata with resource, get resource data
-        if(l.data.objRef.selfRef == m.subject.href){
-          l.data.meta[dataId] = m;
-          $http.get('api/data/' + dataId + '?limit=5').then(function(res){
-              service.measurementHandler(m, res.data[0], l);
-          });
-
-        }
-
-      });
+    graph.forEachNode(function(n){
+        n.data.meta = {};
     });
+
+    UnisService.metadata.forEach(function(m){
+        ref = m;
+        dataId = m.id;
+        console.log(UnisService.getMostRecent(UnisService.links));
+        l = UnisService.links.filter(l => l.selfRef == m.subject.href)[0];
+        targetNodes = UnisService.nodes.filter(n => n.selfRef == l.properties.sourceRef || n.selfRef == l.properties.destRef);
+        graph.forEachNode(function(n){
+          if(n.data.objRef.selfRef == targetNodes[0].selfRef || n.data.objRef.selfRef == targetNodes[1].selfRef){
+            n.data.meta[dataId] = m;
+            n.data.testNode = true;
+            $http.get('api/data/' + dataId + '?limit=5').then(function(res){
+              service.measurementHandler(m, res.data[0], n);
+            });
+          }
+        });
+
+
+
+    });
+
   };
 
   /*
@@ -57,17 +62,8 @@ function topologyService($http, $q){
       console.log("DATA", data);
       val = data.value
       console.log("VALUE", val);
-      if(val > 500000000){
-        console.log("GREEN");
-        $('#' + resourceId).attr('stroke','green');
-      }
-      else if( val > 200000000){
-        $('#' + resourceId).attr('stroke', 'yellow');
-      }
-      else {
-        console.log("RED");
-        $('#' + resourceId).attr('stroke', 'red');
-      }
+
+      //$('#' + resourceId).attr('stroke','green');
 
       return (val/1000000) + " Mbits/s";
     };

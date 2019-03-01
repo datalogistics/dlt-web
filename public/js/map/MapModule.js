@@ -8,7 +8,7 @@ angular.module('map', [])
   .factory('EsmondService', ['$http', '$polling',  function($http, $polling) {
     return new esmondService($http, $polling);
   }])
-  .factory('TopologyService', ['$http', '$q',  function($http, $q) {
+  .factory('TopologyService', ['$http', '$q','UnisService',  function($http, $q) {
     return new topologyService($http, $q);
   }])
   .controller('MapController', mapController)

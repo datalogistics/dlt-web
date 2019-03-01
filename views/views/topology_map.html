@@ -55,7 +55,7 @@
 
 
 
-<h1 class="page-header"><img src="images/osiris_logo.png" style="height:100px; width:100px;"/> OSiRIS Topology Monitor <small>prototype version 0.2.0</small></h1>
+<h1 class="page-header"><img src="images/osiris_logo.png" style="height:100px; width:100px;"/> OSiRIS Topology Monitor</h1>
 
 
 
@@ -105,106 +105,85 @@
   <div class="modal-dialog modal-dialog-fs" role="document" style="width: 85%">
     <div class="modal-content modal-content-fs" style="border-radius: 0px !important;">
       <div class="modal-header">
-        <h5 class="modal-title" id="graphModalLabel">{{currentGraph.src}} -> {{currentGraph.dst}}</h5>
+        <h5 class="modal-title" id="graphModalLabel">{{modal.source}} -> {{modal.destination}}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body" style="height:100%">
-        <iframe ng-src="{{currentGraph.ref}}" frameborder="0" style="width:100%; height:95%"></iframe>
+        <iframe ng-src="{{graphUrl}}" frameborder="0" style="width:100%; height:95%"></iframe>
       </div>
     </div>
   </div>
 </div>
 
+</div>
 <div class="pull-right" style="padding-right:10px">
   <button ng-click="clearPaths()" class="btn btn-danger" style=" border-radius: 0px">Clear</button>
 </div>
 
-<div pageslide ps-auto-close="false" ps-open="stats_slide" ps-click-outside="true" ps-speed="0.5" ps-size="750px" ps-side="top"  ps-click-outside="true" style="padding-bottom:20px;">
-  <div style="padding:20px; overflow:auto; height: 100%" >
+<div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="false" ps-speed="0.5" ps-size="700px" >
+  <div style="padding:30px; overflow:auto; height: 100%" id="slide-right">
     <div><p><br/></p></div>
-    <div class="row">
-      <div class="col-md-12">
-        <h2>Esmond Dashboard<a ng-click="toggleStats()" class="btn btn-info pull-right" >Close</a></h2>
+    <h2 style="color:#000000;"><b>{{cobj.objRef.name}}</b><a ng-click="toggle()" class="btn btn-info pull-right">Close</a></h2>
+    <hr>
 
-        <p><b>Perfsonar Node: {{currentInstitution.name}}</b></p>
-        <p><small>Showing tests on all interfaces for the last 7 days.</small></p>
-        <p><small>OW Latency Measurement is from a continually updated sample of ~150 packet. For more accurate aggregation click Show.</small></p>
-      </div>
+
+    <table class="table table-hover graph-slide-table" ng-if="cobj.objRef.testNode">
+
+      <thead>
+        <tr style="color:#000;!important">
+          <th>Type</th>
+          <th>Source</th>
+          <th>Destination</th>
+          <th>Value</th>
+          <th>Last Updated</th>
+          <th></th>
+          <!--
+          <th class="text-center">THROUGHPUT (avg)</th>
+          <th class="text-center">LOSS</th>
+          <th class="text-center">OW-LATENCY (ms)</th>-->
+        <tr>
+      </thead>
+
+      <tbody class="graph-table" style="color:#000;!important">
+        <tr ng-repeat="meta in cobj.objRef.meta track by $index"  class="graph-row" style="background-color:#FFF;">
+          <td><div>{{meta.eventType}}<div></td>
+          <td><div>{{meta.parameters.source}}<div></td>
+          <td><div>{{meta.parameters.destination}}<div></td>
+          <td highlighter="meta.value" class="text-center"><div>{{meta.value}}<div></td>
+          <td highlighter="meta.value" class="text-center"><div>{{meta.last_updated}}<div></td>
+          <td class="text-center">
+              <button
+              ng-click="buildGraphModal(meta.parameters.archive, meta.parameters.source, meta.parameters.destination)"
+              class="btn btn-warning"
+              data-toggle="modal"
+              data-target="#graphPathModal"
+              style="border-radius: 0px">
+              Show
+            </button>
+          </td>
+
+
+        </tr>
+      </tbody>
+
+    </table>
+    <div class="well" style="background-color:#737373!important;">
+      <h4>UNIS Representation</h4>
+      <json-formatter json="cobj.objRef" open="1"></json-formatter>
     </div>
-
-    <!-- Interface Collapsables -->
-    <div ng-repeat="interface in currentInstitution.test.interfaces" ng-model="currentInstitution.test">
-      <p>
-        <button class="btn btn-primary" type="button" ng-click="interface.collapse = !interface.collapse" ng-init="interface.collapse = false">
-          {{interface.interface_name}}
-        </button>
-      </p>
-      <div collapse="interface.collapse">
-    		<div class="well well-lg" style="border-radius:0px;">
-
-
-          <div ng-show="interface.throughput.length == 0" class="text-center" style="color:#000;">
-            <p>No throughput tests recorded in the last week.</p>
-            <p>Please refer to
-              <a href="{{currentInstitution.name}}/toolkit" style="color:lightblue; text-decoration:none">
-                {{currentInstitution.name}}/tookit
-              </a>
-              for more detailed information</a>
-            </p>
-          </div>
-
-          <!-- BEGIN TABLE -->
-            <table class="table table-hover graph-slide-table" ng-show="interface.throughput.length != 0">
-
-              <thead>
-                <tr style="color:#000;!important">
-                  <th>SOURCE</th>
-                  <th>DESTINATION</th>
-                  <th class="text-center">VIEW</th>
-                  <th class="text-center">THROUGHPUT (avg)</th>
-                  <th class="text-center">LOSS</th>
-                  <th class="text-center">OW-LATENCY (ms)</th>
-                <tr>
-              </thead>
-
-              <tbody class="graph-table" style="color:#000;!important">
-                <tr highlighter="summary.latency.mean" ng-repeat="summary in interface.summary track by $index" ng-if="dst != currentInstitution" class="graph-row">
-                  <td><div>{{interface.interface_name}} - <small>{{interface.interface.ipv4[0]}}</small><div></td>
-                  <td><div>{{summary["input-destination"]}} - <small>{{summary.destination}}</small><div></td>
-                  <td class="text-center">
-                      <button
-                      ng-click="buildGraphModal(currentInstitution.name, interface.interface_name, summary.destination)"
-                      class="btn btn-warning"
-                      data-toggle="modal"
-                      data-target="#graphPathModal"
-                      style="border-radius: 0px">
-                      Show
-                    </button>
-                  </td>
-                  <td class="text-center">{{(summary.throughput_val / 1000000000).toFixed(2)}} gb/s</td>
-                  <td class="text-center">{{summary.packet_loss_rate.toFixed(5)}} %</td>
-                  <td class="text-center latency-value"
-                    id="{{summary['input-destination'] + '-' + summary.destination}}"
-                  >{{summary.latency ? summary.latency.mean.toFixed(3) : "Nothing Here"}}</td>
-                </tr>
-              </tbody>
-
-            </table> <!-- END TABLE -->
-
-        </div>
-    	</div>
-    </div> <!-- end interface collapsables -->
-
-
-    <hr style="border-top: 1px solid #fff;">
-    <div class="text-center" style="height:30px"><span class="glyphicon glyphicon-menu-up text-center" style="color:#fff; font-size:20px"></span></div>
   </div>
-
 </div>
 
 
+<!--    <hr style="border-top: 1px solid #fff;">
+    <div class="text-center" style="height:30px"><span class="glyphicon glyphicon-menu-up text-center" style="color:#fff; font-size:20px"></span></div>
+  </div>
+
+</div>-->
+
+<!--
 <div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="false" ps-speed="0.5" ps-size="700px" >
   <div style="padding:30px; overflow:auto; height: 100%" id="slide-right">
     <div><p><br/></p></div>
@@ -212,7 +191,7 @@
     <hr>
     <json-formatter json="cobj.objRef" open="1"></json-formatter>
   </div>
-</div>
+</div>-->
 
 <div id="topologyMap">
   <topology-map></topology-map>

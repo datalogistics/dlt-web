@@ -28,7 +28,8 @@
     "angular-pageslide-directive": "^2.1.4",
     "ng-prettyjson": "^0.2.1",
     "json-formatter": "^0.7.0",
-    "angular-ivh-treeview": "^1.1.0"
+    "angular-ivh-treeview": "^1.1.0",
+    "angular-websocket": "^2.0.0"
   },
   "resolutions": {
     "angular": "1.2.16",

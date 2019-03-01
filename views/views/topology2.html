@@ -24,14 +24,14 @@
       <hr>
 
 
-      <table class="table table-hover graph-slide-table" ng-if="cobj.meta">
+      <table class="table table-hover graph-slide-table" ng-if="cobj.testNode">
 
         <thead>
           <tr style="color:#000;!important">
             <th>Type</th>
             <th>Source</th>
             <th>Destination</th>
-            <th>Value</th>
+            <th class="text-center">Value</th>
             <th>Last Updated</th>
             <th></th>
             <!--
@@ -46,7 +46,7 @@
             <td><div>{{meta.eventType}}<div></td>
             <td><div>{{meta.parameters.source}}<div></td>
             <td><div>{{meta.parameters.destination}}<div></td>
-            <td highlighter="meta.value" class="text-center"><div>{{meta.value}}<div></td>
+            <td highlighter="meta.value" ><div>{{meta.value}}<div></td>
             <td highlighter="meta.value" class="text-center"><div>{{meta.last_updated}}<div></td>
             <td class="text-center">
                 <button
