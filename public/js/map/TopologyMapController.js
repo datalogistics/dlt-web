@@ -13,15 +13,15 @@ function topoMapDirective() {
 
     	scope.network.on("beforeDrawing", function(ctx) {
           //ctx.drawImage(document.getElementById("mapImage"), -1000, -1000, 2000,1500);
-          ctx.fillStyle = "rgb(211,211,211)";
+          ctx.fillStyle = "white";
           ctx.fillRect(-window.innerWidth * 50, -window.innerHeight * 100, window.innerWidth * 100, window.innerHeight * 200);
-          for(var n in scope.network.body.nodes){
+          /*for(var n in scope.network.body.nodes){
             var node = scope.network.body.nodes[n];
             // destroys heap, TODO: implement some nutty WebGL for rendering.
             //var color = scope.network.body.data.nodes._data[n].color;
             drawCircle(node.x, node.y, 'rgb(255,255,255)', 75);
 
-          }
+          }*/
           //ctx.globalCompositeOperation = 'source-out';
           //for(var n in scope.network.body.nodes){
           //  var node = scope.network.body.nodes[n];
@@ -276,6 +276,52 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
              }
   };
 
+  function createNode(d, e, color) {
+    var n = {id: e.id,
+       label: e.name,
+       domain: d.id,
+       color: color,
+       objRef: e,
+       title: e.description || ""}
+
+    if (e.$schema == OFSW) {
+      n.image = '/images/switch-icon.png';
+      n.shape = 'image';
+    } else if(e.name.includes('ps')){
+      n.image = '/images/database.png';
+      n.shape = 'image';
+    }
+    else {
+      n.image = '/images/server_icon.png';
+      n.shape = 'image';
+    }
+
+    return n;
+  }
+
+  function createNodeLinks(data, dset) {
+    data.reduce((acc, link) => {
+      if (link.endpoints &&
+          link.endpoints[0].href.startsWith("http") &&
+          link.endpoints[1].href.startsWith("http")) {
+        acc.push({a: link.endpoints[0].href,
+            b: link.endpoints[1].href,
+            id: link.id,
+            ref: link})
+      } return acc}, [])
+      .forEach(function(e) {
+        var a = dset.get(e.a.split('/').pop());
+        var b = dset.get(e.b.split('/').pop());
+        if (a && b) {
+          links.add({id: e.id,
+             objRef: e.ref,
+             from: a.node,
+             to: b.node,
+             color: 'black'})
+        }
+      });
+  }
+
   $http.get('/api/topologies/'+$scope.topoId+'?inline')
     .then(function(res) {
 
@@ -288,51 +334,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       	}
       }
 
-      function createNode(d, e, color) {
-      	var n = {id: e.id,
-      		 label: e.name,
-      		 domain: d.id,
-      		 color: color,
-      		 objRef: e,
-      		 title: e.description || ""}
 
-      	if (e.$schema == OFSW) {
-      	  n.image = '/images/switch-icon.png';
-      	  n.shape = 'image';
-      	} else if(e.name.includes('ps')){
-          n.image = '/images/database.png';
-          n.shape = 'image';
-        }
-      	else {
-      	  n.image = '/images/server_icon.png';
-      	  n.shape = 'image';
-      	}
-
-	      return n;
-      }
-
-      function createNodeLinks(data, dset) {
-      	data.reduce((acc, link) => {
-      	  if (link.endpoints &&
-      	      link.endpoints[0].href.startsWith("http") &&
-      	      link.endpoints[1].href.startsWith("http")) {
-      	    acc.push({a: link.endpoints[0].href,
-      		      b: link.endpoints[1].href,
-      		      id: link.id,
-      		      ref: link})
-      	  } return acc}, [])
-      	  .forEach(function(e) {
-      	    var a = dset.get(e.a.split('/').pop());
-      	    var b = dset.get(e.b.split('/').pop());
-      	    if (a && b) {
-      	      links.add({id: e.id,
-          			 objRef: e.ref,
-          			 from: a.node,
-          			 to: b.node,
-          			 color: 'black'})
-      	    }
-      	  });
-      }
 
       var topo = res.data[0];
       console.log(topo)
@@ -386,7 +388,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   console.log(links)
       // links connecting domains
       if ("links" in topo) {
-	createNodeLinks(topo.links, domains);
+	       createNodeLinks(topo.links, domains);
       }
     });
 
@@ -466,6 +468,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       }, 3500);
   }; init();
 
+
   var initializeGraph = function(){
 
     for(n in $scope.topodata.nodes._data){
@@ -478,9 +481,11 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
         dataId = m.id;
         l = UnisService.links.filter(l => l.selfRef == m.subject.href)[0];
         targetNodes = UnisService.nodes.filter(n => n.selfRef == l.properties.sourceRef || n.selfRef == l.properties.destRef);
+        subjectIDs = [];
         for(node in $scope.topodata.nodes._data){
           n = $scope.topodata.nodes._data[node];
           if(n.objRef.selfRef == targetNodes[0].selfRef || n.objRef.selfRef == targetNodes[1].selfRef){
+            subjectIDs.push(node);
             n.objRef.meta[dataId] = m;
             n.objRef.testNode = true;
             $http.get('api/data/' + dataId + '?limit=5').then(function(res){
@@ -489,6 +494,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
             });
           }
         }
+        $scope.topodata.edges.add({to: subjectIDs[0], from: subjectIDs[1], objRef:l, color:"yellow"})
     });
 
   };
