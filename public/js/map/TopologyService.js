@@ -83,6 +83,16 @@ function topologyService($http, $q){
 
   };
 
+  service.handleClusteredEdges = function(graph){
+    // find the edge in the network that corresponds to the new dataId
+    
+    // network.getClusteredEdges to find the edge that maps to that cluster.
+
+    // change the properties of that edge depending on the data
+
+    return;
+  };
+
   /*
       Pass to the controller everything it needs to create a graph.
   */

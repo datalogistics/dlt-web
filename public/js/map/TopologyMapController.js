@@ -102,6 +102,7 @@ function topoMapDirective() {
       });
 
       scope.network.on("selectEdge", function(params) {
+        //scope.network.clustering.updateEdge(params.edges[0], {color : '#ff0000', width:10});
 	       //scope.toggle(params);
       });
 
@@ -408,11 +409,17 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
           	  clusterOptions.mass = totalMass;
           	  return clusterOptions;
           	},
-          	clusterNodeProperties: {id: d.id, borderWidth: 3, shape: 'database', color: 'orange', label:'domain: ' + d.name}
+          	clusterNodeProperties: {id: d.id, borderWidth: 3, shape: 'database', label:'domain: ' + d.name},
+            clusterEdgeProperties: {color: { inherit: null}}
+
           };
         $scope.network.cluster(clusterOptionsByData);
 
     });
+
+    console.log("Cluster", $scope.network);
+    console.log("Clustered nodes", $scope.network.clusteredNodes);
+    // network.getClusteredEdges
 
 
   };
@@ -465,9 +472,50 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     setTimeout(function(){
 
         initializeGraph();
+        $scope.clusterByDomain();
+        //handleClusteredEdges();
       }, 3500);
   }; init();
 
+  $scope.handleClusteredEdges = function(){
+    console.log("network", $scope.network);
+    for(e in $scope.topodata.edges._data){
+      edge = $scope.topodata.edges._data[e];
+      if(edge.metadata_id){
+
+        metaID = edge.metadata_id;
+        clusterEdge = $scope.network.clustering.getClusteredEdges(e);
+
+        connectedNodes = $scope.network.getConnectedNodes(e);
+        node_a = $scope.topodata.nodes._data[connectedNodes[0]];
+        node_b = $scope.topodata.nodes._data[connectedNodes[1]];
+
+        test = node_a.objRef.meta[metaID];
+
+        //$scope.network.clustering.updateEdge(e, {width: 10, color: { color:'#ff0000'}});
+        console.log('test', test);
+        if(test.eventType == 'throughput'){
+          handleClusterTestEdge(test, e);
+        }
+
+      }
+
+    }
+  };
+
+  var handleClusterTestEdge = function(test, edge){
+    function getColor(value){
+        //value from 0 to 1
+        var hue=((1-value)*120).toString(10);
+        return ["hsl(",hue,",100%,50%)"].join("");
+    }
+    if(test.eventType == "throughput" && test.value){
+      val = parseFloat(test.value.split(' ')[0]);
+      console.log('val', val);
+      color = getColor(1 - (val/10000));
+      $scope.network.clustering.updateEdge(edge, {width: 10, color: { color:color}});
+    }
+  }
 
   var initializeGraph = function(){
 
@@ -489,12 +537,19 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
             n.objRef.meta[dataId] = m;
             n.objRef.testNode = true;
             $http.get('api/data/' + dataId + '?limit=5').then(function(res){
-              console.log('n', n);
+              //console.log('n', n);
               measurementHandler(m, res.data[0], n);
+
             });
           }
         }
-        $scope.topodata.edges.add({to: subjectIDs[0], from: subjectIDs[1], objRef:l, color:"yellow"})
+        e = $scope.topodata.edges.add({to: subjectIDs[0], from: subjectIDs[1], objRef:l, metadata_id: m.id, color:'#ff0000', width:10})
+        clusterEdge = $scope.network.clustering.getClusteredEdges(e);
+        //$scope.network.clustering.updateEdge(clusterEdge[0], {color:"#ff0000", width:10});
+        //$scope.network.clustering.updateEdge(clusterEdge[1], {color:"#ff0000", width:10});
+        //console.log("added edge", e);
+        //$scope.network.clustering.updateEdge(originalEdge.id, {color : '#aa0000'});
+
     });
 
   };
@@ -518,6 +573,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       node_b = UnisService.nodes.filter(n => n.selfRef == l.properties.destRef)[0];
       vis_nodes = $scope.network.selectNodes([node_a.id, node_b.id]);
       console.log($scope.topodata.nodes._data[node_a.id]);
+
       /*console.log(dataId, metadata_match);
       graph.forEachLink(function(l){
         if(l.data.objRef.selfRef == metadata_match.subject.href){
