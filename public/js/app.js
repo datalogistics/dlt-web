@@ -18,6 +18,7 @@ angular.module('periApp',
 		'ngAnimate',
 		'schemaForm',
 		'ui.utils',
+    'ngTable',
     'ivh.treeview',
     'jsonFormatter',
 		'ui.bootstrap',
@@ -76,7 +77,7 @@ angular.module('periApp',
 
 
              $routeProvider.
-               when('/:id?', {
+               when('/', {
                  templateUrl: 'views/topology_map.html',
                  controller: 'TopologyMapController',
 		             reloadOnSearch: false,
@@ -111,6 +112,24 @@ angular.module('periApp',
                }).
                when('/topology/:id?', {
                  templateUrl: 'views/topology_map.html',
+                 controller: 'TopologyMapController',
+		               reloadOnSearch: false,
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               }).
+               when('/dashboard/', {
+                 templateUrl: 'views/dashboard.html',
+                 controller: 'TopologyMapController',
+		               reloadOnSearch: false,
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               }).
+               when('/dashboard/:id', {
+                 templateUrl: 'views/dashboard.html',
                  controller: 'TopologyMapController',
 		               reloadOnSearch: false,
                  resolve: {
