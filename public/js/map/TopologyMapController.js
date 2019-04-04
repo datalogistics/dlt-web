@@ -202,6 +202,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   $scope.tableParams = new NgTableParams({}, { dataset: $scope.t_data});
 
 
+
   $scope.toggle = function(p) {
 
     $scope.cobj = undefined;
@@ -274,10 +275,28 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     edges: links
   };
   console.log(nodes , links);
+
+  $scope.physics = true;
+  $scope.togglePhysics = function(){
+    console.log($scope.network);
+    if($scope.physics){
+      $scope.network.setOptions({physics: false});
+    } else if (!$scope.physics){
+      $scope.network.setOptions({physics: true});
+    }
+    $scope.physics = !$scope.physics;
+
+  }
+
   $scope.topoopts = {
     physics: { //stabilization: { enabled: false},
                //repulsion: {springConstant: 0.01, nodeDistance: 50},
-               solver: "forceAtlas2Based"
+               solver: "forceAtlas2Based",
+               stabilization: {
+                    enabled: true,
+                    iterations: 1000,
+                    updateInterval: 25
+                }
              }
   };
 
