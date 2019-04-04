@@ -354,7 +354,15 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
         console.log("DOMAIN", d);
       	if ("nodes" in d) {
       	  // find domain nodes
-      	  nodes.add(d.nodes.filter(ffunc).map(e => {return createNode(d, e, color)}));
+      	  //nodes.add(d.nodes.filter(ffunc).map(e => {return createNode(d, e, color)}));
+          f_nodes = d.nodes.filter(ffunc).map(e => {return createNode(d, e, color)})
+          f_nodes.forEach(function(n){
+            try{
+              nodes.add(n);
+            } catch(err){
+              console.log(err);
+            }
+          })
       	  d.nodes.forEach(function(n) {
       	    // build port DB
       	    if ("ports" in n) {
