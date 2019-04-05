@@ -8,7 +8,7 @@ function topoMapDirective() {
 
 
       canvas = scope.network.canvas.frame.canvas;
-    	ctx = canvas.getContext('2d');
+      ctx = canvas.getContext('2d');
 
 
     	scope.network.on("beforeDrawing", function(ctx) {
@@ -103,7 +103,24 @@ function topoMapDirective() {
 
       scope.network.on("selectEdge", function(params) {
         //scope.network.clustering.updateEdge(params.edges[0], {color : '#ff0000', width:10});
-	       //scope.toggle(params);
+	//scope.toggle(params);
+	
+	// TODO: resolve clustered edges!
+	edge = scope.topodata.edges.get(params.edges[0]);
+	if (edge) {
+	  var re = /[a-z]+-|^switch:([a-z]+)/i;
+	  var src = scope.topodata.nodes.get(edge.from);
+	  var dst = scope.topodata.nodes.get(edge.to);
+	  console.log(src, dst);
+	  if (src.label && dst.label) {
+	    var sstr = src.label.match(re);
+	    var dstr = dst.label.match(re);
+	    if (sstr && dstr) {
+	      scope.changeFilter('source', sstr[1] || sstr[0]);
+	      scope.changeFilter('destination', dstr[1] || dstr[0]);
+	    }
+	  }
+	}
       });
 
       scope.network.on("deselectEdge", function(params) {
@@ -198,11 +215,24 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     "destination": '',
     "ref": ''
   };
+  
+  $scope.testSrc = "";
+  $scope.testDst = "";
+  
+  $scope.tableParams = new NgTableParams({
+    // filtering overload
+    filter: {source: $scope.testSrc,
+	     destination: $scope.testDst}
+  },{
+    dataset: $scope.t_data
+  });
 
-  $scope.tableParams = new NgTableParams({}, { dataset: $scope.t_data});
-
-
-
+  $scope.changeFilter = function changeFilter(field, value) {
+    var filter = {};
+    filter[field] = value;
+    angular.extend($scope.tableParams.filter(), filter);
+  }
+  
   $scope.toggle = function(p) {
 
     $scope.cobj = undefined;
@@ -584,8 +614,6 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
         }
         e = $scope.topodata.edges.add({to: subjectIDs[0], from: subjectIDs[1], objRef:l, metadata_id: m.id, color:'#ff0000', width:10})
         clusterEdge = $scope.network.clustering.getClusteredEdges(e);
-
-
     });
 
 };
