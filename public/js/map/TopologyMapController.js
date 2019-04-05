@@ -120,7 +120,7 @@ function topoMapDirective() {
             scope.changeFilter('destination', dstr);
           }
         }
-      	/*if (edge) {
+      	else if (edge) {
       	  var re = /[a-z]+-|^switch:([a-z]+)/i;
       	  var src = scope.topodata.nodes.get(edge.from);
       	  var dst = scope.topodata.nodes.get(edge.to);
@@ -133,7 +133,7 @@ function topoMapDirective() {
       	      scope.changeFilter('destination', dstr[1] || dstr[0]);
       	    }
       	  }
-        }*/
+        }
       });
 
       scope.network.on("deselectEdge", function(params) {
