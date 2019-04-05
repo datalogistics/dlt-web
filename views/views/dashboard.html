@@ -174,7 +174,7 @@
       </div>
 
       <h2 class="sub-header">All Tests</h2>
-
+        <button class="btn btn-primary"><i class="glyphicon glyphicon-resize-horizontal" ng-click="swapFilter()"></i></button>
         <table ng-table="tableParams" class="table" show-filter="true">
           <tr ng-repeat="test in $data">
             <td title="'Source'" filter="{ source: 'text'}" sortable="'source'">{{test.parameters.source}}</td>

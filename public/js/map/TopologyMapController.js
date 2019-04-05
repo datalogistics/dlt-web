@@ -103,24 +103,37 @@ function topoMapDirective() {
 
       scope.network.on("selectEdge", function(params) {
         //scope.network.clustering.updateEdge(params.edges[0], {color : '#ff0000', width:10});
-	//scope.toggle(params);
-	
-	// TODO: resolve clustered edges!
-	edge = scope.topodata.edges.get(params.edges[0]);
-	if (edge) {
-	  var re = /[a-z]+-|^switch:([a-z]+)/i;
-	  var src = scope.topodata.nodes.get(edge.from);
-	  var dst = scope.topodata.nodes.get(edge.to);
-	  console.log(src, dst);
-	  if (src.label && dst.label) {
-	    var sstr = src.label.match(re);
-	    var dstr = dst.label.match(re);
-	    if (sstr && dstr) {
-	      scope.changeFilter('source', sstr[1] || sstr[0]);
-	      scope.changeFilter('destination', dstr[1] || dstr[0]);
-	    }
-	  }
-	}
+      	//scope.toggle(params);
+
+      	// TODO: resolve clustered edges!
+      	edge = scope.topodata.edges.get(params.edges[0]);
+        edgeID = params.edges[0]
+        if(edgeID.includes('cluster')){
+          clusteredEdges = scope.network.clustering.getBaseEdges(edgeID);
+          firstEdge = scope.topodata.edges.get(clusteredEdges[0]);
+
+          parts = firstEdge.objRef.name.split(":");
+          sstr = parts[1];
+          dstr = parts[2];
+          if (sstr && dstr) {
+            scope.changeFilter('source', sstr);
+            scope.changeFilter('destination', dstr);
+          }
+        }
+      	/*if (edge) {
+      	  var re = /[a-z]+-|^switch:([a-z]+)/i;
+      	  var src = scope.topodata.nodes.get(edge.from);
+      	  var dst = scope.topodata.nodes.get(edge.to);
+      	  console.log(src, dst);
+      	  if (src.label && dst.label) {
+      	    var sstr = src.label.match(re);
+      	    var dstr = dst.label.match(re);
+      	    if (sstr && dstr) {
+      	      scope.changeFilter('source', sstr[1] || sstr[0]);
+      	      scope.changeFilter('destination', dstr[1] || dstr[0]);
+      	    }
+      	  }
+        }*/
       });
 
       scope.network.on("deselectEdge", function(params) {
@@ -215,10 +228,10 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     "destination": '',
     "ref": ''
   };
-  
+
   $scope.testSrc = "";
   $scope.testDst = "";
-  
+
   $scope.tableParams = new NgTableParams({
     // filtering overload
     filter: {source: $scope.testSrc,
@@ -232,7 +245,15 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     filter[field] = value;
     angular.extend($scope.tableParams.filter(), filter);
   }
-  
+
+  $scope.swapFilter = function () {
+    filter = {
+      source: jQuery('[name="destination"]').val(),
+      destination: jQuery('[name="source"]').val()
+    }
+    angular.extend($scope.tableParams.filter(), filter);
+  }
+
   $scope.toggle = function(p) {
 
     $scope.cobj = undefined;
