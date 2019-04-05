@@ -148,7 +148,7 @@
           <a ng-repeat="option in data.topoOptions" href="dashboard/{{option.id}}">{{option.name}}</a>
         </div>
         <button ng-click="clusterByDomain()" class="btn btn-info" align="right" style="border-radius: 0px; margin-bottom: 10px">Cluster</button>
-        <button ng-click="handleClusteredEdges()" class="btn btn-info" align="right" style="border-radius: 0px; margin-bottom: 10px">Refresh</button>
+        <button ng-click="handleClusteredEdges()" class="btn btn-info" align="right" style="border-radius: 0px; margin-bottom: 10px"><i class="glyphicon glyphicon-repeat"></i></button>
         <button ng-click="togglePhysics()" class="btn" ng-class="{true: 'btn-success', false: 'btn-danger'}[physics]" align="right" style="border-radius: 0px; margin-bottom: 10px"><i class="glyphicon glyphicon-magnet"></i></button>
 
       </div>

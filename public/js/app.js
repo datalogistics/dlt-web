@@ -78,7 +78,7 @@ angular.module('periApp',
 
              $routeProvider.
                when('/', {
-                 templateUrl: 'views/topology_map.html',
+                 templateUrl: 'views/dashboard.html',
                  controller: 'TopologyMapController',
 		             reloadOnSearch: false,
                  resolve: {
