@@ -120,7 +120,7 @@ function topoMapDirective() {
             scope.changeFilter('destination', dstr);
           }
         }
-      	else if (edge) {
+      	else if (edge && params.nodes.length == 0) {
       	  var re = /[a-z]+-|^switch:([a-z]+)/i;
       	  var src = scope.topodata.nodes.get(edge.from);
       	  var dst = scope.topodata.nodes.get(edge.to);
