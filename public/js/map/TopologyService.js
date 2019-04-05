@@ -26,6 +26,7 @@ function topologyService($http, $q){
             n.data.meta[dataId] = m;
             n.data.testNode = true;
             $http.get('api/data/' + dataId + '?limit=5').then(function(res){
+              
               service.measurementHandler(m, res.data[0], n);
             });
           }
@@ -85,7 +86,7 @@ function topologyService($http, $q){
 
   service.handleClusteredEdges = function(graph){
     // find the edge in the network that corresponds to the new dataId
-    
+
     // network.getClusteredEdges to find the edge that maps to that cluster.
 
     // change the properties of that edge depending on the data

@@ -155,7 +155,7 @@ var OFSW = "http://unis.crest.iu.edu/schema/ext/ofswitch/1/ofswitch#";
 function topologyMapController($scope, $route, $routeParams, $http, UnisService, $sce, $websocket, NgTableParams) {
   // XXX: testing vis.js
   var topolist = UnisService.getMostRecent(UnisService.topologies)
-      .map(e => {return {id: e.id, name: e.name}});
+      .map(e => {return {id: (e.id + "?t=all"), name: e.name}});
   console.log(topolist);
 
 
@@ -567,7 +567,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
             subjectIDs.push(node);
             n.objRef.meta[dataId] = m;
             n.objRef.testNode = true;
-            $http.get('api/data/' + dataId + '?limit=5').then(function(res){
+            $http.get('api/data/' + dataId + '?limit=1').then(function(res){
               //console.log('n', n);
               measurementHandler(m, res.data[0], n);
               for(id in n.objRef.meta){
