@@ -1,0 +1,96 @@
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <h1 class="page-header"><img src="images/osiris_logo.png" style="height:100px; width:100px;"/> OSiRIS Topology Monitor</h1>
+      <div class="dropdown">
+        <button onclick="topoSelect()" class="btn btn-success" style="margin-bottom: 10px; border-radius: 0px">Select Topology</button>
+        <div id="topoDropdown" class="dropdown-content" ng-model="data.model">
+          <input type="text" placeholder="Search." id="topoInput" onkeyup="topofilterFunction()">
+          <a ng-repeat="option in topolist"  href="map2/{{option.id}}" onclick="window.location.reload()">{{option.name}}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+  #slide-right {
+    background: #cccccc !important;
+  }
+  </style>
+  <div pageslide ps-open="checked" ps-auto-close="false" ps-click-outside="false" ps-speed="0.5" ps-size="700px" >
+    <div style="padding:30px; overflow:auto; height: 100%" id="slide-right">
+      <div><p><br/></p></div>
+      <h2 style="color:#000000;"><b>{{cobj.objRef.name}}</b><a ng-click="toggle()" class="btn btn-info pull-right">Close</a></h2>
+      <hr>
+
+
+      <table class="table table-hover graph-slide-table" ng-if="cobj.testNode">
+
+        <thead>
+          <tr style="color:#000;!important">
+            <th>Type</th>
+            <th>Source</th>
+            <th>Destination</th>
+            <th class="text-center">Value</th>
+            <th>Last Updated</th>
+            <th></th>
+            <!--
+            <th class="text-center">THROUGHPUT (avg)</th>
+            <th class="text-center">LOSS</th>
+            <th class="text-center">OW-LATENCY (ms)</th>-->
+          <tr>
+        </thead>
+
+        <tbody class="graph-table" style="color:#000;!important">
+          <tr ng-repeat="meta in cobj.meta track by $index"  class="graph-row" style="background-color:#FFF;">
+            <td><div>{{meta.eventType}}<div></td>
+            <td><div>{{meta.parameters.source}}<div></td>
+            <td><div>{{meta.parameters.destination}}<div></td>
+            <td highlighter="meta.value" ><div>{{meta.value}}<div></td>
+            <td highlighter="meta.value" class="text-center"><div>{{meta.last_updated}}<div></td>
+            <td class="text-center">
+                <button
+                ng-click="buildGraphModal(meta.parameters.archive, meta.parameters.source, meta.parameters.destination)"
+                class="btn btn-warning"
+                data-toggle="modal"
+                data-target="#graphPathModal"
+                style="border-radius: 0px">
+                Show
+              </button>
+            </td>
+
+
+          </tr>
+        </tbody>
+
+      </table>
+      <div class="well" style="background-color:#737373!important;">
+        <h4>UNIS Representation</h4>
+        <json-formatter json="cobj.objRef" open="1"></json-formatter>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="row">
+    <div id="graphDiv" class="col-md-12" style="height:500px"></div>
+  </div>
+
+  <!-- Graph Modal -->
+  <div class="modal fade" id="graphPathModal" tabindex="-1" role="dialog" aria-labelledby="graphPathModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-fs" role="document" style="width: 85%">
+      <div class="modal-content modal-content-fs" style="border-radius: 0px !important;">
+        <div class="modal-header">
+          <h5 class="modal-title" id="graphModalLabel">{{modal.source}} -> {{modal.destination}}</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" style="height:100%">
+          <iframe ng-src="{{graphUrl}}" frameborder="0" style="width:100%; height:95%"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

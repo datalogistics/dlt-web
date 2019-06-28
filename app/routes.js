@@ -354,7 +354,6 @@ module.exports = function(app) {
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       // console.log('BODY: ' + JSON.stringify(res.body));
       var fullpath = "/" + path + "?" + paramString;
-      console.log("GETTING: ", fullpath)
       var options = _.extend({
         req : req , res : res ,
         path : fullpath,
@@ -388,10 +387,10 @@ module.exports = function(app) {
     return function(req, res) {
       // Get all parameters and just forward it to UNIS
       var paramString = querystring.stringify(req.query);
-      //console.log("node id: " + req.params.id);
-      //console.log('STATUS: ' + res.statusCode);
-      //console.log('HEADERS: ' + JSON.stringify(res.headers));
-      //console.log('BODY: ' + JSON.stringify(res.body));
+      console.log("node id: " + req.params.id);
+      console.log('STATUS: ' + res.statusCode);
+      console.log('HEADERS: ' + JSON.stringify(res.headers));
+      console.log('BODY: ' + JSON.stringify(res.body));
       var node_id = req.params.id;
       var inline = ('inline' in req.query) ? true : false;
       var fullpath = "/" + path + '/' + node_id + '?' + paramString
@@ -406,6 +405,7 @@ module.exports = function(app) {
       opt.handler = opt.handler || registerGenericHandler;
       opt.handler(options);
     };
+
   };
 
   app.get('/api/domains/:id', getGenericHandlerWithId({path : 'domains', name : 'domains'}));

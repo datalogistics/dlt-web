@@ -18,11 +18,11 @@ angular.module('periApp',
 		'ngAnimate',
 		'schemaForm',
 		'ui.utils',
+    'ngTable',
     'ivh.treeview',
     'jsonFormatter',
 		'ui.bootstrap',
 		'ui.bootstrap-slider',
-		'nvd3ChartDirectives',
 		'pubsub',
 		'main',
 		'unis',
@@ -31,7 +31,8 @@ angular.module('periApp',
 		'auth',
 		'map',
     'ngSanitize',
-    'services.polling'
+    'services.polling',
+    'ngWebSocket'
   ])
   .run(function($rootScope,UnisService,ServiceService,CommChannel,$modal,$cookies) {
     $rootScope.unis = UnisService;
@@ -77,8 +78,13 @@ angular.module('periApp',
 
              $routeProvider.
                when('/', {
-                 templateUrl: 'views/main.html',
-                 controller: 'MainController'
+                 templateUrl: 'views/dashboard.html',
+                 controller: 'TopologyMapController',
+		             reloadOnSearch: false,
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
                }).
                when('/status', {
                  templateUrl: 'views/services.html',
@@ -106,6 +112,24 @@ angular.module('periApp',
                }).
                when('/topology/:id?', {
                  templateUrl: 'views/topology_map.html',
+                 controller: 'TopologyMapController',
+		               reloadOnSearch: false,
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               }).
+               when('/dashboard/', {
+                 templateUrl: 'views/dashboard.html',
+                 controller: 'TopologyMapController',
+		               reloadOnSearch: false,
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               }).
+               when('/dashboard/:id', {
+                 templateUrl: 'views/dashboard.html',
                  controller: 'TopologyMapController',
 		               reloadOnSearch: false,
                  resolve: {
@@ -152,6 +176,14 @@ angular.module('periApp',
                .when('/exnode/:id', {
                  templateUrl: 'views/exnode_map.html',
                  controller: 'ExnodeMapController',
+                 resolve: {
+                   'unis': function(UnisService) {
+                     return UnisService.init()
+                   }}
+               })
+               .when('/map2/:id?', {
+                 templateUrl: 'views/topology2.html',
+                 controller: 'Topology2MapController',
                  resolve: {
                    'unis': function(UnisService) {
                      return UnisService.init()
