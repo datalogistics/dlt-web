@@ -187,8 +187,8 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
         }
         ss = (ss/divValue).toFixed(2) + " "+ label;
       }
-      else {
-        try{ ss = (s.sref[md.eventType]/1e9).toFixed(0);
+	else {
+            try{ ss = (s.sref[md.eventType]/1e9).toFixed(0);
 	     if (Number.isNaN(ss) || ss == "NaN")
 	       ss = "N/A";
 	   } catch(e){
@@ -240,19 +240,9 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
     $location.path('/map/' + service_id);
   };
 
-  // XXX: FIXME!
   function updateService(ser,dat) {
-    if (dat &&  !dat.error) {
-      var data = dat.data || {};
-      if (ser.ttl && ser.ttl < 200)
-	ser.ttl = 200;
-      ser.service['ps:tools:blipp:ibp_server:resource:usage:used'] = data.totalUsed;
-      ser.service['ps:tools:blipp:ibp_server:resource:usage:free'] = data.totalFree;
-    } else {
-      // Kill the service - Can't find data
-      ser.ttl = ser.service['ps:tools:blipp:ibp_server:resource:usage:free'] = ser.service['ps:tools:blipp:ibp_server:resource:usage:used'] = 0;
-    }
   }
+    
   $scope.runGetVersion = function(ser,ev) {
     var url = ser.accessPoint;
     var target = ev.target;
@@ -272,31 +262,21 @@ function serviceController($scope, $routeParams, $location, $filter, $rootScope,
 
   $scope.showGetVersionRes = function(ser,ev) {
     var url = ser.accessPoint;
-    console.log("SER: ", ser);
-    var modScope;
     var prom = $q.defer();
     var modalInstance = $modal.open({
-      templateUrl: "getVersionModal.html",
-      controller: function($scope) {
-        $scope.cancel = function() {
-          modalInstance.dismiss();
-        };
-    	modScope = $scope;
-    	prom.resolve($scope, function(res){
-        console.log(res);
-      });
-    	$scope.isLoading = true;
-      }
-    });
-    UnisService.getVersionByUrl(url,true).then(function(data) {
-      console.log(data);
-      prom.promise.then(function(modScope){
-    	$scope.isLoading = false;
-      console.log(data);
-    	$scope.getVersionRaw = data.data.rawData;
-      $scope.getVersionRaw = data.data.rawData;
-      console.log("GOT TO HERE");
-      });
+	templateUrl: "getVersionModal.html",
+	windowClass: "get-version-window",
+	controller: function($scope) {
+            $scope.cancel = function() {
+		modalInstance.dismiss();
+            };
+    	$scope.isLoading = true;	  
+	UnisService.getVersionByUrl(url,true).then(function(data) {
+	    //console.log(data);
+	    $scope.getVersionRaw = data.data.rawData;
+	    $scope.isLoading = false;
+	});
+       }
     });
     var tmpl = $("#getVersionModal.html");
   };

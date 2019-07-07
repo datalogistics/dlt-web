@@ -307,9 +307,10 @@ module.exports = function(app) {
 
     q.allSettled(handlerArr.map(function(x) {return x()})).then(function(obj) {
       var isErr = true ;
-      var json = obj.reduce(function(x,y){
-        isErr = isErr && y.state =='rejected';
-        return x.concat(y.value.data || {});
+      var json = obj.reduce(function(x,y) {
+          isErr = isErr && y.state =='rejected';
+	  //console.log(x, y);
+          return x.concat(y.value.data || {});
       },[]);
 
       function finish(ret) {
@@ -431,7 +432,7 @@ module.exports = function(app) {
       port = urlData.port;
     }
     getVersion(host,port).then(function(data) {
-      console.log("API RESONSE: ", res.json(data));
+      //console.log("API RESPONSE: ", res.json(data));
       return res.json(data);
     }).catch(function(x) {
       return res.json( {
@@ -517,9 +518,6 @@ module.exports = function(app) {
       name : 'wildfire'
     }));
 
-
-
-
     registerGenericHandler(options, function(obj) {
       // Return matching id children
       arr = getMostRecent(obj);
@@ -545,7 +543,6 @@ module.exports = function(app) {
     var paramString = querystring.stringify(req.query);
     // Make a request to the USGS get_metadata url which returns the data in xml form
     var url = cfg.usgs_row_searchurl + "?"+paramString;
-    console.log(url);
     request(url,function(err,r,resp){
       xmlparse(resp, function(err , result){
         console.dir(result);
@@ -559,7 +556,6 @@ module.exports = function(app) {
     var paramString = querystring.stringify(req.query);
     // Make a request to the USGS get_metadata url which returns the data in xml form
     var url = cfg.usgs_lat_searchurl + "?"+paramString;
-    console.log(url);
     request(url,function(err,r,resp){
       xmlparse(resp, function(err , result){
         console.dir(result);
@@ -587,6 +583,26 @@ module.exports = function(app) {
   app.get('/api/linkmap',function(req, res) {
     var link_map = {}
     res.json(link_map)
+  })
+    
+  app.get('/api/geoip/*',function(req, res) {
+    // Get it from IP service
+      var name = req.params['0'];
+      var url = cfg.freegeoipUrl + "/" + name + cfg.freegeoKey;
+      request(url, function (err, r, resp) {
+	  try{
+	      if (err || r.statusCode == 404) {
+		  res.json({'error': true});
+	      }
+	      else {
+		  var ret = JSON.parse(resp);
+		  ret.state = ret.region_code; // Normalize state
+		  res.json(ret);
+	      }
+	  } catch(e) {
+	      console.log(e,resp);
+	  }
+      });
   })
 
   app.get('/api/natmap',function(req, res) {

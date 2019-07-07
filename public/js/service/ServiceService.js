@@ -130,7 +130,8 @@ function serviceService($http, UnisService, CommChannel) {
     // get values for each metadata
     mds.forEach(function(md) {
       if (MY_ETS.indexOf(md.eventType) >= 0) {
-	onData = function(data) {
+	  onData = function(data) {
+	      console.log(data);
           var isRate = false;
           if (/network:/.test(md.eventType)) {
             isRate = true;
@@ -159,9 +160,10 @@ function serviceService($http, UnisService, CommChannel) {
               yVal = y;
             else 
               yVal = ((y - oldy) / timeD).toFixed(2);
-            service[md.eventType] =  yVal;
+              service[md.eventType] =  yVal;
           } else {            
-            service[md.eventType] = y;
+              service[md.eventType] = y;
+	      console.log(service);
           }
 	};	
 	UnisService.subDataId(md.id, onData, "service_"+md.id);
@@ -183,7 +185,8 @@ function serviceService($http, UnisService, CommChannel) {
 		found = 1;
 	      }
 	    }
-	    if (!found) {
+	      if (!found) {
+		  console.log(d);
 	      d.metadata.push(md);
 	      getValues(d);
 	    }

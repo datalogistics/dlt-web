@@ -13,7 +13,6 @@ function prom(k) {
 
 // Run it serially - i.e wait for each
 function recProm(i) {
-  console.log(i);
   if (i < 1000) {
     prom(i).then(recProm.bind(this,i+1));
   }       

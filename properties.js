@@ -13,14 +13,15 @@ var self = {
   },
   sslOpt : {
     // Example of domain
-    'dlt.incntre.iu.edu' : {
-      key : './cert/server.key',
-      cert : './cert/server.crt'
-      // ca : "./ssl/dlt-client.csr"
+    'dlt.open.sice.indiana.edu' : {
+      key : './ssl/server.key',
+      cert : './ssl/server.crt',
+      ca : "./ssl/incommon_inter.cer"
     }
   },
   nat_map_file : './misc/idms_nat_map',
-  freegeoipUrl : "http://dlt.incntre.iu.edu:8080",
+  freegeoipUrl : "http://api.ipstack.com",
+  freegeoKey   :  "?access_key=ce853dd619e7655fab8cc7a173697d51",
   jnlpMap : {
     'download': {
       'template': './misc/dlt-client.jnlp.tmpl',
@@ -66,8 +67,8 @@ var self = {
     'measurements_id' : [],
     'metadata': [],
     'metadata_id' : [],
-    'data': [],
-    'data_id': [],
+    'data': ['dlt_ms',],
+    'data_id': ['dlt_ms',],
     'ports': [],
     'ports_id' : [],
     'wildfire' : []
@@ -79,7 +80,7 @@ var self = {
     'services_id' : ""
   },
   filterMap : {
-    services : "",
+    services : "serviceType=ibp_server",
     exnodes : ""
   },
   wsfilterMap : {
