@@ -53,7 +53,7 @@ var self = {
   routeMap : {
     // Aggregate from the following by default
     //'default'  : ['dev', 'dlt', 'monitor'],
-    'default': ['iu'],
+    'default': ['dlt'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
     'exnodes' : [],
@@ -80,8 +80,7 @@ var self = {
     'services_id' : ""
   },
   filterMap : {
-    //services : "serviceType=ibp_server",
-    services : "",
+    services : "serviceType=ibp_server",
     exnodes : ""
   },
   wsfilterMap : {
