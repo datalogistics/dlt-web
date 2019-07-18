@@ -20,7 +20,7 @@ var getOptions = resourceHelper.getOptions;
 var getHttpOptions = resourceHelper.getHttpOptions;
 var wsfilterMap = cfg.wsfilterMap;
 
-WebSocket.super_.defaultMaxListeners = 0;
+process.setMaxListeners(0);
 
 // Storing all the data in memory -- ya seriously gonna do that - Data manually deleted in 15 minutes
 // This map stores the fileData which is used to retrieve it.
