@@ -58,8 +58,6 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     return name;
   };
 
-
-
   hasLocationInfo = function(item) {
     return (typeof item.location != 'undefined'
             && typeof item.location.longitude != 'undefined'
@@ -87,16 +85,17 @@ function unisService($q, $http, $timeout, SocketService, CommChannel) {
     item.ttl = Math.round(((item.ttl + (item.ts / 1e6)) - now));
     var d = $q.defer();
     if (!hasLocationInfo(item)) {
-    var url = '/api/geoip/'+getServiceName(item);
+      var url = '/api/geoip/'+getServiceName(item);
       $http.get(url).
-	  success(function(data, status, headers, config) {
+	success(function(data, status, headers, config) {
 	  item.location = {
 	    'latitude': data.latitude,
 	    'longitude': data.longitude,
 	    'state': data.region_code,
 	    'country': data.country_code,
 	    'zipcode': data.zip_code,
-	    'city': data.city
+	    'city': data.city,
+	    'institution': item.location.institution
 	  };
 	  getInstitutionName(item);
           d.resolve();

@@ -56,7 +56,7 @@ var self = {
     'default': ['dlt'],
     // Empty array is ignored and goes to default , otherwise using this to aggregate
     'measurements' : [],
-    'exnodes' : [],
+    'exnodes' : ['exnodedev'],
     'nodes': [],
     'nodes_id' : [],
     //'services': ['dev', 'dlt', 'monitor', 'msu', 'um', 'wsu'] ,
@@ -84,8 +84,7 @@ var self = {
     exnodes : ""
   },
   wsfilterMap : {
-    //services : '{"serviceType":{"in":["ibp_server"]}}'
-    services : ""
+    services : '{"serviceType":{"in":["ibp_server"]}}'
   },
   serviceMap : {
     local : {
