@@ -15,12 +15,13 @@ var self = {
     // Example of domain
     'dlt.open.sice.indiana.edu' : {
       key : './ssl/server.key',
-      cert : './ssl/server.crt'
-      // ca : "./ssl/dlt-client.csr"
+      cert : './ssl/server.crt',
+      ca : "./ssl/incommon_inter.cer"
     }
   },
   nat_map_file : './misc/idms_nat_map',
-  freegeoipUrl : "http://dlt.open.sice.indiana.edu:8080",
+  freegeoipUrl : "http://api.ipstack.com",
+  freegeoKey   :  "?access_key=ce853dd619e7655fab8cc7a173697d51",
   jnlpMap : {
     'download': {
       'template': './misc/dlt-client.jnlp.tmpl',
@@ -67,8 +68,8 @@ var self = {
     'measurements_id' : [],
     'metadata': [],
     'metadata_id' : [],
-    'data': [],
-    'data_id': [],
+    'data': ['dlt_ms',],
+    'data_id': ['dlt_ms',],
     'ports': [],
     'ports_id' : [],
     'wildfire' : []
@@ -80,11 +81,13 @@ var self = {
     'services_id' : ""
   },
   filterMap : {
+    //services : "serviceType=ibp_server",
     services : "",
     exnodes : ""
   },
   wsfilterMap : {
-    services : ''
+    //services : '{"serviceType":{"in":["ibp_server"]}}'
+    services : ""
   },
   serviceMap : {
     local : {
@@ -106,11 +109,6 @@ var self = {
       url: "unis.open.sice.indiana.edu",
       port: "8890",
       use_ssl: false
-    },
-    fuego : {
-      url : "dlt.open.sice.indiana.edu",
-      port : "8000/test.json",
-      use_ssl : false
     },
     iu: {
       url: "iu-ps01.osris.org",
@@ -137,13 +135,6 @@ var self = {
       port : "8888",
       use_ssl : false,
     },
-    dev : {
-      url : "dev.open.sice.indiana.edu",
-      port : "8888",
-      key : null,
-      cert : null,
-      use_ssl : false
-    },
     dlt : {
       url : "dlt.open.sice.indiana.edu",
       port : "9000",
@@ -151,26 +142,12 @@ var self = {
       cert: "./ssl/dlt-client.pem",
       use_ssl: true
     },
-    monitor : {
-      url : "monitor.open.sice.indiana.edu",
-      port : "9000",
-      key : null,
-      cert : null,
-      use_ssl : false
-    },
     dlt_ms : {
       url : "dlt.open.sice.indiana.edu",
       port : "9001",
       key : "./ssl/dlt-client.pem",
       cert : "./ssl/dlt-client.pem",
       use_ssl : true
-    },
-    monitor_ms : {
-      url : "monitor.open.sice.indiana.edu",
-      port : "9001",
-      key : null,
-      cert : null,
-      use_ssl : false
     }
   },
   sslOptions : {

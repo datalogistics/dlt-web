@@ -558,3 +558,7 @@ th {
   margin:0;
   padding:0;
 }
+
+.get-version-window .modal-dialog {
+    width: 1000px;
+}

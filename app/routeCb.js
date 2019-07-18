@@ -19,7 +19,7 @@ function getLocation(ap,obj) {
       return q.resolve();
   }
   
-  var url = cfg.freegeoipUrl + "/json/";
+  var url = cfg.freegeoipUrl + "/";
   var name;
   try {
     name = obj.accessPoint.split(':')[1].replace('//', '');
@@ -47,7 +47,7 @@ function getLocation(ap,obj) {
   // Get it from IP service
   var prom = q.defer();
   name = unescape((name||"").trim());
-  request(url + name, function (err, r, resp) {
+  request(url + name + cfg.freegeoKey, function (err, r, resp) {
     try{ 
       if (err || r.statusCode == 404)
 	prom.resolve({error:true});

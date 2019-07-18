@@ -3,11 +3,6 @@
  * public/js/
  * app.js
  */
-// The global config json
-var DLT_PROPS = {
-  FreeGeoIpUrl :"http://dlt.incntre.iu.edu:8080/json/"
-  // FreeGeoIpUrl :"https://www.freegeoip.net/json/"
-};
 angular.module('periApp',
                ['ngRoute',
 		'ngCookies',
