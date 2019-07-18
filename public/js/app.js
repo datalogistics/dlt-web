@@ -73,8 +73,8 @@ angular.module('periApp',
 
              $routeProvider.
                when('/', {
-                 templateUrl: 'views/dashboard.html',
-                 controller: 'TopologyMapController',
+                 templateUrl: 'views/main.html',
+                 controller: 'MainController',
 		             reloadOnSearch: false,
                  resolve: {
                    'unis': function(UnisService) {
