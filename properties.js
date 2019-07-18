@@ -80,11 +80,13 @@ var self = {
     'services_id' : ""
   },
   filterMap : {
-    services : "serviceType=ibp_server",
+    //services : "serviceType=ibp_server",
+    services : "",
     exnodes : ""
   },
   wsfilterMap : {
-    services : ''
+    //services : '{"serviceType":{"in":["ibp_server"]}}'
+    services : ""
   },
   serviceMap : {
     local : {
@@ -101,11 +103,6 @@ var self = {
       url: "unis.open.sice.indiana.edu",
       port: "8890",
       use_ssl: false
-    },
-    fuego : {
-      url : "dlt.open.sice.indiana.edu",
-      port : "8000",
-      use_ssl : false
     },
     iu: {
       url: "iu-ps01.osris.org",
@@ -128,44 +125,23 @@ var self = {
     	use_ssl : false,
     },
     unis : {
-      url : "unis.crest.iu.edu",
+      url : "unis.open.sice.indiana.edu",
       port : "8888",
       use_ssl : false,
     },
-    dev : {
-      url : "dev.crest.iu.edu",
-      port : "8888",
-      key : null,
-      cert : null,
-      use_ssl : false
-    },
     dlt : {
-      url : "dlt.crest.iu.edu",
+      url : "dlt.open.sice.indiana.edu",
       port : "9000",
       key : "./ssl/dlt-client.pem",
       cert: "./ssl/dlt-client.pem",
       use_ssl: true
     },
-    monitor : {
-      url : "monitor.crest.iu.edu",
-      port : "9000",
-      key : null,
-      cert : null,
-      use_ssl : false
-    },
     dlt_ms : {
-      url : "dlt.crest.iu.edu",
+      url : "dlt.open.sice.indiana.edu",
       port : "9001",
       key : "./ssl/dlt-client.pem",
       cert : "./ssl/dlt-client.pem",
       use_ssl : true
-    },
-    monitor_ms : {
-      url : "monitor.crest.iu.edu",
-      port : "9001",
-      key : null,
-      cert : null,
-      use_ssl : false
     }
   },
   sslOptions : {

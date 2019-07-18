@@ -25,7 +25,6 @@ module.exports = {
     var nameArr = [];
       // Create options according to hosts
       hostList.map(function(x) {
-	  console.log(x);
       nameArr.push(x);      
       hostArr.push(smap[x].url);
       portArr.push(smap[x].port);
