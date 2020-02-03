@@ -362,6 +362,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     if (e.$schema == OFSW) {
       n.image = '/images/switch-icon.png';
       n.shape = 'image';
+      n.label = e.properties.mgmtaddr;
     } else if(e.name.includes('ps')){
       n.image = '/images/database.png';
       n.shape = 'image';
