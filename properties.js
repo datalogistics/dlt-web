@@ -67,8 +67,8 @@ var self = {
     'measurements_id' : [],
     'metadata': [],
     'metadata_id' : [],
-    'data': ['dlt_ms',],
-    'data_id': ['dlt_ms',],
+    'data': ['iu',],
+    'data_id': ['iu',],
     'ports': [],
     'ports_id' : [],
     'wildfire' : []
@@ -95,7 +95,7 @@ var self = {
       use_ssl : false
     },
     slate : {
-      url : "155.101.6.236",
+      url : "slate.open.sice.indiana.edu",
       port : "8888",
       use_ssl : false
     },

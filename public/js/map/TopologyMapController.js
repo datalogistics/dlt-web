@@ -5,37 +5,34 @@ function topoMapDirective() {
       scope.network = new vis.Network(element[0], scope.topodata, scope.topoopts);
       console.log(element);
       //scope.network.stabilize();
-
-
+      
       canvas = scope.network.canvas.frame.canvas;
       ctx = canvas.getContext('2d');
-
-
-    	scope.network.on("beforeDrawing", function(ctx) {
-          //ctx.drawImage(document.getElementById("mapImage"), -1000, -1000, 2000,1500);
-          ctx.fillStyle = "white";
-          ctx.fillRect(-window.innerWidth * 50, -window.innerHeight * 100, window.innerWidth * 100, window.innerHeight * 200);
-          /*for(var n in scope.network.body.nodes){
-            var node = scope.network.body.nodes[n];
-            // destroys heap, TODO: implement some nutty WebGL for rendering.
-            //var color = scope.network.body.data.nodes._data[n].color;
-            drawCircle(node.x, node.y, 'rgb(255,255,255)', 75);
-
+      
+      scope.network.on("beforeDrawing", function(ctx) {
+        //ctx.drawImage(document.getElementById("mapImage"), -1000, -1000, 2000,1500);
+        ctx.fillStyle = "white";
+        ctx.fillRect(-window.innerWidth * 50, -window.innerHeight * 100, window.innerWidth * 100, window.innerHeight * 200);
+        /*for(var n in scope.network.body.nodes){
+          var node = scope.network.body.nodes[n];
+          // destroys heap, TODO: implement some nutty WebGL for rendering.
+          //var color = scope.network.body.data.nodes._data[n].color;
+          drawCircle(node.x, node.y, 'rgb(255,255,255)', 75);
+	  
           }*/
-          //ctx.globalCompositeOperation = 'source-out';
-          //for(var n in scope.network.body.nodes){
-          //  var node = scope.network.body.nodes[n];
-          //  drawArc(node.x, node.y, 100, 0, 2*Math.PI);
-          //}
-          //ctx.globalCompositeOperation = 'source-over';
-    	});
-
+        //ctx.globalCompositeOperation = 'source-out';
+        //for(var n in scope.network.body.nodes){
+        //  var node = scope.network.body.nodes[n];
+        //  drawArc(node.x, node.y, 100, 0, 2*Math.PI);
+        //}
+        //ctx.globalCompositeOperation = 'source-over';
+      });
+      
       scope.network.on("stabilized", function(){
         scope.showPathButtons = true;
       });
-
+      
       var drawArc = function(x,y,size, degrees, radians){
-
         ctx.beginPath();
         ctx.arc(x, y, size, degrees, radians);
         ctx.stroke();
@@ -54,46 +51,39 @@ function topoMapDirective() {
       	    scope.network.openCluster(params.nodes[0]);
       	  }
       	}
-	      //scope.toggle(params);
+	//scope.toggle(params);
       });
-
+      
       scope.network.on('select', function(ev){
         scope.$apply();
-        console.log(scope.network);
         var open = true;
-        if(ev.nodes[0]){
+        if (ev.nodes[0]) {
           var nodeId = ev.nodes[0];
           var node = scope.topodata.nodes._data[nodeId];
           var name = node.objRef.name;
-          console.log(node);
-          scope.institutions.forEach(function(n){
 
-            var test = n.split('//')[1];
-            console.log(test, ' - ', name);
-            // if the node you selected matches on of the PS nodes, bring up the dashboard.
-            if(test == name && !scope.stat_slide){
-              console.log("TOPODATA: ", scope.topodata);
-              // open the dashboard, pass name into scope.
-              var url = 'http://' + name;
-
-              scope.currentInstitution = {
-                'name': url,
-                'test': scope.throughputTests[url]
-              };
-
-              open = false;
-              console.log("CURRENT INSTITUTION: ", scope.currentInstitution);
-              scope.toggleStats();
-              scope.$apply();
-            }
-          });
-
+	  // If this is a test node, bring up the dashboard
+	  if (node.objRef.testNode) {
+            // open the dashboard, pass name into scope.
+            var url = 'http://' + name;
+	    
+            scope.currentInstitution = {
+              'name': url,
+              'test': scope.throughputTests[url]
+            };
+	    
+            open = false;
+            console.log("CURRENT INSTITUTION: ", scope.currentInstitution);
+            //scope.toggleStats();
+            scope.$apply();
+          }
         }
-        // fixes bug when you click a cluster and resource info slider shows.
-        if (ev.nodes.length == 0) {
+	
+	// fixes bug when you click a cluster and resource info slider shows.
+	if (ev.nodes.length == 0) {
           console.log(ev);
           return;
-
+	  
         } else if(open){scope.toggle(ev)};
       });
 
@@ -104,7 +94,7 @@ function topoMapDirective() {
       scope.network.on("selectEdge", function(params) {
         //scope.network.clustering.updateEdge(params.edges[0], {color : '#ff0000', width:10});
       	//scope.toggle(params);
-
+	
       	// TODO: resolve clustered edges!
       	edge = scope.topodata.edges.get(params.edges[0]);
         edgeID = params.edges[0]
@@ -147,35 +137,31 @@ function topoMapDirective() {
       var updateFrameVar = setInterval(function() { updateFrameTimer(); }, 60);
       var animatePath = true
       function updateFrameTimer() {
-          if (scope.animatePath) {
-              scope.network.redraw();
-              currentRadius += 1;
-          }
+        if (scope.animatePath) {
+          scope.network.redraw();
+          currentRadius += 1;
+        }
       }
-
+      
       scope.network.on("afterDrawing", function(ctx) {
-
-          if (scope.animatePath) {
-            var inode;
-            var nodePosition = scope.network.getPositions(scope.nodesInPath);
-        	  var arrayLength = scope.topodata.nodes.length;
-
-        	  for (node in nodePosition) {
-        		  var colorCircle = 'rgba(255, 165, 0, 0.8)';
-        		  var colorBorder = 'rgba(255, 165, 0, 0.2)';
-        		  ctx.strokeStyle = colorCircle;
-        		  ctx.fillStyle = colorBorder;
-        		  var radius = Math.abs(35 * Math.sin(currentRadius / 10));
-        		  ctx.circle(nodePosition[node].x, nodePosition[node].y, radius);
-        		  ctx.fill();
-        		  ctx.stroke();
-        	  }
-
-          };
-
-        });
-
-
+	
+        if (scope.animatePath) {
+          var inode;
+          var nodePosition = scope.network.getPositions(scope.nodesInPath);
+          var arrayLength = scope.topodata.nodes.length;
+	  
+          for (node in nodePosition) {
+            var colorCircle = 'rgba(255, 165, 0, 0.8)';
+            var colorBorder = 'rgba(255, 165, 0, 0.2)';
+            ctx.strokeStyle = colorCircle;
+            ctx.fillStyle = colorBorder;
+            var radius = Math.abs(35 * Math.sin(currentRadius / 10));
+            ctx.circle(nodePosition[node].x, nodePosition[node].y, radius);
+            ctx.fill();
+            ctx.stroke();
+          }
+        };
+      });
     }
   }
 }
@@ -188,9 +174,8 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       .map(e => {return {id: (e.id + "?t=all"), name: e.name}});
   console.log(topolist);
 
-
   // clean up polling threads on close
-  $scope.$on('$destroy',function(){
+  $scope.$on('$destroy',function() {
 
   });
 
@@ -203,8 +188,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
        $(tag).toggleClass('latency-changed');
      },1000);
   };
-
-
+  
   var ccnt = 0;
   $scope.colors = ['red', 'DarkViolet', 'lime', 'lightblue', 'pink', 'yellow'];
 
@@ -259,11 +243,10 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     $scope.cobj = undefined;
     if (p) {
       if (p.nodes.length) {
-	       $scope.cobj = nodes.get(p.nodes[0]);
-         console.log($scope.cobj.objRef.testNode);
+	$scope.cobj = $scope.topodata.nodes.get(p.nodes[0]);
       }
       else if (p.edges.length) {
-	       $scope.cobj = links.get(p.edges[0]);
+	$scope.cobj = $scope.topodata.links.get(p.edges[0]);
       }
     }
     $scope.checked = !$scope.checked
@@ -338,27 +321,27 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     $scope.physics = !$scope.physics;
 
   }
-
+  
   $scope.topoopts = {
     physics: { //stabilization: { enabled: false},
-               //repulsion: {springConstant: 0.01, nodeDistance: 50},
-               solver: "forceAtlas2Based",
-               stabilization: {
-                    enabled: true,
-                    iterations: 1000,
-                    updateInterval: 25
-                }
-             }
+      //repulsion: {springConstant: 0.01, nodeDistance: 50},
+      solver: "forceAtlas2Based",
+      stabilization: {
+        enabled: true,
+        iterations: 1000,
+        updateInterval: 25
+      }
+    }
   };
-
+  
   function createNode(d, e, color) {
     var n = {id: e.id,
-       label: e.name,
-       domain: d.id,
-       color: color,
-       objRef: e,
-       title: e.description || ""}
-
+	     label: e.name,
+	     domain: d.id,
+	     color: color,
+	     objRef: e,
+	     title: e.description || ""}
+    
     if (e.$schema == OFSW) {
       n.image = '/images/switch-icon.png';
       n.shape = 'image';
@@ -371,7 +354,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       n.image = '/images/server_icon.png';
       n.shape = 'image';
     }
-
+    
     return n;
   }
 
@@ -381,28 +364,28 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
           link.endpoints[0].href.startsWith("http") &&
           link.endpoints[1].href.startsWith("http")) {
         acc.push({a: link.endpoints[0].href,
-            b: link.endpoints[1].href,
-            id: link.id,
-            ref: link})
+		  b: link.endpoints[1].href,
+		  id: link.id,
+		  ref: link})
       } return acc}, [])
       .forEach(function(e) {
         var a = dset.get(e.a.split('/').pop());
         var b = dset.get(e.b.split('/').pop());
         if (a && b) {
           links.add({id: e.id,
-             objRef: e.ref,
-             from: a.node,
-             to: b.node,
-             color: 'black'})
+		     objRef: e.ref,
+		     from: a.node,
+		     to: b.node,
+		     color: 'black'})
         }
       });
   }
-
+  
   $http.get('/api/topologies/'+$scope.topoId+'?inline')
     .then(function(res) {
-
+      
       console.log("RESULT", res)
-
+      
       // generic filter function
       function ffunc(e) {
       	if (e.ts >= (t_hist)) {
@@ -410,15 +393,13 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       	}
       }
 
-
-
       var topo = res.data[0];
       console.log(topo)
       domains.add(topo.domains.map(e => {return {id: e.id,
 						 name: e.name,
 						 node: e.id}
 					}));
-
+      
       topo.domains.forEach(function(d) {
       	var color = $scope.colors[ccnt];
       	ccnt += 1;
@@ -438,20 +419,20 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
       	    // build port DB
       	    if ("ports" in n) {
               try {
-              ports.add(n.ports.filter(ffunc)
-        			.map(e => {return {id: e.id,
-        					   label: e.name,
-        					   node: n.id,
-        					   selfRef: e.selfRef,
-        					   title: e.description || ""}
-        				  }));
+		ports.add(n.ports.filter(ffunc)
+        		  .map(e => {return {id: e.id,
+        				     label: e.name,
+        				     node: n.id,
+        				     selfRef: e.selfRef,
+        				     title: e.description || ""}
+        			    }));
               } catch (err){
                 console.log(err);
               }
-
+	      
       	    }
       	  });
-	       }
+	}
     	else {
     	  // add domain placeholder nodes
     	  nodes.add({id: d.id,
@@ -460,51 +441,47 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     		     color: color,
     		     title: d.name+" placeholder"})
     	}
-
+	
     	// links connecting nodes
     	if ("links" in d) {
     	  createNodeLinks(d.links.filter(ffunc), ports);
     	}
-
-
-  });
-  //displayPathById("4994b225-6e58-47a7-99f3-9e3bb8c7d3e6");
-  console.log(links)
+      });
+      
+      //displayPathById("4994b225-6e58-47a7-99f3-9e3bb8c7d3e6");
+      console.log(links)
       // links connecting domains
       if ("links" in topo) {
-	       createNodeLinks(topo.links, domains);
+	createNodeLinks(topo.links, domains);
       }
     });
-
+  
   $scope.clusterByDomain = function() {
     $scope.clearPaths()
     var clusterOptionsByData;
     $scope.domains.forEach(function(d) {
-        clusterOptionsByData = {
-        	joinCondition: function (childOptions) {
-          	  return childOptions.domain == d.id;
-          	},
-          	processProperties: function (clusterOptions, childNodes, childEdges) {
-          	  var totalMass = 0;
-          	  for (var i = 0; i < childNodes.length; i++) {
-          	    totalMass += childNodes[i].mass;
-          	  }
-          	  clusterOptions.mass = totalMass;
-          	  return clusterOptions;
-          	},
-          	clusterNodeProperties: {id: d.id, borderWidth: 3, shape: 'database', label:'domain: ' + d.name},
-            clusterEdgeProperties: {color: { inherit: null}}
-
-          };
-        $scope.network.cluster(clusterOptionsByData);
-
+      clusterOptionsByData = {
+        joinCondition: function (childOptions) {
+          return childOptions.domain == d.id;
+        },
+        processProperties: function (clusterOptions, childNodes, childEdges) {
+          var totalMass = 0;
+          for (var i = 0; i < childNodes.length; i++) {
+            totalMass += childNodes[i].mass;
+          }
+          clusterOptions.mass = totalMass;
+          return clusterOptions;
+        },
+        clusterNodeProperties: {id: d.id, borderWidth: 3, shape: 'database', label:'domain: ' + d.name},
+        clusterEdgeProperties: {color: { inherit: null}}
+	
+      };
+      $scope.network.cluster(clusterOptionsByData);
+      
     });
-
+    
     console.log("Cluster", $scope.network);
     console.log("Clustered nodes", $scope.network.clusteredNodes);
-    // network.getClusteredEdges
-
-
   };
 
   var attachValue = function(metadata, data, resource){
@@ -522,44 +499,43 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     } catch(err) {
       console.log("Unable to attach value to metadata", err);
     }
-
   };
-
+  
   var handleThroughput = function(metadata, data, resource){
-      id  = metadata.id;
-      resourceId = resource.objRef.id;
-
-      console.log("DATA", data);
-      val = data.value
-      console.log("VALUE", val);
-
-      return (val/1000000).toFixed(2) + " Mbits/s";
-    };
-
-  var measurementHandler = function(metadata, data, resource){
-      console.log(metadata);
-      var value;
-      if(metadata.eventType == 'throughput'){
-        data.value = handleThroughput(metadata, data, resource);
-      } else{
-        data.value = Math.round(data.value, 2);
-      }
-
-      attachValue(metadata, data, resource);
-
+    id  = metadata.id;
+    resourceId = resource.objRef.id;
+    
+    console.log("DATA", data);
+    val = data.value
+    console.log("VALUE", val);
+    
+    return (val/1000000).toFixed(2) + " Mbits/s";
   };
-
+  
+  var measurementHandler = function(metadata, data, resource){
+    console.log(metadata);
+    var value;
+    if(metadata.eventType == 'throughput'){
+      data.value = handleThroughput(metadata, data, resource);
+    } else{
+      data.value = Math.round(data.value, 2);
+    }
+    
+    attachValue(metadata, data, resource);
+    
+  };
+  
   var init = function(){
     console.log(UnisService);
     /* After UnisService loads make links that have tests show more clearly */
     setTimeout(function(){
-
-        initializeGraph();
-        $scope.clusterByDomain();
-        //handleClusteredEdges();
-      }, 3500);
+      
+      initializeGraph();
+      $scope.clusterByDomain();
+      //handleClusteredEdges();
+    }, 3500);
   }; init();
-
+  
   $scope.handleClusteredEdges = function(){
     console.log("network", $scope.network);
     for(e in $scope.topodata.edges._data){
@@ -580,17 +556,15 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
         if(test.eventType == 'throughput'){
           handleClusterTestEdge(test, e);
         }
-
       }
-
     }
   };
 
   var handleClusterTestEdge = function(test, edge){
     function getColor(value){
-        //value from 0 to 1
-        var hue=((1-value)*120).toString(10);
-        return ["hsl(",hue,",100%,50%)"].join("");
+      //value from 0 to 1
+      var hue=((1-value)*120).toString(10);
+      return ["hsl(",hue,",100%,50%)"].join("");
     }
     if(test.eventType == "throughput" && test.value){
       val = parseFloat(test.value.split(' ')[0]);
@@ -600,81 +574,84 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
     }
   }
 
+  var findLinkNodes = function(link){
+    // can resolve nodes from link endpoints
+    return []
+  }
+
+  var findMetadataNodes = function(md){
+    nodes = UnisService.nodes.filter(n => n.name == md.parameters.source || n.name == md.parameters.destination);
+    return nodes;
+  }
+  
   var initializeGraph = function(){
-
-    for(n in $scope.topodata.nodes._data){
-
-        node = $scope.topodata.nodes._data[n].objRef.meta = {};
-    }
+    $scope.topodata.nodes.forEach(function(n) {
+      n.objRef.meta = {};
+    });
 
     UnisService.metadata.forEach(function(m){
-        ref = m;
-        dataId = m.id;
-        l = UnisService.links.filter(l => l.selfRef == m.subject.href)[0];
-        targetNodes = UnisService.nodes.filter(n => n.selfRef == l.properties.sourceRef || n.selfRef == l.properties.destRef);
-        subjectIDs = [];
-        for(node in $scope.topodata.nodes._data){
-          n = $scope.topodata.nodes._data[node];
-          if(n.objRef.selfRef == targetNodes[0].selfRef || n.objRef.selfRef == targetNodes[1].selfRef){
-            subjectIDs.push(node);
+      dataId = m.id;
+      l = UnisService.links.filter(l => l.selfRef == m.subject.href)[0];
+      targetNodes = findMetadataNodes(m);
+      // We need to associate metadata with links in the displayed topology
+      // but I don't think we should be adding edges here...
+      //e = $scope.topodata.edges.add({to: subjectIDs[0], from: subjectIDs[1], objRef:l, metadata_id: m.id, color:'#ff0000', width:10})
+      if (targetNodes.length == 2) {
+	$scope.topodata.nodes.forEach(function(n) {
+          if (n.objRef.selfRef == targetNodes[0].selfRef || n.objRef.selfRef == targetNodes[1].selfRef){
             n.objRef.meta[dataId] = m;
             n.objRef.testNode = true;
+	    console.log("Marking testNode ", n);
             $http.get('api/data/' + dataId + '?limit=1').then(function(res){
-              //console.log('n', n);
               measurementHandler(m, res.data[0], n);
               for(id in n.objRef.meta){
-                if(!$scope.tests[id]){
+		if(!$scope.tests[id]){
                   n.objRef.meta[id].source = n.objRef.meta[id].parameters.source;
                   n.objRef.meta[id].destination = n.objRef.meta[id].parameters.destination;
                   $scope.t_data.push(n.objRef.meta[id]);
-                }
-                $scope.tests[id] = n.objRef.meta[id];
+		}
+		$scope.tests[id] = n.objRef.meta[id];
+		$scope.tableParams.reload();
               }
-
             });
           }
-        }
-        e = $scope.topodata.edges.add({to: subjectIDs[0], from: subjectIDs[1], objRef:l, metadata_id: m.id, color:'#ff0000', width:10})
-        clusterEdge = $scope.network.clustering.getClusteredEdges(e);
+	})
+      }
     });
-
-};
-
-
-
-
-
-  var handle_measurement_data = function(rcv){
-      // in case the data cannot get parsed correctly.
-      dataId = JSON.parse(rcv).headers.id;
-
-      console.log("Scope Network", $scope.network);
-      console.log("Rcv socket data: ", rcv);
-      console.log("Metadata: ", UnisService.metadata);
-
-      m = UnisService.metadata.find(m => m.id == dataId);
-      l = UnisService.links.filter(l => l.selfRef == m.subject.href)[0];
-      console.log("l", l);
-      node_a = UnisService.nodes.forEach(n => n.selfRef == l.properties.sourceRef)[0];
-      node_b = UnisService.nodes.filter(n => n.selfRef == l.properties.destRef)[0];
-      vis_nodes = $scope.network.selectNodes([node_a.id, node_b.id]);
-      console.log($scope.topodata.nodes._data[node_a.id]);
-
-      /*console.log(dataId, metadata_match);
-      graph.forEachLink(function(l){
-        if(l.data.objRef.selfRef == metadata_match.subject.href){
-          TopologyService.measurementHandler(metadata_match, JSON.parse(rcv).data[dataId][0], l);
-        }
-      });*/
   };
 
+  var handle_measurement_data = function(rcv){
+    // in case the data cannot get parsed correctly.
+    dataId = JSON.parse(rcv).headers.id;
+    
+    console.log("Scope Network", $scope.network);
+    console.log("Rcv socket data: ", rcv);
+    console.log("Metadata: ", UnisService.metadata);
+    
+    m = UnisService.metadata.find(m => m.id == dataId);
+    nodes = findMetadataNodes(m);
+    
+    console.log("nodes", nodes);
+    
+    if (nodes.length == 2) {
+      //vis_nodes = $scope.network.selectNodes([nodes[0].id, nodes[1].id]);
+    }
+    
+    /*console.log(dataId, metadata_match);
+      graph.forEachLink(function(l){
+      if(l.data.objRef.selfRef == metadata_match.subject.href){
+      TopologyService.measurementHandler(metadata_match, JSON.parse(rcv).data[dataId][0], l);
+      }
+      });*/
+  };
+  
   var ws = $websocket('ws://iu-ps01.osris.org:8888/subscribe/data')
       .onOpen(function(){
-            console.log("Web Socket open.")
+        console.log("Web Socket open.")
       })
       .onMessage(function(data){
-            console.log("New data", data.data);
-            handle_measurement_data(data.data);
+        //console.log("New data", data.data);
+        //handle_measurement_data(data.data);
       })
       .onError(function(e){
         console.log("WS ERROR:", e);
@@ -690,8 +667,7 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
   $scope.toggleStats = function(){
     $scope.stats_slide = !$scope.stats_slide;
   };
-
-
+  
   //
   // Really just a debug function to spit out a bunch of JSON objects to console.
   // Grab paths from the host Unis Instance.
@@ -708,104 +684,99 @@ function topologyMapController($scope, $route, $routeParams, $http, UnisService,
         }
 
       })};
-
-      // Helper function, simply reset how the edge looks to 'reset' the current shown path.
-      $scope.clearPaths = function(){
-        $scope.animatePath = false
-        $scope.nodesInPath = []
-        for(edge in $scope.topodata.edges._data){
-          $scope.topodata.edges.update({id: edge, width: 1,
-                                        shadow:{size:40, enabled:false, color:"#ff5a00" }})
-        }
-        $scope.showNetpath = false
-      }
-
-      $scope.getNetPath = function(){
-
-        $http.get('/api/paths/')
-          .then(function(res) {
-
-            // generic filter function
-            function ffunc(e) {
-              if (e.ts >= (t_hist)) {
-                return true;
-              }
-            }
-
-            for(path in res.data){
-
-              if(res.data[path].id == $scope.currentPathId){
-                var currentPath = res.data[path];
-                return currentPath;
-                console.log(currentPath);
-              }
-            }
-
-          })};
-
-      //
-      //
-      // Grab paths from the host Unis Instance.
-      var displayPathById = function(id){
-
-        $scope.clearPaths()
-        $scope.currentPathId = id;
-
-        $http.get('/api/paths')
-          .then(function(res) {
-
-            // generic filter function
-            function ffunc(e) {
-              if (e.ts >= (t_hist)) {
-                return true;
-              }
-            }
-
-
-
-            for(path in res.data){
-
-              if(res.data[path].id == id){
-                $scope.currentPathDetails = res.data[path]
-                var hops = res.data[path].hops
-                for(i in hops){
-                  hopId =  res.data[path].hops[i].href.split("links/")[1]
-                  $scope.topodata.edges.update({id: hopId, width: 5, color:'ff5a00',
-                                                shadow:{size:40, enabled:true, color:"#ff5a00" }})
-
-                  edge = $scope.topodata.edges._data[hopId]
-                  $scope.nodesInPath.push(edge.to)
-                  $scope.nodesInPath.push(edge.from)
-                }
-              }
-
-            }
-
-            $scope.showNetpath = true;
-            $scope.animatePath = true;
-          })};
-
-          $scope.displayPath = function(id){
-            displayPathById(id)
+  
+  // Helper function, simply reset how the edge looks to 'reset' the current shown path.
+  $scope.clearPaths = function(){
+    $scope.animatePath = false
+    $scope.nodesInPath = []
+    for(edge in $scope.topodata.edges._data){
+      $scope.topodata.edges.update({id: edge, width: 1,
+                                    shadow:{size:40, enabled:false, color:"#ff5a00" }})
+    }
+    $scope.showNetpath = false
+  }
+  
+  $scope.getNetPath = function(){
+    
+    $http.get('/api/paths/')
+      .then(function(res) {
+	
+        // generic filter function
+        function ffunc(e) {
+          if (e.ts >= (t_hist)) {
+            return true;
           }
-
-          $scope.paths = []
-          $http.get('/api/paths')
-            .then(function(res) {
-              // generic filter function
-              function ffunc(e) {
-                if (e.ts >= (t_hist)) {
-                  return true;
-                }
-              }
-              for(path in res.data){
-                pathId = res.data[path].id
-                $scope.paths.push(pathId)
-              }
-            });
-
-          console.log("PATH IDS: ", $scope.paths)
-
+        }
+	
+        for(path in res.data){
+	  
+          if(res.data[path].id == $scope.currentPathId){
+            var currentPath = res.data[path];
+            return currentPath;
+            console.log(currentPath);
+          }
+        }
+      })
+  };
+  
+  //
+  //
+  // Grab paths from the host Unis Instance.
+  var displayPathById = function(id){
+    $scope.clearPaths()
+    $scope.currentPathId = id;
+    
+    $http.get('/api/paths')
+      .then(function(res) {
+	
+        // generic filter function
+        function ffunc(e) {
+          if (e.ts >= (t_hist)) {
+            return true;
+          }
+        }
+        for(path in res.data){
+	  
+          if(res.data[path].id == id){
+            $scope.currentPathDetails = res.data[path]
+            var hops = res.data[path].hops
+            for(i in hops){
+              hopId =  res.data[path].hops[i].href.split("links/")[1]
+              $scope.topodata.edges.update({id: hopId, width: 5, color:'ff5a00',
+                                            shadow:{size:40, enabled:true, color:"#ff5a00" }})
+	      
+              edge = $scope.topodata.edges._data[hopId]
+              $scope.nodesInPath.push(edge.to)
+              $scope.nodesInPath.push(edge.from)
+            }
+          }
+	  
+        }
+	
+        $scope.showNetpath = true;
+        $scope.animatePath = true;
+      })};
+  
+  $scope.displayPath = function(id){
+    displayPathById(id)
+  }
+  
+  $scope.paths = []
+  $http.get('/api/paths')
+    .then(function(res) {
+      // generic filter function
+      function ffunc(e) {
+        if (e.ts >= (t_hist)) {
+          return true;
+        }
+      }
+      for(path in res.data){
+        pathId = res.data[path].id
+        $scope.paths.push(pathId)
+      }
+    });
+  
+  console.log("PATH IDS: ", $scope.paths)
 }
 
 function timeConverter(UNIX_timestamp){
@@ -832,7 +803,7 @@ function highlighterDirective($timeout){
         if (nv !== ov) {
           // apply class
           element.addClass('highlight');
-
+	  
           // auto remove after some delay
           $timeout(function () {
             element.removeClass('highlight');
